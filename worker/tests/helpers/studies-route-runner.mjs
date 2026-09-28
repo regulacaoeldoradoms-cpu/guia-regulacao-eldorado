@@ -87,11 +87,32 @@ test('fluxo real da rota salva tentativa única, conclui aula e preserva XP',asy
   assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_attempts').get().n,4);
 });
 
+test('backend bloqueia missão futura até concluir o pré-requisito',async t=>{
+  const {sql,call,start,answer,lesson,boss}=await fixture(t);
+  const locked=await call('sessions',{missionId:boss.id});
+  assert.equal(locked.status,409);
+  assert.equal(locked.body.code,'STUDY_PREREQUISITE_REQUIRED');
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_sessions').get().n,0);
+
+  const prerequisite=await start(lesson);await answer(lesson,prerequisite);
+  const completed=await call('missions/'+lesson.id+'/complete',{sessionId:prerequisite});
+  assert.equal(completed.status,200);
+
+  const unlocked=await call('sessions',{missionId:boss.id});
+  assert.equal(unlocked.status,201);
+});
+
 test('Chefe reprova uma rodada e não concede conquista nem XP indevido',async t=>{
-  const {sql,call,start,answer,boss}=await fixture(t);const id=await start(boss);await answer(boss,id,[0,0,1,1]);
+  const {sql,call,start,answer,lesson,boss}=await fixture(t);
+  const prerequisite=await start(lesson);await answer(lesson,prerequisite);
+  assert.equal((await call('missions/'+lesson.id+'/complete',{sessionId:prerequisite})).status,200);
+  const xpBeforeBoss=sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n;
+  const achievementsBeforeBoss=sql.prepare('SELECT COUNT(*) n FROM study_achievements').get().n;
+  const id=await start(boss);await answer(boss,id,[0,0,1,1]);
   const r=await call('missions/'+boss.id+'/complete',{sessionId:id});
   assert.equal(r.status,422);assert.equal(r.body.score,50);
-  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,0);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,xpBeforeBoss);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_achievements').get().n,achievementsBeforeBoss);
   const next=await start(boss);await answer(boss,next,[0,0,0,1]);
   const passed=await call('missions/'+boss.id+'/complete',{sessionId:next});
   assert.equal(passed.body.score,75);assert.equal(passed.body.xpGranted,220);
