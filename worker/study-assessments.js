@@ -175,6 +175,8 @@ function correctionFor(question, selectedOption, missions) {
   const missionMap = new Map(missions.map((mission) => [mission.id, mission]));
   return {
     questionId: question.id,
+    prompt: question.prompt,
+    options: question.options,
     selectedOption,
     correctOption: question.answer,
     correct: selectedOption === question.answer,
