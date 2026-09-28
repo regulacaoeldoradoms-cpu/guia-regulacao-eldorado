@@ -209,13 +209,19 @@
     event.preventDefault();
     const status = document.getElementById('editStatus');
     try {
+      const editingUser = state.users.find((item) => item.username === state.editing) || null;
+      const selectedRole = editRole.value;
       const input = {
         name: document.getElementById('editName').value.trim(),
         jobTitle: document.getElementById('editJobTitle').value.trim(),
-        role: editRole.value,
         active: document.getElementById('editActive').checked
       };
-      const editingUser = state.users.find((item) => item.username === state.editing) || null;
+      if (!editingUser || selectedRole !== editingUser.role) {
+        input.role = selectedRole;
+        if (editingUser?.role === 'telemedicina' && selectedRole !== 'telemedicina') {
+          input.telemedicineAccess = false;
+        }
+      }
       if (isDeveloper) {
         input.councilRole = editCouncil.value;
         input.additionalRoles = editAdditionalRoleDocuments?.checked ? ['documentos'] : [];
