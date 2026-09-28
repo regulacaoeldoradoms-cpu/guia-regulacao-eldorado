@@ -30,6 +30,11 @@
       method: 'POST', body: JSON.stringify({ durationSeconds })
     })
   }) || null;
+  const assessmentUi = window.StudyAssessmentUI?.create({
+    root: $('studyAssessmentFocus'),
+    auth,
+    onUpdated: async () => { await load(); }
+  }) || null;
   const status = (text, focus = false) => {
     const el = $(focus ? 'focusStatus' : 'studyStatus');
     if (el) el.textContent = text || '';
@@ -122,6 +127,44 @@
     return `Retenção: ${evidence.scoredCycles}/${evidence.totalCycles} revisões com resultado${score} · ${evidence.label.toLowerCase()}`;
   }
 
+  function renderAssessment(summary) {
+    const panel = $('assessmentPanel');
+    if (!panel) return;
+    if (!summary) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    $('assessmentTitle').textContent = summary.title || 'Avaliação independente do bloco';
+    $('assessmentDescription').textContent = summary.description
+      || 'Questões novas para verificar aplicação sem reutilizar a prática da aula.';
+
+    const evidence = summary.evidence || { attempts: 0, firstScore: null, latestScore: null };
+    const attempts = Number(evidence.attempts || 0);
+    if (!summary.unlocked) {
+      $('assessmentEvidence').textContent = 'Bloqueada até concluir o Chefe do primeiro bloco. Isso evita avaliar conteúdo antes de concluir o ensino previsto.';
+    } else if (!attempts) {
+      $('assessmentEvidence').textContent = 'Nenhuma tentativa concluída. O primeiro resultado será preservado como linha de base.';
+    } else {
+      const forms = Array.isArray(evidence.formsSeen) && evidence.formsSeen.length
+        ? ` · formas vistas: ${evidence.formsSeen.join(', ')}` : '';
+      $('assessmentEvidence').textContent =
+        `Tentativas: ${attempts} · primeira: ${evidence.firstScore}% · última: ${evidence.latestScore}%${forms}. Não altera XP nem a taxa das práticas.`;
+    }
+
+    const start = $('startAssessment');
+    start.disabled = !summary.unlocked || !assessmentUi;
+    start.textContent = !summary.unlocked ? 'Conclua o Chefe'
+      : attempts ? 'Fazer outra forma' : 'Iniciar avaliação';
+    start.onclick = summary.unlocked && assessmentUi
+      ? () => assessmentUi.open(summary) : null;
+
+    const review = $('reviewAssessment');
+    review.hidden = attempts < 1;
+    review.disabled = !assessmentUi;
+    review.onclick = attempts && assessmentUi ? () => assessmentUi.review(summary) : null;
+  }
+
   function renderDashboard() {
     const data = state.data;
     if (!data) return;
@@ -143,6 +186,7 @@
     setBar('availabilityBar', m.campaignAvailability);
     setBar('personalProgressBar', m.availableCompletion);
     renderCurriculum(data.curriculum);
+    renderAssessment(Array.isArray(data.assessments) ? data.assessments[0] : null);
 
     const review = Array.isArray(data.reviews) && data.reviews.length ? data.reviews[0] : null;
     const reviewPanel = $('reviewPanel');
