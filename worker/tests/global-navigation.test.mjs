@@ -56,7 +56,7 @@ test('cabeçalhos próprios do Guia Médico e Fontes técnicas entram na cobertu
 
 test('Telemedicina carrega a Barra Global diretamente e renova a camada comum', () => {
   const html = read('telemedicina/index.html');
-  assert.match(html, /portal-interactions\.js\?v=20260928-globalnav-1/);
+  assert.match(html, /portal-interactions\.js\?v=20260923-2/);
   assert.match(html, /portal-global-navigation\.js\?v=20260928-2/);
   assert.equal((html.match(/portal-global-navigation\.js\?v=20260928-2/g) || []).length, 1);
 });
