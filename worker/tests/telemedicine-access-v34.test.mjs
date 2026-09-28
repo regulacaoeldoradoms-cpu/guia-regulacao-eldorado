@@ -77,6 +77,7 @@ test('V34.3: revogação de Telemedicina é explícita e edição comum não der
   assert.match(admin, /selectedRole !== editingUser\.role/);
   assert.match(admin, /editingUser\?\.role === 'telemedicina'/);
   assert.match(admin, /input\.telemedicineAccess = false/);
+  assert.match(flex, /actor\?\.role === 'admin' && requestedRole/);
 });
 
 test('V34.3: publicação usa URL nova para o formulário administrativo atualizado', () => {
