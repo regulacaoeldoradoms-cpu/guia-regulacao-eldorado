@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalSocialNavigation) return;
+  if (window.PortalSocialNavigation?.version === '20260928-1') return;
 
   let activeNotificationPanel = null;
   let activeUserSearch = null;
@@ -21,8 +21,8 @@
       @media (min-width:901px){
         .social-global-nav-inner{width:min(1360px,calc(100% - 32px));overflow-x:auto;scrollbar-width:thin}
         .social-nav-link{min-width:100px;flex:1 1 0;padding-left:9px;padding-right:9px;white-space:nowrap}
-        .social-global-nav-inner.has-home-user-search{overflow:visible}
-        .social-global-nav-inner.has-home-user-search .social-nav-link{flex:0 1 150px;min-width:98px}
+        .social-global-nav-inner.has-global-user-search{overflow:visible}
+        .social-global-nav-inner.has-global-user-search .social-nav-link{flex:0 1 150px;min-width:98px}
       }
       @media (max-width:900px){
         .social-mobile-nav{display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;justify-content:flex-start}
@@ -32,6 +32,8 @@
       body.mobile-home-mode .social-mobile-nav{display:flex!important;overflow-x:auto;overflow-y:hidden;grid-auto-flow:unset;grid-auto-columns:unset;scrollbar-width:none}
       body.mobile-home-mode .social-mobile-nav::-webkit-scrollbar{display:none}
       body.mobile-home-mode .social-mobile-nav-link{flex:0 0 clamp(112px,15vw,150px);min-width:clamp(112px,15vw,150px)}
+      body.has-social-navigation .portal-topbar .portal-user > a.portal-button[href="/"],
+      body.has-social-navigation .portal-topbar .portal-user > a.portal-button[href="/ferramentas/"]{display:none!important}
       @media (forced-colors:active){.social-nav-link,.social-mobile-nav-link{border:1px solid CanvasText}}
     `;
     document.head.appendChild(style);
@@ -584,11 +586,9 @@
           navLink('/perfil/', 'Perfil', icons.user || '', { social: true })
         );
       }
-      if (active('/') && socialAvailable) {
-        inner.classList.add('has-home-user-search');
+      if (socialAvailable) {
+        inner.classList.add('has-global-user-search');
         desktopLinks.push(homeUserSearch());
-      } else {
-        desktopLinks.push(...accountNavigationLinks(icons, false));
       }
       inner.append(...desktopLinks);
       desktop.appendChild(inner);
@@ -607,7 +607,6 @@
         navLink('/perfil/', 'Perfil', icons.user || '', { mobile: true, social: true })
       );
     }
-    mobileLinks.push(...accountNavigationLinks(icons, true));
     bottom.append(...mobileLinks);
     document.body.appendChild(bottom);
     document.body.classList.add('has-social-navigation');
@@ -617,5 +616,5 @@
     if (role && !role.textContent) role.textContent = labels[user?.role] || user?.role || '';
   }
 
-  window.PortalSocialNavigation = Object.freeze({ mount });
+  window.PortalSocialNavigation = Object.freeze({ version: '20260928-1', mount });
 })();

@@ -1176,6 +1176,13 @@
     applyTheme(preferences.theme);
     syncSoundStateAttribute();
     mountUtilityUi();
+    if (document.querySelector('.portal-topbar') && document.getElementById('portalLogout')) {
+      const globalNav = document.createElement('script');
+      globalNav.src = '/js/portal-global-navigation.js?v=20260928-1';
+      globalNav.async = false;
+      globalNav.dataset.portalGlobalNavigationLoader = 'true';
+      document.head.appendChild(globalNav);
+    }
     bindThemePanel();
     bindPreferencePanel();
     startObserver();
