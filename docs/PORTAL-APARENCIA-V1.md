@@ -101,7 +101,7 @@ A correção permanece restrita à apresentação e usa `html[data-portal-theme=
 - compositor, campo de mensagem e botão Enviar;
 - avisos, cartões de notificação e scrollbars.
 
-O modo claro não é alterado. Nenhuma regra de chat, contato, amizade, cargo, mensagem, push ou observabilidade muda. O CSS do chat é versionado em `portal-chat.css?v=20260923-1` nas rotas que montam o chat e no carregador do Guia Médico.
+O modo claro não é alterado. Nenhuma regra de chat, contato, amizade, cargo, mensagem, push ou observabilidade muda. O CSS do chat continua em `portal-chat.css?v=20260923-1`, agora carregado pelo bootstrap global `portal-global-chat.js` em todos os módulos autenticados.
 
 ## Refinamento transversal do modo escuro — 23/09/2026
 
