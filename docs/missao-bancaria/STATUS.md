@@ -157,9 +157,18 @@ O marcador é neutro: não altera cobertura, domínio, XP, conquistas, tentativa
 
 Testes do roteador real e navegador sintético cobrem idempotência, seção inválida, sessão encerrada, ausência de recompensa e restauração da visão do leitor.
 
+## Nova correção empilhada — sequência histórica completa
+
+Documento: `44-SEQUENCIA-HISTORICA.md`.  
+Branch: `fix/missao-bancaria-streak-historico-completo`, empilhada sobre o marcador de leitura.
+
+A sequência deixa de truncar silenciosamente o histórico nos 500 eventos mais recentes. A API percorre os eventos em páginas de 500 por cursor `activity_at + activity_key`, mantendo a conversão de calendário em `America/Campo_Grande` e a deduplicação por dia.
+
+Teste de regressão no roteador real cria 520 dias consecutivos e exige sequência atual e melhor sequência iguais a 520. Nenhum XP, cobertura, domínio, revisão ou schema é alterado.
+
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois remover o truncamento histórico dos 500 eventos e preparar a integração da avaliação independente já especificada. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois estabilizar a cadeia técnica e preparar a implementação da avaliação independente já especificada. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
