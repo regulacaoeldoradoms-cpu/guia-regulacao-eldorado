@@ -13,7 +13,8 @@ async function fixture(t) {
   t.after(() => sql.close());
   const db = sqliteD1(sql);
   const lesson = { id:'fixture.lesson', topicId:'fixture.lesson', contentVersion:2, order:1, xp:100,
-    title:'Leitura de teste', kind:'lesson', sourceIds:[], sections:[], recall:[],
+    title:'Leitura de teste', kind:'lesson', sourceIds:[],
+    sections:[{id:'intro',heading:'Introdução',body:'Texto sintético'},{id:'exemplo',heading:'Exemplo',body:'Outro texto sintético'}], recall:[],
     questions:Array.from({length:4},(_,i)=>({id:`lesson.${i}`,prompt:'Teste',options:['A','B'],answer:0,explanation:'Comentário de teste'})) };
   const boss = { ...lesson, id:'fixture.boss', topicId:'fixture.boss', kind:'boss', order:2, passScore:75, xp:220,
     questions:lesson.questions.map((q,i)=>({...q,id:`boss.${i}`})) };
@@ -205,6 +206,37 @@ test('bootstrap oferece retomada e impede sessão paralela até encerrar a anter
   assert.equal((await call('sessions/'+id,{durationSeconds:45},{method:'PATCH'})).status,200);
   assert.equal((await call('bootstrap')).body.activeSession,null);
   assert.equal((await call('sessions',{missionId:lesson.id})).status,201);
+});
+
+test('marcador de leitura é idempotente, neutro e reaparece na sessão ativa',async t=>{
+  const {sql,call,start,lesson}=await fixture(t);
+  const id=await start(lesson);
+  const first=await call('sessions/'+id+'/marker',{view:'lesson',sectionId:'exemplo',allSections:false});
+  assert.equal(first.status,200);
+  assert.equal(first.body.markerSaved,true);
+  assert.equal(first.body.markerProtocol,1);
+  assert.deepEqual(first.body.marker,{view:'lesson',sectionId:'exemplo',allSections:false});
+
+  const second=await call('sessions/'+id+'/marker',{view:'practice',sectionId:'exemplo',allSections:true});
+  assert.equal(second.status,200);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_session_markers').get().n,1);
+  assert.equal(sql.prepare('SELECT view FROM study_session_markers WHERE session_id=?').get(id).view,'practice');
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,0);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_attempts').get().n,0);
+
+  const bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.markerProtocol,1);
+  assert.deepEqual(bootstrap.body.activeSession.marker,{
+    view:'practice',sectionId:'exemplo',allSections:true,updatedAt:bootstrap.body.activeSession.marker.updatedAt
+  });
+  assert.ok(bootstrap.body.activeSession.marker.updatedAt);
+
+  const invalid=await call('sessions/'+id+'/marker',{view:'lesson',sectionId:'nao-existe',allSections:false});
+  assert.equal(invalid.status,400);assert.equal(invalid.body.code,'STUDY_MARKER_SECTION_INVALID');
+
+  await call('sessions/'+id,{durationSeconds:0},{method:'PATCH'});
+  const closed=await call('sessions/'+id+'/marker',{view:'lesson',sectionId:'intro',allSections:false});
+  assert.equal(closed.status,409);assert.equal(closed.body.code,'STUDY_SESSION_CLOSED');
 });
 
 test('checkpoint respeita autorização antes de inicializar o schema',async t=>{
