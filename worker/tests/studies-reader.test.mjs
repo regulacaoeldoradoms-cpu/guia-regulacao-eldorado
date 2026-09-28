@@ -35,7 +35,7 @@ test('o navegador de leitura não concede XP nem envia respostas', () => {
   assert.doesNotMatch(source, /\bfetch\s*\(|RegulationAuth|\.api\s*\(|localStorage|sessionStorage|\/api\//);
   assert.doesNotMatch(source, /innerHTML\s*=/);
   const client = fs.readFileSync(new URL('../../js/studies.js', import.meta.url), 'utf8');
-  assert.match(client, /reader\?\.mount\(mission\)/);
+  assert.match(client, /reader\?\.mount\(mission,\s*marker\)/);
   assert.match(client, /StudyReader\?\.practiceProgress/);
   assert.doesNotMatch(client, /35 \+ \(answered \/ total\)/);
 });
