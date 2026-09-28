@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'worker/telemedicine-access.js'
+      - 'worker/auth-management-flex.js'
+      - 'js/admin-users.js'
       - 'worker/role-migration.js'
       - 'worker/index.js'
       - 'worker/telemedicine.js'
@@ -15,6 +17,8 @@ on:
     branches: [main]
     paths:
       - 'worker/telemedicine-access.js'
+      - 'worker/auth-management-flex.js'
+      - 'js/admin-users.js'
       - 'worker/role-migration.js'
       - 'worker/index.js'
       - 'worker/telemedicine.js'
@@ -37,6 +41,8 @@ jobs:
       - name: Conferir sintaxe
         run: |
           node --input-type=module --check < worker/telemedicine-access.js
+          node --input-type=module --check < worker/auth-management-flex.js
+          node --check js/admin-users.js
           node --input-type=module --check < worker/role-migration.js
           node --test worker/tests/telemedicine-access-v34.test.mjs
       - name: Conferir segurança e otimização
