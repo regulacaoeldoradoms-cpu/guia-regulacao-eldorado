@@ -1,6 +1,6 @@
 'use strict';
 
-// 20260928-2 also invalidates the pre-Barra-Global navigation assets.
+// 20260928-3 invalidates navigation/chat assets after global chat rollout.
 const CACHE_VERSION = '20260928-3';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
