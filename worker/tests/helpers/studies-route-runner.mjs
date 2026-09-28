@@ -97,6 +97,7 @@ test('backend bloqueia missão futura até concluir o pré-requisito',async t=>{
   const prerequisite=await start(lesson);await answer(lesson,prerequisite);
   const completed=await call('missions/'+lesson.id+'/complete',{sessionId:prerequisite});
   assert.equal(completed.status,200);
+  assert.equal((await call('sessions/'+prerequisite,{durationSeconds:0},{method:'PATCH'})).status,200);
 
   const unlocked=await call('sessions',{missionId:boss.id});
   assert.equal(unlocked.status,201);
@@ -121,6 +122,7 @@ test('Chefe reprova uma rodada e não concede conquista nem XP indevido',async t
   const {sql,call,start,answer,lesson,boss}=await fixture(t);
   const prerequisite=await start(lesson);await answer(lesson,prerequisite);
   assert.equal((await call('missions/'+lesson.id+'/complete',{sessionId:prerequisite})).status,200);
+  assert.equal((await call('sessions/'+prerequisite,{durationSeconds:0},{method:'PATCH'})).status,200);
   const xpBeforeBoss=sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n;
   const achievementsBeforeBoss=sql.prepare('SELECT COUNT(*) n FROM study_achievements').get().n;
   const id=await start(boss);await answer(boss,id,[0,0,1,1]);
@@ -162,6 +164,16 @@ test('bootstrap oferece retomada da rodada ativa com respostas já registradas',
   assert.equal(r.body.resumableSession.mode,'lesson');
   assert.equal(r.body.resumableSession.durationSeconds,75);
   assert.deepEqual(r.body.resumableSession.answeredQuestionIds,[lesson.questions[0].id,lesson.questions[1].id]);
+});
+
+test('nova rodada é bloqueada enquanto há sessão elegível para retomada',async t=>{
+  const {sql,call,start,lesson}=await fixture(t);
+  const id=await start(lesson);
+  const blocked=await call('sessions',{missionId:lesson.id});
+  assert.equal(blocked.status,409);
+  assert.equal(blocked.body.code,'STUDY_SESSION_RESUME_REQUIRED');
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_sessions').get().n,1);
+  assert.equal((await call('bootstrap')).body.resumableSession.sessionId,id);
 });
 
 test('sessão encerrada deixa de ser oferecida para retomada',async t=>{
