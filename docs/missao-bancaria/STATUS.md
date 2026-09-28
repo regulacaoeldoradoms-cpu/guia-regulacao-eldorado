@@ -115,6 +115,23 @@ Sem alteração de schema, conteúdo, perguntas, gabaritos, XP ou histórico. Te
 
 Limite: esta regra cobre a fila atual de nove missões. O mapa curricular de 43 blocos exigirá pré-requisitos explícitos por competência/trilha ao criar novas áreas paralelas; não transformar o curso inteiro numa fila linear por acidente.
 
+## Nova entrega empilhada — evidência de retenção
+
+Documento: `40-EVIDENCIA-RETENCAO.md`.  
+Branch: `feat/missao-bancaria-evidencia-retencao`, empilhada sobre a correção de pré-requisitos.
+
+O cartão da missão passa a separar:
+- **Acerto nas tentativas** — desempenho acumulado;
+- **Retenção** — revisões posteriores identificadas.
+
+Estados descritivos: sem revisão posterior; revisão histórica sem nota isolável; evidência em coleta; ciclos previstos observados. Nenhum deles é chamado de domínio, prontidão ou aprovação.
+
+A evidência usa `study_reviews` e scores de `study_rounds`, sem tabela nova. Revisões antigas sem score isolável são preservadas como históricas; nenhuma pontuação é inventada ou reconstruída por horário.
+
+Mesmo três ciclos registrados não alteram **Prontidão de prova: Ainda não medida**. Prontidão continuará exigindo cobertura curricular, avaliação independente e simulados representativos.
+
+Testes verificam histórico sem score, deduplicação por ciclo, pontuação mais recente, ausência de linguagem de domínio e exibição separada no frontend.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
