@@ -18,6 +18,7 @@ jobs:
           node --check worker/portal-chat-v2.js
           node --check worker/push-notifications.js
           node --check worker/index.js
+          node --check js/portal-global-chat.js
           node --check js/portal-chat.js
           node --check js/portal-pwa.js
           node --check js/portal-chat-switch-optimizer.js
@@ -29,10 +30,9 @@ jobs:
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-body' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-contact:hover' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-message.mine' css/portal-chat.css
-          grep -q "portal-chat.css?v=20260923-1" index.html
-          grep -q "portal-chat.css?v=20260923-1" recepcao/index.html
-          grep -q "portal-chat.css?v=20260923-1" admin/usuarios/index.html
-          grep -q "portal-chat.css?v=20260923-1" js/medical-portal-nav.js
+          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20260923-1'" js/portal-global-chat.js
+          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20260928-global-1'" js/portal-global-chat.js
+          grep -q "CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1'" js/portal-global-chat.js
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
           grep -q "portal-chat-v2.js" worker/index.js
@@ -57,36 +57,37 @@ jobs:
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "portal-chat.js?v=20260911-3" index.html
-          grep -q "portal-chat.js?v=20260911-3" recepcao/index.html
-          grep -q "portal-chat.js?v=20260911-3" admin/usuarios/index.html
+          grep -q "version: '20260928-global-1'" js/portal-chat.js
+          grep -q "PortalChatSwitchOptimizer" js/portal-chat-switch-optimizer.js
           grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q "id=\"portalChatProfileLink\"" js/portal-chat.js
           grep -Fq 'profile.href = `/perfil/?u=' js/portal-chat.js
           grep -Fq "background-image:url('" js/portal-chat.js
           ! grep -Fq 'background-image:url("${photo' js/portal-chat.js
           test -f css/portal-chat-profile-link.css
-          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" index.html
-          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" recepcao/index.html
-          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" admin/usuarios/index.html
-          grep -q "ensureChatAssets" js/medical-portal-nav.js
           grep -q "portal-chat-present" js/medical-portal-nav.js
-      - name: Garantir separação entre chat profissional e chat social
+          ! grep -q "ensureChatAssets" js/medical-portal-nav.js
+      - name: Garantir chat global sem ampliar autorização
         run: |
           set -euo pipefail
-          ! grep -q "portal-chat.js" login/index.html
-          ! grep -q "portal-chat.js" cadastro/index.html
-          ! grep -q "portal-chat.js" cidadao/index.html
-          ! grep -q "portal-chat.js" conselho/index.html
-          ! grep -q "portal-chat.js" conselho/painel/index.html
-          ! grep -q "portal-chat.js" conta/index.html
-          ! grep -q "portal-chat.js" seguranca/index.html
-          ! grep -q "portal-chat.js" configuracoes/index.html
-          ! grep -q "portal-chat.js" conquistas/index.html
+          for file in \
+            index.html ferramentas/index.html amigos/index.html notificacoes/index.html perfil/index.html \
+            seguranca/index.html configuracoes/index.html conquistas/index.html estudos/index.html \
+            medico/index.html protocolo/index.html recepcao/index.html telemedicina/index.html \
+            documentos/index.html agenda/index.html agenda/sync/index.html cidadao/index.html \
+            conselho/painel/index.html admin/usuarios/index.html admin/monitoramento/index.html \
+            admin/configuracao/index.html admin/social/index.html; do
+            grep -q "portal-global-chat.js?v=20260928-1" "$file"
+            ! grep -q "portal-chat.js?v=" "$file"
+            ! grep -q "portal-chat-switch-optimizer.js?v=" "$file"
+          done
+          ! grep -q "portal-global-chat.js" login/index.html
+          ! grep -q "portal-global-chat.js" cadastro/index.html
+          ! grep -q "portal-global-chat.js" conselho/index.html
+          grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
+          grep -q "PROFESSIONAL_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'\])" worker/portal-chat-v2.js
           grep -q "socialFriendContacts" worker/portal-chat-v2.js
           grep -q "socialFriendContact" worker/portal-chat-v2.js
           grep -q "relationship.state = 'friends'" worker/portal-chat-v2.js
           grep -q "const institutional = await professionalContact" worker/portal-chat-v2.js
           grep -q "return socialFriendContact(env, currentUser.username, targetUsername)" worker/portal-chat-v2.js
-          ! grep -q "isSocialProfessional(viewer) === isSocialProfessional(target)" worker/social-policy.js
-          ! grep -q "au.role = 'cidadao' AND au.accept_friend_requests = 1" worker/social.js
