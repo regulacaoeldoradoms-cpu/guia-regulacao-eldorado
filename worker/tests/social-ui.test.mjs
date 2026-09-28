@@ -99,8 +99,9 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(navigation, /homeUserSearch/);
   assert.match(navigation, /Pesquisar usuários/);
   assert.match(navigation, /\/api\/social\/search\?q=/);
-  assert.match(navigation, /if \(active\('\/'\) && socialAvailable\)/);
-  assert.match(navigation, /has-home-user-search/);
+  assert.doesNotMatch(navigation, /if \(active\('\/'\) && socialAvailable\)/);
+  assert.match(navigation, /if \(socialAvailable\)/);
+  assert.match(navigation, /has-global-user-search/);
   assert.match(navigation, /overflow-x:auto/);
   assert.doesNotMatch(navigation, /navLink\('\/notificacoes\/', '(?:Notificações|Avisos)'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
@@ -207,7 +208,7 @@ test('chat profissional continua por cargo e chat social exige amizade aceita', 
 
 test('chat interno acompanha o modo escuro sem superfícies claras residuais', () => {
   const css = read('css/portal-chat.css');
-  const medicalNav = read('js/medical-portal-nav.js');
+  const globalChat = read('js/portal-global-chat.js');
 
   assert.match(css, /html\[data-portal-theme="dark"\] \.portal-chat-body/);
   assert.match(css, /html\[data-portal-theme="dark"\] \.portal-chat-search-wrap/);
@@ -221,10 +222,10 @@ test('chat interno acompanha o modo escuro sem superfícies claras residuais', (
   assert.match(css, /html\[data-portal-theme="dark"\] \.portal-chat-notification-card/);
   assert.match(css, /scrollbar-color:/);
 
-  assert.match(read('index.html'), /portal-chat\.css\?v=20260923-1/);
-  assert.match(read('recepcao\/index.html'), /portal-chat\.css\?v=20260923-1/);
-  assert.match(read('admin\/usuarios\/index.html'), /portal-chat\.css\?v=20260923-1/);
-  assert.match(medicalNav, /portal-chat\.css\?v=20260923-1/);
+  assert.match(globalChat, /CHAT_CSS = '\/css\/portal-chat\.css\?v=20260923-1'/);
+  assert.match(globalChat, /stylesheet\(CHAT_CSS/);
+  assert.match(read('medico/index.html'), /portal-global-chat\.js\?v=20260928-1/);
+  assert.match(read('recepcao/index.html'), /portal-global-chat\.js\?v=20260928-1/);
 });
 
 test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {

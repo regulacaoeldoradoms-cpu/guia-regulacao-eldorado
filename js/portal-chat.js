@@ -1,6 +1,7 @@
 'use strict';
 
 (() => {
+  if (window.PortalChat?.version === '20260928-global-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -731,6 +732,7 @@
   window.addEventListener('portal:session-cleared', clearMessageMemory);
 
   window.PortalChat = Object.freeze({
+    version: '20260928-global-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

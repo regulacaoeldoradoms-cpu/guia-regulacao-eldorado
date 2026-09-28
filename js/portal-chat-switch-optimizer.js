@@ -1,6 +1,7 @@
 'use strict';
 
 (() => {
+  if (window.PortalChatSwitchOptimizer?.version === '20260928-global-1') return;
   const conversationCache = new Map();
   let currentUsername = '';
 
@@ -45,6 +46,8 @@
       snapshotCurrentConversation();
     }
   }, true);
+
+  window.PortalChatSwitchOptimizer = Object.freeze({ version: '20260928-global-1' });
 
   window.addEventListener('message', (event) => {
     if (event.data?.type !== 'OPEN_PORTAL_CHAT' || !event.data.chatUser) return;

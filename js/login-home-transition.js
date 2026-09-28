@@ -15,9 +15,7 @@
     ['/js/social-navigation.js', 'PortalSocialNavigation'],
     ['/js/social-feed.js', 'PortalSocialFeed'],
     ['/js/social-home.js', 'PortalSocialHome'],
-    ['/js/home.js', 'PortalHomeReady'],
-    ['/js/portal-chat.js', 'PortalChat'],
-    ['/js/portal-chat-switch-optimizer.js', '']
+    ['/js/home.js', 'PortalHomeReady']
   ]);
   const REQUIRED = ['/js/social-api.js', '/js/social-home.js', '/js/home.js'];
   const HOME_TIMEOUT_MS = 20000;
