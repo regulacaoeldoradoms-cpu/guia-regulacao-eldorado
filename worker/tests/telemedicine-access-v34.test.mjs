@@ -63,3 +63,18 @@ test('rotas usam a capacidade explícita como fonte de verdade e autocorrigem pa
     assert.doesNotMatch(source, /user\.role === 'recepcao' && await telemedicineAccessFor/);
   }
 });
+
+test('V34.3: revogação de Telemedicina é explícita e edição comum não derruba a capacidade', () => {
+  const flex = read('worker/auth-management-flex.js');
+  const admin = read('js/admin-users.js');
+
+  assert.match(flex, /requestedTelemedicineAccess = null/);
+  assert.match(flex, /Object\.prototype\.hasOwnProperty\.call\(body, 'telemedicineAccess'\)/);
+  assert.match(flex, /targetTelemedicineEnabled[\s\S]+requestedTelemedicineAccess !== false/);
+  assert.match(flex, /requestedTelemedicineAccess === false[\s\S]+setTelemedicineAccess\(env, targetUsername, false/);
+  assert.doesNotMatch(flex, /setTelemedicineAccess\(env, targetUsername, requestedRole === 'telemedicina'/);
+
+  assert.match(admin, /selectedRole !== editingUser\.role/);
+  assert.match(admin, /editingUser\?\.role === 'telemedicina'/);
+  assert.match(admin, /input\.telemedicineAccess = false/);
+});
