@@ -137,12 +137,23 @@ async function ensureStudySchema(env) {
         unlocked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         source_ref TEXT,
         PRIMARY KEY (username, achievement_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS study_session_markers (
+        session_id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        mission_id TEXT NOT NULL,
+        content_version INTEGER NOT NULL,
+        view TEXT NOT NULL DEFAULT 'lesson' CHECK(view IN ('lesson','practice')),
+        section_id TEXT,
+        all_sections INTEGER NOT NULL DEFAULT 0 CHECK(all_sections IN (0,1)),
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`
     ];
     for (const sql of statements) await db.prepare(sql).run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_attempts_user_topic ON study_attempts(username, topic_id, attempted_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_sessions_user_finished ON study_sessions(username, finished_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_reviews_user_due ON study_reviews(username, status, due_at)').run();
+    await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_session_markers_user ON study_session_markers(username, updated_at)').run();
     await ensureRoundSchema(db);
     schemaReady.add(db);
     return true;
@@ -514,6 +525,27 @@ async function activeStudySession(env, username) {
     }
   }
 
+  let marker = null;
+  if (resumable && mission) {
+    const markerRow = await env.AUTH_DB.prepare(`SELECT mission_id, content_version, view, section_id,
+        all_sections, updated_at
+      FROM study_session_markers
+      WHERE session_id=? AND username=? LIMIT 1`).bind(row.session_id, username).first();
+    if (markerRow && markerRow.mission_id === mission.id
+      && Number(markerRow.content_version) === Number(mission.contentVersion)) {
+      const sectionIds = new Set((mission.sections || []).map((section) => section.id));
+      const sectionId = sectionIds.has(markerRow.section_id)
+        ? markerRow.section_id
+        : (mission.sections?.[0]?.id || '');
+      marker = {
+        view: markerRow.view === 'practice' ? 'practice' : 'lesson',
+        sectionId,
+        allSections: Boolean(Number(markerRow.all_sections || 0)),
+        updatedAt: markerRow.updated_at || ''
+      };
+    }
+  }
+
   let answers = [];
   if (resumable && mission) {
     const result = await env.AUTH_DB.prepare(`SELECT x.question_id, a.selected_option, a.correct
@@ -545,6 +577,7 @@ async function activeStudySession(env, username) {
     startedAt: row.started_at || '',
     resumable,
     reason,
+    marker,
     answers
   };
 }
@@ -555,6 +588,7 @@ async function handleBootstrap(env, user, origin) {
     user,
     roundProtocol: 1,
     timeProtocol: 1,
+    markerProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: await metrics(env, user.username, progress),
     progress,
@@ -781,7 +815,57 @@ async function handleStartSession(request, env, user, origin) {
     );
   }
   const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
-  return json(result, 201, origin);
+  return json({ ...result, markerProtocol: 1 }, 201, origin);
+}
+
+async function handleStudyMarker(request, pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/sessions\/([a-f0-9-]+)\/marker$/i);
+  if (!match) return json({ error: 'Sessão não encontrada.' }, 404, origin);
+  const body = await readStudyBody(request);
+  const view = body.view === 'practice' ? 'practice' : body.view === 'lesson' ? 'lesson' : '';
+  if (!view || typeof body.allSections !== 'boolean' || typeof body.sectionId !== 'string') {
+    throw new StudyRoundError('Marcador de leitura inválido.', 400, 'STUDY_MARKER_INVALID');
+  }
+
+  const row = await env.AUTH_DB.prepare(`SELECT s.mission_id, s.status AS session_status,
+      r.status AS round_status, r.content_version
+    FROM study_sessions s
+    JOIN study_rounds r ON r.session_id=s.session_id AND r.username=s.username
+    WHERE s.session_id=? AND s.username=? LIMIT 1`).bind(match[1], user.username).first();
+  if (!row) throw new StudyRoundError('Sessão não encontrada.', 404, 'STUDY_SESSION_NOT_FOUND');
+  if (row.session_status !== 'active' || row.round_status !== 'active') {
+    throw new StudyRoundError('A sessão já foi encerrada.', 409, 'STUDY_SESSION_CLOSED');
+  }
+
+  const mission = missionById(row.mission_id);
+  if (!mission || Number(row.content_version) !== Number(mission.contentVersion)) {
+    throw new StudyRoundError('O conteúdo foi atualizado. O marcador antigo não será aplicado.', 409, 'STUDY_MARKER_CONTENT_CHANGED');
+  }
+  const validSections = new Set((mission.sections || []).map((section) => section.id));
+  if (validSections.size && !validSections.has(body.sectionId)) {
+    throw new StudyRoundError('Parte da aula não encontrada.', 400, 'STUDY_MARKER_SECTION_INVALID');
+  }
+
+  await env.AUTH_DB.prepare(`INSERT INTO study_session_markers(
+      session_id, username, mission_id, content_version, view, section_id, all_sections, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(session_id) DO UPDATE SET
+      username=excluded.username,
+      mission_id=excluded.mission_id,
+      content_version=excluded.content_version,
+      view=excluded.view,
+      section_id=excluded.section_id,
+      all_sections=excluded.all_sections,
+      updated_at=CURRENT_TIMESTAMP`)
+    .bind(match[1], user.username, mission.id, mission.contentVersion, view,
+      body.sectionId, body.allSections ? 1 : 0).run();
+
+  return json({
+    markerSaved: true,
+    markerProtocol: 1,
+    sessionId: match[1],
+    marker: { view, sectionId: body.sectionId, allSections: body.allSections }
+  }, 200, origin);
 }
 
 async function handleFinishSession(request, pathname, env, user, origin) {
@@ -823,6 +907,9 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     if (request.method === 'POST' && /^\/api\/studies\/sessions\/[a-f0-9-]+\/checkpoint$/i.test(url.pathname)) {
       return await handleTimeCheckpoint(request, url.pathname, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/sessions\/[a-f0-9-]+\/marker$/i.test(url.pathname)) {
+      return await handleStudyMarker(request, url.pathname, env, user, origin);
     }
     if (request.method === 'PATCH' && /^\/api\/studies\/sessions\/[a-f0-9-]+$/i.test(url.pathname)) {
       return await handleFinishSession(request, url.pathname, env, user, origin);
