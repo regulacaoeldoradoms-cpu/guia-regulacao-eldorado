@@ -19,6 +19,7 @@ async function setup(page, { theme = 'light', history = false, kind = 'lesson', 
   const content = structuredClone(mission);
   content.kind = kind === 'review' ? 'lesson' : kind;
   const payload = {
+    markerProtocol: 1,
     user: { username, name: 'Estudante sintético' }, missions: [content], progress: {},
     attemptedQuestions: { [content.topicId]: history ? ['q.audit.1'] : [] },
     reviews: kind === 'review' ? [{ id: 'review-audit', missionId: content.id, title: 'Leitura', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
@@ -34,9 +35,13 @@ async function setup(page, { theme = 'light', history = false, kind = 'lesson', 
       requireRole: async () => ({username: ${JSON.stringify(username)}, name: 'Estudante sintético'}),
       logout: async () => {},
       api: async (route, options = {}) => {
-        window.__studyCalls.push({route, method:options.method});
+        window.__studyCalls.push({route, method:options.method, body:options.body || null});
         if (route.endsWith('/bootstrap')) return structuredClone(window.__studyPayload);
-        if (route.endsWith('/sessions')) return {sessionId:'session-audit'};
+        if (route.endsWith('/sessions')) return {sessionId:'session-audit', markerProtocol:1};
+        if (route.endsWith('/marker')) {
+          const body = JSON.parse(options.body);
+          return {markerSaved:true,markerProtocol:1,sessionId:'session-audit',marker:body};
+        }
         if (route.endsWith('/attempts')) {
           const answer = JSON.parse(options.body);
           const key = window.__studyPayload.missions[0].topicId;
@@ -138,6 +143,24 @@ for (const kind of ['lesson', 'review', 'boss']) {
     expect(unexpected).toEqual([]);
   });
 }
+
+test('navegação do leitor envia marcador sem registrar aprendizagem', async ({ page }) => {
+  const { errors, unexpected } = await setup(page);
+  await page.locator('#studyNextPart').click();
+  await expect.poll(() => page.evaluate(() => window.__studyCalls.filter((c) => c.route.endsWith('/marker')).length)).toBeGreaterThan(0);
+  let markers = await page.evaluate(() => window.__studyCalls.filter((c) => c.route.endsWith('/marker')));
+  expect(markers.at(-1).method).toBe('POST');
+
+  await page.locator('#studyPracticeButton').click();
+  await expect.poll(() => page.evaluate(() => window.__studyCalls.filter((c) => c.route.endsWith('/marker')).length)).toBeGreaterThan(markers.length);
+  markers = await page.evaluate(() => window.__studyCalls.filter((c) => c.route.endsWith('/marker')).map((c) => JSON.parse(c.body || '{}')));
+  expect(markers.at(-1)).toEqual({view:'practice',sectionId:'part-1',allSections:false});
+
+  const learningWrites = await page.evaluate(() => window.__studyCalls.filter((c) => /attempts|complete/.test(c.route)));
+  expect(learningWrites).toEqual([]);
+  expect(errors).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
 
 test('falha do módulo novo mantém texto e prática em sequência', async ({ page }) => {
   const { errors, unexpected } = await setup(page, { missingReader: true });
