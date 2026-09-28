@@ -22,6 +22,8 @@ jobs:
         run: |
           npm run check
           node --check study-rounds.js
+          node --check study-assessments.js
+          node --check studies-content/sfn-assessment-v1.js
           npm test
 
       - name: Validar frontend da Missao Bancaria
@@ -42,6 +44,8 @@ jobs:
           test -f worker/studies.js
           test -f worker/studies-content/manifest.js
           test -f worker/studies-content/banking-sfn.js
+          test -f worker/studies-content/sfn-assessment-v1.js
+          test -f worker/study-assessments.js
           grep -q "id: 'mission-bank'" js/tools-catalog.js
           grep -q "wellyton" js/tools-catalog.js
           grep -q "ALLOWED_USERNAME = 'wellyton'" worker/studies.js
@@ -60,11 +64,13 @@ jobs:
           grep -q 'Content-Security-Policy' estudos/index.html
           grep -q 'Prontidão de prova' estudos/index.html
           grep -q 'Mapa do curso-base' estudos/index.html
+          grep -q 'assessment.sfn-foundation.transfer.v1' worker/studies-content/sfn-assessment-v1.js
+          grep -q 'study_assessment_runs' worker/study-assessments.js
 
       - name: Validar isolamento assistencial
         run: |
           set -euo pipefail
-          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/studies-content/*.js js/studies.js js/studies-reader.js js/studies-clock.js estudos/index.html; then
+          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/study-assessments.js worker/studies-content/*.js js/studies.js js/studies-reader.js js/studies-clock.js estudos/index.html; then
             echo 'A Missao Bancaria contem termo assistencial proibido no dominio de estudos.' >&2
             exit 1
           fi
