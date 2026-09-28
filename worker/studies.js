@@ -508,6 +508,9 @@ async function handleComplete(request, pathname, env, user, origin) {
   const mission = match ? missionById(decodeURIComponent(match[1])) : null;
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
   const body = await readStudyBody(request);
+  // Revalida o pré-requisito também no fechamento. Isso invalida uma eventual
+  // sessão futura criada por um cliente antigo antes de este gate existir.
+  await assertMissionPrerequisite(env, user.username, mission);
   const result = await evaluateStudyRound(
     env.AUTH_DB, user.username, mission, body.sessionId,
     mission.kind === 'boss' ? 'boss' : 'lesson'
