@@ -2,6 +2,24 @@
 
 Última atualização: 28/09/2026.
 
+## Chat global em todos os módulos — EM VALIDAÇÃO — 28/09/2026
+
+Pedido aprovado: manter o **chat interno disponível em todos os módulos autenticados**, sem exigir retorno à Home e sem criar uma implementação diferente por página.
+
+Arquitetura adotada: novo bootstrap único `js/portal-global-chat.js`. Cada módulo autenticado carrega somente esse bootstrap; ele valida a existência de sessão, carrega autenticação sob demanda quando necessário, injeta `portal-chat.css`, `portal-chat.js` e o otimizador e respeita `mustChangePassword`. Login, Cadastro e a página pública do Conselho continuam sem chat.
+
+Cobertura explícita: Home, Ferramentas, Amigos, Notificações, Perfil, Segurança, Configurações, Conquistas, Estudos, Guia Médico, Fontes técnicas, Recepção, Telemedicina, Central de Documentos, Agenda, ponte de sincronização da Agenda, Canal do Cidadão, Painel do Conselho e Administração (Usuários, Monitoramento, Configuração e Social).
+
+Segurança preservada: disponibilizar o componente visual em mais rotas **não altera quem pode conversar com quem**. O frontend mantém os papéis `medico`, `recepcao`, `coordenacao`, `telemedicina`, `admin` e `cidadao`; o Worker continua separando chat profissional de chat social. Cidadão não entra no diretório profissional e conversa social exige amizade atual em `friends`. Nenhuma permissão, dado clínico, Drive, IA ou regra de módulo foi ampliada.
+
+Carregamentos manuais antigos de `portal-chat.js` e `portal-chat-switch-optimizer.js` foram removidos das páginas que os possuíam para evitar duas instâncias, polling e timers duplicados. O Guia Médico deixou de injetar assets do chat e mantém somente o observador que acompanha a ferramenta flutuante. O preload de transição Login→Home também deixa o carregamento a cargo do bootstrap global.
+
+Cache/versão: componente e otimizador versionados como `20260928-global-1`; Service Worker passa a `20260928-3` e aquece bootstrap, script, otimizador e CSS. Testes que fixavam o cache foram atualizados apenas na asserção `CACHE_VERSION`.
+
+Validação focal: `worker/tests/global-chat.test.mjs` verifica a presença do bootstrap em todos os módulos autenticados, ausência em superfícies públicas, ausência de scripts manuais duplicados, sessão/primeiro acesso e preservação da matriz de autorização. O workflow de chat foi atualizado para validar o modelo global, e o workflow do Conselho reconhece a interface global sem transformar cidadão em profissional.
+
+**Próxima ação exata:** abrir PR, executar o check focal do chat + Social V1 + interações/governança, corrigir regressão real se houver, integrar com SHA conferido e confirmar GitHub Pages antes da revisão visual.
+
 ## Barra Global — correção específica da Telemedicina — PUBLICADA — 28/09/2026
 
 Relato confirmado: `/telemedicina/` não exibiu a Barra Global após #513/#515. A rota dependia exclusivamente da injeção indireta pelo `portal-interactions.js`; em navegador com recurso anterior em cache, a barra podia não ser montada.
@@ -197,18 +215,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fases 0–6 e 7G.6 não reiniciadas. |
-| Subfase / objetivo atual | Barra Global do Portal com cobertura padrão + cabeçalhos próprios implementada e publicada; revisão visual humana pendente. |
+| Subfase / objetivo atual | Chat global em todos os módulos autenticados em validação; Barra Global já publicada. |
 | Última ação concluída | #515 merge `0398b466` e GitHub Pages run `36416967807`, job `108910469068`, deployment `6708957122` success. |
-| Branch atual | Funcionais #513/#515 integradas; registro final em `docs/global-navigation-complete-20260928`. |
-| PR atual | #513 e #515 merged; esta PR documental consolida o handoff da Barra Global. |
+| Branch atual | `feat/global-chat-all-modules-20260928`, baseada na main após #518. |
+| PR atual | Abrir/conferir PR do chat global; #513/#515/#517 e registros correspondentes já integrados. |
 | Último commit relevante | Complemento merge `0398b4663a740fea89953027165fa87be109610e`; base documental anterior `0b6054d9`; #513 merge `ba85adc9`. |
 | Checks e testes | Barra Global, Social V1, interações, governança e suítes rápidas pertinentes success no complemento; Pages success. Worker Build separado failure; auditorias Chromium pesadas permanecem para consulta posterior. |
-| Decisões tomadas | Barra Global reconhece `.portal-topbar` e `.site-header`; desktop mantém seis elementos definidos; navegação contextual dos módulos é preservada. |
-| Justificativas | As duas exceções estruturais `/medico/` e `/protocolo/` precisavam da mesma navegação para cumprir a regra de retorno/navegação consistente em todo módulo. |
-| Alternativas descartadas | Excluir Guia Médico/Fontes técnicas; duplicar barra manualmente; forçar autenticação sem sessão; remover ações contextuais úteis. |
+| Decisões tomadas | Chat é recurso global de interface; autorização continua no Worker por cargo/amizade; superfícies públicas e primeiro acesso obrigatório ficam sem chat. |
+| Justificativas | O usuário deve poder manter conversas sem sair do módulo em uso; bootstrap único evita divergência e duplicidade entre páginas. |
+| Alternativas descartadas | Adicionar chat manualmente caso a caso; ampliar diretório profissional para cidadão; duplicar timers/scripts; mostrar chat em Login/Cadastro/página pública. |
 | Ações externas concluídas | #513 e #515 publicadas pelo GitHub Pages; nenhuma credencial, OAuth, permissão ou segredo mudou. |
-| Pendências e bloqueios | Revisão visual humana; resultado das auditorias pesadas já iniciadas; diagnóstico separado dos Worker Builds. |
+| Pendências e bloqueios | Checks/merge/deploy do chat global; revisão visual humana; Worker Build histórico continua frente separada. |
 | Riscos conhecidos | Ajustes finos de layout/cache podem surgir em navegador físico; Worker failure segue sem causalidade atribuída; revisão visual ainda necessária. |
 | Métricas / observabilidade | Nenhuma telemetria nova e nenhum dado sensível; evidências desta unidade são checks e deploy. |
-| Próxima ação exata | Revisar visualmente a Barra Global em Agenda, Documentos, Recepção, Telemedicina, Guia Médico e Fontes técnicas; corrigir apenas divergências concretas. |
-| Arquivos e fontes principais | `js/portal-global-navigation.js`; `js/social-navigation.js`; `js/portal-interactions.js`; `portal-sw.js`; `medico/index.html`; `protocolo/index.html`; PRs #513/#515; Pages runs `36416124069` e `36416967807`; este status; Guia Mestre 1.1. |
+| Próxima ação exata | Validar e publicar o chat global; depois revisar launcher/conversa em módulos representativos sem alterar a matriz de autorização. |
+| Arquivos e fontes principais | `js/portal-global-chat.js`; `js/portal-chat.js`; `js/portal-chat-switch-optimizer.js`; `docs/CHAT-PROFISSIONAL.md`; `worker/tests/global-chat.test.mjs`; workflows de chat/Conselho; este status; Guia Mestre 1.1. |
