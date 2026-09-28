@@ -14,6 +14,7 @@ import {
   questionById,
   sourceMap
 } from './studies-content/manifest.js';
+import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
 
 const ALLOWED_USERNAME = 'wellyton';
 const STUDY_TIME_ZONE = 'America/Campo_Grande';
@@ -198,11 +199,11 @@ function levelForXp(xp) {
   const total = Math.max(0, Number(xp || 0));
   const levels = [
     { min: 0, level: 1, title: 'Recruta', next: 150 },
-    { min: 150, level: 2, title: 'Iniciante', next: 400 },
-    { min: 400, level: 3, title: 'Aspirante Bancário', next: 800 },
-    { min: 800, level: 4, title: 'Competitivo', next: 1400 },
-    { min: 1400, level: 5, title: 'Pré-aprovação', next: 2200 },
-    { min: 2200, level: 6, title: 'Reta final', next: null }
+    { min: 150, level: 2, title: 'Explorador', next: 400 },
+    { min: 400, level: 3, title: 'Praticante', next: 800 },
+    { min: 800, level: 4, title: 'Estrategista', next: 1400 },
+    { min: 1400, level: 5, title: 'Maratonista', next: 2200 },
+    { min: 2200, level: 6, title: 'Veterano', next: null }
   ];
   return [...levels].reverse().find((item) => total >= item.min) || levels[0];
 }
@@ -371,7 +372,7 @@ async function achievementRows(env, username) {
     FROM study_achievements WHERE username=? ORDER BY unlocked_at`).bind(username).all();
   const catalog = {
     'study.first_mission': { title: 'Primeira missão', description: 'Concluiu a primeira missão real da Missão Bancária.' },
-    'study.sfn.boss': { title: 'SFN dominado', description: 'Venceu o Chefe do Sistema Financeiro Nacional com o desempenho mínimo exigido.' }
+    'study.sfn.boss': { title: 'Chefe do SFN vencido', description: 'Venceu o Chefe do primeiro bloco de Sistema Financeiro Nacional com o desempenho mínimo exigido.' }
   };
   return (result.results || []).map((row) => ({
     id: row.achievement_id,
@@ -412,6 +413,7 @@ async function handleBootstrap(env, user, origin) {
     contentRelease: 'sfn-v1.2',
     metrics: await metrics(env, user.username, progress),
     progress,
+    curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
     attemptedQuestions: await attemptedQuestionsMap(env, user.username),
     reviews: await dueReviewRows(env, user.username),
     missions: PUBLISHED_MISSIONS.map(publicMission),
@@ -551,8 +553,8 @@ async function handleComplete(request, pathname, env, user, origin) {
     if (bossAchievementGranted) {
       newAchievements.push({
         id: 'study.sfn.boss',
-        title: 'SFN dominado',
-        description: 'Você venceu o Chefe do Sistema Financeiro Nacional.'
+        title: 'Chefe do SFN vencido',
+        description: 'Você venceu o Chefe do primeiro bloco de Sistema Financeiro Nacional.'
       });
     }
   }

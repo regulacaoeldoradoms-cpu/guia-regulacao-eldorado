@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/css/studies.css?v=20260926-5">
   <link rel="stylesheet" href="/css/studies-reader.css?v=20260926-application-1">
   <link rel="stylesheet" href="/css/studies-clock.css?v=20260926-clock-1">
+  <link rel="stylesheet" href="/css/studies-curriculum.css?v=20260927-curriculum-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
 </head>
 <body class="portal-page study-page">
@@ -51,15 +52,35 @@
         <article><span>Sequência</span><strong id="metricStreak">0 dias</strong><small id="metricBestStreak">Melhor: 0 dias</small></article>
       </section>
 
-      <section class="study-progress-panel">
+      <section class="study-progress-panel" aria-label="Progresso no bloco publicado">
         <div class="study-progress-row">
-          <div><strong>Campanha disponível</strong><span id="availabilityLabel">—</span></div>
+          <div><strong>Bloco atual publicado</strong><span id="availabilityLabel">—</span></div>
           <div class="study-progress-track"><span id="availabilityBar"></span></div>
         </div>
         <div class="study-progress-row">
-          <div><strong>Seu progresso conquistado</strong><span id="personalProgressLabel">—</span></div>
+          <div><strong>Seu progresso no bloco atual</strong><span id="personalProgressLabel">—</span></div>
           <div class="study-progress-track"><span id="personalProgressBar"></span></div>
         </div>
+      </section>
+
+      <section class="study-progress-panel study-course-map" aria-labelledby="courseMapTitle">
+        <header>
+          <div><span class="study-eyebrow">Mapa do curso-base</span><h2 id="courseMapTitle">Cobertura curricular</h2></div>
+          <p id="courseBasis">Carregando a matriz de formação...</p>
+        </header>
+        <div class="study-progress-row">
+          <div><strong>Blocos com material publicado</strong><span id="courseAvailabilityLabel">—</span></div>
+          <div class="study-progress-track"><span id="courseAvailabilityBar"></span></div>
+        </div>
+        <div class="study-progress-row">
+          <div><strong>Blocos concluídos por você</strong><span id="courseProgressLabel">—</span></div>
+          <div class="study-progress-track"><span id="courseProgressBar"></span></div>
+        </div>
+        <div class="study-readiness" aria-live="polite">
+          <div><strong>Prontidão de prova</strong><span id="readinessLabel">Ainda não medida</span></div>
+          <p id="readinessExplanation">Prontidão exige cobertura curricular, retenção e simulados representativos.</p>
+        </div>
+        <div class="study-course-areas" id="courseAreaList" aria-label="Áreas da formação"></div>
       </section>
 
       <section class="study-review-panel" id="reviewPanel" hidden>
@@ -160,6 +181,6 @@
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/studies-reader.js?v=20260926-application-1"></script>
   <script src="/js/studies-clock.js?v=20260926-clock-1"></script>
-  <script src="/js/studies.js?v=20260926-clock-1"></script>
+  <script src="/js/studies.js?v=20260927-curriculum-1"></script>
 </body>
 </html>
