@@ -2,17 +2,23 @@
 
 Última atualização: 28/09/2026.
 
-## Barra Global do Portal — EM VALIDAÇÃO — 28/09/2026
+## Barra Global do Portal — IMPLEMENTADA E PUBLICADA — 28/09/2026
 
-Decisão aprovada: o componente com **Início, Amigos, Ferramentas, Notificações, Perfil e Pesquisar usuários** passa a se chamar **Barra Global do Portal** e deve permanecer disponível entre módulos autenticados. O desenho reaproveita `js/social-navigation.js`; não cria um segundo menu concorrente.
+Decisão consolidada: **Barra Global do Portal** é o nome oficial do componente de navegação que mantém **Início, Amigos, Ferramentas, Notificações, Perfil e Pesquisar usuários** entre os módulos autenticados. A implementação reaproveita `js/social-navigation.js`; não cria menu paralelo e não amplia permissões.
 
-Implementação na branch `feat/global-portal-navigation-20260928`: `js/portal-interactions.js` carrega um bootstrap único (`js/portal-global-navigation.js`) nas superfícies que já possuem cabeçalho autenticado e logout. O bootstrap reutiliza sessão, API social, estilos e navegação existentes. A pesquisa de usuários deixa de ser exclusiva da Home e acompanha a barra desktop sempre que a Camada Social estiver disponível. Quando a Barra Global monta, atalhos legados diretos **Início/Ferramentas** dentro do cabeçalho são ocultados para evitar duplicidade; controles próprios de cada módulo permanecem.
+Entrega efetiva: PR **#513** mesclada em `ba85adc975eb7c9d608fcfdfc9e9e772eff7a095` a partir do head `71d1f1e2f972e0e610a193f1282451c253e5d1ec`. `js/portal-interactions.js` carrega `js/portal-global-navigation.js` nas superfícies com cabeçalho autenticado e logout; o bootstrap reutiliza a sessão, a API social, estilos e navegação existentes. A pesquisa de usuários deixou de ser exclusiva da Home e acompanha a barra desktop quando a Camada Social está disponível. Atalhos legados diretos **Início/Ferramentas** no cabeçalho são ocultados somente depois que a Barra Global monta, evitando duplicidade e preservando os controles próprios de cada módulo. O componente versionado reconcilia páginas que já haviam carregado uma instância antiga de `PortalSocialNavigation`.
 
-A montagem não força login em superfícies sem token, não amplia cargos/permissões e não altera dados clínicos, Drive, IA ou observabilidade. O mobile mantém os destinos principais da navegação e não recebe os atalhos secundários Segurança/Configurações/Conquistas dentro dessa barra. O Service Worker foi versionado para `20260928-1` e aquece os assets novos, reduzindo risco de cache antigo.
+Mobile mantém os destinos principais de navegação, sem os atalhos secundários Segurança/Configurações/Conquistas dentro da Barra Global. Ausência de token não provoca login forçado por esse bootstrap. Não houve alteração de autenticação, cargos, permissões, protocolos, dados clínicos, Google Drive, IA ou observabilidade. A pesquisa continua usando somente a API social já autorizada.
 
-Validação adicionada: `worker/tests/global-navigation.test.mjs` + workflow **Validar Barra Global do Portal**. A suíte social existente foi ajustada apenas no contrato que antes exigia pesquisa exclusiva da Home; asserções de segurança e demais comportamentos continuam. A auditoria transversal existente não foi desativada nem relaxada.
+Cache: Service Worker renovado para `20260928-1` e novos assets da Barra Global incluídos no aquecimento. Três testes que fixavam a geração antiga foram atualizados **somente** na asserção `CACHE_VERSION`; referências de outros assets foram restauradas após uma alteração inicialmente ampla demais.
 
-**Próxima ação exata:** abrir PR, conferir checks pertinentes, corrigir regressão real se houver, integrar com SHA esperado e confirmar GitHub Pages. Depois revisar visualmente Agenda, Central de Documentos, Recepção, Telemedicina e Guia Médico para confirmar a mesma Barra Global. Não declarar publicação antes do deploy.
+Validação pertinente pré-merge: **Validar Barra Global do Portal**, **Validar Camada Social V1**, **Validar interações do Portal V1**, governança e as demais suítes rápidas aplicáveis concluíram com success no candidato final. A falha do `Workers Builds: yellow-wave-d0a1guia-regulacao-ia` permaneceu separada e não foi atribuída à navegação sem evidência; esta entrega não altera Worker. Auditorias pesadas de navegador ainda estavam em execução no momento do merge e não foram declaradas aprovadas antecipadamente.
+
+Publicação: GitHub Pages run **36416124069**, job `deploy` **108907732250**, concluído com **success** às 11:32:16 UTC de 28/09/2026; deployment `6708809391`, ambiente `github-pages`. A evidência de publicação é do Portal no GitHub Pages, não do laboratório Cloudflare da Central.
+
+Reversão, se necessária: preparar branch da main atual e reverter somente o merge `ba85adc975eb7c9d608fcfdfc9e9e772eff7a095` por PR; não resetar/forçar a main nem desfazer entregas anteriores. Não executada.
+
+**Próxima ação exata:** receber revisão visual do operador em Agenda, Central de Documentos, Recepção, Telemedicina e Guia Médico; corrigir qualquer divergência concreta da Barra Global. Consultar os resultados finais das auditorias pesadas já iniciadas sem reiniciá-las e manter o diagnóstico do Worker como frente separada.
 
 ## Recepção — correção de contraste #486 — 25/09/2026
 
@@ -161,18 +167,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fases 0–6 e 7G.6 não reiniciadas. |
-| Subfase / objetivo atual | Reparo de contraste da Recepção #486 publicado; revisão humana pendente. |
-| Última ação concluída | Merge `a039c08497c4b1eb92e23a11ae72461a658847cf` e GitHub Pages success: run `36171385857`, job `108191891604`. |
-| Branch atual | `fix/reception-dark-contrast-20260925` integrada; registro em `docs/reception-dark-release-20260925`. |
-| PR atual | #486 merged; conferir integração documental desta branch. #480, #483, #484 e #485 integradas; #481 intocada. |
-| Último commit relevante | Head `8841708`; merge `a039c08497c4b1eb92e23a11ae72461a658847cf`; base anterior `2a67acd`. |
-| Checks e testes | Recepção focal 6/6 local e CI `36171225634` aprovado; interações local 13/13. Auditoria anterior #484: 210/214, quatro falhas. Consultar run amplo `36171225531`; não declarar aprovação integral. |
-| Decisões tomadas | Texto branco e cabeçalhos escuros apenas na Recepção dark/screen; preservar claro, impressão e cores semânticas; publicar após aceite focado autorizado. |
-| Justificativas | Defeito visual reportado em produção; cascata local e atualização de cache sem alterar conteúdo funcional. |
-| Alternativas descartadas | Branco global; mudar protocolos; desativar testes; relaxar comparação; reverter todo o tema; nova confirmação de implementação. |
-| Ações externas concluídas | #486 mesclada e publicada no Pages. Sem mudança de dados, permissões, OAuth, segredos ou configuração externa. |
-| Pendências e bloqueios | Revisão visual humana; resultado amplo `36171225531`; diagnóstico das quatro falhas anteriores e dos Worker Builds; confirmar integração documental. |
-| Riscos conhecidos | Teste sintético não valida serviços reais; cache do navegador do operador não foi inspecionado; falhas amplas não suprimidas; domínio não homologado por navegação autenticada nesta sessão. |
-| Métricas / observabilidade | Evidência sintética apenas; nenhuma telemetria clínica. |
-| Próxima ação exata | Conferir revisão de `/recepcao/` e run amplo existente, sem repetir matriz já encerrada; investigar falhas separadas; reverter somente #486 se houver regressão atribuível. |
-| Arquivos e fontes principais | `css/reception.css`; `recepcao/index.html`; `testing/browser/reception-dark-contrast.mjs`; workflow `validate-reception-dark.yml`; este status/histórico; PR #486; Guia Mestre 1.1; `PORTAL-APARENCIA-V1.md`. |
+| Subfase / objetivo atual | Barra Global do Portal #513 implementada/publicada; revisão visual humana nos módulos e auditorias pesadas pendentes. |
+| Última ação concluída | Merge #513 `ba85adc9` e GitHub Pages success: run `36416124069`, job `108907732250`, deployment `6708809391`. |
+| Branch atual | Funcional `feat/global-portal-navigation-20260928` integrada; registro final em `docs/global-navigation-release-20260928`. |
+| PR atual | #513 merged. Esta branch documental registra publicação/handoff; demais PRs históricas mantêm seus estados próprios. |
+| Último commit relevante | Head funcional `71d1f1e2`; merge real `ba85adc975eb7c9d608fcfdfc9e9e772eff7a095`; base anterior `841da112`. |
+| Checks e testes | Barra Global, Social V1, interações, governança e suítes rápidas pertinentes success no candidato final. Pages success. Worker Build separado failure; auditorias pesadas estavam em execução no merge e devem ser consultadas, sem aprovação antecipada. |
+| Decisões tomadas | Nome oficial **Barra Global do Portal**; persistir Início, Amigos, Ferramentas, Notificações, Perfil e pesquisa no desktop entre módulos autenticados; reutilizar navegação social; evitar atalhos duplicados no cabeçalho. |
+| Justificativas | Usuário precisa sempre de uma saída/navegação consistente entre módulos; componente compartilhado reduz divergência e duplicação. |
+| Alternativas descartadas | Adicionar botão Início isolado em cada ferramenta; duplicar menu por módulo; ampliar permissões; editar dezenas de páginas sem necessidade; manter pesquisa restrita à Home. |
+| Ações externas concluídas | #513 integrada e publicada pelo GitHub Pages. Nenhuma credencial, OAuth, permissão, segredo ou dado foi alterado. |
+| Pendências e bloqueios | Revisão visual da Barra Global nos módulos; resultados finais das auditorias pesadas já iniciadas; diagnóstico separado dos Worker Builds. |
+| Riscos conhecidos | Diferenças de layout/cache em navegador físico ainda dependem de revisão humana; Worker failure não diagnosticado; testes sintéticos não provam todos os serviços reais. |
+| Métricas / observabilidade | Nenhuma telemetria nova e nenhum dado sensível; evidências desta unidade são checks e deploy. |
+| Próxima ação exata | Revisar Agenda, Documentos, Recepção, Telemedicina e Guia Médico no site; tratar divergência concreta da Barra Global e consultar as auditorias pesadas existentes sem repeti-las. |
+| Arquivos e fontes principais | `js/portal-global-navigation.js`; `js/social-navigation.js`; `js/portal-interactions.js`; `portal-sw.js`; `worker/tests/global-navigation.test.mjs`; PR #513; Pages run `36416124069`; este status; Guia Mestre 1.1. |
