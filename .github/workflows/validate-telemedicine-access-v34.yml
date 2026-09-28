@@ -7,7 +7,6 @@ on:
       - 'worker/auth-management-flex.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
-      - 'portal-sw.js'
       - 'worker/role-migration.js'
       - 'worker/index.js'
       - 'worker/telemedicine.js'
