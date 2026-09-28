@@ -70,6 +70,8 @@ test('V34.3: revogação de Telemedicina é explícita e edição comum não der
 
   assert.match(flex, /requestedTelemedicineAccess = null/);
   assert.match(flex, /Object\.prototype\.hasOwnProperty\.call\(body, 'telemedicineAccess'\)/);
+  assert.match(flex, /typeof body\.telemedicineAccess !== 'boolean'/);
+  assert.match(flex, /requestedTelemedicineAccess = body\.telemedicineAccess/);
   assert.match(flex, /targetTelemedicineEnabled[\s\S]+requestedTelemedicineAccess !== false/);
   assert.match(flex, /requestedTelemedicineAccess === false[\s\S]+setTelemedicineAccess\(env, targetUsername, false/);
   assert.doesNotMatch(flex, /setTelemedicineAccess\(env, targetUsername, requestedRole === 'telemedicina'/);
