@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
-async function setup(page, { theme = 'light', mode = '', width = 390 } = {}) {
+async function setup(page, { theme = 'light', mode = '', width = 390, autoOpen = true } = {}) {
   await page.setViewportSize({ width, height: 844 });
   await page.clock.install({ time: new Date('2026-09-26T12:00:00Z') });
   const mission = { id: 'fixture.time', topicId: 'fixture.time', order: 1, contentVersion: 2,
@@ -20,6 +20,12 @@ async function setup(page, { theme = 'light', mode = '', width = 390 } = {}) {
     metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0,
       publishedMissions: 1, plannedMissions: 9, campaignAvailability: 11.1, completedPublished: 0, campaignProgress: 0,
       availableCompletion: 0, streak: { current: 0, best: 0 } }
+  };
+  if (mode === 'resume') payload.activeSession = {
+    sessionId: 'session-resume', missionId: mission.id, title: mission.shortTitle, mode: 'lesson',
+    reviewId: null, review: null, durationSeconds: 42, startedAt: '2026-09-26 11:58:00',
+    resumable: true, reason: '',
+    answers: [{ questionId: 'q.time.1', selectedOption: 0, correct: true, explanation: 'Resposta sintética retomada' }]
   };
   const errors = [], unexpected = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -67,7 +73,7 @@ async function setup(page, { theme = 'light', mode = '', width = 390 } = {}) {
     await page.locator('#continueStudy').click();
     await expect(page.locator('#focusStatus')).toHaveText('');
   };
-  await open();
+  if (autoOpen) await open();
   return { open,
     checkpoints: () => page.evaluate(() => window.__calls.filter(call => call.route.endsWith('/checkpoint'))),
     clean: () => { expect(errors).toEqual([]); expect(unexpected).toEqual([]); } };
@@ -86,6 +92,31 @@ for (const theme of ['light', 'dark']) {
     clean();
   });
 }
+
+test('sessão interrompida retoma a mesma rodada, respostas e tempo confirmado', async ({ page }) => {
+  const { clean } = await setup(page, { mode: 'resume', autoOpen: false });
+  await expect(page.locator('#resumePanel')).toBeVisible();
+  await expect(page.locator('#continueStudy')).toContainText('Retomar');
+  await expect(page.locator('#resumeMeta')).toContainText('00:42');
+
+  await page.locator('#resumeSession').click();
+  await expect(page.locator('#focusStatus')).toContainText('Sessão retomada');
+  await expect(page.locator('#studyTimer')).toHaveText('00:42');
+  const card = page.locator('[data-question-id="q.time.1"]');
+  await expect(card.locator('input[value="0"]')).toBeChecked();
+  await expect(card.locator('[data-answer-question]')).toBeDisabled();
+  await expect(card.locator('[data-feedback]')).toContainText('Correto. Resposta sintética retomada');
+
+  await page.clock.runFor(3000);
+  await expect(page.locator('#studyTimer')).toHaveText('00:45');
+  expect(await page.evaluate(() => window.__calls.filter(call => call.route.endsWith('/sessions') && call.method === 'POST').length)).toBe(0);
+
+  await page.locator('#leaveFocus').click();
+  await expect(page.locator('#studyDashboard')).toBeVisible();
+  const patch = await page.evaluate(() => window.__calls.find(call => call.route.endsWith('/sessions/session-resume') && call.method === 'PATCH'));
+  expect(patch?.body?.durationSeconds).toBe(45);
+  clean();
+});
 
 test('aba oculta não acrescenta tempo; voltar retoma sem criar sessão', async ({ page }) => {
   const { clean } = await setup(page);
