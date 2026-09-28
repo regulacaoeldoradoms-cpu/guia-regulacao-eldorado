@@ -29,7 +29,8 @@ export async function ensureAssessmentSchema(db) {
       answered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (run_id, question_id)
     )`),
-    db.prepare('CREATE INDEX IF NOT EXISTS idx_study_assessment_runs_user ON study_assessment_runs(username, assessment_id, started_at)')
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_study_assessment_runs_user ON study_assessment_runs(username, assessment_id, started_at)'),
+    db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_study_assessment_active ON study_assessment_runs(username, assessment_id) WHERE status='active'")
   ]);
 }
 
@@ -102,10 +103,25 @@ export async function startAssessmentRun(db, username, assessment) {
 
   const runId = crypto.randomUUID();
   const ids = form.questions.map((item) => item.id);
-  await db.prepare(`INSERT INTO study_assessment_runs(
+  const inserted = await db.prepare(`INSERT OR IGNORE INTO study_assessment_runs(
       run_id, username, assessment_id, form_id, question_ids
     ) VALUES (?, ?, ?, ?, ?)`)
     .bind(runId, username, assessment.id, form.id, JSON.stringify(ids)).run();
+
+  if (Number(inserted.meta?.changes || 0) === 0) {
+    const concurrent = await db.prepare(`SELECT * FROM study_assessment_runs
+      WHERE username=? AND assessment_id=? AND status='active'
+      ORDER BY started_at DESC LIMIT 1`).bind(username, assessment.id).first();
+    if (!concurrent) fail('Não foi possível recuperar a tentativa ativa.');
+    const parsed = parseQuestionIds(concurrent, assessment);
+    return {
+      runId: concurrent.run_id,
+      resumed: true,
+      formId: concurrent.form_id,
+      questions: parsed.ids.map((id) => publicQuestion(parsed.form.questions.find((item) => item.id === id))),
+      answered: await selectedAnswers(db, username, concurrent.run_id)
+    };
+  }
 
   return {
     runId,
