@@ -118,9 +118,7 @@
     if (!resumable?.sessionId || !resumable?.missionId) return null;
     const mission = state.data?.missions?.find((item) => item.id === resumable.missionId) || null;
     if (!mission) return null;
-    const review = resumable.reviewId
-      ? (state.data?.reviews || []).find((item) => item.id === resumable.reviewId) || null
-      : null;
+    const review = resumable.reviewId ? { id: resumable.reviewId } : null;
     return { mission, review, resumable };
   }
 
