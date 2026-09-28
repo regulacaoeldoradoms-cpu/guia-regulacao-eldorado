@@ -2,15 +2,19 @@
 
 Última atualização: 28/09/2026.
 
-## Barra Global — correção específica da Telemedicina — EM VALIDAÇÃO — 28/09/2026
+## Barra Global — correção específica da Telemedicina — PUBLICADA — 28/09/2026
 
-Relato de produção: `/telemedicina/` não exibiu a Barra Global após #513/#515. Diagnóstico: a rota dependia exclusivamente da injeção feita por `portal-interactions.js`, mas o HTML continuava referenciando `portal-interactions.js?v=20260923-2`; portanto, cache do navegador poderia manter a versão anterior da camada comum e impedir a montagem, mesmo com os novos assets publicados.
+Relato confirmado: `/telemedicina/` não exibiu a Barra Global após #513/#515. A rota dependia exclusivamente da injeção indireta pelo `portal-interactions.js`; em navegador com recurso anterior em cache, a barra podia não ser montada.
 
-Correção na branch `fix/telemedicine-global-navigation-20260928`: `/telemedicina/` passa a carregar diretamente `portal-global-navigation.js?v=20260928-2`, mantendo `portal-interactions.js?v=20260923-2` intacto. A Barra Global continua sendo o mesmo componente compartilhado; não há segunda implementação, alteração de layout clínico ou mudança em dados/permissões.
+Correção efetiva: PR **#517** mesclada em `ff382eba69ee807435ba15fe5ea2ef8d8b992d38`, head `20c8819e31f754df958f47458ca460529f5a527a`. `/telemedicina/` passou a carregar diretamente `portal-global-navigation.js?v=20260928-2`, preservando `portal-interactions.js?v=20260923-2` e, portanto, o contrato compartilhado da camada de interações. Não foi criada segunda implementação da barra.
 
-Teste focal ampliado verifica a presença única do bootstrap global e preserva o pin canônico da camada comum na Telemedicina. A primeira tentativa de renovar `portal-interactions.js` foi descartada porque rompia o contrato de versão única dos testes compartilhados e não era necessária para resolver o carregamento.
+A primeira tentativa de também versionar `portal-interactions.js` foi descartada após os checks mostrarem quebra do teste de versão única. O ajuste foi revertido antes do merge; a solução final toca somente o HTML da Telemedicina, teste focal e documentação.
 
-**Próxima ação exata:** validar checks pertinentes, integrar com SHA conferido, confirmar GitHub Pages e pedir revisão da própria `/telemedicina/`.
+Validação pertinente: Barra Global, Social V1, interações e governança concluíram com success no candidato final. GitHub Pages run **36418789550**, job `deploy` **108916437973**, **success** às 11:58:34 UTC de 28/09/2026; deployment `6709288689`.
+
+Sem alteração de dados clínicos, permissões, Worker, IA, Drive ou regras da Telemedicina.
+
+**Próxima ação exata:** revisão visual humana em `/telemedicina/`; se a barra ainda não aparecer, tratar como evidência de cache/navegador ou CSS específico e diagnosticar a partir do comportamento real sem reimplementar o componente.
 
 ## Barra Global do Portal — COBERTURA COMPLETA PUBLICADA — 28/09/2026
 
