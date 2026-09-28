@@ -1,7 +1,7 @@
 'use strict';
 
-// 20260928-1 also invalidates the pre-Barra-Global navigation assets.
-const CACHE_VERSION = '20260928-1';
+// 20260928-2 also invalidates the pre-Barra-Global navigation assets.
+const CACHE_VERSION = '20260928-2';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -62,8 +62,8 @@ const CORE_RESOURCES = Object.freeze([
   '/js/login-opening.js?v=20260918-1',
   '/js/login.js?v=20260917-3',
   '/vendor/pdf-lib/pdf-lib.min.js',
-  '/js/social-navigation.js?v=20260928-1',
-  '/js/portal-global-navigation.js?v=20260928-1',
+  '/js/social-navigation.js?v=20260928-2',
+  '/js/portal-global-navigation.js?v=20260928-2',
   '/js/social-api.js?v=20260910-4',
   '/css/social-notification-panel.css?v=20260910-1',
   '/js/portal-interactions.js?v=20260923-2',
