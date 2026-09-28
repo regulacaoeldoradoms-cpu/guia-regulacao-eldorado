@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 27/09/2026 — mapa curricular e prontidão separados do XP.
+Atualizado em 28/09/2026 — #510 e #511 integradas; retenção em validação final.
 
 ## Estado e autorização
 
@@ -132,6 +132,16 @@ A evidência usa `study_reviews` e scores de `study_rounds`, sem tabela nova. Re
 Mesmo três ciclos registrados não alteram **Prontidão de prova: Ainda não medida**. Prontidão continuará exigindo cobertura curricular, avaliação independente e simulados representativos.
 
 Testes verificam histórico sem score, deduplicação por ciclo, pontuação realmente mais recente por `completed_at` mesmo com ciclos concluídos fora de ordem, ausência de herança de nota quando a revisão mais recente não tem score, ausência de linguagem de domínio e exibição separada no frontend.
+
+
+## Integrações de 28/09/2026
+
+- **#510 — mapa curricular e prontidão:** integrada na `main` em `1f52115e075790d6b83a6f395a5b8b3b2f1cfaf6`. A auditoria global terminou aprovada no rerun do run 105, sem relaxamento de baseline/tolerância.
+- **#511 — pré-requisitos no backend:** integrada na `main` em `804456e90c03bfdd845ae60663d580a69af3993c`. O gate vale na abertura e no fechamento da missão, inclusive contra sessão legada.
+- **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
+- **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
+
+Placar de referência do projeto nesta etapa: motor técnico ~81%; Fase 1 ~90% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~30%.
 
 ## Próximos recortes autorizados
 
