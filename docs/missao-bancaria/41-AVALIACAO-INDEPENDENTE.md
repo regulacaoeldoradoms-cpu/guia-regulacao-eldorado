@@ -49,17 +49,22 @@ Ela não substitui ensino, prática ou revisão. Vem **depois** deles.
 - não são usadas como exemplo resolvido;
 - não são usadas nas atividades de autoexplicação;
 - não são reutilizadas como revisão comum antes de terem cumprido sua função avaliativa;
-- resposta e explicação só aparecem após envio da questão ou término da rodada, conforme o formato adotado.
+- durante a rodada, o envio de uma resposta apenas registra a alternativa; acerto, gabarito e explicação ficam retidos até o encerramento da forma inteira, para uma questão não ensinar a seguinte.
 
 ## 4. Catálogo inicial — primeiro bloco de SFN
 
 Criar um banco autoral separado do banco das 38 questões atuais.
 
 Primeiro lote recomendado:
-- 24 itens independentes;
-- três itens por cada uma das oito aulas de ensino;
+- **32 itens independentes**;
+- quatro itens por cada uma das oito aulas de ensino;
+- duas formas não sobrepostas, **A e B**, com 16 itens cada;
+- cada forma contém dois itens primários de cada aula, evitando que uma aula fique sem amostra;
+- nenhum item da forma A reaparece na forma B;
 - o Chefe atual não conta como item independente;
-- dificuldade distribuída entre aplicação direta, distinção entre conceitos próximos e integração entre aulas.
+- o banco deve equilibrar distinção entre conceitos próximos, aplicação em situação nova e integração entre aulas, sem virar prova de simples memorização literal.
+
+A mudança de 24 para 32 itens resolve uma lacuna do desenho anterior: um banco de 24 itens não permitia duas medições equilibradas por aula sem consumir ou repetir itens. As duas formas de 16 preservam uma segunda evidência realmente inédita.
 
 Cada item deve registrar:
 - ID estável, prefixo `eval.sfn.*`;
@@ -82,8 +87,11 @@ Requisitos:
 - conjunto de questões congelado no início;
 - uma resposta por item/rodada;
 - sem consulta ao texto dentro da interface enquanto a rodada estiver ativa;
+- **sem feedback de correção por item antes do fechamento da rodada**;
 - resultado calculado apenas com itens daquela rodada;
-- repetição posterior deve preferir itens ainda não vistos ou variantes equivalentes;
+- a primeira medição usa a forma A;
+- a segunda medição usa a forma B e não pode ocorrer antes de sete dias após a conclusão da forma A;
+- depois de A e B, uma nova avaliação só conta como evidência independente nova quando houver itens ainda não vistos ou variantes equivalentes editorialmente validadas;
 - respostas de outra aba, revisão ou missão não contam;
 - falha de rede precisa ser idempotente, seguindo as garantias já criadas para rodadas comuns.
 
@@ -101,6 +109,8 @@ Campos mínimos da rodada:
 - assessment_id;
 - username;
 - block_id;
+- form_id (`A`, `B` ou versão posterior);
+- assessment_version;
 - content_version;
 - question_ids;
 - started_at;
@@ -121,10 +131,11 @@ Nenhum dado institucional entra nessas tabelas.
 
 Para o primeiro bloco:
 - só depois de concluir as oito aulas e o Chefe;
-- pode existir uma primeira avaliação imediata para transferência;
-- a prontidão do bloco não deve ser definida por essa primeira rodada isolada.
+- a **forma A** pode ser liberada imediatamente para medir transferência sem consulta;
+- a **forma B** só fica elegível após pelo menos sete dias da conclusão da forma A;
+- a prontidão do bloco não deve ser definida por nenhuma dessas rodadas isoladamente.
 
-Uma avaliação independente posterior, após intervalo e revisões, é evidência mais forte.
+A forma B funciona como evidência temporalmente separada. Revisões realizadas nesse intervalo continuam sendo parte legítima do aprendizado; o objetivo não é impedir revisão, e sim verificar aplicação em itens diferentes depois de tempo decorrido.
 
 ## 8. Resultado exibido
 
@@ -171,7 +182,7 @@ O servidor deve selecionar os IDs da rodada e retornar somente:
 - alternativas;
 - metadados necessários para exibição.
 
-A correção vem do servidor.
+A correção vem do servidor. Durante a rodada, o endpoint de resposta retorna apenas recibo/idempotência; **não retorna `correct`, alternativa correta ou explicação**. O diagnóstico completo só é liberado depois do fechamento da forma.
 
 ## 11. Uso pedagógico do erro
 
@@ -188,6 +199,9 @@ O caderno de erros futuro deve registrar **conceito/categoria**, não apenas ID 
 - item independente não aparece no catálogo comum;
 - gabarito não vaza no bootstrap;
 - rodada congela os itens;
+- forma A e forma B não compartilham itens;
+- forma B é bloqueada antes do intervalo mínimo de sete dias;
+- resposta individual não revela acerto/gabarito antes do encerramento;
 - respostas de treino/revisão não contam;
 - repetição de POST não duplica resposta;
 - usuário diferente não acessa;
@@ -202,8 +216,8 @@ O caderno de erros futuro deve registrar **conceito/categoria**, não apenas ID 
 
 1. validar esta especificação contra o código já integrado;
 2. definir schema sem violar CHECKs existentes;
-3. criar catálogo independente inicial;
-4. validar pedagogicamente os 24 itens;
+3. criar catálogo independente inicial com 32 itens;
+4. validar pedagogicamente os 32 itens e o equilíbrio das formas A/B;
 5. implementar endpoints/rodadas;
 6. implementar interface;
 7. testar isolamento, vazamento e idempotência;
