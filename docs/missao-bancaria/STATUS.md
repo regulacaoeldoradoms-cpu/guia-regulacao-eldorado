@@ -132,6 +132,15 @@ Mesmo três ciclos registrados não alteram **Prontidão de prova: Ainda não me
 
 Testes verificam histórico sem score, deduplicação por ciclo, pontuação mais recente, ausência de linguagem de domínio e exibição separada no frontend.
 
+## Especificação preparada — avaliação independente
+
+Documento: `41-AVALIACAO-INDEPENDENTE.md`.  
+Branch documental: `docs/missao-bancaria-avaliacao-independente`, baseada na cadeia até a evidência de retenção.
+
+Objetivo: impedir que questões já vistas no ensino/revisão sejam usadas sozinhas como prova de domínio. A especificação separa um banco autoral de avaliação, inicialmente com 24 itens inéditos do primeiro bloco de SFN, sem gabarito no bootstrap, sem XP por participação e sem alterar prontidão automaticamente.
+
+A implementação de produção **não começa antes da estabilização/integração da cadeia #510–#512**. O documento registra schema sugerido, isolamento, prevenção de vazamento, diagnóstico por competência e testes obrigatórios.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
