@@ -76,13 +76,21 @@ test('V34.3: revogação de Telemedicina é explícita e edição comum não der
   assert.match(flex, /requestedTelemedicineAccess === false[\s\S]+setTelemedicineAccess\(env, targetUsername, false/);
   assert.doesNotMatch(flex, /setTelemedicineAccess\(env, targetUsername, requestedRole === 'telemedicina'/);
 
-  assert.match(admin, /selectedRole !== editingUser\.role/);
+  assert.match(admin, /selectedRole === 'telemedicina'/);
+  assert.match(admin, /input\.role = 'telemedicina'/);
+  assert.match(admin, /input\.telemedicineAccess = true/);
   assert.match(admin, /editingUser\?\.role === 'telemedicina'/);
   assert.match(admin, /input\.telemedicineAccess = false/);
+  assert.match(admin, /autorização técnica do backend está inconsistente/);
+  assert.match(flex, /requestedTelemedicineAccess === true && requestedRole !== 'telemedicina'/);
   assert.match(flex, /actor\?\.role === 'admin' && requestedRole/);
 });
 
-test('V34.3: publicação usa URL nova para o formulário administrativo atualizado', () => {
+test('V34.4: publicação usa URL nova e salvar Telemedicina repara capacidade inconsistente', () => {
   const page = read('admin/usuarios/index.html');
-  assert.match(page, /admin-users\.js\?v=20260928-v34-3/);
+  const admin = read('js/admin-users.js');
+
+  assert.match(page, /admin-users\.js\?v=20260928-v34-4/);
+  assert.match(admin, /Telemedicina: autorização técnica pendente/);
+  assert.match(admin, /selectedRole === 'telemedicina'[\s\S]+input\.telemedicineAccess = true/);
 });
