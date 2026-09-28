@@ -513,19 +513,25 @@ async function dueReviewRows(env, username) {
 
 async function activeStudySession(env, username) {
   const row = await env.AUTH_DB.prepare(`SELECT s.session_id, s.mission_id, s.started_at, s.duration_seconds,
-      r.mode, r.review_id, r.content_version
+      r.mode, r.review_id, r.content_version, r.status AS round_status
     FROM study_sessions s
     JOIN study_rounds r ON r.session_id=s.session_id AND r.username=s.username
-    WHERE s.username=? AND s.status='active' AND r.status='active'
+    WHERE s.username=? AND s.status='active'
     ORDER BY s.started_at DESC LIMIT 1`).bind(username).first();
   if (!row) return null;
 
   const mission = missionById(row.mission_id);
-  let resumable = Boolean(mission && Number(row.content_version) === Number(mission.contentVersion));
-  let reason = resumable ? '' : 'O conteúdo desta sessão foi atualizado e não pode ser retomado com segurança.';
+  const versionCompatible = Boolean(mission && Number(row.content_version) === Number(mission.contentVersion));
+  const roundOpen = row.round_status === 'active';
+  let resumable = versionCompatible && roundOpen;
+  let reason = !roundOpen
+    ? 'Esta rodada já possui resultado. Encerre a sessão anterior para iniciar outra.'
+    : versionCompatible
+      ? ''
+      : 'O conteúdo desta sessão foi atualizado e não pode ser retomado com segurança.';
   let review = null;
 
-  if (row.mode === 'review') {
+  if (row.mode === 'review' && roundOpen) {
     const reviewRow = row.review_id
       ? await env.AUTH_DB.prepare(`SELECT review_id, topic_id, cycle, due_at, status
           FROM study_reviews WHERE review_id=? AND username=? LIMIT 1`)
@@ -592,6 +598,7 @@ async function activeStudySession(env, username) {
     missionId: row.mission_id,
     title: mission?.shortTitle || mission?.title || 'Sessão anterior',
     mode: row.mode,
+    roundStatus: row.round_status,
     reviewId: row.review_id || null,
     review,
     durationSeconds: Math.max(0, Number(row.duration_seconds || 0)),
