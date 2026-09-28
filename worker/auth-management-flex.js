@@ -169,6 +169,10 @@ async function handleAdminUsers(request, env, origin) {
   let requestedRole = '';
   let requestedCouncilRole = null;
   let requestedAdditionalRoles = null;
+  let requestedTelemedicineAccess = null;
+  const targetTelemedicineEnabled = targetUsername
+    ? await telemedicineAccessFor(env, targetUsername)
+    : false;
   let baseRequest = request;
 
   if ((request.method === 'POST' || request.method === 'PATCH') && url.pathname.startsWith('/api/admin/users')) {
@@ -180,6 +184,20 @@ async function handleAdminUsers(request, env, origin) {
     if (Object.prototype.hasOwnProperty.call(body, 'additionalRoles')) {
       if (actor?.role !== 'admin') return jsonError('Somente o Desenvolvedor pode conceder funções adicionais.', 403, origin);
       requestedAdditionalRoles = Array.isArray(body.additionalRoles) ? body.additionalRoles : [];
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'telemedicineAccess')) {
+      if (actor?.role !== 'admin') return jsonError('Somente o Desenvolvedor pode alterar o acesso à Telemedicina.', 403, origin);
+      if (typeof body.telemedicineAccess !== 'boolean') {
+        return jsonError('O campo telemedicineAccess deve ser booleano.', 400, origin);
+      }
+      requestedTelemedicineAccess = body.telemedicineAccess;
+    }
+
+    if (targetTelemedicineEnabled
+      && requestedRole
+      && requestedRole !== 'telemedicina'
+      && requestedTelemedicineAccess !== false) {
+      return jsonError('A alteração do perfil Técnico em Telemedicina exige revogação explícita do acesso.', 409, origin);
     }
 
     let rewrittenRole = '';
@@ -225,8 +243,10 @@ async function handleAdminUsers(request, env, origin) {
   if (payload.user?.username) {
     if (request.method === 'POST' && url.pathname === '/api/admin/users' && requestedRole === 'telemedicina') {
       await setTelemedicineAccess(env, payload.user.username, true, actor?.username || 'admin');
-    } else if (request.method === 'PATCH' && targetUsername && requestedRole) {
-      await setTelemedicineAccess(env, targetUsername, requestedRole === 'telemedicina', actor?.username || 'admin');
+    } else if (request.method === 'PATCH' && targetUsername && requestedRole === 'telemedicina') {
+      await setTelemedicineAccess(env, targetUsername, true, actor?.username || 'admin');
+    } else if (request.method === 'PATCH' && targetUsername && requestedTelemedicineAccess === false) {
+      await setTelemedicineAccess(env, targetUsername, false, actor?.username || 'admin');
     }
 
     if (actor?.role === 'admin') {
@@ -239,7 +259,7 @@ async function handleAdminUsers(request, env, origin) {
       }
     }
 
-    if (actor?.role === 'admin') {
+    if (actor?.role === 'admin' && requestedRole) {
       if (requestedRole === 'cidadao') {
         await retireProfessionalSeededRelationships(env, payload.user.username);
       } else {

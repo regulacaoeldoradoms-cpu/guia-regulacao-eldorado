@@ -83,3 +83,27 @@ Regra V34.2:
 6. A mesma regra é aplicada ao backend principal da Telemedicina, ao roteador V2 e à Agenda espelhada.
 
 Não há concessão por nome, cargo textual, frontend ou sessão antiga. A fonte de verdade continua sendo exclusivamente a capacidade server-side.
+
+## Complemento V34.3 — persistência da autorização e revogação explícita
+
+Decisão permanente registrada em 28/09/2026 após nova recorrência de `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor` em uma conta operacional já destinada ao módulo.
+
+### Diagnóstico da recorrência
+
+A correção V34.2 continua válida: as rotas protegidas usam `auth_telemedicine_access` como fonte de verdade e autocorrigem o papel-base `recepcao`. Portanto, quando uma sessão válida chega à tela da Telemedicina, mas uma gravação recebe o `403` acima, o problema não é mais a divergência transitória do papel-base: a capacidade persistida está ausente ou desabilitada.
+
+A revisão do código encontrou uma via de revogação acidental no fluxo administrativo. O formulário de edição enviava `role` em toda gravação, mesmo quando o operador alterava apenas nome, cargo textual ou estado da conta. O backend interpretava qualquer `PATCH` cujo `role` não fosse `telemedicina` como ordem para gravar `auth_telemedicine_access.enabled = 0`. Como o papel-base de uma conta de Telemedicina é internamente `recepcao`, uma edição administrativa comum podia derrubar a capacidade lógica sem intenção de revogá-la.
+
+A interface ainda podia permanecer aberta por alguns instantes porque a sessão do navegador mantém o perfil lógico em cache e faz revalidação em segundo plano. Nesse intervalo, a API já consultava o D1 em tempo real e recusava a gravação, produzindo exatamente a combinação "tela aberta + 403 ao salvar".
+
+### Regra V34.3
+
+1. Editar nome, cargo textual, status ativo ou funções independentes não altera a capacidade de Telemedicina.
+2. O frontend administrativo somente envia `role` quando o perfil realmente foi alterado.
+3. Sair do perfil lógico `telemedicina` envia também `telemedicineAccess: false`.
+4. O backend somente grava `enabled = 0` quando recebe essa revogação explícita de um Desenvolvedor.
+5. Se uma conta com capacidade ativa receber pedido de mudança de perfil sem revogação explícita, a alteração é recusada em vez de remover silenciosamente o acesso.
+6. Selecionar explicitamente o perfil `telemedicina` continua concedendo a capacidade e normalizando o papel-base.
+7. A autorização das APIs permanece server-side; nenhuma confiança é transferida para cache, botão, cargo textual ou nome do usuário.
+
+Com essa regra, uma conta destinada permanentemente à operação da Telemedicina permanece autorizada até que o Desenvolvedor execute uma mudança de perfil que contenha revogação explícita.
