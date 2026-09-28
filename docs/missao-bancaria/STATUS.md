@@ -133,9 +133,22 @@ Mesmo três ciclos registrados não alteram **Prontidão de prova: Ainda não me
 
 Testes verificam histórico sem score, deduplicação por ciclo, pontuação realmente mais recente por `completed_at` mesmo com ciclos concluídos fora de ordem, ausência de herança de nota quando a revisão mais recente não tem score, ausência de linguagem de domínio e exibição separada no frontend.
 
+## Nova entrega empilhada — recuperação controlada da sessão
+
+Documento: `42-RECUPERACAO-SESSAO.md`.  
+Branch: `feat/missao-bancaria-recuperacao-sessao`, empilhada sobre a evidência de retenção.
+
+Quando existe uma rodada ainda ativa, o bootstrap passa a expor a sessão recuperável com missão, modo, revisão, último checkpoint e respostas já persistidas. O dashboard oferece **Retomar sessão** ou **Encerrar sessão**; enquanto a rodada está ativa, o backend recusa uma nova abertura com `STUDY_ACTIVE_SESSION_EXISTS`.
+
+A retomada reutiliza o mesmo `sessionId`, restaura respostas já registradas e reinicia o cronômetro a partir do último tempo confirmado. Não cria XP, conclusão ou tentativa apenas por recarregar a página. Sessão com conteúdo atualizado/incompatível não é retomada silenciosamente e pode ser encerrada preservando o que já estava salvo.
+
+O roteador passa a incluir fluxo específico de recuperação e bloqueio de sessão paralela; navegador sintético cobre painel, respostas, tempo inicial e fechamento da mesma sessão.
+
+Limite preservado: esta entrega ainda não guarda a parte exata da aula em que o leitor estava. Marcador de leitura fica para o recorte seguinte, separado de comprovação de aprendizagem.
+
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir o marcador de leitura e remover o truncamento histórico dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
