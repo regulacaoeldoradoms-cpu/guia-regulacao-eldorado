@@ -38,14 +38,50 @@ async function fixture(t) {
       readiness:{status:'not_measured',label:'Ainda não medida',explanation:'fixture'},areas:[]
     }));
   },{context});
+  const assessmentFixture={
+    id:'assessment.fixture',version:1,blockId:'fixture.block',title:'Avaliação independente sintética',
+    description:'Avaliação sintética sem XP.',unlockMissionId:boss.id,questionCount:2,
+    forms:[
+      {id:'A',questions:[
+        {id:'eval.fixture.a1',prompt:'Avaliação A1?',options:['A','B'],answer:0,explanation:'Correção A1.',teachingRefs:[{missionId:lesson.id,sectionId:'lesson'}]},
+        {id:'eval.fixture.a2',prompt:'Avaliação A2?',options:['A','B'],answer:1,explanation:'Correção A2.',teachingRefs:[{missionId:lesson.id,sectionId:'lesson'}]}
+      ]},
+      {id:'B',questions:[
+        {id:'eval.fixture.b1',prompt:'Avaliação B1?',options:['A','B'],answer:0,explanation:'Correção B1.',teachingRefs:[{missionId:lesson.id,sectionId:'lesson'}]},
+        {id:'eval.fixture.b2',prompt:'Avaliação B2?',options:['A','B'],answer:1,explanation:'Correção B2.',teachingRefs:[{missionId:lesson.id,sectionId:'lesson'}]}
+      ]}
+    ]
+  };
+  const assessmentContent=new vm.SyntheticModule(
+    ['SFN_TRANSFER_ASSESSMENT','assessmentById','assessmentQuestionById'],
+    function(){
+      this.setExport('SFN_TRANSFER_ASSESSMENT',assessmentFixture);
+      this.setExport('assessmentById',id=>id===assessmentFixture.id?assessmentFixture:null);
+      this.setExport('assessmentQuestionById',id=>{
+        for(const form of assessmentFixture.forms){
+          const question=form.questions.find(q=>q.id===id);
+          if(question)return {assessment:assessmentFixture,form,question};
+        }
+        return null;
+      });
+    },{context}
+  );
   const rounds=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-rounds.js',import.meta.url),'utf8'),{context});
   await rounds.link(()=>{throw new Error('Import não esperado no serviço');});await rounds.evaluate();
+  const assessments=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-assessments.js',import.meta.url),'utf8'),{context});
+  await assessments.link((specifier)=>{
+    if(specifier==='./study-rounds.js')return rounds;
+    if(specifier==='./studies-content/sfn-assessment-v1.js')return assessmentContent;
+    throw new Error(`Import não previsto na avaliação: ${specifier}`);
+  });await assessments.evaluate();
   const route=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies.js',import.meta.url),'utf8'),{context});
   await route.link((specifier)=>{
     if(specifier==='./auth-management-flex.js')return auth;
     if(specifier==='./studies-content/manifest.js')return catalog;
     if(specifier==='./studies-content/curriculum-v1.js')return curriculum;
+    if(specifier==='./studies-content/sfn-assessment-v1.js')return assessmentContent;
     if(specifier==='./study-rounds.js')return rounds;
+    if(specifier==='./study-assessments.js')return assessments;
     throw new Error(`Import não previsto: ${specifier}`);
   });
   await route.evaluate();
@@ -57,7 +93,7 @@ async function fixture(t) {
   }
   async function start(m=lesson,reviewId=null){const r=await call('sessions',{missionId:m.id,reviewId});assert.equal(r.status,201);return r.body.sessionId;}
   async function answer(m,id, choices=[]){for(let i=0;i<m.questions.length;i++){const r=await call('attempts',{sessionId:id,questionId:m.questions[i].id,selectedOption:choices[i]??0});assert.equal(r.status,200);}}
-  return {sql,call,start,answer,lesson,boss};
+  return {sql,call,start,answer,lesson,boss,assessment:assessmentFixture};
 }
 
 test('rota mantém os gates antes de inicializar as tabelas',async t=>{
@@ -179,4 +215,80 @@ test('nova rota rejeita payload inválido e não reabre sessão encerrada',async
   const receipt=await call(path,{durationSeconds:90});
   assert.equal(receipt.status,200);assert.equal(receipt.body.finished,true);assert.equal(receipt.body.durationSeconds,0);
   assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,0);
+});
+
+test('avaliação independente fica bloqueada antes do Chefe',async t=>{
+  const {sql,call,assessment}=await fixture(t);
+  const bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.status,200);
+  assert.equal(bootstrap.body.assessments[0].id,assessment.id);
+  assert.equal(bootstrap.body.assessments[0].unlocked,false);
+  const startEval=await call('assessments/'+assessment.id+'/runs',{});
+  assert.equal(startEval.status,409);
+  assert.equal(startEval.body.code,'STUDY_ASSESSMENT_LOCKED');
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_assessment_runs').get().n,0);
+});
+
+test('avaliação independente não revela gabarito nem contamina treino ou XP',async t=>{
+  const {sql,call,start,answer,lesson,boss,assessment}=await fixture(t);
+  const lessonRun=await start(lesson);await answer(lesson,lessonRun);
+  await call('missions/'+lesson.id+'/complete',{sessionId:lessonRun});
+  const bossRun=await start(boss);await answer(boss,bossRun,[0,0,0,0]);
+  const bossResult=await call('missions/'+boss.id+'/complete',{sessionId:bossRun});
+  assert.equal(bossResult.status,200);
+
+  const beforeAttempts=sql.prepare('SELECT COUNT(*) n FROM study_attempts').get().n;
+  const beforeXp=sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n;
+  const evalRun=await call('assessments/'+assessment.id+'/runs',{});
+  assert.equal(evalRun.status,201);
+  assert.equal(evalRun.body.questions.length,2);
+  for(const question of evalRun.body.questions){
+    assert.equal(question.answer,undefined);
+    assert.equal(question.explanation,undefined);
+  }
+  const q=assessment.forms[0].questions[0];
+  const result=await call('assessments/'+assessment.id+'/runs/'+evalRun.body.runId+'/answers',{
+    questionId:q.id,selectedOption:q.answer
+  });
+  assert.equal(result.status,200);
+  assert.equal(result.body.correct,undefined);
+  assert.equal(result.body.correctOption,undefined);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_attempts').get().n,beforeAttempts);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,beforeXp);
+});
+
+test('avaliação conclui só com todas as respostas e preserva primeiro resultado',async t=>{
+  const {sql,call,start,answer,lesson,boss,assessment}=await fixture(t);
+  const lessonRun=await start(lesson);await answer(lesson,lessonRun);
+  await call('missions/'+lesson.id+'/complete',{sessionId:lessonRun});
+  const bossRun=await start(boss);await answer(boss,bossRun,[0,0,0,0]);
+  await call('missions/'+boss.id+'/complete',{sessionId:bossRun});
+
+  const run=await call('assessments/'+assessment.id+'/runs',{});
+  assert.equal((await call('assessments/'+assessment.id+'/runs/'+run.body.runId+'/complete',{})).status,409);
+  for(const item of assessment.forms[0].questions){
+    await call('assessments/'+assessment.id+'/runs/'+run.body.runId+'/answers',{
+      questionId:item.id,selectedOption:item.answer
+    });
+  }
+  const completed=await call('assessments/'+assessment.id+'/runs/'+run.body.runId+'/complete',{});
+  assert.equal(completed.status,200);
+  assert.equal(completed.body.score,100);
+  assert.equal(completed.body.corrections.length,2);
+  assert.equal(completed.body.evidence.firstScore,100);
+  assert.equal(completed.body.evidence.latestScore,100);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_assessment_answers').get().n,2);
+
+  const second=await call('assessments/'+assessment.id+'/runs',{});
+  assert.equal(second.body.formId,'B');
+  for(const [index,item] of assessment.forms[1].questions.entries()){
+    await call('assessments/'+assessment.id+'/runs/'+second.body.runId+'/answers',{
+      questionId:item.id,selectedOption:index===0?(item.answer+1)%2:item.answer
+    });
+  }
+  const secondDone=await call('assessments/'+assessment.id+'/runs/'+second.body.runId+'/complete',{});
+  assert.equal(secondDone.body.score,50);
+  assert.equal(secondDone.body.evidence.firstScore,100);
+  assert.equal(secondDone.body.evidence.latestScore,50);
+  assert.deepEqual(secondDone.body.evidence.formsSeen,['A','B']);
 });
