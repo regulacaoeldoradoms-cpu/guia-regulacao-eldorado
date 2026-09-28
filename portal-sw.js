@@ -1,5 +1,6 @@
 'use strict';
 
+// 20260928-1 also invalidates the pre-Barra-Global navigation assets.
 const CACHE_VERSION = '20260928-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
