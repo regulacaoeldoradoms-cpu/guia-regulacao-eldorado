@@ -225,6 +225,15 @@ export async function completeAssessmentRun(db, username, assessment, runId, mis
   };
 }
 
+export async function latestAssessmentResult(db, username, assessment, missions) {
+  const row = await db.prepare(`SELECT run_id FROM study_assessment_runs
+    WHERE username=? AND assessment_id=? AND status='completed'
+    ORDER BY completed_at DESC, started_at DESC, run_id DESC LIMIT 1`)
+    .bind(username, assessment.id).first();
+  if (!row?.run_id) return null;
+  return completeAssessmentRun(db, username, assessment, row.run_id, missions);
+}
+
 export async function assessmentEvidence(db, username, assessment) {
   const result = await db.prepare(`SELECT run_id, form_id, score, completed_at
     FROM study_assessment_runs
