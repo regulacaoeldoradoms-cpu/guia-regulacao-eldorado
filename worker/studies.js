@@ -593,10 +593,35 @@ async function handleCompleteReview(request, pathname, env, user, origin) {
   }, 200, origin);
 }
 
+async function assertMissionPrerequisite(env, username, mission, reviewId = null) {
+  // Revisões possuem seu próprio gate por review_id e só existem depois da
+  // conclusão da missão correspondente.
+  if (reviewId) return;
+  const index = PUBLISHED_MISSIONS.findIndex((item) => item.id === mission.id);
+  if (index <= 0) return;
+
+  // Conteúdo já concluído pode ser reaberto para consulta ou nova prática.
+  const own = await env.AUTH_DB.prepare(`SELECT coverage_state FROM study_topic_progress
+    WHERE username=? AND topic_id=? LIMIT 1`).bind(username, mission.topicId).first();
+  if (Number(own?.coverage_state || 0) >= 3) return;
+
+  const previous = PUBLISHED_MISSIONS[index - 1];
+  const row = await env.AUTH_DB.prepare(`SELECT coverage_state FROM study_topic_progress
+    WHERE username=? AND topic_id=? LIMIT 1`).bind(username, previous.topicId).first();
+  if (Number(row?.coverage_state || 0) < 3) {
+    throw new StudyRoundError(
+      `Conclua a missão anterior — ${previous.shortTitle || previous.title} — antes de iniciar esta etapa.`,
+      409,
+      'STUDY_PREREQUISITE_REQUIRED'
+    );
+  }
+}
+
 async function handleStartSession(request, env, user, origin) {
   const body = await readStudyBody(request);
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
+  await assertMissionPrerequisite(env, user.username, mission, body.reviewId ?? null);
   const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
   return json(result, 201, origin);
 }
