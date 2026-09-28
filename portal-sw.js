@@ -1,7 +1,7 @@
 'use strict';
 
-// 20260928-4 invalida páginas/ativos para entregar a proteção de acesso Telemedicina V34.3.
-const CACHE_VERSION = '20260928-4';
+// 20260928-3 invalidates navigation/chat assets after global chat rollout.
+const CACHE_VERSION = '20260928-3';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
