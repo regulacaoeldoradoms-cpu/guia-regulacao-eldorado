@@ -368,3 +368,16 @@ Contrato V41:
 - se as três tentativas de leitura falharem, a interface continua mostrando o erro normal já existente.
 
 A finalidade é absorver oscilações muito curtas entre navegador e Worker sem esconder falhas reais do backend e sem tornar operações de escrita não idempotentes.
+
+## Persistência do acesso V34.3 — 28/09/2026
+
+A capacidade lógica de **Técnico em Telemedicina** não pode ser removida como efeito colateral de uma edição administrativa comum da conta.
+
+- `auth_telemedicine_access` permanece a fonte de verdade server-side;
+- alterações de nome, cargo textual, status ou funções independentes preservam a capacidade existente;
+- a revogação da Telemedicina deve ser explícita e executada pelo Desenvolvedor ao mudar deliberadamente o perfil;
+- uma tentativa ambígua de trocar o perfil de uma conta com Telemedicina ativa é bloqueada, em vez de gravar `enabled = 0` silenciosamente;
+- o formulário de gestão de usuários só envia `role` quando o perfil foi efetivamente alterado;
+- cache de sessão no navegador nunca concede autorização de API: a capacidade persistida no backend continua sendo conferida em cada operação protegida.
+
+A medida fecha a causa de recorrência em que a interface ainda podia mostrar o perfil em cache enquanto o backend já havia perdido a capacidade persistida.
