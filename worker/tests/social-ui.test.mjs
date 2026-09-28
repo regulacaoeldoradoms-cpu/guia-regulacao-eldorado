@@ -99,8 +99,9 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(navigation, /homeUserSearch/);
   assert.match(navigation, /Pesquisar usuários/);
   assert.match(navigation, /\/api\/social\/search\?q=/);
-  assert.match(navigation, /if \(active\('\/'\) && socialAvailable\)/);
-  assert.match(navigation, /has-home-user-search/);
+  assert.doesNotMatch(navigation, /if \(active\('\/'\) && socialAvailable\)/);
+  assert.match(navigation, /if \(socialAvailable\)/);
+  assert.match(navigation, /has-global-user-search/);
   assert.match(navigation, /overflow-x:auto/);
   assert.doesNotMatch(navigation, /navLink\('\/notificacoes\/', '(?:Notificações|Avisos)'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
