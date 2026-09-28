@@ -309,24 +309,45 @@ export function computeStudyStreak(activityTimestamps, now = new Date(), timeZon
 }
 
 async function studyStreak(env, username) {
-  const result = await env.AUTH_DB.prepare(`SELECT activity_at FROM (
-      SELECT attempted_at AS activity_at
-      FROM study_attempts
-      WHERE username=?
-      UNION ALL
-      SELECT finished_at AS activity_at
-      FROM study_sessions
-      WHERE username=? AND status='finished' AND duration_seconds >= 60 AND finished_at IS NOT NULL
-      UNION ALL
-      SELECT created_at AS activity_at
-      FROM study_xp_events
-      WHERE username=?
-    )
-    WHERE activity_at IS NOT NULL
-    ORDER BY activity_at DESC
-    LIMIT 500`).bind(username, username, username).all();
+  const timestamps = [];
+  let cursorAt = '';
+  let cursorKey = '';
+  const pageSize = 500;
 
-  return computeStudyStreak((result.results || []).map((row) => row.activity_at));
+  for (;;) {
+    const result = await env.AUTH_DB.prepare(`SELECT activity_at, activity_key FROM (
+        SELECT attempted_at AS activity_at, 'a:' || attempt_id AS activity_key
+        FROM study_attempts
+        WHERE username=?
+        UNION ALL
+        SELECT finished_at AS activity_at, 's:' || session_id AS activity_key
+        FROM study_sessions
+        WHERE username=? AND status='finished' AND duration_seconds >= 60 AND finished_at IS NOT NULL
+        UNION ALL
+        SELECT created_at AS activity_at, 'x:' || event_id AS activity_key
+        FROM study_xp_events
+        WHERE username=?
+      )
+      WHERE activity_at IS NOT NULL
+        AND (?='' OR activity_at < ? OR (activity_at = ? AND activity_key < ?))
+      ORDER BY activity_at DESC, activity_key DESC
+      LIMIT ?`).bind(
+        username, username, username,
+        cursorAt, cursorAt, cursorAt, cursorKey, pageSize
+      ).all();
+
+    const rows = result.results || [];
+    timestamps.push(...rows.map((row) => row.activity_at));
+    if (rows.length < pageSize) break;
+    const last = rows[rows.length - 1];
+    const nextAt = String(last.activity_at || '');
+    const nextKey = String(last.activity_key || '');
+    if (!nextAt || (nextAt === cursorAt && nextKey === cursorKey)) break;
+    cursorAt = nextAt;
+    cursorKey = nextKey;
+  }
+
+  return computeStudyStreak(timestamps);
 }
 
 export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
