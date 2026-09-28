@@ -113,7 +113,8 @@
           <div class="user-badges">
             <span class="user-badge">${escapeHtml(roleLabels[user.role] || user.role)}</span>
             ${user.role !== 'cidadao' ? '<span class="user-badge">Canal do Cidadão</span>' : ''}
-            ${user.role === 'telemedicina' ? '<span class="user-badge">Módulo Telemedicina</span>' : ''}
+            ${user.role === 'telemedicina' && user.telemedicineAccess === true ? '<span class="user-badge">Módulo Telemedicina</span>' : ''}
+            ${user.role === 'telemedicina' && user.telemedicineAccess !== true ? '<span class="user-badge inactive">Telemedicina: autorização técnica pendente</span>' : ''}
             ${user.councilRole ? `<span class="user-badge">${escapeHtml(councilLabels[user.councilRole] || user.councilRole)}</span>` : ''}
             ${(Array.isArray(user.additionalRoles) ? user.additionalRoles : []).map((role) => `<span class="user-badge">${escapeHtml(additionalRoleLabels[role] || role)}</span>`).join('')}
             <span class="user-badge ${user.active ? '' : 'inactive'}">${user.active ? 'Ativo' : 'Desativado'}</span>
@@ -191,7 +192,12 @@
         editAdditionalRoleDocuments.checked = Array.isArray(user.additionalRoles) && user.additionalRoles.includes('documentos');
       }
       document.getElementById('editActive').checked = Boolean(user.active);
-      document.getElementById('editStatus').className = 'account-status full';
+      const editStatus = document.getElementById('editStatus');
+      editStatus.textContent = '';
+      editStatus.className = 'account-status full';
+      if (user.role === 'telemedicina' && user.telemedicineAccess !== true) {
+        showStatus(editStatus, 'O perfil está marcado como Telemedicina, mas a autorização técnica do backend está inconsistente. Salvar alterações irá reparar o acesso.', 'warning');
+      }
       openModal('editUserModal');
     }
 
@@ -216,9 +222,15 @@
         jobTitle: document.getElementById('editJobTitle').value.trim(),
         active: document.getElementById('editActive').checked
       };
-      if (!editingUser || selectedRole !== editingUser.role) {
+      if (selectedRole === 'telemedicina') {
+        // V34.4: selecionar/manter Telemedicina e salvar é uma concessão explícita.
+        // Isso repara contas legadas cujo rótulo permaneceu Telemedicina enquanto
+        // a capacidade server-side foi desabilitada em uma inconsistência antiga.
+        input.role = 'telemedicina';
+        input.telemedicineAccess = true;
+      } else if (!editingUser || selectedRole !== editingUser.role) {
         input.role = selectedRole;
-        if (editingUser?.role === 'telemedicina' && selectedRole !== 'telemedicina') {
+        if (editingUser?.role === 'telemedicina') {
           input.telemedicineAccess = false;
         }
       }
