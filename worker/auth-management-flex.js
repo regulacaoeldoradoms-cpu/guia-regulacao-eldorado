@@ -193,6 +193,10 @@ async function handleAdminUsers(request, env, origin) {
       requestedTelemedicineAccess = body.telemedicineAccess;
     }
 
+    if (requestedTelemedicineAccess === true && requestedRole !== 'telemedicina') {
+      return jsonError('A concessão do acesso à Telemedicina exige o perfil Técnico em Telemedicina.', 400, origin);
+    }
+
     if (targetTelemedicineEnabled
       && requestedRole
       && requestedRole !== 'telemedicina'

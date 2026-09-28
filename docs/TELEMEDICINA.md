@@ -381,3 +381,17 @@ A capacidade lógica de **Técnico em Telemedicina** não pode ser removida como
 - cache de sessão no navegador nunca concede autorização de API: a capacidade persistida no backend continua sendo conferida em cada operação protegida.
 
 A medida fecha a causa de recorrência em que a interface ainda podia mostrar o perfil em cache enquanto o backend já havia perdido a capacidade persistida.
+
+## Reparo de capacidade V34.4 — 28/09/2026
+
+O painel de usuários não pode tratar o texto **Técnico em Telemedicina** como prova suficiente de autorização. A capacidade efetiva continua sendo `auth_telemedicine_access`.
+
+Quando uma conta antiga estiver visualmente marcada como Telemedicina, mas a capacidade server-side estiver ausente/desabilitada:
+
+- o painel mostra **Telemedicina: autorização técnica pendente**;
+- a janela de edição informa a inconsistência;
+- manter **Técnico em Telemedicina** e salvar executa uma concessão explícita e repara a capacidade;
+- o backend só aceita `telemedicineAccess: true` junto do perfil `telemedicina`;
+- nenhuma conta revogada é reativada automaticamente apenas por nome, cargo textual ou cache de sessão.
+
+Depois do reparo, as regras V34.2 e V34.3 mantêm a autorização como fonte de verdade nas APIs e impedem que edições administrativas comuns derrubem novamente o acesso.
