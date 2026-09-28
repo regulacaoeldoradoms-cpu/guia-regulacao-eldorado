@@ -11,6 +11,8 @@ test('Barra Global usa a camada comum do Portal e sessão existente', () => {
   assert.match(bootstrap, /portalLogout/);
   assert.match(bootstrap, /enforcementEnabled && !auth\.getToken/);
   assert.match(bootstrap, /PortalSocialNavigation/);
+  assert.match(bootstrap, /navigationIsCurrent/);
+  assert.match(bootstrap, /force: !navigationIsCurrent/);
   assert.match(bootstrap, /PortalSocial\.getConfig/);
   assert.match(bootstrap, /data-portal-global-navigation="off"/);
 });
@@ -22,6 +24,7 @@ test('desktop mantém os seis elementos definidos para a Barra Global', () => {
   }
   assert.match(navigation, /if \(socialAvailable\)/);
   assert.doesNotMatch(navigation, /if \(active\('\/'\) && socialAvailable\)/);
+  assert.match(navigation, /version: '20260928-1'/);
   assert.match(navigation, /has-global-user-search/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/"\]/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/ferramentas\/"\]/);
