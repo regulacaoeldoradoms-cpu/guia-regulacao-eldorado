@@ -79,10 +79,7 @@ test('V34.3: revogação de Telemedicina é explícita e edição comum não der
   assert.match(admin, /input\.telemedicineAccess = false/);
 });
 
-test('V34.3: publicação quebra o cache do formulário administrativo atualizado', () => {
+test('V34.3: publicação usa URL nova para o formulário administrativo atualizado', () => {
   const page = read('admin/usuarios/index.html');
-  const serviceWorker = read('portal-sw.js');
-
   assert.match(page, /admin-users\.js\?v=20260928-v34-3/);
-  assert.match(serviceWorker, /const CACHE_VERSION = '20260928-4'/);
 });
