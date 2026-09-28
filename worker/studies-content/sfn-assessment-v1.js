@@ -340,6 +340,10 @@ export const SFN_TRANSFER_ASSESSMENT = Object.freeze({
   ])
 });
 
+export function assessmentById(id) {
+  return String(id || '') === SFN_TRANSFER_ASSESSMENT.id ? SFN_TRANSFER_ASSESSMENT : null;
+}
+
 export function assessmentQuestionById(id) {
   for (const assessmentForm of SFN_TRANSFER_ASSESSMENT.forms) {
     const found = assessmentForm.questions.find((item) => item.id === String(id || ''));
