@@ -109,6 +109,7 @@ Implementado:
 - missão futura ainda não concluída exige `coverage_state >= 3` da missão publicada imediatamente anterior;
 - ausência do pré-requisito retorna HTTP 409 / `STUDY_PREREQUISITE_REQUIRED`;
 - pedido bloqueado não cria sessão;
+- fechamento da missão revalida o pré-requisito, inclusive contra sessão antiga criada antes do gate;
 - revisões continuam usando sua autorização específica por `reviewId` e não são bloqueadas pela fila normal.
 
 Sem alteração de schema, conteúdo, perguntas, gabaritos, XP ou histórico. Teste comportamental do roteador comprova bloqueio antes do pré-requisito e liberação depois da conclusão.
