@@ -146,9 +146,20 @@ O roteador passa a incluir fluxo específico de recuperação e bloqueio de sess
 
 Limite preservado: esta entrega ainda não guarda a parte exata da aula em que o leitor estava. Marcador de leitura fica para o recorte seguinte, separado de comprovação de aprendizagem.
 
+## Nova entrega empilhada — marcador neutro de leitura
+
+Documento: `43-MARCADOR-LEITURA.md`.  
+Branch: `feat/missao-bancaria-marcador-leitura`, empilhada sobre a recuperação controlada da sessão.
+
+A sessão ativa passa a guardar, em tabela aditiva própria, **onde a interface estava**: parte da aula, leitura/prática e estado “aula inteira”. O bootstrap e a abertura anunciam `markerProtocol: 1`; o frontend só envia marcadores quando o servidor confirma suporte.
+
+O marcador é neutro: não altera cobertura, domínio, XP, conquistas, tentativas ou revisões. O backend só aceita seção pertencente à missão, sessão/rodada ativa e versão de conteúdo compatível. Na retomada, a interface restaura a posição válida junto do mesmo `sessionId`, respostas e tempo confirmado.
+
+Testes do roteador real e navegador sintético cobrem idempotência, seção inválida, sessão encerrada, ausência de recompensa e restauração da visão do leitor.
+
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir o marcador de leitura e remover o truncamento histórico dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois remover o truncamento histórico dos 500 eventos e preparar a integração da avaliação independente já especificada. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
