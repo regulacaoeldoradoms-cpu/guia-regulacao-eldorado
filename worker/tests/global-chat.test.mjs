@@ -1,0 +1,69 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
+
+const authenticatedModules = [
+  'index.html',
+  'ferramentas/index.html',
+  'amigos/index.html',
+  'notificacoes/index.html',
+  'perfil/index.html',
+  'seguranca/index.html',
+  'configuracoes/index.html',
+  'conquistas/index.html',
+  'estudos/index.html',
+  'medico/index.html',
+  'protocolo/index.html',
+  'recepcao/index.html',
+  'telemedicina/index.html',
+  'documentos/index.html',
+  'agenda/index.html',
+  'agenda/sync/index.html',
+  'cidadao/index.html',
+  'conselho/painel/index.html',
+  'admin/usuarios/index.html',
+  'admin/monitoramento/index.html',
+  'admin/configuracao/index.html',
+  'admin/social/index.html'
+];
+
+test('chat global aparece em todos os módulos autenticados sem carga manual duplicada', () => {
+  for (const path of authenticatedModules) {
+    const html = read(path);
+    assert.match(html, /portal-global-chat\.js\?v=20260928-1/, path);
+    assert.doesNotMatch(html, /<script[^>]+portal-chat\.js\?v=/, path);
+    assert.doesNotMatch(html, /<script[^>]+portal-chat-switch-optimizer\.js\?v=/, path);
+  }
+});
+
+test('superfícies públicas permanecem sem chat global', () => {
+  for (const path of ['login/index.html', 'cadastro/index.html', 'conselho/index.html']) {
+    assert.doesNotMatch(read(path), /portal-global-chat\.js/, path);
+  }
+});
+
+test('bootstrap global exige sessão e preserva primeiro acesso', () => {
+  const source = read('js/portal-global-chat.js');
+  assert.match(source, /regulacao\.portal\.session/);
+  assert.match(source, /if \(!storedToken\(\)\) return null/);
+  assert.match(source, /user\.mustChangePassword/);
+  assert.match(source, /portal-chat\.css\?v=20260923-1/);
+  assert.match(source, /portal-chat\.js\?v=20260928-global-1/);
+  assert.match(source, /portal-chat-switch-optimizer\.js\?v=20260928-global-1/);
+});
+
+test('componente global mantém autorização atual por cargo e amizade', () => {
+  const client = read('js/portal-chat.js');
+  const worker = read('worker/portal-chat-v2.js');
+  assert.match(client, /CHAT_ROLES = new Set\(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\]\)/);
+  assert.match(worker, /PROFESSIONAL_ROLES = new Set\(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'\]\)/);
+  assert.match(worker, /relationship\.state = 'friends'/);
+});
+
+test('chat e otimizador têm guarda de versão global', () => {
+  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20260928-global-1'/);
+  assert.match(read('js/portal-chat.js'), /version: '20260928-global-1'/);
+  assert.match(read('js/portal-chat-switch-optimizer.js'), /PortalChatSwitchOptimizer\?\.version === '20260928-global-1'/);
+});
