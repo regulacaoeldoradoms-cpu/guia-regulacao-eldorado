@@ -24,6 +24,7 @@ jobs:
           node --check js/portal-chat-switch-optimizer.js
           node --check js/medical-portal-nav.js
           node --check portal-sw.js
+          node --test worker/tests/global-chat.test.mjs
       - name: Conferir integração profissional
         run: |
           test -f css/portal-chat.css
