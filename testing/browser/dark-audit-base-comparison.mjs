@@ -132,10 +132,13 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   const pattern='http://127.0.0.1:4176/**';
   let assets=working;
   const fulfilledCurrent=new Set(),fulfilledBase=new Set();
+  const requestedChangedCurrent=new Set(),requestedChangedBase=new Set();
+  const changedProductFiles=new Set(changed.filter(file=>!file.startsWith('testing/')));
   const handler=async request=>{
     const pathname=decodeURIComponent(new URL(request.request().url()).pathname);
     if(pathname===AUDIT_RESET_PATH)return request.fulfill({contentType:'text/css',body:AUDIT_RESET_CSS});
     const name=pathname==='/'?'index.html':pathname.replace(/^\//,'').replace(/\/$/,'/index.html');
+    if(changedProductFiles.has(name))(assets===working?requestedChangedCurrent:requestedChangedBase).add(name);
     if(!assets.has(name))return request.fallback();
     (assets===working?fulfilledCurrent:fulfilledBase).add(name);
     const contentType=name.endsWith('.css')?'text/css':name.endsWith('.js')?'text/javascript':'text/html';
@@ -165,6 +168,13 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   for(const [selector,before] of baselineMap)differences.push({selector,before,after:null});
   const pixelComparison=comparePngPixels(current.screenshot,baseline.screenshot);
   pixelComparison.gateApplicable=Boolean(current.captureStability.rasterStable&&baseline.captureStability.rasterStable);
+  // Se nenhum arquivo de produto alterado pela comparação foi sequer requisitado
+  // em qualquer uma das duas fases, uma diferença de raster não pode ter sido
+  // causada pelo patch sob teste. DOM/computed/layout e erros JavaScript ainda
+  // precisam permanecer exatamente iguais. Isso classifica apenas o raster como
+  // diagnóstico de runtime, sem aumentar a tolerância quando código alterado é usado.
+  const noChangedProductSourceRequested=
+    requestedChangedCurrent.size===0&&requestedChangedBase.size===0;
   // Exact computed/layout equality is the primary preservation invariant. On
   // very large screenshots Chromium can deterministically rasterize the same
   // geometry with low-amplitude text-edge differences. Accept only a tightly
@@ -193,10 +203,20 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   );
   pixelComparison.lowAmplitudeRaster=lowAmplitudeRaster;
   pixelComparison.sparseRaster=sparseRaster;
-  pixelComparison.gateAccepted=pixelComparison.gateApplicable?(pixelComparison.accepted||lowAmplitudeRaster||sparseRaster):true;
-  pixelComparison.diagnosticOnly=!pixelComparison.gateApplicable||lowAmplitudeRaster||sparseRaster;
+  pixelComparison.noChangedProductSourceRequested=noChangedProductSourceRequested;
+  const unrelatedRaster=Boolean(
+    pixelComparison.gateApplicable &&
+    noChangedProductSourceRequested &&
+    differences.length===0 &&
+    current.errors.filter(error=>!baseline.errors.includes(error)).length===0
+  );
+  pixelComparison.unrelatedRaster=unrelatedRaster;
+  pixelComparison.gateAccepted=pixelComparison.gateApplicable
+    ? (pixelComparison.accepted||lowAmplitudeRaster||sparseRaster||unrelatedRaster)
+    : true;
+  pixelComparison.diagnosticOnly=!pixelComparison.gateApplicable||lowAmplitudeRaster||sparseRaster||unrelatedRaster;
   const sourceEvidence=(files,sources)=>[...files].sort().map(file=>({path:file,sha256:createHash('sha256').update(sources.get(file)).digest('hex')}));
-  const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,comparableChanged,newFilesWithoutBase:changed.filter(file=>!comparableChanged.includes(file)),productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
+  const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,comparableChanged,newFilesWithoutBase:changed.filter(file=>!comparableChanged.includes(file)),productChanges:changed.filter(file=>!file.startsWith('testing/')),requestedChangedProductCurrent:[...requestedChangedCurrent].sort(),requestedChangedProductBase:[...requestedChangedBase].sort(),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
   const name=`${theme}-${media}-base-comparison`;
   await info.attach(`${name}.json`,{body:Buffer.from(JSON.stringify(report,null,2)),contentType:'application/json'});
   await writeFile(info.outputPath(`${name}.json`),JSON.stringify(report,null,2));
