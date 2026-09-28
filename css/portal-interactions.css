@@ -241,12 +241,10 @@ html[data-portal-interactions="v1"] .portal-auxiliary-dialog.open {
   transition-delay: 0s;
 }
 
-/* Diálogos ativos precisam permanecer acima da barra social e do chat globais.
-   O chat usa 12000 e a navegação móvel pode chegar a 13000. */
-html[data-portal-interactions="v1"] .modal-backdrop.open,
-html[data-portal-interactions="v1"] .citizen-modal.open,
-html[data-portal-interactions="v1"] .council-delete-dialog-backdrop.open,
-html[data-portal-interactions="v1"] .portal-auxiliary-dialog.open {
+/* O formulário de nova manifestação precisa permanecer acima da barra social
+   e do chat globais. O chat usa 12000 e a navegação móvel pode chegar a 13000.
+   O escopo fica restrito ao modal afetado para não alterar outras camadas. */
+html[data-portal-interactions="v1"] #newManifestationModal.citizen-modal.open {
   z-index: 15000;
 }
 
