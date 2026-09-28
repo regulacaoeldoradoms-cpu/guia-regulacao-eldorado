@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalSocialNavigation?.version === '20260928-1') return;
+  if (window.PortalSocialNavigation?.version === '20260928-2') return;
 
   let activeNotificationPanel = null;
   let activeUserSearch = null;
@@ -34,6 +34,7 @@
       body.mobile-home-mode .social-mobile-nav-link{flex:0 0 clamp(112px,15vw,150px);min-width:clamp(112px,15vw,150px)}
       body.has-social-navigation .portal-topbar .portal-user > a.portal-button[href="/"],
       body.has-social-navigation .portal-topbar .portal-user > a.portal-button[href="/ferramentas/"]{display:none!important}
+      body.has-social-navigation .site-header [data-portal-home]{display:none!important}
       @media (forced-colors:active){.social-nav-link,.social-mobile-nav-link{border:1px solid CanvasText}}
     `;
     document.head.appendChild(style);
@@ -563,7 +564,7 @@
     ensureExtendedNavigationStyles();
 
     const icons = window.PortalSocial?.icons || {};
-    const header = document.querySelector('.portal-topbar');
+    const header = document.querySelector('.portal-topbar, .site-header');
     const socialAvailable = Boolean(socialConfig.backendEnabled && socialConfig.available);
     const unread = Number(socialConfig.unreadSocialNotifications || 0);
 
@@ -616,5 +617,5 @@
     if (role && !role.textContent) role.textContent = labels[user?.role] || user?.role || '';
   }
 
-  window.PortalSocialNavigation = Object.freeze({ version: '20260928-1', mount });
+  window.PortalSocialNavigation = Object.freeze({ version: '20260928-2', mount });
 })();

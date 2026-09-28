@@ -7,8 +7,11 @@ const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), '
 test('Barra Global usa a camada comum do Portal e sessão existente', () => {
   const interactions = read('js/portal-interactions.js');
   const bootstrap = read('js/portal-global-navigation.js');
-  assert.match(interactions, /portal-global-navigation\.js\?v=20260928-1/);
-  assert.match(bootstrap, /portalLogout/);
+  assert.match(interactions, /portal-global-navigation\.js\?v=20260928-2/);
+  assert.match(bootstrap, /\.portal-topbar, \.site-header/);
+  assert.match(bootstrap, /AUTH_CONFIG/);
+  assert.match(bootstrap, /AUTH_CLIENT/);
+  assert.match(bootstrap, /storedToken/);
   assert.match(bootstrap, /enforcementEnabled && !auth\.getToken/);
   assert.match(bootstrap, /PortalSocialNavigation/);
   assert.match(bootstrap, /navigationIsCurrent/);
@@ -24,16 +27,28 @@ test('desktop mantém os seis elementos definidos para a Barra Global', () => {
   }
   assert.match(navigation, /if \(socialAvailable\)/);
   assert.doesNotMatch(navigation, /if \(active\('\/'\) && socialAvailable\)/);
-  assert.match(navigation, /version: '20260928-1'/);
+  assert.match(navigation, /version: '20260928-2'/);
   assert.match(navigation, /has-global-user-search/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/"\]/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/ferramentas\/"\]/);
+  assert.match(navigation, /\.portal-topbar, \.site-header/);
+  assert.match(navigation, /\.site-header \[data-portal-home\]/);
 });
 
 test('Service Worker aquece a versão nova sem alterar os endpoints sociais', () => {
   const sw = read('portal-sw.js');
-  assert.match(sw, /CACHE_VERSION = '20260928-1'/);
-  assert.match(sw, /portal-global-navigation\.js\?v=20260928-1/);
-  assert.match(sw, /social-navigation\.js\?v=20260928-1/);
+  assert.match(sw, /CACHE_VERSION = '20260928-2'/);
+  assert.match(sw, /portal-global-navigation\.js\?v=20260928-2/);
+  assert.match(sw, /social-navigation\.js\?v=20260928-2/);
   assert.match(sw, /social-api\.js\?v=20260910-4/);
+});
+
+
+test('cabeçalhos próprios do Guia Médico e Fontes técnicas entram na cobertura global', () => {
+  const medico = read('medico/index.html');
+  const protocolo = read('protocolo/index.html');
+  assert.match(medico, /class="site-header"/);
+  assert.match(medico, /portal-interactions\.js/);
+  assert.match(protocolo, /class="site-header"/);
+  assert.match(protocolo, /portal-interactions\.js/);
 });
