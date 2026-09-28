@@ -319,23 +319,37 @@ async function studyStreak(env, username) {
 }
 
 export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
+  const timestamp = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return 0;
+    const normalized = text.includes('T') ? text : text.replace(' ', 'T') + 'Z';
+    const parsed = Date.parse(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
   const normalized = (Array.isArray(rows) ? rows : [])
-    .map((row) => ({
-      cycle: Number(row.cycle || 0),
-      score: row.score === null || row.score === undefined ? null : Number(row.score),
-      completedAt: String(row.completed_at || row.completedAt || '')
-    }))
+    .map((row) => {
+      const completedAt = String(row.completed_at || row.completedAt || '');
+      return {
+        cycle: Number(row.cycle || 0),
+        score: row.score === null || row.score === undefined ? null : Number(row.score),
+        completedAt,
+        completedTime: timestamp(completedAt)
+      };
+    })
     .filter((row) => Number.isInteger(row.cycle) && row.cycle > 0)
     .sort((a, b) => a.cycle - b.cycle);
 
   const byCycle = new Map();
   for (const row of normalized) {
     const previous = byCycle.get(row.cycle);
-    if (!previous || row.completedAt >= previous.completedAt) byCycle.set(row.cycle, row);
+    if (!previous || row.completedTime >= previous.completedTime) byCycle.set(row.cycle, row);
   }
   const cycles = [...byCycle.values()];
   const scored = cycles.filter((row) => Number.isFinite(row.score));
-  const latest = scored.length ? scored[scored.length - 1] : null;
+  const latest = scored.reduce((current, row) =>
+    !current || row.completedTime >= current.completedTime ? row : current, null);
+  const lastReview = cycles.reduce((current, row) =>
+    !current || row.completedTime >= current.completedTime ? row : current, null);
   const completedCycles = cycles.length;
   const scoredCycles = scored.length;
   const status = completedCycles === 0 ? 'not_observed'
@@ -349,7 +363,7 @@ export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
     scoredCycles,
     latestScore: latest ? Math.round(latest.score * 10) / 10 : null,
     latestCycle: latest?.cycle || null,
-    lastReviewAt: cycles.length ? cycles[cycles.length - 1].completedAt : '',
+    lastReviewAt: lastReview?.completedAt || '',
     status,
     label: status === 'not_observed' ? 'Sem revisão posterior'
       : status === 'historical_unscored' ? 'Revisão histórica sem nota isolável'

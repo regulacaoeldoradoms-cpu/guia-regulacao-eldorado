@@ -84,7 +84,7 @@ Foram adicionados testes para:
 - duplicidade do mesmo ciclo sem contagem dupla;
 - interface mantendo “Acerto nas tentativas” e “Retenção” como conceitos distintos.
 
-O cálculo escolhe um registro por ciclo e preserva a revisão mais recente daquele ciclo, sem inflar a quantidade.
+O cálculo escolhe um registro por ciclo e preserva a revisão mais recente daquele ciclo, sem inflar a quantidade. A “última revisão” exibida é definida por `completed_at`, e não pelo número do ciclo; isso mantém o diagnóstico correto mesmo se ciclos vencidos forem concluídos fora de ordem.
 
 ## Continuidade
 
