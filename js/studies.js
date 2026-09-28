@@ -15,8 +15,6 @@
     activeReview: null,
     answered: new Map(),
     sessionId: '',
-    sessionStartedAt: 0,
-    timer: null,
     doubt: false,
     generation: 0,
     leaving: false,
@@ -26,6 +24,12 @@
 
   const $ = (id) => document.getElementById(id);
   const reader = window.StudyReader?.create($('studyFocus')) || null;
+  const clock = window.StudyClock?.create({
+    root: $('studyFocus'),
+    send: (sessionId, durationSeconds) => auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}/checkpoint`, {
+      method: 'POST', body: JSON.stringify({ durationSeconds })
+    })
+  }) || null;
   const status = (text, focus = false) => {
     const el = $(focus ? 'focusStatus' : 'studyStatus');
     if (el) el.textContent = text || '';
@@ -234,15 +238,12 @@
     updateFocusProgress();
   }
 
-  function startTimer() {
-    clearInterval(state.timer);
-    state.sessionStartedAt = Date.now();
-    const paint = () => {
-      const sec = Math.floor((Date.now() - state.sessionStartedAt) / 1000);
-      $('studyTimer').textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
-    };
-    paint();
-    state.timer = setInterval(paint, 1000);
+  function startTimer(supportsCheckpoints) {
+    if (clock) clock.start(state.sessionId, supportsCheckpoints);
+    else {
+      $('studyTimer').textContent = '—';
+      if ($('studyTimerStatus')) $('studyTimerStatus').textContent = 'Cronômetro indisponível; atualize a página.';
+    }
   }
 
   async function openMission(id, review = null) {
@@ -253,7 +254,7 @@
     state.activeMission = mission;
     state.activeReview = review;
     state.sessionId = '';
-    state.sessionStartedAt = 0;
+    clock?.reset();
     state.completing = false;
     state.pendingAnswers.clear();
     state.answered.clear();
@@ -278,7 +279,7 @@
       }
       if (!response.sessionId) throw new Error('Identificador da rodada não recebido.');
       state.sessionId = response.sessionId;
-      startTimer();
+      startTimer(response.timeProtocol === 1);
       updateFocusProgress();
       status('', true);
     } catch (error) {
@@ -358,10 +359,8 @@
     if (state.leaving || !state.activeMission) return;
     state.leaving = true;
     ++state.generation;
-    clearInterval(state.timer);
     const sessionId = state.sessionId;
-    const durationSeconds = state.sessionStartedAt
-      ? Math.max(0, Math.floor((Date.now() - state.sessionStartedAt) / 1000)) : 0;
+    const durationSeconds = clock?.stop().durationSeconds || 0;
     state.sessionId = '';
     updateFocusProgress();
     const saved = await finishSession(sessionId, durationSeconds);

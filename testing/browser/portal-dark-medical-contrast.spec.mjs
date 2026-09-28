@@ -40,10 +40,12 @@ for (const empty of [false, true]) {
     await expect(page.locator('#detailPanel .clinical-alert li')).not.toHaveCSS('color', white);
 
     const colors = () => texts.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).color));
-    await page.evaluate(() => document.documentElement.dataset.portalTheme = 'light');
+    await page.evaluate(() => window.PortalTheme.apply('light'));
+    await expect(page.locator('html')).toHaveAttribute('data-portal-theme', 'light');
     for (const item of await texts.all()) await expect(item).not.toHaveCSS('color', white);
     const lightColors = await colors();
-    await page.evaluate(() => document.documentElement.dataset.portalTheme = 'dark');
+    await page.evaluate(() => window.PortalTheme.apply('dark'));
+    await expect(page.locator('html')).toHaveAttribute('data-portal-theme', 'dark');
     await page.emulateMedia({ media: 'print' });
     // Screen-only override: printing retains the original light text colors.
     expect(await colors()).toEqual(lightColors);

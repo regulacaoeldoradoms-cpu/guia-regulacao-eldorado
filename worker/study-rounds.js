@@ -61,7 +61,7 @@ export async function startStudyRound(db, username, mission, reviewId = null) {
       .bind(id, username, mission.id, mode, reviewId, mission.contentVersion,
         JSON.stringify(ids), mode === 'boss' ? Number(mission.passScore || 0) : 0)
   ]);
-  return { sessionId: id, started: true, roundProtocol: 1, mode };
+  return { sessionId: id, started: true, roundProtocol: 1, timeProtocol: 1, mode };
 }
 
 export async function getStudyRound(db, username, mission, id, expectedMode = null, reviewId = null) {
@@ -189,7 +189,7 @@ export async function finishStudySession(db, username, sessionId, durationSecond
   }
   const reported = Math.min(21600, Math.floor(durationSeconds));
   await db.prepare(`UPDATE study_sessions SET finished_at=CURRENT_TIMESTAMP,
-      duration_seconds=MIN(?, MAX(0, unixepoch('now')-unixepoch(started_at))), status='finished'
+      duration_seconds=MAX(duration_seconds, MIN(?, MAX(0, unixepoch('now')-unixepoch(started_at)))), status='finished'
     WHERE session_id=? AND username=? AND status='active'`)
     .bind(reported, sessionId, username).run();
   const saved = await db.prepare(`SELECT duration_seconds, status FROM study_sessions
@@ -197,4 +197,23 @@ export async function finishStudySession(db, username, sessionId, durationSecond
   if (!saved) fail('Sessão não encontrada.', 404);
   if (saved.status !== 'finished') fail('Não foi possível encerrar a sessão.');
   return { finished: true, durationSeconds: Number(saved.duration_seconds || 0) };
+}
+
+// Checkpoint cumulativo: não soma incrementos, não encerra a rodada e não dá XP.
+export async function checkpointStudySession(db, username, sessionId, durationSeconds) {
+  if (!sessionKey(sessionId)) fail('Sessão não encontrada.', 404);
+  if (typeof durationSeconds !== 'number' || !Number.isFinite(durationSeconds) || durationSeconds < 0) {
+    fail('Duração inválida.', 400);
+  }
+  const reported = Math.min(21600, Math.floor(durationSeconds));
+  await db.prepare(`UPDATE study_sessions SET
+      duration_seconds=MAX(duration_seconds, MIN(?, MAX(0, unixepoch('now')-unixepoch(started_at))))
+    WHERE session_id=? AND username=? AND status='active'`)
+    .bind(reported, sessionId, username).run();
+  const saved = await db.prepare(`SELECT duration_seconds, status FROM study_sessions
+    WHERE session_id=? AND username=?`).bind(sessionId, username).first();
+  if (!saved) fail('Sessão não encontrada.', 404);
+  if (!['active', 'finished'].includes(saved.status)) fail('Estado da sessão indisponível.');
+  return { checkpointed: true, timeProtocol: 1, sessionId,
+    finished: saved.status === 'finished', durationSeconds: Number(saved.duration_seconds || 0) };
 }
