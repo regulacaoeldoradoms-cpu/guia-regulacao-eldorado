@@ -96,6 +96,26 @@ Arquivos funcionais: `worker/studies-content/curriculum-v1.js`, bootstrap, dashb
 
 Testes adicionados impedem regressão para “9/9 = curso completo”, validam os totais oficiais das provas-base, os 12 eixos/43 blocos e a permanência da prontidão como não medida neste estágio. O resultado remoto desta branch ainda deve ser consultado depois do push final; não presumir merge ou publicação.
 
+## Nova correção empilhada — pré-requisitos no backend
+
+Documento: `39-PREREQUISITOS-BACKEND.md`.  
+Branch: `fix/missao-bancaria-prerequisitos-backend`, empilhada sobre o mapa curricular.
+
+Problema: a interface bloqueava missões futuras, mas a API de abertura aceitava um `missionId` direto sem conferir a conclusão da missão anterior.
+
+Implementado:
+- primeira missão livre;
+- conteúdo já concluído pode ser reaberto;
+- missão futura ainda não concluída exige `coverage_state >= 3` da missão publicada imediatamente anterior;
+- ausência do pré-requisito retorna HTTP 409 / `STUDY_PREREQUISITE_REQUIRED`;
+- pedido bloqueado não cria sessão;
+- fechamento da missão revalida o pré-requisito, inclusive contra sessão antiga criada antes do gate;
+- revisões continuam usando sua autorização específica por `reviewId` e não são bloqueadas pela fila normal.
+
+Sem alteração de schema, conteúdo, perguntas, gabaritos, XP ou histórico. Teste comportamental do roteador comprova bloqueio antes do pré-requisito e liberação depois da conclusão.
+
+Limite: esta regra cobre a fila atual de nove missões. O mapa curricular de 43 blocos exigirá pré-requisitos explícitos por competência/trilha ao criar novas áreas paralelas; não transformar o curso inteiro numa fila linear por acidente.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
