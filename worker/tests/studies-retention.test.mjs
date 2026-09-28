@@ -80,6 +80,19 @@ test('última revisão segue o horário concluído mesmo se os ciclos forem fina
   assert.equal(result.status, 'schedule_observed');
 });
 
+test('revisão cronologicamente mais recente sem score não herda nota de ciclo anterior', () => {
+  const result = summarizeRetentionEvidence([
+    { cycle: 1, score: 92, completed_at: '2026-09-01 12:00:00' },
+    { cycle: 2, score: null, completed_at: '2026-09-08 12:00:00' }
+  ]);
+  assert.equal(result.completedCycles, 2);
+  assert.equal(result.scoredCycles, 1);
+  assert.equal(result.latestCycle, 2);
+  assert.equal(result.latestScore, null);
+  assert.equal(result.lastReviewAt, '2026-09-08 12:00:00');
+  assert.equal(result.status, 'collecting');
+});
+
 test('frontend mostra retenção como evidência distinta de acerto nas tentativas', () => {
   const source = fs.readFileSync(new URL('../../js/studies.js', import.meta.url), 'utf8');
   assert.match(source, /Acerto nas tentativas/);
