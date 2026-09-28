@@ -6,6 +6,10 @@ import {
   evaluateStudyRound, commitReviewReward, finishStudySession, checkpointStudySession
 } from './study-rounds.js';
 import {
+  ensureAssessmentSchema, startAssessmentRun, recordAssessmentAnswer,
+  completeAssessmentRun, assessmentEvidence
+} from './study-assessments.js';
+import {
   STUDY_SOURCES,
   PUBLISHED_MISSIONS,
   PLANNED_MISSIONS,
@@ -15,6 +19,9 @@ import {
   sourceMap
 } from './studies-content/manifest.js';
 import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
+import {
+  SFN_TRANSFER_ASSESSMENT, assessmentById
+} from './studies-content/sfn-assessment-v1.js';
 
 const ALLOWED_USERNAME = 'wellyton';
 const STUDY_TIME_ZONE = 'America/Campo_Grande';
@@ -144,6 +151,7 @@ async function ensureStudySchema(env) {
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_sessions_user_finished ON study_sessions(username, finished_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_reviews_user_due ON study_reviews(username, status, due_at)').run();
     await ensureRoundSchema(db);
+    await ensureAssessmentSchema(db);
     schemaReady.add(db);
     return true;
   })().catch((error) => {
@@ -467,6 +475,27 @@ async function dueReviewRows(env, username) {
   }).filter(Boolean);
 }
 
+async function assessmentUnlocked(env, username, assessment) {
+  const unlockMission = missionById(assessment.unlockMissionId);
+  if (!unlockMission) return false;
+  const row = await env.AUTH_DB.prepare(`SELECT coverage_state FROM study_topic_progress
+    WHERE username=? AND topic_id=? LIMIT 1`).bind(username, unlockMission.topicId).first();
+  return Number(row?.coverage_state || 0) >= 3;
+}
+
+async function publicAssessmentSummary(env, username, assessment) {
+  return {
+    id: assessment.id,
+    version: assessment.version,
+    blockId: assessment.blockId,
+    title: assessment.title,
+    description: assessment.description,
+    questionCount: assessment.questionCount,
+    unlocked: await assessmentUnlocked(env, username, assessment),
+    evidence: await assessmentEvidence(env.AUTH_DB, username, assessment)
+  };
+}
+
 async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
   return json({
@@ -478,6 +507,7 @@ async function handleBootstrap(env, user, origin) {
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
     learningEvidence: await learningEvidenceMap(env, user.username),
+    assessments: [await publicAssessmentSummary(env, user.username, SFN_TRANSFER_ASSESSMENT)],
     attemptedQuestions: await attemptedQuestionsMap(env, user.username),
     reviews: await dueReviewRows(env, user.username),
     missions: PUBLISHED_MISSIONS.map(publicMission),
@@ -690,6 +720,52 @@ async function handleStartSession(request, env, user, origin) {
   return json(result, 201, origin);
 }
 
+async function handleStartAssessment(pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/assessments\/([^/]+)\/runs$/);
+  const assessment = match ? assessmentById(decodeURIComponent(match[1])) : null;
+  if (!assessment) return json({ error: 'Avaliação não encontrada.' }, 404, origin);
+  if (!await assessmentUnlocked(env, user.username, assessment)) {
+    return json({
+      error: 'Conclua o Chefe do primeiro bloco antes de iniciar a avaliação independente.',
+      code: 'STUDY_ASSESSMENT_LOCKED'
+    }, 409, origin);
+  }
+  const run = await startAssessmentRun(env.AUTH_DB, user.username, assessment);
+  return json({
+    assessment: {
+      id: assessment.id,
+      title: assessment.title,
+      description: assessment.description,
+      questionCount: assessment.questionCount
+    },
+    ...run
+  }, run.resumed ? 200 : 201, origin);
+}
+
+async function handleAssessmentAnswer(request, pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/assessments\/([^/]+)\/runs\/([a-f0-9-]+)\/answers$/i);
+  const assessment = match ? assessmentById(decodeURIComponent(match[1])) : null;
+  if (!assessment) return json({ error: 'Avaliação não encontrada.' }, 404, origin);
+  const body = await readStudyBody(request);
+  const result = await recordAssessmentAnswer(
+    env.AUTH_DB, user.username, assessment, match[2], body.questionId, body.selectedOption
+  );
+  return json(result, 200, origin);
+}
+
+async function handleCompleteAssessment(pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/assessments\/([^/]+)\/runs\/([a-f0-9-]+)\/complete$/i);
+  const assessment = match ? assessmentById(decodeURIComponent(match[1])) : null;
+  if (!assessment) return json({ error: 'Avaliação não encontrada.' }, 404, origin);
+  const result = await completeAssessmentRun(
+    env.AUTH_DB, user.username, assessment, match[2], PUBLISHED_MISSIONS
+  );
+  return json({
+    ...result,
+    evidence: await assessmentEvidence(env.AUTH_DB, user.username, assessment)
+  }, 200, origin);
+}
+
 async function handleFinishSession(request, pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/sessions\/([a-f0-9-]+)$/i);
   if (!match) return json({ error: 'Sessão não encontrada.' }, 404, origin);
@@ -726,6 +802,15 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     if (request.method === 'POST' && url.pathname === '/api/studies/sessions') {
       return await handleStartSession(request, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/assessments\/[^/]+\/runs$/.test(url.pathname)) {
+      return await handleStartAssessment(url.pathname, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/assessments\/[^/]+\/runs\/[a-f0-9-]+\/answers$/i.test(url.pathname)) {
+      return await handleAssessmentAnswer(request, url.pathname, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/assessments\/[^/]+\/runs\/[a-f0-9-]+\/complete$/i.test(url.pathname)) {
+      return await handleCompleteAssessment(url.pathname, env, user, origin);
     }
     if (request.method === 'POST' && /^\/api\/studies\/sessions\/[a-f0-9-]+\/checkpoint$/i.test(url.pathname)) {
       return await handleTimeCheckpoint(request, url.pathname, env, user, origin);
