@@ -1,0 +1,38 @@
+name: Validar Barra Global do Portal
+
+on:
+  pull_request:
+    paths:
+      - 'js/portal-global-navigation.js'
+      - 'js/social-navigation.js'
+      - 'js/portal-interactions.js'
+      - 'portal-sw.js'
+      - 'worker/tests/global-navigation.test.mjs'
+      - 'worker/tests/social-ui.test.mjs'
+      - '.github/workflows/validate-global-navigation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'js/portal-global-navigation.js'
+      - 'js/social-navigation.js'
+      - 'js/portal-interactions.js'
+      - 'portal-sw.js'
+      - 'worker/tests/global-navigation.test.mjs'
+      - 'worker/tests/social-ui.test.mjs'
+      - '.github/workflows/validate-global-navigation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  global-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar Barra Global
+        run: |
+          node --check js/portal-global-navigation.js
+          node --check js/social-navigation.js
+          node --check js/portal-interactions.js
+          node --test worker/tests/global-navigation.test.mjs
+          node --test worker/tests/social-ui.test.mjs
