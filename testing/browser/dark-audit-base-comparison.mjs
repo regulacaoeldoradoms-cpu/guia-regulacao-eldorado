@@ -57,9 +57,22 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Capture each source from the same deterministic resting state. This does
     // not relax pixel acceptance: it removes scroll restoration, focus/hover
     // residue and live CSS motion that are unrelated to the source comparison.
-    // Strict CSP pages must stay strict during the audit. Load the synthetic
-    // stabilization CSS from the same origin instead of injecting inline CSS.
-    await targetPage.addStyleTag({url:AUDIT_RESET_PATH});
+    // Strict CSP pages must stay strict during the audit. Playwright's
+    // addStyleTag({url}) materializes a <style> element and is therefore blocked
+    // by style-src 'self'. Insert a real same-origin stylesheet link instead.
+    await targetPage.evaluate(async resetPath=>{
+      let link=document.querySelector('link[data-dark-audit-reset]');
+      if(link)return;
+      link=document.createElement('link');
+      link.rel='stylesheet';
+      link.href=resetPath;
+      link.dataset.darkAuditReset='1';
+      await new Promise((resolve,reject)=>{
+        link.addEventListener('load',resolve,{once:true});
+        link.addEventListener('error',()=>reject(new Error('Falha ao carregar CSS sintético da auditoria.')),{once:true});
+        document.head.appendChild(link);
+      });
+    },AUDIT_RESET_PATH);
     const resetRestingState=async()=>{
       await targetPage.evaluate(async()=>{
         if(document.activeElement instanceof HTMLElement)document.activeElement.blur();

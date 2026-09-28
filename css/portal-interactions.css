@@ -241,6 +241,13 @@ html[data-portal-interactions="v1"] .portal-auxiliary-dialog.open {
   transition-delay: 0s;
 }
 
+/* O formulário de nova manifestação precisa permanecer acima da barra social
+   e do chat globais. O chat usa 12000 e a navegação móvel pode chegar a 13000.
+   O escopo fica restrito ao modal afetado para não alterar outras camadas. */
+html[data-portal-interactions="v1"] #newManifestationModal.citizen-modal.open {
+  z-index: 15000;
+}
+
 html[data-portal-interactions="v1"] .modal-backdrop > .portal-modal,
 html[data-portal-interactions="v1"] .citizen-modal > .citizen-modal-panel,
 html[data-portal-interactions="v1"] .portal-auxiliary-dialog > .praise-dialog {
