@@ -187,7 +187,10 @@ async function handleAdminUsers(request, env, origin) {
     }
     if (Object.prototype.hasOwnProperty.call(body, 'telemedicineAccess')) {
       if (actor?.role !== 'admin') return jsonError('Somente o Desenvolvedor pode alterar o acesso à Telemedicina.', 403, origin);
-      requestedTelemedicineAccess = body.telemedicineAccess === true;
+      if (typeof body.telemedicineAccess !== 'boolean') {
+        return jsonError('O campo telemedicineAccess deve ser booleano.', 400, origin);
+      }
+      requestedTelemedicineAccess = body.telemedicineAccess;
     }
 
     if (targetTelemedicineEnabled
