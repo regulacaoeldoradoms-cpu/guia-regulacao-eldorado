@@ -479,6 +479,76 @@ async function dueReviewRows(env, username) {
   }).filter(Boolean);
 }
 
+async function activeStudySession(env, username) {
+  const row = await env.AUTH_DB.prepare(`SELECT s.session_id, s.mission_id, s.started_at, s.duration_seconds,
+      r.mode, r.review_id, r.content_version
+    FROM study_sessions s
+    JOIN study_rounds r ON r.session_id=s.session_id AND r.username=s.username
+    WHERE s.username=? AND s.status='active' AND r.status='active'
+    ORDER BY s.started_at DESC LIMIT 1`).bind(username).first();
+  if (!row) return null;
+
+  const mission = missionById(row.mission_id);
+  let resumable = Boolean(mission && Number(row.content_version) === Number(mission.contentVersion));
+  let reason = resumable ? '' : 'O conteúdo desta sessão foi atualizado e não pode ser retomado com segurança.';
+  let review = null;
+
+  if (row.mode === 'review') {
+    const reviewRow = row.review_id
+      ? await env.AUTH_DB.prepare(`SELECT review_id, topic_id, cycle, due_at, status
+          FROM study_reviews WHERE review_id=? AND username=? LIMIT 1`)
+          .bind(row.review_id, username).first()
+      : null;
+    if (!reviewRow || reviewRow.status !== 'pending' || reviewRow.topic_id !== mission?.topicId) {
+      resumable = false;
+      reason = 'Esta revisão não está mais disponível para retomada.';
+    } else {
+      review = {
+        id: reviewRow.review_id,
+        topicId: reviewRow.topic_id,
+        cycle: Number(reviewRow.cycle || 0),
+        dueAt: reviewRow.due_at || '',
+        missionId: mission?.id || row.mission_id,
+        title: mission?.shortTitle || mission?.title || 'Revisão'
+      };
+    }
+  }
+
+  let answers = [];
+  if (resumable && mission) {
+    const result = await env.AUTH_DB.prepare(`SELECT x.question_id, a.selected_option, a.correct
+      FROM study_round_answers x
+      JOIN study_attempts a ON a.attempt_id=x.attempt_id
+      WHERE x.session_id=? AND a.username=? AND a.topic_id=?
+      ORDER BY a.attempted_at, x.question_id`).bind(row.session_id, username, mission.topicId).all();
+    const questions = new Map(mission.questions.map((question) => [question.id, question]));
+    answers = (result.results || []).map((item) => {
+      const question = questions.get(item.question_id);
+      if (!question) return null;
+      return {
+        questionId: item.question_id,
+        selectedOption: Number(item.selected_option),
+        correct: Boolean(Number(item.correct)),
+        explanation: question.explanation
+      };
+    }).filter(Boolean);
+  }
+
+  return {
+    sessionId: row.session_id,
+    missionId: row.mission_id,
+    title: mission?.shortTitle || mission?.title || 'Sessão anterior',
+    mode: row.mode,
+    reviewId: row.review_id || null,
+    review,
+    durationSeconds: Math.max(0, Number(row.duration_seconds || 0)),
+    startedAt: row.started_at || '',
+    resumable,
+    reason,
+    answers
+  };
+}
+
 async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
   return json({
@@ -490,6 +560,7 @@ async function handleBootstrap(env, user, origin) {
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
     learningEvidence: await learningEvidenceMap(env, user.username),
+    activeSession: await activeStudySession(env, user.username),
     attemptedQuestions: await attemptedQuestionsMap(env, user.username),
     reviews: await dueReviewRows(env, user.username),
     missions: PUBLISHED_MISSIONS.map(publicMission),
@@ -701,6 +772,14 @@ async function handleStartSession(request, env, user, origin) {
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
   await assertMissionPrerequisite(env, user.username, mission, body.reviewId ?? null);
+  const active = await activeStudySession(env, user.username);
+  if (active) {
+    throw new StudyRoundError(
+      'Há uma sessão anterior ainda aberta. Retome ou encerre essa sessão antes de iniciar outra.',
+      409,
+      'STUDY_ACTIVE_SESSION_EXISTS'
+    );
+  }
   const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
   return json(result, 201, origin);
 }
