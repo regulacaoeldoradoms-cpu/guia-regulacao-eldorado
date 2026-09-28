@@ -207,6 +207,29 @@ test('bootstrap oferece retomada e impede sessão paralela até encerrar a anter
   assert.equal((await call('sessions',{missionId:lesson.id})).status,201);
 });
 
+test('sessão ativa com rodada já concluída bloqueia nova abertura até fechamento explícito',async t=>{
+  const {sql,call,start,answer,lesson}=await fixture(t);
+  const id=await start(lesson);
+  await answer(lesson,id);
+  const completed=await call('missions/'+lesson.id+'/complete',{sessionId:id});
+  assert.equal(completed.status,200);
+  assert.equal(sql.prepare('SELECT status FROM study_rounds WHERE session_id=?').get(id).status,'passed');
+  assert.equal(sql.prepare('SELECT status FROM study_sessions WHERE session_id=?').get(id).status,'active');
+
+  const bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.activeSession.sessionId,id);
+  assert.equal(bootstrap.body.activeSession.roundStatus,'passed');
+  assert.equal(bootstrap.body.activeSession.resumable,false);
+  assert.match(bootstrap.body.activeSession.reason,/já possui resultado/i);
+
+  const blocked=await call('sessions',{missionId:lesson.id});
+  assert.equal(blocked.status,409);
+  assert.equal(blocked.body.code,'STUDY_ACTIVE_SESSION_EXISTS');
+
+  assert.equal((await call('sessions/'+id,{durationSeconds:0},{method:'PATCH'})).status,200);
+  assert.equal((await call('sessions',{missionId:lesson.id})).status,201);
+});
+
 test('checkpoint respeita autorização antes de inicializar o schema',async t=>{
   const {sql,call}=await fixture(t);const path='sessions/'+crypto.randomUUID()+'/checkpoint';
   assert.equal((await call(path,{durationSeconds:30},{identity:null})).status,401);
