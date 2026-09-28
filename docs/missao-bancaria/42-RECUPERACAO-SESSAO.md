@@ -116,7 +116,7 @@ Também não cria exclusão distribuída entre múltiplos dispositivos. Duas cha
 
 Depois desta entrega:
 1. integrar somente após a cadeia #510–#512 estar estável;
-2. adicionar marcador de leitura/parte atual sem conceder progresso;
+2. marcador de leitura/parte atual: implementado no documento 43, sem conceder progresso;
 3. remover o truncamento histórico dos 500 eventos usado na sequência;
 4. manter avaliação independente como recorte separado.
 
