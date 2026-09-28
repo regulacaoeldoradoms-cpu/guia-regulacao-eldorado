@@ -46,7 +46,10 @@ O usuário também pode escolher **Encerrar sessão**. Nesse caso, o fechamento 
 Uma sessão só é marcada como recuperável se:
 - a missão ainda existir;
 - a `contentVersion` da rodada coincidir com a missão atual;
+- a rodada ainda estiver em estado `active`;
 - em revisão, o `review_id` ainda estiver pendente e corresponder ao tópico.
+
+Se a sessão ainda estiver aberta mas a rodada já tiver resultado (`passed` ou `failed`), ela continua bloqueando uma nova abertura, porém não é retomada como se ainda aceitasse respostas. O painel oferece encerramento explícito para liberar a próxima rodada. Isso cobre recarga/fechamento no pequeno intervalo entre o resultado da missão e o PATCH normal de encerramento.
 
 Quando isso não for verdade, o painel explica que a sessão precisa ser encerrada. O sistema não tenta encaixar respostas antigas em conteúdo diferente.
 
@@ -96,7 +99,8 @@ O roteador real com SQLite cobre:
 5. bloqueio de abertura paralela;
 6. fechamento da sessão;
 7. desaparecimento do marcador ativo;
-8. nova sessão permitida somente depois do fechamento.
+8. nova sessão permitida somente depois do fechamento;
+9. sessão ainda ativa com rodada já aprovada/reprovada aparece como não recuperável e também bloqueia abertura paralela até ser encerrada.
 
 O navegador sintético cobre:
 - painel de sessão interrompida;
