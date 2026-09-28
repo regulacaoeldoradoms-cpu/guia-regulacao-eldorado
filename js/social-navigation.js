@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalSocialNavigation) return;
+  if (window.PortalSocialNavigation?.version === '20260928-1') return;
 
   let activeNotificationPanel = null;
   let activeUserSearch = null;
@@ -616,5 +616,5 @@
     if (role && !role.textContent) role.textContent = labels[user?.role] || user?.role || '';
   }
 
-  window.PortalSocialNavigation = Object.freeze({ mount });
+  window.PortalSocialNavigation = Object.freeze({ version: '20260928-1', mount });
 })();
