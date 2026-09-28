@@ -318,6 +318,69 @@ async function studyStreak(env, username) {
   return computeStudyStreak((result.results || []).map((row) => row.activity_at));
 }
 
+export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
+  const normalized = (Array.isArray(rows) ? rows : [])
+    .map((row) => ({
+      cycle: Number(row.cycle || 0),
+      score: row.score === null || row.score === undefined ? null : Number(row.score),
+      completedAt: String(row.completed_at || row.completedAt || '')
+    }))
+    .filter((row) => Number.isInteger(row.cycle) && row.cycle > 0)
+    .sort((a, b) => a.cycle - b.cycle);
+
+  const byCycle = new Map();
+  for (const row of normalized) {
+    const previous = byCycle.get(row.cycle);
+    if (!previous || row.completedAt >= previous.completedAt) byCycle.set(row.cycle, row);
+  }
+  const cycles = [...byCycle.values()];
+  const scored = cycles.filter((row) => Number.isFinite(row.score));
+  const latest = scored.length ? scored[scored.length - 1] : null;
+  const completedCycles = cycles.length;
+  const scoredCycles = scored.length;
+  const status = completedCycles === 0 ? 'not_observed'
+    : scoredCycles === 0 ? 'historical_unscored'
+    : scoredCycles >= totalCycles ? 'schedule_observed'
+    : 'collecting';
+
+  return {
+    totalCycles,
+    completedCycles,
+    scoredCycles,
+    latestScore: latest ? Math.round(latest.score * 10) / 10 : null,
+    latestCycle: latest?.cycle || null,
+    lastReviewAt: cycles.length ? cycles[cycles.length - 1].completedAt : '',
+    status,
+    label: status === 'not_observed' ? 'Sem revisão posterior'
+      : status === 'historical_unscored' ? 'Revisão histórica sem nota isolável'
+      : status === 'schedule_observed' ? 'Ciclos previstos observados'
+      : 'Evidência em coleta'
+  };
+}
+
+async function learningEvidenceMap(env, username) {
+  const result = await env.AUTH_DB.prepare(`SELECT v.topic_id, v.cycle, v.completed_at,
+      (SELECT r.score FROM study_rounds r
+        WHERE r.review_id=v.review_id AND r.username=v.username
+          AND r.mode='review' AND r.status='passed' AND r.completed_at IS NOT NULL
+        ORDER BY r.completed_at DESC LIMIT 1) AS score
+    FROM study_reviews v
+    WHERE v.username=? AND v.status='completed'
+    ORDER BY v.topic_id, v.cycle, v.completed_at`).bind(username).all();
+
+  const grouped = {};
+  for (const row of result.results || []) {
+    const topicId = String(row.topic_id || '');
+    if (!topicId) continue;
+    if (!grouped[topicId]) grouped[topicId] = [];
+    grouped[topicId].push(row);
+  }
+  return Object.fromEntries(PUBLISHED_MISSIONS.map((mission) => [
+    mission.topicId,
+    summarizeRetentionEvidence(grouped[mission.topicId] || [])
+  ]));
+}
+
 async function metrics(env, username, progress) {
   const [attempts, sessions, xpRow, reviews, streak] = await Promise.all([
     env.AUTH_DB.prepare(`SELECT COUNT(*) AS total,
@@ -414,6 +477,7 @@ async function handleBootstrap(env, user, origin) {
     metrics: await metrics(env, user.username, progress),
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
+    learningEvidence: await learningEvidenceMap(env, user.username),
     attemptedQuestions: await attemptedQuestionsMap(env, user.username),
     reviews: await dueReviewRows(env, user.username),
     missions: PUBLISHED_MISSIONS.map(publicMission),
