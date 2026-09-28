@@ -2,17 +2,21 @@
 
 Última atualização: 28/09/2026.
 
-## Barra Global do Portal — complemento de cabeçalhos próprios — EM VALIDAÇÃO — 28/09/2026
+## Barra Global do Portal — COBERTURA COMPLETA PUBLICADA — 28/09/2026
 
-Após a publicação da #513, a conferência de cobertura identificou duas rotas com estrutura deliberadamente diferente: `/medico/` e `/protocolo/` usam `.site-header`, enquanto a primeira versão da Barra Global reconhecia apenas `.portal-topbar`. Portanto, módulos com cabeçalho padrão já estavam cobertos, mas essas duas rotas não deveriam ser declaradas cobertas antes deste complemento.
+A Barra Global do Portal está publicada tanto nos cabeçalhos padrão `.portal-topbar` quanto nas duas exceções estruturais do Portal, `/medico/` e `/protocolo/`, que usam `.site-header`.
 
-Implementação na branch `fix/global-navigation-custom-headers-20260928`: o carregador comum e `js/social-navigation.js` passam a aceitar `.portal-topbar, .site-header`; `/medico/` mantém seu botão local **Sair**, mas o antigo **Início** gerado por `medical-portal-nav.js` fica oculto somente após a Barra Global montar, evitando duplicidade. `/protocolo/` mantém **Voltar ao guia médico** por ser navegação contextual, não substituto da Barra Global.
+Complemento técnico: PR **#515** mesclada em `0398b4663a740fea89953027165fa87be109610e`, head `d7f5220c33f6c307f683809337f8038cf8d96c21`. O loader e a navegação compartilhada aceitam `.portal-topbar, .site-header`; o Início legado do Guia Médico é ocultado depois que a Barra Global monta, enquanto **Sair** e **Voltar ao guia médico** permanecem por serem ações próprias. Em `/protocolo/`, o cliente de autenticação é carregado sob demanda somente quando já existe token de sessão; sem token não há login forçado nem ampliação de acesso.
 
-Como `/protocolo/` não carregava o cliente de autenticação, o bootstrap global agora reutiliza um token de sessão já existente para carregar `auth-config.js` e `auth-client.js` somente quando necessário. Sem token, não força login nem exibe uma barra autenticada. Nenhuma permissão é ampliada.
+Assets da Barra Global/Social Navigation e Service Worker estão em `20260928-2`. Testes de cache foram atualizados apenas na asserção `CACHE_VERSION`. Checks pertinentes do complemento — Barra Global, Social V1, interações, governança e demais suítes rápidas — concluíram com success. O Worker Build separado voltou a falhar e continua registrado como pendência externa não atribuída a esta navegação; auditorias Chromium pesadas estavam em execução no merge e não foram declaradas aprovadas antecipadamente.
 
-Assets versionados em `20260928-2` e Service Worker em `20260928-2` para impedir que a primeira versão publicada permaneça em cache. Teste focal ampliado verifica explicitamente os dois cabeçalhos próprios e a carga de autenticação sob demanda. Os testes de cache foram alterados somente na asserção `CACHE_VERSION`.
+Publicação do complemento: GitHub Pages run **36416967807**, job `deploy` **108910469068**, **success** às 11:40:21 UTC de 28/09/2026; deployment `6708957122`.
 
-**Próxima ação exata:** abrir PR deste complemento, validar Barra Global/Social/interações e suítes pertinentes, integrar com SHA conferido e confirmar novo GitHub Pages. Depois a revisão humana pode considerar Agenda, Documentos, Recepção, Telemedicina, Guia Médico e Fontes técnicas sob a mesma regra de navegação.
+Estado funcional consolidado: desktop autenticado mantém **Início, Amigos, Ferramentas, Notificações, Perfil e Pesquisar usuários** ao navegar entre módulos. Mobile preserva a navegação principal adaptada. Controles contextuais dos módulos permanecem independentes da Barra Global. Nenhum dado, regra clínica, permissão, Drive, IA ou observabilidade foi alterado.
+
+Reversão, se necessária: tratar #513 e #515 como unidades separadas e reversíveis por branch/PR; não resetar a main nem desfazer entregas não relacionadas.
+
+**Próxima ação exata:** revisão visual humana diretamente no Portal, especialmente Agenda, Central de Documentos, Recepção, Telemedicina, Guia Médico e Fontes técnicas. Se houver divergência de posição, largura, item ativo ou cache, corrigir pontualmente sem recriar barras locais.
 
 ## Barra Global do Portal — IMPLEMENTADA E PUBLICADA — 28/09/2026
 
@@ -179,18 +183,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fases 0–6 e 7G.6 não reiniciadas. |
-| Subfase / objetivo atual | Complemento da Barra Global para cabeçalhos próprios (`/medico/` e `/protocolo/`) em validação; #513 já publicada para cabeçalhos padrão. |
-| Última ação concluída | Merge #513 `ba85adc9` e GitHub Pages success: run `36416124069`, job `108907732250`, deployment `6708809391`. |
-| Branch atual | `fix/global-navigation-custom-headers-20260928`, baseada na main após #514. |
-| PR atual | Abrir/conferir PR do complemento; #513 e #514 merged. |
-| Último commit relevante | Complemento head da branch (consultar PR); #513 merge `ba85adc9`; docs #514 merge `0b6054d9`. |
-| Checks e testes | Focal ampliado preparado; exige Barra Global, Social V1 e interações verdes antes do merge. Testes de cache mudam somente CACHE_VERSION. |
-| Decisões tomadas | Barra Global cobre tanto `.portal-topbar` quanto `.site-header`; autenticação é carregada sob demanda em cabeçalho próprio somente quando já existe token de sessão. |
-| Justificativas | Guia Médico e Fontes técnicas eram as únicas rotas com `.site-header`; sem este complemento a promessa de navegação global ficaria incompleta. |
-| Alternativas descartadas | Deixar exceções sem Barra Global; duplicar HTML da barra nos dois módulos; forçar login em rota sem sessão; remover navegação contextual `Voltar ao guia médico`. |
-| Ações externas concluídas | #513 integrada e publicada pelo GitHub Pages. Nenhuma credencial, OAuth, permissão, segredo ou dado foi alterado. |
-| Pendências e bloqueios | Checks/merge/deploy do complemento; revisão visual humana; auditorias pesadas/Worker continuam frentes separadas. |
-| Riscos conhecidos | Diferenças de layout/cache em navegador físico ainda dependem de revisão humana; Worker failure não diagnosticado; testes sintéticos não provam todos os serviços reais. |
+| Subfase / objetivo atual | Barra Global do Portal com cobertura padrão + cabeçalhos próprios implementada e publicada; revisão visual humana pendente. |
+| Última ação concluída | #515 merge `0398b466` e GitHub Pages run `36416967807`, job `108910469068`, deployment `6708957122` success. |
+| Branch atual | Funcionais #513/#515 integradas; registro final em `docs/global-navigation-complete-20260928`. |
+| PR atual | #513 e #515 merged; esta PR documental consolida o handoff da Barra Global. |
+| Último commit relevante | Complemento merge `0398b4663a740fea89953027165fa87be109610e`; base documental anterior `0b6054d9`; #513 merge `ba85adc9`. |
+| Checks e testes | Barra Global, Social V1, interações, governança e suítes rápidas pertinentes success no complemento; Pages success. Worker Build separado failure; auditorias Chromium pesadas permanecem para consulta posterior. |
+| Decisões tomadas | Barra Global reconhece `.portal-topbar` e `.site-header`; desktop mantém seis elementos definidos; navegação contextual dos módulos é preservada. |
+| Justificativas | As duas exceções estruturais `/medico/` e `/protocolo/` precisavam da mesma navegação para cumprir a regra de retorno/navegação consistente em todo módulo. |
+| Alternativas descartadas | Excluir Guia Médico/Fontes técnicas; duplicar barra manualmente; forçar autenticação sem sessão; remover ações contextuais úteis. |
+| Ações externas concluídas | #513 e #515 publicadas pelo GitHub Pages; nenhuma credencial, OAuth, permissão ou segredo mudou. |
+| Pendências e bloqueios | Revisão visual humana; resultado das auditorias pesadas já iniciadas; diagnóstico separado dos Worker Builds. |
+| Riscos conhecidos | Ajustes finos de layout/cache podem surgir em navegador físico; Worker failure segue sem causalidade atribuída; revisão visual ainda necessária. |
 | Métricas / observabilidade | Nenhuma telemetria nova e nenhum dado sensível; evidências desta unidade são checks e deploy. |
-| Próxima ação exata | Validar e publicar o complemento de `.site-header`, depois revisar a Barra Global nos módulos padrão e médicos sem repetir auditorias encerradas. |
-| Arquivos e fontes principais | `js/portal-global-navigation.js`; `js/social-navigation.js`; `js/portal-interactions.js`; `medico/index.html`; `protocolo/index.html`; `worker/tests/global-navigation.test.mjs`; #513/#514; este status; Guia Mestre 1.1. |
+| Próxima ação exata | Revisar visualmente a Barra Global em Agenda, Documentos, Recepção, Telemedicina, Guia Médico e Fontes técnicas; corrigir apenas divergências concretas. |
+| Arquivos e fontes principais | `js/portal-global-navigation.js`; `js/social-navigation.js`; `js/portal-interactions.js`; `portal-sw.js`; `medico/index.html`; `protocolo/index.html`; PRs #513/#515; Pages runs `36416124069` e `36416967807`; este status; Guia Mestre 1.1. |
