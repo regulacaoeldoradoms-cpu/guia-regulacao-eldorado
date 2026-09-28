@@ -38,6 +38,23 @@ A identidade de Telemedicina continua seguindo a arquitetura definida em `docs/T
 
 Por isso, o chat deve sempre usar a camada de autenticação flexível e a decoração de identidade de Telemedicina antes de decidir autorização ou apresentar contatos. Isso evita que o Técnico em Telemedicina seja bloqueado indevidamente ou exibido como simples Recepção.
 
+## Disponibilidade global nos módulos
+
+O chat passa a ser um recurso de interface **global do Portal autenticado**. O bootstrap
+`js/portal-global-chat.js` é carregado nos módulos operacionais, sociais, de conta e
+administrativos e monta o mesmo `js/portal-chat.js` em cada rota. Login, cadastro e a
+página pública do Conselho permanecem sem chat.
+
+A disponibilidade visual não altera a matriz de autorização: profissionais continuam
+sujeitos a `PROFESSIONAL_ROLES` no Worker; cidadão usa somente contatos sociais
+autorizados por amizade em estado `friends`. Assim, mudar de Agenda para Documentos,
+Telemedicina, Conselho, Configurações ou outro módulo não muda quem a pessoa pode
+contatar — apenas mantém o chat acessível sem precisar voltar à Home.
+
+Carregamentos antigos por página foram removidos para evitar duas instâncias, timers ou
+polling duplicado. O Guia Médico conserva somente o observador visual que reposiciona
+as ferramentas flutuantes quando o componente global entra no DOM.
+
 ## Regras de segurança
 
 - A autorização é validada no Cloudflare Worker; exibir o componente visual não concede acesso.
