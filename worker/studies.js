@@ -260,10 +260,10 @@ function dayNumber(key) {
   return Math.floor(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86400000);
 }
 
-export function computeStudyStreak(activityTimestamps, now = new Date(), timeZone = STUDY_TIME_ZONE) {
-  const days = [...new Set((Array.isArray(activityTimestamps) ? activityTimestamps : [])
-    .map((value) => localDayKey(value, timeZone))
-    .filter(Boolean))]
+export function computeStudyStreakDays(dayKeys, now = new Date(), timeZone = STUDY_TIME_ZONE) {
+  const days = [...new Set((Array.isArray(dayKeys) ? dayKeys : [])
+    .map((value) => String(value || '').trim())
+    .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value)))]
     .sort()
     .reverse();
 
@@ -297,25 +297,35 @@ export function computeStudyStreak(activityTimestamps, now = new Date(), timeZon
   };
 }
 
+export function computeStudyStreak(activityTimestamps, now = new Date(), timeZone = STUDY_TIME_ZONE) {
+  const days = (Array.isArray(activityTimestamps) ? activityTimestamps : [])
+    .map((value) => localDayKey(value, timeZone))
+    .filter(Boolean);
+  return computeStudyStreakDays(days, now, timeZone);
+}
+
 async function studyStreak(env, username) {
-  const result = await env.AUTH_DB.prepare(`SELECT activity_at FROM (
-      SELECT attempted_at AS activity_at
+  // Os registros da Missão Bancária são de 2026 em diante. Campo Grande usa
+  // UTC-4 sem horário de verão nesse período. Agregar por dia no SQL evita que
+  // o histórico seja truncado por quantidade de eventos e mantém o payload
+  // proporcional ao número de dias estudados, não ao número de cliques.
+  const result = await env.AUTH_DB.prepare(`SELECT day FROM (
+      SELECT date(attempted_at, '-4 hours') AS day
       FROM study_attempts
-      WHERE username=?
-      UNION ALL
-      SELECT finished_at AS activity_at
+      WHERE username=? AND attempted_at IS NOT NULL
+      UNION
+      SELECT date(finished_at, '-4 hours') AS day
       FROM study_sessions
       WHERE username=? AND status='finished' AND duration_seconds >= 60 AND finished_at IS NOT NULL
-      UNION ALL
-      SELECT created_at AS activity_at
+      UNION
+      SELECT date(created_at, '-4 hours') AS day
       FROM study_xp_events
-      WHERE username=?
+      WHERE username=? AND created_at IS NOT NULL
     )
-    WHERE activity_at IS NOT NULL
-    ORDER BY activity_at DESC
-    LIMIT 500`).bind(username, username, username).all();
+    WHERE day IS NOT NULL
+    ORDER BY day DESC`).bind(username, username, username).all();
 
-  return computeStudyStreak((result.results || []).map((row) => row.activity_at));
+  return computeStudyStreakDays((result.results || []).map((row) => row.day));
 }
 
 export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
