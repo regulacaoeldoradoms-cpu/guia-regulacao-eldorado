@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260923-1';
+const CACHE_VERSION = '20260928-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -61,7 +61,11 @@ const CORE_RESOURCES = Object.freeze([
   '/js/login-opening.js?v=20260918-1',
   '/js/login.js?v=20260917-3',
   '/vendor/pdf-lib/pdf-lib.min.js',
-  '/js/social-navigation.js?v=20260922-2',
+  '/js/social-navigation.js?v=20260928-1',
+  '/js/portal-global-navigation.js?v=20260928-1',
+  '/js/social-api.js?v=20260910-4',
+  '/css/social-notification-panel.css?v=20260910-1',
+  '/js/portal-interactions.js?v=20260923-2',
   '/js/portal-chat.js?v=20260911-3',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-header.png?v=20260910-1',
