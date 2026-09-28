@@ -239,6 +239,23 @@ test('marcador de leitura é idempotente, neutro e reaparece na sessão ativa',a
   assert.equal(closed.status,409);assert.equal(closed.body.code,'STUDY_SESSION_CLOSED');
 });
 
+test('sequência histórica percorre mais de 500 eventos sem truncar dias consecutivos',async t=>{
+  const {sql,call}=await fixture(t);
+  await call('bootstrap');
+  const noon=new Date();
+  noon.setUTCHours(16,0,0,0);
+  const insert=sql.prepare(`INSERT INTO study_xp_events(event_id, username, event_type, ref_id, points, created_at)
+    VALUES (?, 'wellyton', 'streak_fixture', ?, 0, ?)`);
+  for(let i=0;i<520;i++){
+    const at=new Date(noon.getTime()-i*86400000).toISOString().slice(0,19).replace('T',' ');
+    insert.run(`streak-${i}`,`day-${i}`,at);
+  }
+  const dashboard=await call('bootstrap');
+  assert.equal(dashboard.status,200);
+  assert.equal(dashboard.body.metrics.streak.current,520);
+  assert.equal(dashboard.body.metrics.streak.best,520);
+});
+
 test('checkpoint respeita autorização antes de inicializar o schema',async t=>{
   const {sql,call}=await fixture(t);const path='sessions/'+crypto.randomUUID()+'/checkpoint';
   assert.equal((await call(path,{durationSeconds:30},{identity:null})).status,401);
