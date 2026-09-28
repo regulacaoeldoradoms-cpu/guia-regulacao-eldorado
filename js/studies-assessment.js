@@ -161,14 +161,16 @@
 
         const heading = document.createElement('h3');
         const question = questionMap.get(item.questionId);
-        heading.textContent = `${index + 1}. ${item.correct ? 'Acertou' : 'Revisar'} — ${question?.prompt || item.questionId}`;
+        const prompt = item.prompt || question?.prompt || item.questionId;
+        const options = item.options || question?.options || [];
+        heading.textContent = `${index + 1}. ${item.correct ? 'Acertou' : 'Revisar'} — ${prompt}`;
 
         const explanation = document.createElement('p');
         explanation.textContent = item.explanation || '';
 
         const answer = document.createElement('p');
-        const chosenText = question?.options?.[item.selectedOption] ?? `alternativa ${item.selectedOption + 1}`;
-        const correctText = question?.options?.[item.correctOption] ?? `alternativa ${item.correctOption + 1}`;
+        const chosenText = options[item.selectedOption] ?? `alternativa ${item.selectedOption + 1}`;
+        const correctText = options[item.correctOption] ?? `alternativa ${item.correctOption + 1}`;
         answer.textContent = item.correct
           ? `Sua resposta: ${chosenText}.`
           : `Sua resposta: ${chosenText}. Resposta correta: ${correctText}.`;
@@ -259,6 +261,41 @@
       }
     }
 
+    async function review(summary) {
+      if (!summary?.id || Number(summary.evidence?.attempts || 0) < 1 || state.busy) return false;
+      state.generation += 1;
+      const generation = state.generation;
+      state.summary = summary;
+      state.runId = '';
+      state.questions = [];
+      state.answered.clear();
+      state.completed = true;
+      list.hidden = true;
+      progress.hidden = true;
+      progressLabel.hidden = true;
+      complete.hidden = true;
+      correction.hidden = false;
+      correctionList.replaceChildren();
+      text(title, 'Último diagnóstico — ' + summary.title);
+      text(meta, 'Revisão da avaliação já concluída. Isso não inicia uma nova tentativa nem altera sua pontuação.');
+      text(correctionSummary, 'Carregando último diagnóstico...');
+      text(status, '');
+      root.hidden = false;
+      document.body.style.overflow = 'hidden';
+      try {
+        const result = await auth.api(assessmentPath('/latest'), { method: 'GET' });
+        if (generation !== state.generation) return false;
+        renderCorrections(result);
+        title.focus({ preventScroll: true });
+        return true;
+      } catch (error) {
+        if (generation !== state.generation) return false;
+        correction.hidden = true;
+        text(status, error.message || 'Não foi possível recuperar o último diagnóstico.');
+        return false;
+      }
+    }
+
     function closePanel() {
       state.generation += 1;
       state.busy = false;
@@ -270,7 +307,7 @@
     complete.addEventListener('click', finish);
     close.addEventListener('click', closePanel);
 
-    return Object.freeze({ open, close: closePanel, isOpen: () => !root.hidden });
+    return Object.freeze({ open, review, close: closePanel, isOpen: () => !root.hidden });
   }
 
   window.StudyAssessmentUI = Object.freeze({ create });
