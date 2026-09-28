@@ -1,0 +1,26 @@
+.study-assessment-panel{display:flex;justify-content:space-between;align-items:center;gap:22px;padding:22px;border:1px solid rgba(13,49,87,.28);border-radius:20px;background:var(--portal-surface,#fff)}
+.study-assessment-panel[hidden]{display:none}
+.study-assessment-panel h2{margin:4px 0 7px}
+.study-assessment-panel p{margin:0;color:var(--portal-muted,#607487);line-height:1.55}
+.study-assessment-panel .study-assessment-evidence{margin-top:8px;font-size:.9rem;font-weight:700}
+.study-assessment-panel .study-primary{min-width:190px}
+.study-assessment-focus .study-focus-body{padding-bottom:70px}
+.study-assessment-shell{width:min(850px,calc(100% - 32px));margin:34px auto 90px;padding:30px;border-radius:22px;background:var(--portal-surface,#fff);border:1px solid var(--portal-border,#dce6ee)}
+.study-assessment-intro{padding:15px 17px;margin-bottom:22px;border-left:4px solid #b36b00;background:rgba(179,107,0,.08);line-height:1.6}
+.study-assessment-question .study-feedback.prior{margin-top:10px}
+.study-assessment-correction{margin:16px 0;padding:18px;border:1px solid var(--portal-border,#dce6ee);border-radius:14px}
+.study-assessment-correction h3{margin:0 0 10px;font-size:1rem}
+.study-assessment-correction p{line-height:1.58}
+.study-assessment-correction.correct{border-left:4px solid #2f8c4a}
+.study-assessment-correction.wrong{border-left:4px solid #b93d31}
+.study-assessment-review-target{font-weight:750;color:var(--portal-muted,#607487)}
+.study-assessment-result{padding:16px;border-radius:14px;background:rgba(13,49,87,.06);font-weight:750;line-height:1.55}
+html[data-portal-theme="dark"] .study-assessment-panel,
+html[data-portal-theme="dark"] .study-assessment-shell{background:#12283d;border-color:#29465f}
+html[data-portal-theme="dark"] .study-assessment-result{background:rgba(214,138,31,.08)}
+html[data-portal-theme="dark"] .study-assessment-correction{border-color:#36546d}
+@media(max-width:760px){
+  .study-assessment-panel{align-items:stretch;flex-direction:column}
+  .study-assessment-panel .study-primary{width:100%;min-width:0}
+  .study-assessment-shell{width:calc(100% - 20px);padding:20px;margin-top:18px}
+}
