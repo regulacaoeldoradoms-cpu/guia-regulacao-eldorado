@@ -346,8 +346,6 @@ export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
   }
   const cycles = [...byCycle.values()];
   const scored = cycles.filter((row) => Number.isFinite(row.score));
-  const latest = scored.reduce((current, row) =>
-    !current || row.completedTime >= current.completedTime ? row : current, null);
   const lastReview = cycles.reduce((current, row) =>
     !current || row.completedTime >= current.completedTime ? row : current, null);
   const completedCycles = cycles.length;
@@ -361,8 +359,8 @@ export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
     totalCycles,
     completedCycles,
     scoredCycles,
-    latestScore: latest ? Math.round(latest.score * 10) / 10 : null,
-    latestCycle: latest?.cycle || null,
+    latestScore: Number.isFinite(lastReview?.score) ? Math.round(lastReview.score * 10) / 10 : null,
+    latestCycle: lastReview?.cycle || null,
     lastReviewAt: lastReview?.completedAt || '',
     status,
     label: status === 'not_observed' ? 'Sem revisão posterior'
