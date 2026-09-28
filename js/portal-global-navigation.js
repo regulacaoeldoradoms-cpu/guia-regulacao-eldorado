@@ -3,18 +3,19 @@
 (() => {
   if (window.PortalGlobalNavigation) return;
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.0.1';
   const SOCIAL_CSS = '/css/social.css?v=20260922-2';
   const NOTIFICATION_CSS = '/css/social-notification-panel.css?v=20260910-1';
   const SOCIAL_API = '/js/social-api.js?v=20260910-4';
-  const SOCIAL_NAVIGATION = '/js/social-navigation.js?v=20260928-1';
+  const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';
+  const AUTH_CLIENT = '/js/auth-client.js?v=20260910-4';
+  const SOCIAL_NAVIGATION = '/js/social-navigation.js?v=20260928-2';
   let started = false;
   let running = null;
 
   function eligibleSurface() {
     return Boolean(
-      document.querySelector('.portal-topbar')
-      && document.getElementById('portalLogout')
+      document.querySelector('.portal-topbar, .site-header')
       && !document.body?.matches?.('[data-portal-global-navigation="off"]')
     );
   }
@@ -68,8 +69,26 @@
     });
   }
 
+  function storedToken() {
+    try {
+      return sessionStorage.getItem('regulacao.portal.session')
+        || localStorage.getItem('regulacao.portal.session')
+        || '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  async function ensureAuthClient() {
+    if (window.RegulationAuth) return window.RegulationAuth;
+    if (!storedToken()) return null;
+    await script(AUTH_CONFIG, 'REGULATION_AUTH_CONFIG', 'portalGlobalNavigationAuthConfig');
+    await script(AUTH_CLIENT, 'RegulationAuth', 'portalGlobalNavigationAuthClient');
+    return window.RegulationAuth || null;
+  }
+
   async function resolveUser() {
-    const auth = window.RegulationAuth;
+    const auth = await ensureAuthClient();
     if (!auth) return null;
     if (auth.enforcementEnabled && !auth.getToken?.()) return null;
     const cached = auth.getCachedUser?.();
@@ -88,7 +107,7 @@
       stylesheet(NOTIFICATION_CSS, 'portalGlobalNavigationNotificationCss')
     ]);
     await script(SOCIAL_API, 'PortalSocial', 'portalGlobalNavigationSocialApi');
-    const navigationIsCurrent = window.PortalSocialNavigation?.version === '20260928-1';
+    const navigationIsCurrent = window.PortalSocialNavigation?.version === '20260928-2';
     await script(
       SOCIAL_NAVIGATION,
       'PortalSocialNavigation',
