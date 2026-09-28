@@ -479,19 +479,66 @@ async function dueReviewRows(env, username) {
   }).filter(Boolean);
 }
 
+async function resumableStudySession(env, username) {
+  const row = await env.AUTH_DB.prepare(`SELECT r.session_id, r.mission_id, r.mode, r.review_id,
+      r.content_version, s.started_at, s.duration_seconds
+    FROM study_rounds r
+    JOIN study_sessions s ON s.session_id=r.session_id
+    WHERE r.username=? AND s.username=? AND r.status='active' AND s.status='active'
+      AND s.started_at >= datetime('now','-12 hours')
+    ORDER BY s.started_at DESC LIMIT 1`).bind(username, username).first();
+  if (!row) return null;
+
+  const mission = missionById(row.mission_id);
+  if (!mission || Number(row.content_version) !== Number(mission.contentVersion)) return null;
+
+  if (row.mode === 'review') {
+    const review = await env.AUTH_DB.prepare(`SELECT status,
+        CASE WHEN due_at <= datetime('now') THEN 1 ELSE 0 END AS due
+      FROM study_reviews WHERE review_id=? AND username=? AND topic_id=? LIMIT 1`)
+      .bind(row.review_id, username, mission.topicId).first();
+    if (!review || review.status !== 'pending' || Number(review.due) !== 1) return null;
+  }
+
+  const answers = await env.AUTH_DB.prepare(`SELECT x.question_id
+    FROM study_round_answers x
+    JOIN study_attempts a ON a.attempt_id=x.attempt_id
+    WHERE x.session_id=? AND a.username=? AND a.topic_id=?
+    ORDER BY x.question_id`).bind(row.session_id, username, mission.topicId).all();
+
+  return {
+    sessionId: row.session_id,
+    missionId: mission.id,
+    mode: row.mode,
+    reviewId: row.review_id || null,
+    startedAt: row.started_at,
+    durationSeconds: Math.max(0, Number(row.duration_seconds || 0)),
+    answeredQuestionIds: (answers.results || []).map((item) => String(item.question_id || '')).filter(Boolean)
+  };
+}
+
 async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
+  const [metricValues, learningEvidence, attemptedQuestions, reviews, resumableSession] = await Promise.all([
+    metrics(env, user.username, progress),
+    learningEvidenceMap(env, user.username),
+    attemptedQuestionsMap(env, user.username),
+    dueReviewRows(env, user.username),
+    resumableStudySession(env, user.username)
+  ]);
   return json({
     user,
     roundProtocol: 1,
     timeProtocol: 1,
+    resumeProtocol: 1,
     contentRelease: 'sfn-v1.2',
-    metrics: await metrics(env, user.username, progress),
+    metrics: metricValues,
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
-    learningEvidence: await learningEvidenceMap(env, user.username),
-    attemptedQuestions: await attemptedQuestionsMap(env, user.username),
-    reviews: await dueReviewRows(env, user.username),
+    learningEvidence,
+    attemptedQuestions,
+    reviews,
+    resumableSession,
     missions: PUBLISHED_MISSIONS.map(publicMission),
     sources: STUDY_SOURCES
   }, 200, origin);
