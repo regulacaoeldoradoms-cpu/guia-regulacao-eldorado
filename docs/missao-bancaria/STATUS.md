@@ -143,9 +143,25 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 
 Placar de referência do projeto nesta etapa: motor técnico ~81%; Fase 1 ~90% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~30%.
 
+## Nova entrega empilhada — retomada controlada de sessão
+
+Documento: `42-RETOMADA-CONTROLADA-DE-SESSAO.md`.  
+Branch: `feat/missao-bancaria-retomada-sessao`, empilhada sobre a evidência de retenção.
+
+O bootstrap passa a anunciar `resumeProtocol: 1` e pode devolver uma `resumableSession` quando existir uma rodada ativa compatível iniciada nas últimas 12 horas.
+
+Ao retomar:
+- a mesma sessão/rodada é reutilizada; nenhuma nova é criada;
+- IDs das respostas já gravadas naquela rodada são restaurados sem reenviar alternativas;
+- o tempo parte do total já confirmado pelo servidor e checkpoints seguintes continuam cumulativos;
+- revisão usa o `reviewId` validado pelo backend e não depende do limite visual de dez revisões;
+- sessão encerrada ou antiga demais deixa de ser sugerida, sem ser apagada silenciosamente.
+
+Sem schema novo, XP, conquista, cobertura ou prontidão alterados. Testes do roteador real cobrem retomada, encerramento e janela temporal; o cronômetro cobre retomada a partir do tempo salvo.
+
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração desta retomada e tratar a sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
