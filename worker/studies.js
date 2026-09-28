@@ -7,7 +7,7 @@ import {
 } from './study-rounds.js';
 import {
   ensureAssessmentSchema, startAssessmentRun, recordAssessmentAnswer,
-  completeAssessmentRun, assessmentEvidence
+  completeAssessmentRun, latestAssessmentResult, assessmentEvidence
 } from './study-assessments.js';
 import {
   STUDY_SOURCES,
@@ -720,6 +720,20 @@ async function handleStartSession(request, env, user, origin) {
   return json(result, 201, origin);
 }
 
+async function handleLatestAssessment(pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/assessments\/([^/]+)\/latest$/);
+  const assessment = match ? assessmentById(decodeURIComponent(match[1])) : null;
+  if (!assessment) return json({ error: 'Avaliação não encontrada.' }, 404, origin);
+  const result = await latestAssessmentResult(
+    env.AUTH_DB, user.username, assessment, PUBLISHED_MISSIONS
+  );
+  if (!result) return json({ error: 'Nenhuma avaliação concluída ainda.' }, 404, origin);
+  return json({
+    ...result,
+    evidence: await assessmentEvidence(env.AUTH_DB, user.username, assessment)
+  }, 200, origin);
+}
+
 async function handleStartAssessment(pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/assessments\/([^/]+)\/runs$/);
   const assessment = match ? assessmentById(decodeURIComponent(match[1])) : null;
@@ -802,6 +816,9 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     if (request.method === 'POST' && url.pathname === '/api/studies/sessions') {
       return await handleStartSession(request, env, user, origin);
+    }
+    if (request.method === 'GET' && /^\/api\/studies\/assessments\/[^/]+\/latest$/.test(url.pathname)) {
+      return await handleLatestAssessment(url.pathname, env, user, origin);
     }
     if (request.method === 'POST' && /^\/api\/studies\/assessments\/[^/]+\/runs$/.test(url.pathname)) {
       return await handleStartAssessment(url.pathname, env, user, origin);
