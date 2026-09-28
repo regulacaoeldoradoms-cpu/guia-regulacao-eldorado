@@ -152,6 +152,8 @@ O bootstrap passa a anunciar `resumeProtocol: 1` e pode devolver uma `resumableS
 
 Ao retomar:
 - a mesma sessão/rodada é reutilizada; nenhuma nova é criada;
+- backend recusa nova rodada com `STUDY_SESSION_RESUME_REQUIRED` enquanto houver sessão retomável;
+- os demais cartões ficam bloqueados até retomar/encerrar a sessão atual;
 - IDs das respostas já gravadas naquela rodada são restaurados sem reenviar alternativas;
 - o tempo parte do total já confirmado pelo servidor e checkpoints seguintes continuam cumulativos;
 - revisão usa o `reviewId` validado pelo backend e não depende do limite visual de dez revisões;
