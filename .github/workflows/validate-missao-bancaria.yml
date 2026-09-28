@@ -32,6 +32,7 @@ jobs:
           node --check js/studies.js
           node --check js/studies-reader.js
           node --check js/studies-clock.js
+          node --check js/studies-assessment.js
           node --check worker/studies-content/curriculum-v1.js
           node --check js/tools-catalog.js
           node --check js/achievements.js
@@ -40,6 +41,8 @@ jobs:
           test -f css/studies-reader.css
           test -f css/studies-clock.css
           test -f css/studies-curriculum.css
+          test -f css/studies-assessment.css
+          test -f js/studies-assessment.js
           test -f js/studies.js
           test -f worker/studies.js
           test -f worker/studies-content/manifest.js
@@ -66,6 +69,8 @@ jobs:
           grep -q 'Mapa do curso-base' estudos/index.html
           grep -q 'assessment.sfn-foundation.transfer.v1' worker/studies-content/sfn-assessment-v1.js
           grep -q 'study_assessment_runs' worker/study-assessments.js
+          grep -q 'assessmentPanel' estudos/index.html
+          grep -q 'studyAssessmentFocus' estudos/index.html
 
       - name: Validar isolamento assistencial
         run: |
