@@ -107,3 +107,23 @@ A interface ainda podia permanecer aberta por alguns instantes porque a sessão 
 7. A autorização das APIs permanece server-side; nenhuma confiança é transferida para cache, botão, cargo textual ou nome do usuário.
 
 Com essa regra, uma conta destinada permanentemente à operação da Telemedicina permanece autorizada até que o Desenvolvedor execute uma mudança de perfil que contenha revogação explícita.
+
+## Complemento V34.4 — o rótulo visual não substitui a capacidade server-side
+
+Decisão permanente registrada em 28/09/2026 após confirmação de um estado incoerente no painel administrativo: a conta podia aparecer com **Perfil de acesso: Técnico em Telemedicina** e **Acesso ativo**, mas a API de registro de consulta ainda retornar `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor`.
+
+### Causa
+
+O perfil exibido no painel e a capacidade `auth_telemedicine_access.enabled` são informações relacionadas, mas não eram apresentadas de forma suficientemente explícita quando havia uma inconsistência histórica. Uma conta legada podia manter o rótulo lógico `telemedicina` enquanto a capacidade server-side permanecia desabilitada. Nesse caso, o seletor visual parecia correto, porém a API fazia corretamente a validação da capacidade persistida e bloqueava a gravação.
+
+### Regra V34.4
+
+1. O painel administrativo passa a distinguir o rótulo lógico da autorização técnica real.
+2. Se a conta aparecer como `telemedicina` mas `telemedicineAccess !== true`, a interface mostra **Telemedicina: autorização técnica pendente**.
+3. Abrir a edição nessa condição exibe aviso de inconsistência.
+4. Manter **Técnico em Telemedicina** selecionado e clicar em **Salvar alterações** passa a ser uma concessão explícita: o frontend envia `role: telemedicina` e `telemedicineAccess: true`.
+5. O backend aceita a concessão somente quando o papel solicitado também é `telemedicina`; `telemedicineAccess: true` isolado é rejeitado.
+6. A concessão executa o fluxo canônico `setTelemedicineAccess(..., true)`, que grava a capacidade server-side e normaliza o papel-base interno para `recepcao`.
+7. Sair do perfil continua exigindo `telemedicineAccess: false`, conforme V34.3.
+
+Assim, o Desenvolvedor consegue reparar com uma única gravação uma conta antiga cujo seletor já mostrava Telemedicina, sem depender de manipulação direta do D1 e sem reativar automaticamente contas revogadas.
