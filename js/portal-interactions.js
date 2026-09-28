@@ -1176,6 +1176,13 @@
     applyTheme(preferences.theme);
     syncSoundStateAttribute();
     mountUtilityUi();
+    if (document.querySelector('.portal-topbar, .site-header')) {
+      const globalNav = document.createElement('script');
+      globalNav.src = '/js/portal-global-navigation.js?v=20260928-2';
+      globalNav.async = false;
+      globalNav.dataset.portalGlobalNavigationLoader = 'true';
+      document.head.appendChild(globalNav);
+    }
     bindThemePanel();
     bindPreferencePanel();
     startObserver();
