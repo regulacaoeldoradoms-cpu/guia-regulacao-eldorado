@@ -138,7 +138,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 Documento: `41-AVALIACAO-INDEPENDENTE.md`.  
 Branch documental: `docs/missao-bancaria-avaliacao-independente`, baseada na cadeia até a evidência de retenção.
 
-Objetivo: impedir que questões já vistas no ensino/revisão sejam usadas sozinhas como prova de domínio. A especificação separa um banco autoral de avaliação, inicialmente com 24 itens inéditos do primeiro bloco de SFN, sem gabarito no bootstrap, sem XP por participação e sem alterar prontidão automaticamente.
+Objetivo: impedir que questões já vistas no ensino/revisão sejam usadas sozinhas como prova de domínio. A especificação separa um banco autoral de avaliação, inicialmente com **32 itens inéditos** do primeiro bloco de SFN, divididos em duas formas A/B de 16 itens sem sobreposição. A forma B só fica elegível sete dias após a forma A. Durante a rodada não há feedback de acerto por item; gabarito/explicação só aparecem no fechamento. Continua sem XP por participação e sem alterar prontidão automaticamente.
 
 A implementação de produção **não começa antes da estabilização/integração da cadeia #510–#512**. O documento registra schema sugerido, isolamento, prevenção de vazamento, diagnóstico por competência e testes obrigatórios.
 
