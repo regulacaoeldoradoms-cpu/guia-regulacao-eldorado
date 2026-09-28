@@ -178,6 +178,35 @@ test('checkpoint mantém sessão ativa, total no dashboard e não gera recompens
   dashboard=await call('bootstrap');assert.equal(dashboard.body.metrics.hoursSeconds,60);
 });
 
+test('bootstrap oferece retomada e impede sessão paralela até encerrar a anterior',async t=>{
+  const {sql,call,start,lesson}=await fixture(t);
+  const id=await start(lesson);
+  const first=await call('attempts',{sessionId:id,questionId:lesson.questions[0].id,selectedOption:0});
+  assert.equal(first.status,200);
+  sql.prepare("UPDATE study_sessions SET started_at=datetime('now','-120 seconds') WHERE session_id=?").run(id);
+  assert.equal((await call('sessions/'+id+'/checkpoint',{durationSeconds:45})).status,200);
+
+  const bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.status,200);
+  assert.equal(bootstrap.body.activeSession.sessionId,id);
+  assert.equal(bootstrap.body.activeSession.missionId,lesson.id);
+  assert.equal(bootstrap.body.activeSession.durationSeconds,45);
+  assert.equal(bootstrap.body.activeSession.resumable,true);
+  assert.equal(bootstrap.body.activeSession.answers.length,1);
+  assert.deepEqual(bootstrap.body.activeSession.answers[0],{
+    questionId:lesson.questions[0].id,selectedOption:0,correct:true,explanation:'Comentário de teste'
+  });
+
+  const parallel=await call('sessions',{missionId:lesson.id});
+  assert.equal(parallel.status,409);
+  assert.equal(parallel.body.code,'STUDY_ACTIVE_SESSION_EXISTS');
+  assert.equal(sql.prepare("SELECT COUNT(*) n FROM study_sessions WHERE status='active'").get().n,1);
+
+  assert.equal((await call('sessions/'+id,{durationSeconds:45},{method:'PATCH'})).status,200);
+  assert.equal((await call('bootstrap')).body.activeSession,null);
+  assert.equal((await call('sessions',{missionId:lesson.id})).status,201);
+});
+
 test('checkpoint respeita autorização antes de inicializar o schema',async t=>{
   const {sql,call}=await fixture(t);const path='sessions/'+crypto.randomUUID()+'/checkpoint';
   assert.equal((await call(path,{durationSeconds:30},{identity:null})).status,401);
