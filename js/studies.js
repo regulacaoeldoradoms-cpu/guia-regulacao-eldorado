@@ -169,6 +169,7 @@
       }
     }
 
+    const resume = resumableMission();
     const grid = $('missionGrid');
     grid.innerHTML = data.missions.map((mission, index) => {
       const done = completed(mission);
@@ -176,9 +177,15 @@
       const progress = data.progress[mission.topicId];
       const evidence = data.learningEvidence?.[mission.topicId];
       const boss = mission.kind === 'boss';
-      const label = done ? 'Concluída' : unlocked ? (boss ? 'Chefe disponível' : 'Disponível') : 'Bloqueada';
+      const isActive = resume?.mission.id === mission.id;
+      const blockedByActive = Boolean(resume && !isActive);
+      const label = isActive ? 'Sessão em andamento'
+        : done ? 'Concluída'
+          : unlocked && !blockedByActive ? (boss ? 'Chefe disponível' : 'Disponível')
+            : blockedByActive ? 'Retome a sessão atual' : 'Bloqueada';
       const requirement = boss && mission.passScore ? ` · mínimo ${mission.passScore}%` : '';
-      return `<button class="study-mission ${done ? 'done' : ''} ${boss ? 'boss' : ''}" type="button" data-mission-id="${mission.id}" ${unlocked ? '' : 'disabled'}>
+      const disabled = !isActive && (!unlocked || blockedByActive);
+      return `<button class="study-mission ${done ? 'done' : ''} ${boss ? 'boss' : ''}" type="button" data-mission-id="${mission.id}" ${disabled ? 'disabled' : ''}>
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
@@ -188,10 +195,12 @@
     }).join('');
 
     grid.querySelectorAll('[data-mission-id]').forEach((button) => {
-      button.addEventListener('click', () => openMission(button.dataset.missionId));
+      button.addEventListener('click', () => {
+        if (resume?.mission.id === button.dataset.missionId) resumeMission(resume);
+        else openMission(button.dataset.missionId);
+      });
     });
 
-    const resume = resumableMission();
     const next = nextMission();
     $('continueStudy').disabled = !resume && !next;
     $('continueStudy').textContent = resume
