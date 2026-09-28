@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 27/09/2026 — mapa curricular e prontidão separados do XP.
+Atualizado em 28/09/2026 — #510 e #511 integradas; retenção em validação final.
 
 ## Estado e autorização
 
@@ -133,6 +133,16 @@ Mesmo três ciclos registrados não alteram **Prontidão de prova: Ainda não me
 
 Testes verificam histórico sem score, deduplicação por ciclo, pontuação realmente mais recente por `completed_at` mesmo com ciclos concluídos fora de ordem, ausência de herança de nota quando a revisão mais recente não tem score, ausência de linguagem de domínio e exibição separada no frontend.
 
+
+## Integrações de 28/09/2026
+
+- **#510 — mapa curricular e prontidão:** integrada na `main` em `1f52115e075790d6b83a6f395a5b8b3b2f1cfaf6`. A auditoria global terminou aprovada no rerun do run 105, sem relaxamento de baseline/tolerância.
+- **#511 — pré-requisitos no backend:** integrada na `main` em `804456e90c03bfdd845ae60663d580a69af3993c`. O gate vale na abertura e no fechamento da missão, inclusive contra sessão legada.
+- **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
+- **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
+
+Placar de referência do projeto nesta etapa: motor técnico ~81%; Fase 1 ~90% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~30%.
+
 ## Especificação preparada — avaliação independente
 
 Documento: `41-AVALIACAO-INDEPENDENTE.md`.  
@@ -140,7 +150,7 @@ Branch documental: `docs/missao-bancaria-avaliacao-independente`, baseada na cad
 
 Objetivo: impedir que questões já vistas no ensino/revisão sejam usadas sozinhas como prova de domínio. A especificação separa um banco autoral de avaliação, inicialmente com **32 itens inéditos** do primeiro bloco de SFN, divididos em duas formas A/B de 16 itens sem sobreposição. A forma B só fica elegível sete dias após a forma A. Durante a rodada não há feedback de acerto por item; gabarito/explicação só aparecem no fechamento. Continua sem XP por participação e sem alterar prontidão automaticamente.
 
-A implementação de produção **não começa antes da estabilização/integração da cadeia #510–#512**. O documento registra schema sugerido, isolamento, prevenção de vazamento, diagnóstico por competência e testes obrigatórios.
+A implementação de produção **não começa antes da estabilização/integração da cadeia #510–#512**. O documento registra schema sugerido, isolamento, prevenção de vazamento, diagnóstico por competência e testes obrigatórios.
 
 ## Próximos recortes autorizados
 
