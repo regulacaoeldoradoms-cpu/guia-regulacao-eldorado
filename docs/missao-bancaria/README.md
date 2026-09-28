@@ -15,10 +15,11 @@ A primeira versão real não usará aula demonstrativa fictícia: começará com
 ## Ordem de leitura
 1. [00-DOSSIE-MESTRE.md](00-DOSSIE-MESTRE.md)
 2. [11-INSTRUCAO-DE-CONTINUIDADE.md](11-INSTRUCAO-DE-CONTINUIDADE.md)
-3. [STATUS.md](STATUS.md)
-4. documento da fase ativa
-5. [12-FONTES-E-CONTEUDO.md](12-FONTES-E-CONTEUDO.md)
-6. [14-INTEGRACAO-CONQUISTAS.md](14-INTEGRACAO-CONQUISTAS.md)
+3. [38-MAPA-CURRICULAR-E-PRONTIDAO.md](38-MAPA-CURRICULAR-E-PRONTIDAO.md)
+4. [STATUS.md](STATUS.md)
+5. documento da fase ativa
+6. [12-FONTES-E-CONTEUDO.md](12-FONTES-E-CONTEUDO.md)
+7. [14-INTEGRACAO-CONQUISTAS.md](14-INTEGRACAO-CONQUISTAS.md)
 
 ## Fase 0 encerrada
 Plano técnico aprovado: [15-FASE-0-PLANO-TECNICO.md](15-FASE-0-PLANO-TECNICO.md)
@@ -31,7 +32,7 @@ Use [13-FONTE-MESTRA-PARA-ANEXAR.md](13-FONTE-MESTRA-PARA-ANEXAR.md) quando uma 
 - Fase 1 — Motor MVP
 - Fase 2 — Motor pedagógico
 - Fase 3 — Conhecimentos Bancários
-- Fase 4 — Português + Matemática Financeira
+- Fase 4 — Português + Matemática + Matemática Financeira
 - Fase 5 — Atendimento/Vendas + TI/Digital
 - Fase 6 — Ética/Compliance + Estatística + Inglês
 - Fase 7 — Revisão adaptativa

@@ -96,7 +96,7 @@ Regras:
 - vitória concede 220 XP uma única vez;
 - derrota não conclui a missão;
 - nova tentativa exige abrir uma nova rodada;
-- vitória concede a conquista `study.sfn.boss` — **SFN dominado**;
+- vitória concede a conquista `study.sfn.boss` — **Chefe do SFN vencido**;
 - a conquista é idempotente.
 
 ## Segurança da pontuação

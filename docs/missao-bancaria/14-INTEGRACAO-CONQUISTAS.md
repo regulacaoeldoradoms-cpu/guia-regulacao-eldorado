@@ -74,8 +74,8 @@ Priorizar:
 ### Primeiro chefe
 **Regra:** concluir o primeiro chefe temático segundo seu critério mínimo.
 
-### SFN dominado
-**Regra:** superar o chefe de Sistema Financeiro Nacional com o critério de domínio definido para a versão vigente.
+### Chefe do SFN vencido
+**Regra:** superar o Chefe do primeiro bloco de Sistema Financeiro Nacional com o desempenho mínimo definido para aquela rodada. A conquista não certifica domínio total da matéria.
 
 ### Mundo Bancário
 **Regra:** completar o primeiro mundo pedagógico de Conhecimentos Bancários.

@@ -36,7 +36,7 @@ Dashboard:
 - cobertura;
 - domínio;
 - XP e nível;
-- horas líquidas;
+- tempo registrado;
 - questões;
 - taxa de acertos;
 - sequência;
@@ -59,7 +59,7 @@ Missão:
 
 Modo foco:
 - interface limpa;
-- cronômetro;
+- cronômetro, sem tratar tempo visível como prova de atenção/aprendizado;
 - progresso;
 - anterior/próximo;
 - marcar dúvida;
@@ -111,8 +111,8 @@ Expandir em blocos o conteúdo bancário iniciado anteriormente até completar o
 
 Aceite: estudo ponta a ponta com lacunas claramente identificadas.
 
-### Fase 4 — Português + Matemática Financeira
-Português aplicado à prova, começando por interpretação e avançando por estruturas relevantes. Matemática com explicação curta, exemplo, tentativa e correção.
+### Fase 4 — Português + Matemática + Matemática Financeira
+Português aplicado à prova. Matemática comum permanece trilha própria quando o edital-base a exige (como no BB 2022/001); Matemática Financeira não a substitui. Ambas usam explicação, exemplo resolvido, tentativa independente e correção.
 
 Aceite: trilhas completas, revisões e chefes temáticos.
 
@@ -162,7 +162,7 @@ Cada snapshot de edital deve guardar órgão, cargo, banca, data, fonte, discipl
 
 ## Instrução operacional para nova sessão
 
-> Continue o projeto Missão Bancária a partir da documentação versionada no repositório. Antes de alterar código, leia o Dossiê Mestre, a Instrução de Continuidade e o documento da fase ativa. Confira o estado real da main/branch e preserve decisões aprovadas. Trabalhe somente no escopo da fase atual, mas priorize uma fatia vertical utilizável que Wellyton possa estudar assim que estiver estável. Não use conteúdo fictício na experiência real e preserve integralmente o progresso ao publicar novas missões. Não misture dados de estudo com dados institucionais. Ao concluir uma entrega, registre implementação, testes, pendências e o que depende de homologação humana.
+> Continue o projeto Missão Bancária a partir da documentação versionada no repositório. Antes de alterar código, leia o Dossiê Mestre, a Instrução de Continuidade, o Contrato Pedagógico Global, o Mapa Curricular e o documento da fase ativa. Confira o estado real da main/branch e preserve decisões aprovadas. Trabalhe somente no escopo da fase atual, mas priorize uma fatia vertical utilizável que Wellyton possa estudar assim que estiver estável. Não use conteúdo fictício na experiência real e preserve integralmente o progresso ao publicar novas missões. Não misture dados de estudo com dados institucionais. Ao concluir uma entrega, registre implementação, testes, pendências e o que depende de homologação humana.
 
 ## Hierarquia em caso de conflito
 1. instrução humana explícita mais recente;
