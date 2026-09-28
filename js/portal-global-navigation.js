@@ -42,11 +42,13 @@
     });
   }
 
-  function script(src, globalName, id) {
-    if (window[globalName]) return Promise.resolve(window[globalName]);
+  function script(src, globalName, id, options = {}) {
+    const force = options.force === true;
+    if (window[globalName] && !force) return Promise.resolve(window[globalName]);
     const path = src.split('?')[0];
-    const existing = document.getElementById(id)
-      || [...document.scripts].find((item) => item.src.includes(path));
+    const existing = force
+      ? null
+      : (document.getElementById(id) || [...document.scripts].find((item) => item.src.includes(path)));
     if (existing) return new Promise((resolve) => {
       if (window[globalName]) return resolve(window[globalName]);
       const done = () => resolve(window[globalName] || null);
@@ -86,7 +88,13 @@
       stylesheet(NOTIFICATION_CSS, 'portalGlobalNavigationNotificationCss')
     ]);
     await script(SOCIAL_API, 'PortalSocial', 'portalGlobalNavigationSocialApi');
-    await script(SOCIAL_NAVIGATION, 'PortalSocialNavigation', 'portalGlobalNavigationScript');
+    const navigationIsCurrent = window.PortalSocialNavigation?.version === '20260928-1';
+    await script(
+      SOCIAL_NAVIGATION,
+      'PortalSocialNavigation',
+      'portalGlobalNavigationScript',
+      { force: !navigationIsCurrent }
+    );
 
     const navigation = window.PortalSocialNavigation;
     if (!navigation?.mount) return false;
