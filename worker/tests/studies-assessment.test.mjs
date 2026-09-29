@@ -58,6 +58,27 @@ test('catálogo independente possui 32 itens balanceados e fontes conhecidas',()
   assert.doesNotMatch(JSON.stringify(PUBLISHED_MISSIONS),/eval\.sfn\./);
 });
 
+test('itens independentes não repetem literalmente nem quase copiam os prompts de treino',()=>{
+  const training=PUBLISHED_MISSIONS.flatMap(mission=>(mission.questions||[]).map(question=>({
+    id:question.id,prompt:question.prompt
+  })));
+  const normalize=value=>String(value||'').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const stop=new Set(['qual','uma','para','como','mais','pela','pelo','essa','esse','esta','este','entre','sobre','quando','onde','com','sem','que','dos','das','nas','nos','por','seu','sua','suas','seus']);
+  const tokens=value=>new Set(normalize(value).split(' ').filter(token=>token.length>3&&!stop.has(token)));
+  const similarity=(left,right)=>{
+    const a=tokens(left),b=tokens(right);let intersection=0;
+    for(const token of a)if(b.has(token))intersection++;
+    const union=new Set([...a,...b]).size;
+    return union?intersection/union:0;
+  };
+  for(const item of ASSESSMENT_QUESTIONS){
+    assert.ok(!training.some(question=>normalize(question.prompt)===normalize(item.prompt)),item.id+' repete prompt do treino');
+    const best=Math.max(...training.map(question=>similarity(question.prompt,item.prompt)));
+    assert.ok(best<0.75,`${item.id} está excessivamente próximo do treino: ${best}`);
+  }
+});
+
 test('estado não libera avaliação antes de concluir aulas e Chefe',async t=>{
   const {db}=fixture(t);await ensureAssessmentSchema(db);
   const state=await getAssessmentState(db,'wellyton');
