@@ -54,7 +54,7 @@ async function setup(page){
             assessmentVersion:1,contentVersion:2,startedAt:'2026-09-29T12:00:00Z',
             answeredQuestionIds:[...window.__assessmentAnswers],questions:structuredClone(window.__assessmentQuestions)};
         }
-        if(/\/answers$/.test(route)){
+        if(/\\/answers$/.test(route)){
           const body=JSON.parse(options.body);
           const before=window.__assessmentAnswers.size;
           window.__assessmentAnswers.add(body.questionId);
@@ -62,7 +62,7 @@ async function setup(page){
           return {assessmentId:'11111111-1111-1111-1111-111111111111',questionId:body.questionId,
             recorded:window.__assessmentAnswers.size>before,answeredCount:window.__assessmentAnswers.size,total:16};
         }
-        if(/\/complete$/.test(route)){
+        if(/\\/complete$/.test(route)){
           if(window.__assessmentAnswers.size!==16)throw new Error('Responda todos os itens');
           const items=window.__assessmentQuestions.map((question,index)=>({
             questionId:question.id,selectedOption:0,correct:index<12,correctOption:index<12?0:1,
