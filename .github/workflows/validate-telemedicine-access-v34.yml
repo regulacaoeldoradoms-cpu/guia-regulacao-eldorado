@@ -58,6 +58,10 @@ jobs:
           grep -q "TELEMEDICINE_ACCESS_DELETE_FORBIDDEN" worker/telemedicine-access.js
           grep -q "grantTelemedicineAccess" worker/auth-management-flex.js
           grep -q "revokeTelemedicineAccess" worker/auth-management-flex.js
+          grep -q "SELECT username, enabled FROM auth_telemedicine_access" worker/telemedicine-access.js
+          grep -q "MAX(id) AS id" worker/telemedicine-access.js
+          grep -q "bulk-admin-list-integrity" worker/telemedicine-access.js
+          grep -q "preflight do painel de usuários deve responder sem tocar D1" worker/index.js
           if grep -q "setTelemedicineAccess" worker/auth-management-flex.js; then
             echo 'A camada administrativa não pode voltar ao setter genérico da Telemedicina.' >&2
             exit 1
