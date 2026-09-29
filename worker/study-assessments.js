@@ -215,10 +215,16 @@ export async function startIndependentAssessment(db, username, now = new Date())
   const id = crypto.randomUUID();
   const ids = questions.map((item) => item.id);
 
-  await db.prepare(`INSERT INTO study_assessment_rounds(
+  const inserted = await db.prepare(`INSERT OR IGNORE INTO study_assessment_rounds(
       assessment_id, username, block_id, form_id, assessment_version, content_version, question_ids
     ) VALUES (?, ?, ?, ?, ?, ?, ?)`)
     .bind(id, username, BLOCK_ID, formId, ASSESSMENT_VERSION, BLOCK_CONTENT_VERSION, JSON.stringify(ids)).run();
+
+  if (Number(inserted.meta?.changes || 0) === 0) {
+    const concurrent = await activeRound(db, username);
+    if (concurrent) return publicRound(concurrent, await answeredIds(db, concurrent.assessment_id));
+    fail('Não foi possível confirmar o início da avaliação.', 409, 'STUDY_ASSESSMENT_START_CONFLICT');
+  }
 
   const row = await roundForUser(db, username, id);
   return publicRound(row, []);
@@ -357,5 +363,8 @@ export async function completeIndependentAssessment(db, username, assessmentId) 
 
   row = await roundForUser(db, username, assessmentId);
   if (row.status !== 'completed') fail('Não foi possível confirmar o fechamento da avaliação.', 409);
-  return persisted;
+  if (row.result_json) {
+    try { return JSON.parse(row.result_json); } catch {}
+  }
+  return buildAssessmentResult(row, answers);
 }
