@@ -22,6 +22,8 @@ jobs:
         run: |
           npm run check
           node --check study-rounds.js
+          node --check study-assessments.js
+          node --check studies-assessment-content/sfn-foundation-v1.js
           npm test
 
       - name: Validar frontend da Missao Bancaria
@@ -38,8 +40,11 @@ jobs:
           test -f css/studies-reader.css
           test -f css/studies-clock.css
           test -f css/studies-curriculum.css
+          test -f css/studies-assessment.css
           test -f js/studies.js
           test -f worker/studies.js
+          test -f worker/study-assessments.js
+          test -f worker/studies-assessment-content/sfn-foundation-v1.js
           test -f worker/studies-content/manifest.js
           test -f worker/studies-content/banking-sfn.js
           grep -q "id: 'mission-bank'" js/tools-catalog.js
@@ -64,11 +69,11 @@ jobs:
       - name: Validar isolamento assistencial
         run: |
           set -euo pipefail
-          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/studies-content/*.js js/studies.js js/studies-reader.js js/studies-clock.js estudos/index.html; then
+          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/study-assessments.js worker/studies-content/*.js worker/studies-assessment-content/*.js js/studies.js js/studies-reader.js js/studies-clock.js estudos/index.html; then
             echo 'A Missao Bancaria contem termo assistencial proibido no dominio de estudos.' >&2
             exit 1
           fi
-          if grep -Eqi 'firebase|firestore|google_drive|document_drive|telemedicina' worker/studies.js worker/study-rounds.js worker/studies-content/*.js; then
+          if grep -Eqi 'firebase|firestore|google_drive|document_drive|telemedicina' worker/studies.js worker/study-rounds.js worker/study-assessments.js worker/studies-content/*.js worker/studies-assessment-content/*.js; then
             echo 'A Missao Bancaria nao pode depender de dominios institucionais.' >&2
             exit 1
           fi
