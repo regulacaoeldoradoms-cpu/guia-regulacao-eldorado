@@ -55,6 +55,8 @@ Ela não substitui ensino, prática ou revisão. Vem **depois** deles.
 
 Criar um banco autoral separado do banco das 38 questões atuais.
 
+Rascunho editorial inicial: `44-BANCO-AUTORAL-AVALIACAO-INDEPENDENTE-RASCUNHO.md`, com 32 itens distribuídos nas formas A/B. O arquivo é deliberadamente documental e não é servido pela aplicação.
+
 Primeiro lote recomendado:
 - **32 itens independentes**;
 - quatro itens por cada uma das oito aulas de ensino;
