@@ -152,6 +152,16 @@ Objetivo: impedir que questões já vistas no ensino/revisão sejam usadas sozin
 
 A implementação de produção **não começa antes da estabilização/integração da cadeia #510–#512**. O documento registra schema sugerido, isolamento, prevenção de vazamento, diagnóstico por competência e testes obrigatórios.
 
+## Autoria preparada — banco independente A/B
+
+Documento: `44-BANCO-AUTORAL-AVALIACAO-INDEPENDENTE-RASCUNHO.md`.
+
+Foi preparado um rascunho editorial com **32 itens inéditos**, distribuídos em duas formas A/B de 16 questões sem sobreposição, com dois itens primários por cada uma das oito aulas em cada forma.
+
+Cada item registra aula/trecho ensinado, fontes, resposta, explicação e motivo dos distratores. O arquivo permanece **fora do produto**: não é importado pelo Worker, não aparece no bootstrap e não altera XP, cobertura, retenção ou prontidão.
+
+Antes de virar catálogo de produção ainda são obrigatórias revisão semântica contra treino/Chefe, conferência factual nas fontes, revisão de dificuldade/pistas e testes de isolamento.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
