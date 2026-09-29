@@ -40,6 +40,11 @@ async function setup(page, mode = '') {
         attempts++;
         if(mode==='holdAttempt' && attempts===1)return new Promise(resolve=>window.__releaseAttempt=()=>resolve({correct:true,explanation:'Resposta antiga'}));
         if(mode==='failAttemptOnce' && attempts===1)throw new Error('Resposta perdida');
+        if(mode==='richFeedback')return {
+          correct:false,correctOption:1,explanation:'B representa a resposta correta neste cenário sintético.',
+          selectedFeedback:'A representa a confusão simulada que o aluno precisa corrigir.',
+          reviewRefs:[{missionId:'fixture.lesson',sectionId:'ensino'}],recorded:true
+        };
         return {correct:true,explanation:'Comentário sintético',recorded:true};
       }
       if(route.endsWith('/complete')){
@@ -164,4 +169,22 @@ test('fechamento repetido após perda de resposta usa os mesmos dados', async ({
   await page.locator('#leaveFocus').click();await expect(page.locator('#studyDashboard')).toBeVisible();
   const calls=await page.evaluate(()=>window.__calls.filter(c=>c.method==='PATCH'));
   expect(calls).toHaveLength(2);expect(calls[0]).toEqual(calls[1]);clean();
+});
+
+
+test('feedback rico explica o erro e leva ao trecho que precisa ser relido', async ({ page }) => {
+  const {open,answer,clean}=await setup(page,'richFeedback');await open();
+  const card=await answer(0);
+  const feedback=card.locator('[data-feedback]');
+  await expect(feedback).toContainText('Ainda não.');
+  await expect(feedback).toContainText('Por que sua escolha não funciona:');
+  await expect(feedback).toContainText('A representa a confusão simulada');
+  await expect(feedback).toContainText('Resposta correta: B');
+  await expect(feedback).toContainText('Por que é correta:');
+  const review=feedback.locator('.study-feedback-review');
+  await expect(review).toHaveText('Explicação');
+  await review.click();
+  await expect(page.locator('#studyLessonPanel')).toBeVisible();
+  await expect(page.locator('#lessonSections')).toContainText('Material sintético para os testes.');
+  clean();
 });
