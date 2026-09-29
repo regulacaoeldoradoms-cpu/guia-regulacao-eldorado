@@ -55,6 +55,34 @@
     el.className = `account-status visible ${type}`;
   }
 
+  function isTransientNetworkError(error) {
+    if (!error || Number(error.status || 0)) return false;
+    const name = String(error.name || '');
+    const message = String(error.message || '');
+    return name === 'TypeError'
+      || /failed to fetch|network\s*error|networkerror|load failed|fetch failed/i.test(message);
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  async function listUsersWithNetworkRetry() {
+    const delays = [350, 900];
+    let lastError = null;
+    for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+      try {
+        return await auth.listUsers();
+      } catch (error) {
+        lastError = error;
+        if (!isTransientNetworkError(error) || attempt >= delays.length) throw error;
+        countEl.textContent = `Reconectando ao servidor… tentativa ${attempt + 2} de ${delays.length + 1}`;
+        await wait(delays[attempt]);
+      }
+    }
+    throw lastError || new Error('Falha de rede ao carregar os usuários.');
+  }
+
   async function updateDocumentCapabilities(username, user, regulatorEnabled) {
     if (!isDeveloper || !username) return null;
     const existing = user?.documentCapabilities || {};
@@ -133,10 +161,18 @@
   async function loadUsers() {
     listEl.innerHTML = '<div class="portal-note info">Carregando usuários...</div>';
     try {
-      state.users = await auth.listUsers();
+      state.users = await listUsersWithNetworkRetry();
       render();
     } catch (error) {
-      listEl.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar os usuários.')}</div>`;
+      if (isTransientNetworkError(error)) {
+        countEl.textContent = 'Não foi possível concluir a conexão com o servidor.';
+        listEl.innerHTML = `<div class="portal-note warning">
+          Falha de rede ao carregar as contas. O Portal tentou reconectar automaticamente.
+          <div style="margin-top:10px"><button class="portal-button secondary" type="button" data-action="retry-users">Tentar novamente</button></div>
+        </div>`;
+      } else {
+        listEl.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar os usuários.')}</div>`;
+      }
     }
   }
 
@@ -174,8 +210,15 @@
 
   listEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
+    if (!button) return;
+
+    if (button.dataset.action === 'retry-users') {
+      loadUsers();
+      return;
+    }
+
     const row = event.target.closest('[data-username]');
-    if (!button || !row) return;
+    if (!row) return;
     const user = state.users.find((item) => item.username === row.dataset.username);
     if (!user) return;
 
