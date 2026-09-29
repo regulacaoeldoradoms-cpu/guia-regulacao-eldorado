@@ -184,9 +184,26 @@ Foi preparado um roteiro de aceite humano separado dos testes técnicos. Ele cob
 
 O roteiro não cria dados fictícios nem exige manipular datas produtivas. Cenários dependentes de tempo natural podem permanecer pendentes sem transformar CI verde em homologação automática.
 
+## Nova entrega empilhada — backend da avaliação independente
+
+Documento: `47-AVALIACAO-INDEPENDENTE-BACKEND.md`.  
+Branch: `feat/missao-bancaria-avaliacao-independente-backend`, empilhada sobre a sequência histórica.
+
+Implementado em draft:
+- catálogo independente com 32 itens autorais, 16 por forma A/B, sem sobreposição;
+- serviço e schema próprios `study_assessment_*`, separados das rodadas de treino;
+- elegibilidade após oito aulas + Chefe;
+- Forma B somente após A + sete dias;
+- início/resposta/fechamento idempotentes;
+- nenhuma correção por item antes do fechamento;
+- diagnóstico final por competência e aula;
+- zero XP, zero alteração de cobertura e zero alteração automática de prontidão.
+
+O bootstrap comum continua sem enviar o banco `eval.sfn.*`. A UI ainda não foi implementada e a revisão factual/editorial final dos 32 itens continua pendente antes de homologação.
+
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível da retomada, sequência histórica e backend da avaliação independente; verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
