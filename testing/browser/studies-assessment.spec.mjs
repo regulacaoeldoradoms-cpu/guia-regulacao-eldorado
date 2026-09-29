@@ -37,7 +37,7 @@ async function setup(page,{assessmentUnavailable=false}={}){
     window.__assessmentAnswers=new Set();
     window.__assessmentUnavailable=${JSON.stringify(assessmentUnavailable)};
     window.__assessmentState={
-      blockId:'banking.sfn-foundation',assessmentVersion:1,contentVersion:2,
+      blockId:'banking.sfn-foundation',assessmentVersion:2,contentVersion:2,
       prerequisitesComplete:true,availableForm:'A',nextEligibleAt:'',completed:[],active:null
     };
     window.__assessmentQuestions=${JSON.stringify(questions)};
@@ -56,7 +56,7 @@ async function setup(page,{assessmentUnavailable=false}={}){
           window.__assessmentState.active={assessmentId:'11111111-1111-1111-1111-111111111111',formId:'A',startedAt:'2026-09-29T12:00:00Z',
             answeredCount:window.__assessmentAnswers.size,total:16};
           return {assessmentId:'11111111-1111-1111-1111-111111111111',blockId:'banking.sfn-foundation',formId:'A',
-            assessmentVersion:1,contentVersion:2,startedAt:'2026-09-29T12:00:00Z',
+            assessmentVersion:2,contentVersion:2,startedAt:'2026-09-29T12:00:00Z',
             answeredQuestionIds:[...window.__assessmentAnswers],questions:structuredClone(window.__assessmentQuestions)};
         }
         if(/\\/answers$/.test(route)){
@@ -80,7 +80,7 @@ async function setup(page,{assessmentUnavailable=false}={}){
           window.__assessmentState.completed=[{assessmentId:'11111111-1111-1111-1111-111111111111',formId:'A',
             startedAt:'2026-09-29T12:00:00Z',completedAt:'2026-09-29T12:20:00Z',score:75,total:16}];
           return {assessmentId:'11111111-1111-1111-1111-111111111111',blockId:'banking.sfn-foundation',formId:'A',
-            assessmentVersion:1,contentVersion:2,startedAt:'2026-09-29T12:00:00Z',completedAt:'2026-09-29T12:20:00Z',
+            assessmentVersion:2,contentVersion:2,startedAt:'2026-09-29T12:00:00Z',completedAt:'2026-09-29T12:20:00Z',
             total:16,correct:12,score:75,
             diagnostics:[{competencyId:'competencia.1',total:2,correct:1,accuracy:50,lessonIds:['banking.sfn.introducao']}],
             recommendedLessonIds:['banking.sfn.introducao'],items};
