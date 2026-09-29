@@ -248,6 +248,27 @@ O início e o fechamento da avaliação independente passam a ser determinístic
 
 A suíte ganhou cenários explícitos de concorrência para início e fechamento.
 
+## Nova entrega empilhada — interface da avaliação independente
+
+Documento: `48-AVALIACAO-INDEPENDENTE-INTERFACE.md`.  
+Branch: `feat/missao-bancaria-avaliacao-independente-ui`, sobre o backend independente já integrado.
+
+Implementado em draft:
+- painel de estado A/B no dashboard;
+- modo próprio de avaliação, separado da aula;
+- 16 itens por forma;
+- resposta individual sem feedback de correção;
+- retomada da mesma forma ativa;
+- fechamento apenas após 16 respostas;
+- correção e diagnóstico somente após encerrar;
+- histórico resumido de formas concluídas;
+- grade de missões e revisões bloqueada enquanto uma forma independente estiver ativa, com o botão principal priorizando a retomada da avaliação;
+- com `assessmentProtocol: 1`, falha ao consultar o estado da avaliação é tratada de forma fail-closed: aulas permanecem temporariamente bloqueadas até o estado ser confirmado; bootstrap antigo sem o protocolo mantém o fluxo clássico compatível.
+
+O fluxo usa nós DOM/`textContent` para os itens recebidos do backend. A UI não concede XP, não altera cobertura nem calcula prontidão.
+
+A suíte Chromium ganhou cenários específicos para ausência de consulta durante a rodada, neutralidade do feedback, retomada e correção apenas no fechamento.
+
 ## Revisão editorial/factual da avaliação independente
 
 Documento: `49-REVISAO-EDITORIAL-AVALIACAO-INDEPENDENTE.md`.
