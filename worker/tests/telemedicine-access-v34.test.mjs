@@ -10,7 +10,7 @@ test('capacidade Telemedicina mantém papel-base coerente sem conceder acesso po
   const source = read('worker/telemedicine-access.js');
   assert.match(source, /const UNDERLYING_ROLE = 'recepcao'/);
   assert.match(source, /ensureTelemedicineUnderlyingRole/);
-  assert.match(source, /await ensureTelemedicineUnderlyingRole\(env, normalized\)/);
+  assert.match(source, /grantTelemedicineAccess[\s\S]+UPDATE auth_users[\s\S]+SET role = \?/);
   assert.match(source, /if \(user\.role !== UNDERLYING_ROLE\) await ensureTelemedicineUnderlyingRole/);
   assert.match(source, /SELECT enabled FROM auth_telemedicine_access WHERE username = \?/);
   assert.doesNotMatch(source, /jobTitle.*telemedicineAccessFor|DEFAULT_JOB_TITLE.*enabled/);
@@ -73,8 +73,9 @@ test('V34.3: revogação de Telemedicina é explícita e edição comum não der
   assert.match(flex, /typeof body\.telemedicineAccess !== 'boolean'/);
   assert.match(flex, /requestedTelemedicineAccess = body\.telemedicineAccess/);
   assert.match(flex, /targetTelemedicineEnabled[\s\S]+requestedTelemedicineAccess !== false/);
-  assert.match(flex, /requestedTelemedicineAccess === false[\s\S]+setTelemedicineAccess\(env, targetUsername, false/);
-  assert.doesNotMatch(flex, /setTelemedicineAccess\(env, targetUsername, requestedRole === 'telemedicina'/);
+  assert.match(flex, /requestedTelemedicineAccess === false[\s\S]+revokeTelemedicineAccess\(env, targetUsername,[\s\S]+profile-change/);
+  assert.match(flex, /requestedRole === 'telemedicina'[\s\S]+grantTelemedicineAccess/);
+  assert.doesNotMatch(flex, /setTelemedicineAccess/);
 
   assert.match(admin, /selectedRole === 'telemedicina'/);
   assert.match(admin, /input\.role = 'telemedicina'/);
@@ -99,4 +100,40 @@ test('V34.5: painel de usuários tolera falha transitória de rede sem repetir g
   assert.doesNotMatch(admin, /updateUser[\s\S]{0,200}listUsersWithNetworkRetry/);
   assert.match(admin, /Telemedicina: autorização técnica pendente/);
   assert.match(admin, /selectedRole === 'telemedicina'[\s\S]+input\.telemedicineAccess = true/);
+});
+
+
+test('V34.6: revogação física exige intenção, auditoria e batch transacional', () => {
+  const access = read('worker/telemedicine-access.js');
+  const flex = read('worker/auth-management-flex.js');
+
+  assert.match(access, /auth_telemedicine_revocation_intent/);
+  assert.match(access, /auth_telemedicine_access_audit/);
+  assert.match(access, /trg_auth_telemedicine_revoke_update_guard/);
+  assert.match(access, /trg_auth_telemedicine_revoke_insert_guard/);
+  assert.match(access, /trg_auth_telemedicine_delete_guard/);
+  assert.match(access, /TELEMEDICINE_REVOCATION_REQUIRES_INTENT/);
+  assert.match(access, /TELEMEDICINE_ACCESS_DELETE_FORBIDDEN/);
+  assert.match(access, /export async function grantTelemedicineAccess/);
+  assert.match(access, /export async function revokeTelemedicineAccess/);
+  assert.match(access, /reason !== EXPLICIT_REVOCATION_REASON/);
+  assert.match(access, /env\.AUTH_DB\.batch\(\[/);
+  assert.doesNotMatch(access, /export async function setTelemedicineAccess/);
+  assert.doesNotMatch(flex, /setTelemedicineAccess/);
+});
+
+test('V34.6: intenção ativa autorrepara capacidade antes de negar a Telemedicina', () => {
+  const access = read('worker/telemedicine-access.js');
+
+  assert.match(access, /ENABLED_AUDIT_ACTIONS/);
+  assert.match(access, /baseline_enabled/);
+  assert.match(access, /auto_repaired/);
+  assert.match(access, /latestAuditAction/);
+  assert.match(access, /if \(ENABLED_AUDIT_ACTIONS\.has\(action\)\)/);
+  assert.match(access, /repairTelemedicineAccess/);
+  assert.match(access, /V34\.6\.1: a decisão é revalidada dentro do próprio batch transacional/);
+  assert.match(access, /COALESCE\(\(\$\{activeIntentSql\}\), ''\) IN \('baseline_enabled','granted','auto_repaired'\)/);
+  assert.match(access, /const \[state, latest\] = await Promise\.all/);
+  assert.match(access, /action TEXT NOT NULL CHECK\(action IN \('baseline_enabled','granted','revoked','auto_repaired'\)\)/);
+  assert.match(access, /Linhas desabilitadas permanecem intocadas/);
 });

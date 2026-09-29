@@ -145,3 +145,26 @@ Regra V34.5:
 7. o arquivo administrativo recebe nova URL versionada para evitar reutilização do JavaScript anterior pelo cache.
 
 A medida não altera permissões nem concede acesso. Ela apenas torna a leitura administrativa tolerante a falhas transitórias de conectividade.
+
+## Complemento V34.6 — integridade permanente da autorização
+
+Decisão permanente registrada em 29/09/2026 após confirmação de que a conta operacional voltou a funcionar depois do reparo V34.4/V34.5. O objetivo desta etapa é impedir que uma nova regressão silenciosa volte a desabilitar a capacidade de Telemedicina.
+
+### Defesa em profundidade
+
+A partir da V34.6, a capacidade `auth_telemedicine_access` recebe três camadas adicionais:
+
+1. **Concessão e revogação deixam de compartilhar um setter genérico.** O backend passa a expor caminhos distintos: `grantTelemedicineAccess` e `revokeTelemedicineAccess`.
+2. **Revogar exige intenção explícita.** A revogação só é aceita com o motivo técnico `profile-change`, emitido pelo fluxo administrativo quando o Desenvolvedor realmente troca o perfil.
+3. **O D1 passa a bloquear revogações acidentais no próprio banco.** Triggers recusam transição `enabled=1 -> enabled=0`, inserção já desabilitada e exclusão da linha de capacidade sem uma intenção de revogação válida.
+4. **A intenção de revogação existe somente dentro do mesmo batch transacional.** A intenção temporária, a mudança para `enabled=0`, o registro de auditoria e a limpeza da intenção são executados juntos.
+5. **Toda capacidade ativa recebe uma âncora de auditoria.** Contas que já estavam habilitadas quando a V34.6 entrou em produção recebem `baseline_enabled`; contas historicamente desabilitadas não são reativadas por inferência.
+6. **O runtime autorrepara divergências incompatíveis com a última intenção.** Se a linha estiver ausente/desabilitada, mas a última ação persistida continuar sendo `baseline_enabled`, `granted` ou `auto_repaired`, o backend restaura a capacidade e o papel-base antes de negar a operação.
+7. **Revogação legítima sempre prevalece.** Quando a última ação é `revoked`, não há autorreparo.
+
+A trilha `auth_telemedicine_access_audit` armazena somente identidade operacional da conta, ator técnico, ação, motivo e data; não contém dados de pacientes nem conteúdo clínico.
+
+### Resultado esperado
+
+Uma conta cuja última decisão administrativa seja **Técnico em Telemedicina** não deve perder o acesso por edição comum, código legado, exclusão acidental da linha ou escrita `enabled=0` sem intenção explícita. Mesmo se uma divergência física for introduzida por regressão futura, a primeira verificação server-side deve restaurar o estado coerente antes de retornar 403.
+

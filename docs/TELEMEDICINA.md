@@ -395,3 +395,18 @@ Quando uma conta antiga estiver visualmente marcada como Telemedicina, mas a cap
 - nenhuma conta revogada é reativada automaticamente apenas por nome, cargo textual ou cache de sessão.
 
 Depois do reparo, as regras V34.2 e V34.3 mantêm a autorização como fonte de verdade nas APIs e impedem que edições administrativas comuns derrubem novamente o acesso.
+
+## Integridade permanente V34.6 — 29/09/2026
+
+A autorização de Técnico em Telemedicina passa a ter proteção de integridade além da validação normal da API.
+
+- concessão e revogação usam funções distintas;
+- revogação exige mudança explícita de perfil pelo Desenvolvedor;
+- triggers D1 impedem `enabled=0` ou exclusão da capacidade sem intenção válida;
+- a revogação é registrada junto da intenção em batch transacional;
+- capacidades atualmente ativas recebem baseline de auditoria;
+- se o estado físico divergir da última intenção ativa, a verificação server-side repara a capacidade antes de negar o acesso;
+- uma última ação `revoked` nunca é autorreparada.
+
+Isso transforma a prevenção de regressão em regra de backend e de banco, não apenas em comportamento do formulário administrativo.
+

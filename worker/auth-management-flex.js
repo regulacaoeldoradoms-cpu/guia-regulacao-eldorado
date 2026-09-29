@@ -13,7 +13,8 @@ import {
 import {
   decorateTelemedicineUser,
   decorateTelemedicineUsers,
-  setTelemedicineAccess,
+  grantTelemedicineAccess,
+  revokeTelemedicineAccess,
   telemedicineAccessFor,
   telemedicineUnderlyingRole,
   telemedicineDefaultJobTitle
@@ -246,11 +247,11 @@ async function handleAdminUsers(request, env, origin) {
 
   if (payload.user?.username) {
     if (request.method === 'POST' && url.pathname === '/api/admin/users' && requestedRole === 'telemedicina') {
-      await setTelemedicineAccess(env, payload.user.username, true, actor?.username || 'admin');
+      await grantTelemedicineAccess(env, payload.user.username, actor?.username || 'admin');
     } else if (request.method === 'PATCH' && targetUsername && requestedRole === 'telemedicina') {
-      await setTelemedicineAccess(env, targetUsername, true, actor?.username || 'admin');
+      await grantTelemedicineAccess(env, targetUsername, actor?.username || 'admin');
     } else if (request.method === 'PATCH' && targetUsername && requestedTelemedicineAccess === false) {
-      await setTelemedicineAccess(env, targetUsername, false, actor?.username || 'admin');
+      await revokeTelemedicineAccess(env, targetUsername, actor?.username || 'admin', 'profile-change');
     }
 
     if (actor?.role === 'admin') {
