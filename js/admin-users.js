@@ -55,6 +55,34 @@
     el.className = `account-status visible ${type}`;
   }
 
+  function isTransientNetworkError(error) {
+    if (!error || Number(error.status || 0)) return false;
+    const name = String(error.name || '');
+    const message = String(error.message || '');
+    return name === 'TypeError'
+      || /failed to fetch|network\s*error|networkerror|load failed|fetch failed/i.test(message);
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  async function listUsersWithNetworkRetry() {
+    const delays = [350, 900];
+    let lastError = null;
+    for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+      try {
+        return await auth.listUsers();
+      } catch (error) {
+        lastError = error;
+        if (!isTransientNetworkError(error) || attempt >= delays.length) throw error;
+        countEl.textContent = `Reconectando ao servidor… tentativa ${attempt + 2} de ${delays.length + 1}`;
+        await wait(delays[attempt]);
+      }
+    }
+    throw lastError || new Error('Falha de rede ao carregar os usuários.');
+  }
+
   async function updateDocumentCapabilities(username, user, regulatorEnabled) {
     if (!isDeveloper || !username) return null;
     const existing = user?.documentCapabilities || {};
@@ -113,7 +141,8 @@
           <div class="user-badges">
             <span class="user-badge">${escapeHtml(roleLabels[user.role] || user.role)}</span>
             ${user.role !== 'cidadao' ? '<span class="user-badge">Canal do Cidadão</span>' : ''}
-            ${user.role === 'telemedicina' ? '<span class="user-badge">Módulo Telemedicina</span>' : ''}
+            ${user.role === 'telemedicina' && user.telemedicineAccess === true ? '<span class="user-badge">Módulo Telemedicina</span>' : ''}
+            ${user.role === 'telemedicina' && user.telemedicineAccess !== true ? '<span class="user-badge inactive">Telemedicina: autorização técnica pendente</span>' : ''}
             ${user.councilRole ? `<span class="user-badge">${escapeHtml(councilLabels[user.councilRole] || user.councilRole)}</span>` : ''}
             ${(Array.isArray(user.additionalRoles) ? user.additionalRoles : []).map((role) => `<span class="user-badge">${escapeHtml(additionalRoleLabels[role] || role)}</span>`).join('')}
             <span class="user-badge ${user.active ? '' : 'inactive'}">${user.active ? 'Ativo' : 'Desativado'}</span>
@@ -132,10 +161,18 @@
   async function loadUsers() {
     listEl.innerHTML = '<div class="portal-note info">Carregando usuários...</div>';
     try {
-      state.users = await auth.listUsers();
+      state.users = await listUsersWithNetworkRetry();
       render();
     } catch (error) {
-      listEl.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar os usuários.')}</div>`;
+      if (isTransientNetworkError(error)) {
+        countEl.textContent = 'Não foi possível concluir a conexão com o servidor.';
+        listEl.innerHTML = `<div class="portal-note warning">
+          Falha de rede ao carregar as contas. O Portal tentou reconectar automaticamente.
+          <div style="margin-top:10px"><button class="portal-button secondary" type="button" data-action="retry-users">Tentar novamente</button></div>
+        </div>`;
+      } else {
+        listEl.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar os usuários.')}</div>`;
+      }
     }
   }
 
@@ -173,8 +210,15 @@
 
   listEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
+    if (!button) return;
+
+    if (button.dataset.action === 'retry-users') {
+      loadUsers();
+      return;
+    }
+
     const row = event.target.closest('[data-username]');
-    if (!button || !row) return;
+    if (!row) return;
     const user = state.users.find((item) => item.username === row.dataset.username);
     if (!user) return;
 
@@ -191,7 +235,12 @@
         editAdditionalRoleDocuments.checked = Array.isArray(user.additionalRoles) && user.additionalRoles.includes('documentos');
       }
       document.getElementById('editActive').checked = Boolean(user.active);
-      document.getElementById('editStatus').className = 'account-status full';
+      const editStatus = document.getElementById('editStatus');
+      editStatus.textContent = '';
+      editStatus.className = 'account-status full';
+      if (user.role === 'telemedicina' && user.telemedicineAccess !== true) {
+        showStatus(editStatus, 'O perfil está marcado como Telemedicina, mas a autorização técnica do backend está inconsistente. Salvar alterações irá reparar o acesso.', 'warning');
+      }
       openModal('editUserModal');
     }
 
@@ -209,13 +258,25 @@
     event.preventDefault();
     const status = document.getElementById('editStatus');
     try {
+      const editingUser = state.users.find((item) => item.username === state.editing) || null;
+      const selectedRole = editRole.value;
       const input = {
         name: document.getElementById('editName').value.trim(),
         jobTitle: document.getElementById('editJobTitle').value.trim(),
-        role: editRole.value,
         active: document.getElementById('editActive').checked
       };
-      const editingUser = state.users.find((item) => item.username === state.editing) || null;
+      if (selectedRole === 'telemedicina') {
+        // V34.4: selecionar/manter Telemedicina e salvar é uma concessão explícita.
+        // Isso repara contas legadas cujo rótulo permaneceu Telemedicina enquanto
+        // a capacidade server-side foi desabilitada em uma inconsistência antiga.
+        input.role = 'telemedicina';
+        input.telemedicineAccess = true;
+      } else if (!editingUser || selectedRole !== editingUser.role) {
+        input.role = selectedRole;
+        if (editingUser?.role === 'telemedicina') {
+          input.telemedicineAccess = false;
+        }
+      }
       if (isDeveloper) {
         input.councilRole = editCouncil.value;
         input.additionalRoles = editAdditionalRoleDocuments?.checked ? ['documentos'] : [];

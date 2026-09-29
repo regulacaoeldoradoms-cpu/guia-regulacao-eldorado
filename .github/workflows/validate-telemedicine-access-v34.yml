@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'worker/telemedicine-access.js'
+      - 'worker/auth-management-flex.js'
+      - 'js/admin-users.js'
+      - 'admin/usuarios/index.html'
       - 'worker/role-migration.js'
       - 'worker/index.js'
       - 'worker/telemedicine.js'
@@ -15,6 +18,10 @@ on:
     branches: [main]
     paths:
       - 'worker/telemedicine-access.js'
+      - 'worker/auth-management-flex.js'
+      - 'js/admin-users.js'
+      - 'admin/usuarios/index.html'
+      - 'portal-sw.js'
       - 'worker/role-migration.js'
       - 'worker/index.js'
       - 'worker/telemedicine.js'
@@ -37,12 +44,28 @@ jobs:
       - name: Conferir sintaxe
         run: |
           node --input-type=module --check < worker/telemedicine-access.js
+          node --input-type=module --check < worker/auth-management-flex.js
+          node --check js/admin-users.js
           node --input-type=module --check < worker/role-migration.js
           node --test worker/tests/telemedicine-access-v34.test.mjs
       - name: Conferir segurança e otimização
         run: |
           grep -q "SELECT enabled FROM auth_telemedicine_access WHERE username = ?" worker/telemedicine-access.js
           grep -q "accessSchemaReady" worker/telemedicine-access.js
+          grep -q "auth_telemedicine_access_audit" worker/telemedicine-access.js
+          grep -q "auth_telemedicine_revocation_intent" worker/telemedicine-access.js
+          grep -q "TELEMEDICINE_REVOCATION_REQUIRES_INTENT" worker/telemedicine-access.js
+          grep -q "TELEMEDICINE_ACCESS_DELETE_FORBIDDEN" worker/telemedicine-access.js
+          grep -q "grantTelemedicineAccess" worker/auth-management-flex.js
+          grep -q "revokeTelemedicineAccess" worker/auth-management-flex.js
+          grep -q "SELECT username, enabled FROM auth_telemedicine_access" worker/telemedicine-access.js
+          grep -q "MAX(id) AS id" worker/telemedicine-access.js
+          grep -q "bulk-admin-list-integrity" worker/telemedicine-access.js
+          grep -q "preflight do painel de usuários deve responder sem tocar D1" worker/index.js
+          if grep -q "setTelemedicineAccess" worker/auth-management-flex.js; then
+            echo 'A camada administrativa não pode voltar ao setter genérico da Telemedicina.' >&2
+            exit 1
+          fi
           grep -q "accessSchemaPromise" worker/telemedicine-access.js
           grep -q "ensureTelemedicineUnderlyingRole" worker/telemedicine-access.js
           grep -q "SELECT username FROM auth_telemedicine_access WHERE enabled = 1" worker/role-migration.js
