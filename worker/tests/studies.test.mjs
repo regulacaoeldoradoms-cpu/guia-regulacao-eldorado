@@ -9,7 +9,7 @@ import {
   missionByTopicId,
   questionById
 } from '../studies-content/manifest.js';
-import { computeCampaignProgress, computeStudyStreak, isStudiesApi, studyUsernameAllowed } from '../studies.js';
+import { computeCampaignProgress, computeStudyStreak, computeStudyStreakDays, isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
 test('conteudo SFN v1.2 tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
@@ -201,6 +201,21 @@ test('sequência permanece ativa quando último estudo foi ontem e zera após la
   ], now);
   assert.equal(stale.current, 0);
   assert.equal(stale.best, 2);
+});
+
+test('sequência histórica não perde melhor série depois de mais de 500 eventos', () => {
+  const days=[];
+  for(let day=1;day<=20;day++)days.push(`2026-08-${String(day).padStart(2,'0')}`);
+  const repeated=Array.from({length:600},(_,index)=>days[index%days.length]);
+  const result=computeStudyStreakDays(repeated,new Date('2026-09-26T12:00:00Z'));
+  assert.equal(result.best,20);
+  assert.equal(result.current,0);
+
+  const source=fs.readFileSync(new URL('../studies.js',import.meta.url),'utf8');
+  const streakBlock=source.slice(source.indexOf('async function studyStreak'),source.indexOf('export function summarizeRetentionEvidence'));
+  assert.doesNotMatch(streakBlock,/LIMIT\s+500/i);
+  assert.match(streakBlock,/date\(attempted_at, '-4 hours'\)/);
+  assert.match(streakBlock,/UNION/);
 });
 
 test('sequência vazia é zero e não depende de simples abertura do módulo', () => {
