@@ -224,16 +224,19 @@
       renderAssessmentPanel();
     } catch (_) {
       state.assessmentState = null;
-      state.assessmentUnavailable = true;
+      const supported = Number(state.data?.assessmentProtocol || 0) === 1;
+      state.assessmentUnavailable = supported;
       const panel = $('assessmentPanel');
-      if (panel) panel.hidden = false;
-      if ($('assessmentMeta')) $('assessmentMeta').textContent = 'Não foi possível confirmar o estado da avaliação. As aulas ficam temporariamente bloqueadas para não quebrar o isolamento de uma forma eventualmente ativa.';
-      if ($('startAssessment')) {
-        $('startAssessment').disabled = true;
-        $('startAssessment').onclick = null;
-        $('startAssessment').textContent = 'Avaliação indisponível';
+      if (panel) panel.hidden = !supported;
+      if (supported) {
+        if ($('assessmentMeta')) $('assessmentMeta').textContent = 'Não foi possível confirmar o estado da avaliação. As aulas ficam temporariamente bloqueadas para não quebrar o isolamento de uma forma eventualmente ativa.';
+        if ($('startAssessment')) {
+          $('startAssessment').disabled = true;
+          $('startAssessment').onclick = null;
+          $('startAssessment').textContent = 'Avaliação indisponível';
+        }
+        assessmentMessage('Tente novamente quando a conexão com a avaliação for restabelecida.');
       }
-      assessmentMessage('Tente novamente quando a conexão com a avaliação for restabelecida.');
     }
     if (refreshDashboard && state.data) renderDashboard();
   }
