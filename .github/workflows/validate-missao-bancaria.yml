@@ -34,6 +34,7 @@ jobs:
           node --check js/studies-clock.js
           node --check worker/studies-content/curriculum-v1.js
           node --check worker/studies-content/application-registry.js
+          node --check worker/studies-content/question-feedback-v1.js
           node --check js/tools-catalog.js
           node --check js/achievements.js
           test -f estudos/index.html
@@ -48,6 +49,7 @@ jobs:
           test -f worker/studies-assessment-content/sfn-foundation-v1.js
           test -f worker/studies-content/manifest.js
           test -f worker/studies-content/application-registry.js
+          test -f worker/studies-content/question-feedback-v1.js
           test -f worker/studies-content/banking-sfn.js
           grep -q "id: 'mission-bank'" js/tools-catalog.js
           grep -q "wellyton" js/tools-catalog.js
