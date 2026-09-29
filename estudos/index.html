@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/css/studies-reader.css?v=20260926-application-1">
   <link rel="stylesheet" href="/css/studies-clock.css?v=20260926-clock-1">
   <link rel="stylesheet" href="/css/studies-curriculum.css?v=20260927-curriculum-1">
+  <link rel="stylesheet" href="/css/studies-assessment.css?v=20260929-assessment-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
 </head>
 <body class="portal-page study-page">
@@ -90,6 +91,16 @@
           <p id="reviewMeta">Reforce o conteúdo antes de seguir.</p>
         </div>
         <button class="study-primary" id="startReview" type="button">Revisar agora</button>
+      </section>
+
+      <section class="study-assessment-panel" id="assessmentPanel" hidden aria-labelledby="assessmentTitle">
+        <div>
+          <span class="study-eyebrow">Evidência de aplicação</span>
+          <h2 id="assessmentTitle">Avaliação independente</h2>
+          <p id="assessmentMeta">Carregando o estado da avaliação...</p>
+          <div class="study-assessment-history" id="assessmentHistory" aria-label="Histórico de avaliações"></div>
+        </div>
+        <button class="study-primary" id="startAssessment" type="button" disabled>Avaliação indisponível</button>
       </section>
 
       <section class="study-world">
@@ -172,6 +183,35 @@
       </div>
     </section>
 
+    <section class="study-assessment-focus" id="studyAssessmentFocus" hidden aria-labelledby="assessmentFocusTitle">
+      <header class="study-assessment-header">
+        <div>
+          <span class="study-eyebrow">Sem consulta durante a rodada</span>
+          <h1 id="assessmentFocusTitle" tabindex="-1">Avaliação independente</h1>
+        </div>
+        <button class="portal-button ghost" id="leaveAssessment" type="button">Voltar ao painel</button>
+      </header>
+      <div class="study-assessment-body">
+        <div class="study-assessment-shell">
+          <p class="study-assessment-notice" id="assessmentNotice">As questões desta forma não aparecem no treino. O sistema só mostra a correção depois que os 16 itens forem respondidos e a forma for encerrada.</p>
+          <p class="study-assessment-progress-label" id="assessmentProgressLabel" aria-live="polite">0 de 16 respostas registradas</p>
+          <div class="study-assessment-progress" id="assessmentProgress" role="progressbar" aria-label="Respostas registradas" aria-valuemin="0" aria-valuemax="16" aria-valuenow="0"><span id="assessmentProgressBar"></span></div>
+          <div class="study-assessment-question-list" id="assessmentQuestionList"></div>
+          <div class="study-assessment-actions">
+            <button class="study-primary" id="completeAssessment" type="button" disabled>Encerrar e corrigir</button>
+          </div>
+          <section class="study-assessment-result" id="assessmentResult" hidden aria-labelledby="assessmentResultTitle">
+            <h2 id="assessmentResultTitle">Resultado da avaliação</h2>
+            <strong id="assessmentResultSummary"></strong>
+            <p class="study-assessment-result-note">Este resultado é evidência de aplicação. Não representa aprovação, domínio total nem prontidão de prova.</p>
+            <div class="study-assessment-diagnostics" id="assessmentDiagnostics"></div>
+            <div class="study-assessment-review-list" id="assessmentReviewList"></div>
+          </section>
+          <div class="study-status" id="assessmentStatus" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
     <div class="study-achievement-toast" id="achievementToast" hidden role="status" aria-live="polite"></div>
   </div>
 
@@ -181,7 +221,7 @@
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/studies-reader.js?v=20260926-application-1"></script>
   <script src="/js/studies-clock.js?v=20260928-resume-1"></script>
-  <script src="/js/studies.js?v=20260928-resume-1"></script>
+  <script src="/js/studies.js?v=20260929-assessment-1"></script>
   <script src="/js/portal-global-chat.js?v=20260928-1" defer></script>
 </body>
 </html>
