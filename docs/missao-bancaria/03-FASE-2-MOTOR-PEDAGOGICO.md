@@ -1,8 +1,19 @@
 # MISSÃO BANCÁRIA — FASE 2
 ## Motor pedagógico
 
+Iniciada em: 29/09/2026.  
+Status: **fase ativa**, após aceite explícito da Fase 1.
+
 ### Objetivo
 Transformar o MVP já utilizável em uma plataforma capaz de ensinar de forma consistente, refinando o método com base no uso real de Wellyton enquanto novas missões continuam sendo publicadas.
+
+### Primeiro recorte ativo
+
+Recorte A: **catálogo pedagógico declarativo**, documentado em `52-FASE2-CATALOGO-PEDAGOGICO-DECLARATIVO.md`.
+
+A primeira correção estrutural remove do manifesto a necessidade de conhecer funções de anexação específicas por grupo de aulas. O conteúdo existente deve permanecer idêntico para o usuário e para o histórico; a mudança é arquitetural e prepara a publicação incremental exigida por esta fase.
+
+Depois deste recorte, priorizar o contrato reutilizável de feedback de erro antes de expandir o currículo.
 
 ### Unidade pedagógica padrão
 Cada missão deve suportar:
