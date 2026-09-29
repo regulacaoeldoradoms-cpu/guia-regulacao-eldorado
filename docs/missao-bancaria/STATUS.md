@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 28/09/2026 — #510 e #511 integradas; retenção em validação final.
+Atualizado em 29/09/2026 — interface independente integrada; frontend publicado; Worker produtivo ainda sem comprovação desta cadeia.
 
 ## Estado e autorização
 
@@ -28,6 +28,18 @@ Fonte oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 - #506 Operadores/Seguros: `614991af8d01def824e85b1b71f06fbd22b01d4a`.
 - #507 Pagamentos/revisão: `f19b1cbb583fee9f38c79cda6538972af825ee72`.
 - **#508 rodadas explícitas: `f391a665cd7ede05ea9d1a880e96589d89a67704`, incorporada nesta retomada.**
+- #509 tempo visível/checkpoints: `841da112d93f2cc2c098fea2460ac01743abbc40`.
+- #510 mapa curricular/prontidão: `1f52115e075790d6b83a6f395a5b8b3b2f1cfaf6`.
+- #511 pré-requisitos backend: `804456e90c03bfdd845ae60663d580a69af3993c`.
+- #512 retenção separada do acerto imediato: `0d3f2a06a63a31a84ca50e32f525e720c120f694`.
+- #527 retomada controlada de sessão: `81397c7f0ca5f629f767e3e48f0549cff23df7b3`.
+- #528 sequência histórica sem truncamento: `e119cdafe41b38c027cf4a3f038ee5d659dc8abe`.
+- #519 especificação/autoria/arquitetura da avaliação independente: `eaf516ce45fa8c7512a23b862918c04bc4b13a2c`.
+- #537 backend da avaliação independente: `2c6abfde61454a067271ac533c73c1eb1ac21cd7`.
+- #542 hardening de concorrência da avaliação: `4da25ff93692bb69e98d0056905b4eab5be0a91a`.
+- #543 contrato `assessmentProtocol` no bootstrap: `02215cc76a2bf47a26ecc5e32125da87cc95b4ac`.
+- #544 revisão editorial/factual V3 do banco independente: `2a3379882ba2f4b4a00de182d521ad91f19c88f9`.
+- #541 interface da avaliação independente: `9e5bebac7713b8ad7540aa31c6878e50e6b7faac`, integrada na `main`; CI específico, auditoria global, validação pós-merge e GitHub Pages concluíram em `success`.
 
 Oito aulas, preparação do Chefe, 27 atividades formativas e 38 questões pontuadas representam apenas o primeiro bloco de SFN, não o curso/edital inteiro. O ensino e seus exemplos precedem a prática.
 
@@ -141,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência do projeto nesta etapa: motor técnico ~81%; Fase 1 ~90% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~30%.
+Placar de referência do projeto nesta etapa: motor técnico ~90%; Fase 1 ~96% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~31%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -283,9 +295,21 @@ Guardrails adicionados:
 
 Isso melhora a qualidade editorial, mas não é homologação humana nem certificação de prontidão.
 
+## Fechamento técnico candidato da Fase 1
+
+Documento: `50-FECHAMENTO-TECNICO-FASE1.md`.
+
+A Fase 1 passa a ter um registro consolidado de prontidão **técnica candidata**, sem confundir isso com aceite humano.
+
+O documento mapeia os 12 critérios originais da fase contra o estado atual, registra que backend/retomada/retenção/sequência/avaliação independente possuem cobertura automatizada e mantém explícito que:
+- a interface independente #541 foi integrada e o frontend teve GitHub Pages pós-merge em `success`;
+- o Worker produtivo continua exigindo comprovação separada: Workers Builds falhou repetidamente desde #537, portanto `main` não é prova de publicação do backend;
+- o roteiro humano do documento 46 continua obrigatório;
+- a Fase 2 não deve começar antes do aceite explícito da Fase 1.
+
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+A integração da #541 e a publicação do frontend foram confirmadas. Resolver ou comprovar a publicação produtiva do Worker e então executar o roteiro humano do documento 46. Retomada, sequência histórica, retenção e backend da avaliação independente já estão integrados. Não declarar a Fase 1 homologada nem abrir formalmente a Fase 2 antes do aceite humano explícito.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
