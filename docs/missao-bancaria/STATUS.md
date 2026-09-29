@@ -162,6 +162,23 @@ Cada item registra aula/trecho ensinado, fontes, resposta, explicação e motivo
 
 Antes de virar catálogo de produção ainda são obrigatórias revisão semântica contra treino/Chefe, conferência factual nas fontes, revisão de dificuldade/pistas e testes de isolamento.
 
+## Arquitetura preparada — avaliação independente
+
+Documento: `45-SCHEMA-E-API-AVALIACAO-INDEPENDENTE.md`.
+
+Foi definida uma proposta aditiva com tabelas próprias `study_assessment_rounds` e `study_assessment_answers`, sem alterar o CHECK de `study_rounds.mode`.
+
+A proposta fixa:
+- elegibilidade A/B e intervalo de sete dias;
+- conjunto de itens congelado;
+- resposta idempotente sem revelar correção durante a rodada;
+- fechamento idempotente;
+- isolamento do banco de treino;
+- versionamento/invalidação sem apagar histórico;
+- diagnóstico por competência sem alterar prontidão automaticamente.
+
+Continua sem código de produção: implementação só começa depois da integração/estabilidade da #512.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
