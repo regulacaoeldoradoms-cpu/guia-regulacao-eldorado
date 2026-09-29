@@ -138,3 +138,22 @@ html[data-portal-theme="dark"] .portal-chat-list,
 html[data-portal-theme="dark"] .portal-chat-messages {
   scrollbar-color: #36556b #0b1a27;
 }
+
+
+/* Correção de estado dos controles do cabeçalho — 29/09/2026.
+   O chat não pode depender da camada global de interações para desenhar
+   Voltar/Fechar, e o botão Voltar precisa respeitar [hidden] sem conversa ativa. */
+.portal-chat-icon-button[hidden] {
+  display: none !important;
+}
+.portal-chat-icon-button svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}

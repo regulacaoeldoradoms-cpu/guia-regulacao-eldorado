@@ -14,7 +14,7 @@ Segurança/autorização preservadas: a interface estar presente em todos os mó
 
 Carregamentos manuais antigos de `portal-chat.js` e `portal-chat-switch-optimizer.js` foram removidos das páginas que os possuíam, evitando duas instâncias, polling ou timers duplicados. O Guia Médico mantém somente seu observador de posicionamento da ferramenta flutuante. O preload Login→Home também deixou o chat sob responsabilidade do bootstrap global.
 
-Cache: `portal-chat.js` e otimizador versionados como `20260928-global-1`; Service Worker em `20260928-3`, aquecendo bootstrap, script, otimizador e CSS. As asserções antigas de cache e carregamento manual foram reconciliadas sem retirar validações de autorização.
+Cache: `portal-chat.js` e otimizador versionados como `20260928-global-1`; Service Worker em `20260929-1`, aquecendo bootstrap, script, otimizador e CSS. As asserções antigas de cache e carregamento manual foram reconciliadas sem retirar validações de autorização.
 
 Validação pré-merge: **Validar chat interno do portal**, **Validar Camada Social V1**, **Validar Canal do Conselho V1**, **Validar interações do Portal V1**, **Validar Barra Global do Portal**, governança e demais checks rápidos pertinentes concluíram com success no candidato final. O teste focal `worker/tests/global-chat.test.mjs` verifica cobertura dos módulos, ausência em superfícies públicas, ausência de scripts manuais duplicados, sessão/primeiro acesso e matriz de autorização.
 
@@ -236,3 +236,8 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Métricas / observabilidade | Nenhuma telemetria nova e nenhum dado sensível; evidências desta unidade são checks e deploy. |
 | Próxima ação exata | Revisar launcher/conversa em Telemedicina, Documentos, Agenda, Guia Médico, Conselho e Configurações; corrigir apenas divergências concretas. |
 | Arquivos e fontes principais | `js/portal-global-chat.js`; `js/portal-chat.js`; `js/portal-chat-switch-optimizer.js`; `docs/CHAT-PROFISSIONAL.md`; `worker/tests/global-chat.test.mjs`; PR #520; Pages run `36420891455`; este status; Guia Mestre 1.1. |
+
+
+## Controles do chat global — CORRIGIDO — 29/09/2026
+
+Revisão visual do chat global identificou dois defeitos no cabeçalho: o ícone de fechar podia ficar invisível e o botão Voltar podia aparecer na lista de contatos sem conversa aberta. A correção foi isolada no componente do chat: `portal-chat.css` agora desenha os SVGs dos controles sem depender da camada de interações e força `[hidden]` a permanecer oculto. O cache do Service Worker foi renovado para `20260929-1`.

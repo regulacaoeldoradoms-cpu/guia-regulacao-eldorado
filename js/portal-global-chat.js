@@ -1,13 +1,13 @@
 'use strict';
 
 (() => {
-  if (window.PortalGlobalChat?.version === '20260928-1') return;
+  if (window.PortalGlobalChat?.version === '20260929-1') return;
 
-  const VERSION = '20260928-1';
+  const VERSION = '20260929-1';
   const TOKEN_KEY = 'regulacao.portal.session';
   const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';
   const AUTH_CLIENT = '/js/auth-client.js?v=20260910-4';
-  const CHAT_CSS = '/css/portal-chat.css?v=20260923-1';
+  const CHAT_CSS = '/css/portal-chat.css?v=20260929-1';
   const CHAT_SCRIPT = '/js/portal-chat.js?v=20260928-global-1';
   const CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1';
   let started = false;
