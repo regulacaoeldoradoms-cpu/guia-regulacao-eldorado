@@ -114,7 +114,8 @@ async function setup(page,{assessmentUnavailable=false,resumableSession=null,leg
     unexpected.push(pathname);return route.abort();
   });
   await page.goto(origin+'/estudos/');
-  await expect(page.locator('#assessmentPanel')).toBeVisible();
+  if(legacyWorker)await expect(page.locator('#assessmentPanel')).toBeHidden();
+  else await expect(page.locator('#assessmentPanel')).toBeVisible();
   return {errors,unexpected};
 }
 
