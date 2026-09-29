@@ -188,6 +188,13 @@
       return;
     }
 
+    const studyResume = resumableMission();
+    if (studyResume) {
+      $('assessmentMeta').textContent = `Finalize ou encerre primeiro a sessão em andamento — ${studyResume.mission.shortTitle || studyResume.mission.title}.`;
+      button.textContent = 'Sessão de estudo em andamento';
+      return;
+    }
+
     if (data.availableForm) {
       $('assessmentMeta').textContent = data.availableForm === 'A'
         ? 'Forma A disponível. São 16 questões inéditas, sem consulta e sem feedback até o encerramento.'
@@ -324,7 +331,7 @@
   }
 
   async function startAssessment() {
-    if (state.activeMission || state.leaving || state.activeAssessment) return;
+    if (state.activeMission || state.leaving || state.activeAssessment || resumableMission()) return;
     const button = $('startAssessment');
     button.disabled = true;
     const previousText = button.textContent;
