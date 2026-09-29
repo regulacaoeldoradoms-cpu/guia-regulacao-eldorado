@@ -368,3 +368,58 @@ Contrato V41:
 - se as três tentativas de leitura falharem, a interface continua mostrando o erro normal já existente.
 
 A finalidade é absorver oscilações muito curtas entre navegador e Worker sem esconder falhas reais do backend e sem tornar operações de escrita não idempotentes.
+
+## Persistência do acesso V34.3 — 28/09/2026
+
+A capacidade lógica de **Técnico em Telemedicina** não pode ser removida como efeito colateral de uma edição administrativa comum da conta.
+
+- `auth_telemedicine_access` permanece a fonte de verdade server-side;
+- alterações de nome, cargo textual, status ou funções independentes preservam a capacidade existente;
+- a revogação da Telemedicina deve ser explícita e executada pelo Desenvolvedor ao mudar deliberadamente o perfil;
+- uma tentativa ambígua de trocar o perfil de uma conta com Telemedicina ativa é bloqueada, em vez de gravar `enabled = 0` silenciosamente;
+- o formulário de gestão de usuários só envia `role` quando o perfil foi efetivamente alterado;
+- cache de sessão no navegador nunca concede autorização de API: a capacidade persistida no backend continua sendo conferida em cada operação protegida.
+
+A medida fecha a causa de recorrência em que a interface ainda podia mostrar o perfil em cache enquanto o backend já havia perdido a capacidade persistida.
+
+## Reparo de capacidade V34.4 — 28/09/2026
+
+O painel de usuários não pode tratar o texto **Técnico em Telemedicina** como prova suficiente de autorização. A capacidade efetiva continua sendo `auth_telemedicine_access`.
+
+Quando uma conta antiga estiver visualmente marcada como Telemedicina, mas a capacidade server-side estiver ausente/desabilitada:
+
+- o painel mostra **Telemedicina: autorização técnica pendente**;
+- a janela de edição informa a inconsistência;
+- manter **Técnico em Telemedicina** e salvar executa uma concessão explícita e repara a capacidade;
+- o backend só aceita `telemedicineAccess: true` junto do perfil `telemedicina`;
+- nenhuma conta revogada é reativada automaticamente apenas por nome, cargo textual ou cache de sessão.
+
+Depois do reparo, as regras V34.2 e V34.3 mantêm a autorização como fonte de verdade nas APIs e impedem que edições administrativas comuns derrubem novamente o acesso.
+
+## Integridade permanente V34.6 — 29/09/2026
+
+A autorização de Técnico em Telemedicina passa a ter proteção de integridade além da validação normal da API.
+
+- concessão e revogação usam funções distintas;
+- revogação exige mudança explícita de perfil pelo Desenvolvedor;
+- triggers D1 impedem `enabled=0` ou exclusão da capacidade sem intenção válida;
+- a revogação é registrada junto da intenção em batch transacional;
+- capacidades atualmente ativas recebem baseline de auditoria;
+- se o estado físico divergir da última intenção ativa, a verificação server-side repara a capacidade antes de negar o acesso;
+- uma última ação `revoked` nunca é autorreparada.
+
+Isso transforma a prevenção de regressão em regra de backend e de banco, não apenas em comportamento do formulário administrativo.
+
+## Conexão administrativa V34.7 — 29/09/2026
+
+O carregamento de **Usuários e acessos** foi ajustado para não depender de uma sequência de consultas D1 por conta.
+
+- capacidades de Telemedicina são lidas em lote;
+- a última intenção de auditoria é agregada em lote;
+- somente divergências reais acionam autorreparo;
+- o preflight CORS de `/api/admin/users` responde antes de qualquer acesso ao banco;
+- o GET autenticado continua fazendo toda a validação server-side;
+- a repetição automática de rede da V34.5 permanece como fallback, não como mecanismo de desempenho.
+
+A medida evita que o crescimento da quantidade de contas transforme o painel administrativo em uma rota progressivamente mais lenta ou sujeita a falha de transporte.
+

@@ -55,6 +55,16 @@ Carregamentos antigos por página foram removidos para evitar duas instâncias, 
 polling duplicado. O Guia Médico conserva somente o observador visual que reposiciona
 as ferramentas flutuantes quando o componente global entra no DOM.
 
+## Comportamento do cabeçalho
+
+O cabeçalho do chat deve manter o botão **Fechar/Recolher** sempre visível e legível
+nos temas claro e escuro. O ícone deve herdar a cor do botão e usar traço explícito,
+evitando depender do preenchimento padrão do SVG.
+
+O botão **Voltar para usuários** é contextual: permanece oculto enquanto a lista de
+contatos está aberta e só aparece depois que uma conversa é efetivamente aberta.
+Ao retornar à lista, ele deve ser ocultado novamente.
+
 ## Regras de segurança
 
 - A autorização é validada no Cloudflare Worker; exibir o componente visual não concede acesso.

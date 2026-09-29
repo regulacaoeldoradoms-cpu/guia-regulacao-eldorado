@@ -489,3 +489,16 @@ test('Home social é universal e preferências sociais vivem em Configurações'
   assert.match(login, /return '\/';/);
   assert.match(signup, /location\.replace\('\/'\)/);
 });
+
+
+test('Chat mantém fechar visível e só mostra voltar em conversa ativa', () => {
+  const css = read('css/portal-chat.css');
+  const client = read('js/portal-chat.js');
+
+  assert.match(css, /\.portal-chat-icon-button\[hidden\]\{display:none\}/);
+  assert.match(css, /\.portal-chat-icon-button svg\{[^}]*fill:none;[^}]*stroke:currentColor;[^}]*stroke-width:2/s);
+  assert.match(client, /id="portalChatBack"[^>]*hidden/);
+  assert.match(client, /document\.getElementById\('portalChatBack'\)\.hidden = false/);
+  assert.match(client, /document\.getElementById\('portalChatBack'\)\.hidden = true/);
+  assert.match(client, /id="portalChatClose"/);
+});
