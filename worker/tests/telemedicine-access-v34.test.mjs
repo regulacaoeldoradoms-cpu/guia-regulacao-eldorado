@@ -10,7 +10,7 @@ test('capacidade Telemedicina mantém papel-base coerente sem conceder acesso po
   const source = read('worker/telemedicine-access.js');
   assert.match(source, /const UNDERLYING_ROLE = 'recepcao'/);
   assert.match(source, /ensureTelemedicineUnderlyingRole/);
-  assert.match(source, /await ensureTelemedicineUnderlyingRole\(env, normalized\)/);
+  assert.match(source, /grantTelemedicineAccess[\s\S]+UPDATE auth_users[\s\S]+SET role = \?/);
   assert.match(source, /if \(user\.role !== UNDERLYING_ROLE\) await ensureTelemedicineUnderlyingRole/);
   assert.match(source, /SELECT enabled FROM auth_telemedicine_access WHERE username = \?/);
   assert.doesNotMatch(source, /jobTitle.*telemedicineAccessFor|DEFAULT_JOB_TITLE.*enabled/);
