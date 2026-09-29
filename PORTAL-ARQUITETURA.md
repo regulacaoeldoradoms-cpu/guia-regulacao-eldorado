@@ -368,3 +368,17 @@ As preferências `interface_sounds_enabled`, `interface_sound_volume` e `interfa
 Novos módulos devem registrar apenas interações semanticamente relevantes, reutilizar os tokens centrais, respeitar `prefers-reduced-motion`, manter feedback textual/visual completo e utilizar ícones SVG em vez de emojis. É proibido implementar um listener sonoro indiscriminado para todos os botões ou links.
 
 A especificação, a matriz de rotas, a API, a identidade sonora e o checklist de evolução estão em `docs/PORTAL-INTERACTIONS-V1.md`.
+
+## Integridade da capacidade Telemedicina — V34.6
+
+O perfil lógico `telemedicina` continua usando `recepcao` como papel-base por compatibilidade, e `auth_telemedicine_access` continua sendo a fonte de verdade da capacidade. A V34.6 adiciona proteção estrutural contra perda acidental dessa capacidade:
+
+- `grantTelemedicineAccess` e `revokeTelemedicineAccess` são caminhos distintos;
+- revogação só ocorre com intenção `profile-change`;
+- triggers no D1 bloqueiam revogação física ou exclusão sem intenção válida;
+- `auth_telemedicine_access_audit` registra baseline, concessão, revogação e autorreparo;
+- `telemedicineAccessFor` compara o estado físico com a última intenção quando encontra ausência/desabilitação e repara somente estados cuja última intenção continua ativa;
+- revogações legítimas permanecem fail-closed e não são reconstruídas por nome, cargo, cache ou inferência.
+
+Esse mecanismo protege todas as contas de Telemedicina sem cadastrar identificadores específicos no código.
+

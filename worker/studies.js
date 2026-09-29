@@ -305,10 +305,6 @@ export function computeStudyStreak(activityTimestamps, now = new Date(), timeZon
 }
 
 async function studyStreak(env, username) {
-  // Os registros da Missão Bancária são de 2026 em diante. Campo Grande usa
-  // UTC-4 sem horário de verão nesse período. Agregar por dia no SQL evita que
-  // o histórico seja truncado por quantidade de eventos e mantém o payload
-  // proporcional ao número de dias estudados, não ao número de cliques.
   const result = await env.AUTH_DB.prepare(`SELECT day FROM (
       SELECT date(attempted_at, '-4 hours') AS day
       FROM study_attempts
@@ -757,6 +753,17 @@ async function handleStartSession(request, env, user, origin) {
   const body = await readStudyBody(request);
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
+
+  const active = await resumableStudySession(env, user.username);
+  if (active) {
+    const activeMission = missionById(active.missionId);
+    throw new StudyRoundError(
+      `Retome a sessão em andamento — ${activeMission?.shortTitle || activeMission?.title || 'missão atual'} — antes de iniciar outra rodada.`,
+      409,
+      'STUDY_SESSION_RESUME_REQUIRED'
+    );
+  }
+
   await assertMissionPrerequisite(env, user.username, mission, body.reviewId ?? null);
   const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
   return json(result, 201, origin);

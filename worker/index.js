@@ -184,6 +184,13 @@ export default {
       catch (_) { return jsonError('Falha temporária na telemetria técnica.', 503, origin, originAllowed, 'OBSERVABILITY_TEMPORARILY_UNAVAILABLE'); }
     }
 
+    // V34.7: preflight do painel de usuários deve responder sem tocar D1,
+    // Firebase ou migrações. O navegador depende deste OPTIONS para liberar
+    // o GET autenticado; atrasá-lo pode aparecer apenas como "Failed to fetch".
+    if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/admin/users')) {
+      return handlePortalRoute(request, env, origin, originAllowed);
+    }
+
     await enforceDeveloperSeparation(env);
 
     if (isGmailJudicialBridgeApi(url.pathname)) {

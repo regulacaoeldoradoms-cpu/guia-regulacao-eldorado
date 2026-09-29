@@ -36,6 +36,8 @@ Não retorna alternativa escolhida, gabarito ou explicação no bootstrap.
 
 Quando há sessão recuperável, o botão principal do dashboard troca de “Continuar” para **“Retomar: <missão>”**.
 
+Enquanto existir uma sessão elegível para retomada, o backend recusa a abertura de uma nova rodada com HTTP 409 e código `STUDY_SESSION_RESUME_REQUIRED`. Isso impede fragmentação por cliente modificado ou outra aba.
+
 Ao retomar:
 - nenhuma nova sessão é criada;
 - a mesma `sessionId` volta a ser usada;
@@ -66,8 +68,9 @@ Isso evita ressuscitar uma rodada antiga sem contexto e preserva o histórico pa
 
 A suíte do roteador real passa a cobrir:
 1. bootstrap devolve a rodada ativa, o tempo confirmado e os IDs já respondidos;
-2. sessão encerrada deixa de aparecer como retomável;
-3. sessão ativa com mais de 12 horas não é oferecida automaticamente e continua preservada no banco.
+2. uma segunda rodada é recusada enquanto a primeira estiver elegível para retomada;
+3. sessão encerrada deixa de aparecer como retomável;
+4. sessão ativa com mais de 12 horas não é oferecida automaticamente e continua preservada no banco.
 
 O teste do cronômetro também prova que uma sessão retomada parte do tempo previamente confirmado sem duplicá-lo no checkpoint seguinte.
 
