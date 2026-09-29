@@ -101,7 +101,7 @@ A correção permanece restrita à apresentação e usa `html[data-portal-theme=
 - compositor, campo de mensagem e botão Enviar;
 - avisos, cartões de notificação e scrollbars.
 
-O modo claro não é alterado. Nenhuma regra de chat, contato, amizade, cargo, mensagem, push ou observabilidade muda. O CSS do chat continua em `portal-chat.css?v=20260923-1`, agora carregado pelo bootstrap global `portal-global-chat.js` em todos os módulos autenticados.
+O modo claro não é alterado. Nenhuma regra de chat, contato, amizade, cargo, mensagem, push ou observabilidade muda. O CSS do chat continua em `portal-chat.css?v=20260929-1`, agora carregado pelo bootstrap global `portal-global-chat.js` em todos os módulos autenticados.
 
 ## Refinamento transversal do modo escuro — 23/09/2026
 
@@ -122,3 +122,8 @@ Para invalidar CSS antigo em cache, as rotas visuais passam a carregar `portal-i
 
 Aceite visual desta unidade: após publicação, validar em modo escuro `/perfil/`, `/telemedicina/`, `/conquistas/`, `/recepcao/` e `/medico/`, preservando o comportamento do modo claro.
 
+
+
+## Correção dos controles do chat — 29/09/2026
+
+O cabeçalho do chat global passou a ser autossuficiente para os ícones **Voltar** e **Fechar**. O botão Voltar fica oculto enquanto a lista de contatos está aberta e só aparece em uma conversa ativa. Os traços SVG dos dois controles são definidos em `portal-chat.css`, garantindo contraste e visibilidade tanto no modo claro quanto no escuro, mesmo se a camada transversal de interações ainda não tiver inicializado.
