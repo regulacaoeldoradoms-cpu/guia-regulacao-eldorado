@@ -86,11 +86,17 @@ test('V34.3: revogação de Telemedicina é explícita e edição comum não der
   assert.match(flex, /actor\?\.role === 'admin' && requestedRole/);
 });
 
-test('V34.4: publicação usa URL nova e salvar Telemedicina repara capacidade inconsistente', () => {
+test('V34.5: painel de usuários tolera falha transitória de rede sem repetir gravações', () => {
   const page = read('admin/usuarios/index.html');
   const admin = read('js/admin-users.js');
 
-  assert.match(page, /admin-users\.js\?v=20260928-v34-4/);
+  assert.match(page, /admin-users\.js\?v=20260928-v34-5/);
+  assert.match(admin, /listUsersWithNetworkRetry/);
+  assert.match(admin, /const delays = \[350, 900\]/);
+  assert.match(admin, /failed to fetch\|network\\s\*error\|networkerror\|load failed\|fetch failed/i);
+  assert.match(admin, /return await auth\.listUsers\(\)/);
+  assert.match(admin, /data-action="retry-users"/);
+  assert.doesNotMatch(admin, /updateUser[\s\S]{0,200}listUsersWithNetworkRetry/);
   assert.match(admin, /Telemedicina: autorização técnica pendente/);
   assert.match(admin, /selectedRole === 'telemedicina'[\s\S]+input\.telemedicineAccess = true/);
 });
