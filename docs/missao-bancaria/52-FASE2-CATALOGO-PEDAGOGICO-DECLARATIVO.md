@@ -3,7 +3,7 @@
 
 Data: 29/09/2026.  
 Fase ativa: Fase 2.  
-Estado: implementação inicial; não encerra a fase.
+Estado: **integrado na PR #547**; não encerra a fase.
 
 ## Problema
 
@@ -64,7 +64,7 @@ A suíte deve comprovar:
 
 ## Próximo recorte
 
-Depois da integração e publicação deste recorte:
+Após a integração na `main` em `419e10644173effb548a230c82bd62476a21aa2e`, o próximo recorte é:
 - transformar o feedback das questões em contrato reutilizável capaz de informar por que a resposta correta é correta, por que a escolha falhou e qual conceito/trecho revisar;
 - preservar compatibilidade com questões antigas enquanto o conteúdo é enriquecido progressivamente.
 
