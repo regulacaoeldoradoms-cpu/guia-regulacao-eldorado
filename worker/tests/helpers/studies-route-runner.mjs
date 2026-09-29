@@ -201,6 +201,44 @@ test('sessão ativa antiga não é sugerida como retomada automática',async t=>
   assert.equal(sql.prepare('SELECT status FROM study_sessions WHERE session_id=?').get(id).status,'active');
 });
 
+test('rota de avaliação independente não vaza gabarito e mantém idempotência',async t=>{
+  const {sql,call}=await fixture(t);
+  const topics=[
+    'banking.sfn.introducao','banking.sfn.cmn','banking.sfn.bacen','banking.sfn.copom',
+    'banking.sfn.cvm','banking.sfn.operadores','banking.sfn.seguros-previdencia',
+    'banking.sfn.pagamentos-consorcios','banking.sfn.boss'
+  ];
+  await call('bootstrap');
+  const insert=sql.prepare(`INSERT INTO study_topic_progress(
+    username, topic_id, coverage_state, mastery_score, content_version_seen
+  ) VALUES ('wellyton', ?, 3, 0, 2)`);
+  for(const topic of topics)insert.run(topic);
+
+  const state=await call('assessments/banking.sfn-foundation');
+  assert.equal(state.status,200);
+  assert.equal(state.body.availableForm,'A');
+  assert.equal(state.body.questions,undefined);
+  assert.doesNotMatch(JSON.stringify(state.body),/eval\.sfn\./);
+
+  const started=await call('assessments/banking.sfn-foundation/start',{});
+  assert.equal(started.status,201);
+  assert.equal(started.body.formId,'A');
+  assert.equal(started.body.questions.length,16);
+  const q=started.body.questions[0];
+  assert.match(q.id,/^eval\.sfn\.a/);
+  assert.equal(q.answer,undefined);assert.equal(q.correct,undefined);assert.equal(q.explanation,undefined);
+
+  const first=await call('assessments/'+started.body.assessmentId+'/answers',{questionId:q.id,selectedOption:0});
+  assert.equal(first.status,200);assert.equal(first.body.recorded,true);
+  assert.equal(first.body.correct,undefined);assert.equal(first.body.correctOption,undefined);
+  const same=await call('assessments/'+started.body.assessmentId+'/answers',{questionId:q.id,selectedOption:0});
+  assert.equal(same.status,200);assert.equal(same.body.recorded,false);
+  const conflict=await call('assessments/'+started.body.assessmentId+'/answers',{questionId:q.id,selectedOption:1});
+  assert.equal(conflict.status,409);assert.equal(conflict.body.code,'STUDY_ASSESSMENT_ANSWER_CONFLICT');
+  const incomplete=await call('assessments/'+started.body.assessmentId+'/complete',{});
+  assert.equal(incomplete.status,409);assert.equal(incomplete.body.code,'STUDY_ASSESSMENT_INCOMPLETE');
+});
+
 test('clientes antigos recebem erro explícito; JSON inválido não vira resposta zero',async t=>{
   const {sql,call,start,lesson}=await fixture(t);await start();
   const missing=await call('attempts',{questionId:lesson.questions[0].id,selectedOption:0});
