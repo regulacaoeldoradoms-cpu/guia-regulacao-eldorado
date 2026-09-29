@@ -1,6 +1,6 @@
 'use strict';
 
-// 20260929-documents-1 invalidates navigation/chat assets after global chat rollout.
+// 20260929-documents-1 invalida páginas em cache para carregar imediatamente o reparo de rede da Central.
 const CACHE_VERSION = '20260929-documents-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
