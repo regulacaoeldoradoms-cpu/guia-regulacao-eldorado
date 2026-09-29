@@ -42,20 +42,48 @@ async function latestAuditAction(env, normalized) {
 
 async function repairTelemedicineAccess(env, normalized, reason = 'state-mismatch') {
   await ensureTargetUser(env, normalized);
+  const activeIntentSql = `SELECT action
+    FROM auth_telemedicine_access_audit
+    WHERE username = ?
+    ORDER BY id DESC
+    LIMIT 1`;
+  const boundedReason = String(reason || 'state-mismatch').slice(0, 80);
+
+  // V34.6.1: a decisão é revalidada dentro do próprio batch transacional.
+  // Se uma revogação explícita vencer a corrida antes do batch começar,
+  // nenhum statement de reparo altera a capacidade, o papel ou a auditoria.
   await env.AUTH_DB.batch([
     env.AUTH_DB.prepare(`INSERT INTO auth_telemedicine_access(username, enabled, created_by)
-      VALUES (?, 1, 'system-integrity')
-      ON CONFLICT(username) DO UPDATE SET enabled = 1, updated_at = CURRENT_TIMESTAMP`)
-      .bind(normalized),
+      SELECT ?, 1, 'system-integrity'
+      WHERE COALESCE((${activeIntentSql}), '') IN ('baseline_enabled','granted','auto_repaired')
+      ON CONFLICT(username) DO UPDATE SET
+        enabled = 1,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE COALESCE((${activeIntentSql}), '') IN ('baseline_enabled','granted','auto_repaired')`)
+      .bind(normalized, normalized, normalized),
     env.AUTH_DB.prepare(`UPDATE auth_users
       SET role = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE username = ? AND role <> 'admin' AND role <> ?`)
-      .bind(UNDERLYING_ROLE, normalized, UNDERLYING_ROLE),
+      WHERE username = ?
+        AND role <> 'admin'
+        AND role <> ?
+        AND COALESCE((${activeIntentSql}), '') IN ('baseline_enabled','granted','auto_repaired')`)
+      .bind(UNDERLYING_ROLE, normalized, UNDERLYING_ROLE, normalized),
     env.AUTH_DB.prepare(`INSERT INTO auth_telemedicine_access_audit(username, action, actor, reason)
-      VALUES (?, 'auto_repaired', 'system-integrity', ?)`)
-      .bind(normalized, String(reason || 'state-mismatch').slice(0, 80))
+      SELECT ?, 'auto_repaired', 'system-integrity', ?
+      WHERE COALESCE((${activeIntentSql}), '') IN ('baseline_enabled','granted','auto_repaired')
+        AND EXISTS (
+          SELECT 1
+          FROM auth_telemedicine_access
+          WHERE username = ? AND enabled = 1
+        )`)
+      .bind(normalized, boundedReason, normalized, normalized)
   ]);
-  return true;
+
+  const [state, latest] = await Promise.all([
+    env.AUTH_DB.prepare('SELECT enabled FROM auth_telemedicine_access WHERE username = ?').bind(normalized).first(),
+    latestAuditAction(env, normalized)
+  ]);
+  return Number(state?.enabled || 0) === 1 && ENABLED_AUDIT_ACTIONS.has(latest);
 }
 
 export async function ensureTelemedicineAccessSchema(env) {
