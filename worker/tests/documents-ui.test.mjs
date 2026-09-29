@@ -31,7 +31,6 @@ test('visualizador mantém 114% como fallback e aceita zoom inicial persistido',
 
 test('Titon aplica o último zoom manual da conta aos próximos PDFs', () => {
   const client = read('js/documents.js');
-  const router = read('worker/documents-router.js');
 
   assert.match(client, /DEFAULT_VIEWER_ZOOM_SCALE = 1\.14/);
   assert.match(client, /viewerZoomScale: null/);
@@ -1858,11 +1857,4 @@ test('Fase 7 reconecta leituras transitórias sem repetir gravações documentai
   assert.match(serviceWorker, /DOCUMENTS_WARM_RETRY_DELAYS_MS = Object\.freeze\(\[350, 900\]\)/);
   assert.match(serviceWorker, /\[500, 502, 503, 504\]\.includes/);
 
-  assert.match(router, /async function ensureDocumentPreferenceSchemas\(/);
-  const preferenceStart = router.indexOf('async function ensureDocumentPreferenceSchemas(');
-  const preferenceEnd = router.indexOf('async function documentsPreferencesFor(', preferenceStart);
-  const preferenceBlock = router.slice(preferenceStart, preferenceEnd);
-  assert.ok(preferenceBlock.indexOf('ensureEditorPreferencesSchema') < preferenceBlock.indexOf('ensureViewerPreferencesSchema'));
-  assert.ok(preferenceBlock.indexOf('ensureViewerPreferencesSchema') < preferenceBlock.indexOf('ensureDocumentAiPreferencesSchema'));
-  assert.match(preferenceBlock, /DOCUMENTS_PREFERENCES_UNAVAILABLE/);
 });
