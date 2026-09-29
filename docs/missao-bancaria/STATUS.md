@@ -237,6 +237,17 @@ Implementado em draft:
 
 O bootstrap comum continua sem enviar o banco `eval.sfn.*`. A UI ainda não foi implementada e a revisão factual/editorial final dos 32 itens continua pendente antes de homologação.
 
+## Hardening adicional — avaliação independente sob concorrência
+
+Branch: `fix/missao-bancaria-avaliacao-concorrencia`, sobre o backend já integrado.
+
+O início e o fechamento da avaliação independente passam a ser determinísticos mesmo sob duas requisições simultâneas:
+- início concorrente converge para uma única rodada ativa;
+- fechamento concorrente retorna o mesmo resultado persistido;
+- nenhum XP, cobertura, prontidão ou histórico de treino é alterado.
+
+A suíte ganhou cenários explícitos de concorrência para início e fechamento.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
