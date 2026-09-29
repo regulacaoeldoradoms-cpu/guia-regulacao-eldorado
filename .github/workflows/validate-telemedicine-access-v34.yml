@@ -52,6 +52,16 @@ jobs:
         run: |
           grep -q "SELECT enabled FROM auth_telemedicine_access WHERE username = ?" worker/telemedicine-access.js
           grep -q "accessSchemaReady" worker/telemedicine-access.js
+          grep -q "auth_telemedicine_access_audit" worker/telemedicine-access.js
+          grep -q "auth_telemedicine_revocation_intent" worker/telemedicine-access.js
+          grep -q "TELEMEDICINE_REVOCATION_REQUIRES_INTENT" worker/telemedicine-access.js
+          grep -q "TELEMEDICINE_ACCESS_DELETE_FORBIDDEN" worker/telemedicine-access.js
+          grep -q "grantTelemedicineAccess" worker/auth-management-flex.js
+          grep -q "revokeTelemedicineAccess" worker/auth-management-flex.js
+          if grep -q "setTelemedicineAccess" worker/auth-management-flex.js; then
+            echo 'A camada administrativa não pode voltar ao setter genérico da Telemedicina.' >&2
+            exit 1
+          fi
           grep -q "accessSchemaPromise" worker/telemedicine-access.js
           grep -q "ensureTelemedicineUnderlyingRole" worker/telemedicine-access.js
           grep -q "SELECT username FROM auth_telemedicine_access WHERE enabled = 1" worker/role-migration.js
