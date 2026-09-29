@@ -9,11 +9,8 @@ import { INTRODUCTION_SOURCES, INTRODUCTION_V2 } from './sfn-introducao-v2.js';
 import { SFN_LESSONS_V2 } from './sfn-aulas-v2.js';
 import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections } from './sfn-fundamentos-revisados.js';
 import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn-segmentos-revisados.js';
-import { attachIntroApplications } from './sfn-aplicacao-v1.js';
-import { attachMonetaryApplications } from './sfn-aplicacao-cmn-bcb-v1.js';
-import { attachMarketApplications } from './sfn-aplicacao-copom-cvm-v1.js';
-import { OPERATORS_INSURANCE_SOURCES, attachOperatorsInsuranceApplications } from './sfn-aplicacao-operadores-seguros-v1.js';
-import { attachPaymentsReviewApplications } from './sfn-aplicacao-pagamentos-revisao-v1.js';
+import { OPERATORS_INSURANCE_SOURCES } from './sfn-aplicacao-operadores-seguros-v1.js';
+import { attachApplications } from './application-registry.js';
 
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
@@ -99,9 +96,7 @@ function teachMission(mission) {
 }
 
 export const PUBLISHED_MISSIONS = Object.freeze(
-  BASE_MISSIONS.map(teachMission).map(attachIntroApplications)
-    .map(attachMonetaryApplications).map(attachMarketApplications)
-    .map(attachOperatorsInsuranceApplications).map(attachPaymentsReviewApplications)
+  BASE_MISSIONS.map(teachMission).map(attachApplications)
 );
 
 export function missionById(id) {
