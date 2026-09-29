@@ -35,14 +35,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma entidade não atende clientes nem executa operações de crédito. Sua função central é estabelecer diretrizes gerais que serão observadas por outros participantes do sistema. Em qual grupo funcional ela se enquadra?",
     "options": [
-      "Operadores",
       "Órgãos normativos",
+      "Operadores",
       "Instituições de pagamento",
       "Intermediários de mercado"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "O elemento decisivo é a função de formular diretrizes gerais. Isso caracteriza órgão normativo, independentemente do nome da entidade.",
-    "distractorRationale": "A confunde execução com formulação; C é espécie de participante operacional; D descreve atuação de mercado, não função normativa."
+    "distractorRationale": "B confunde execução com formulação; C é espécie de participante operacional; D descreve atuação de mercado, não função normativa."
   },
   {
     "id": "eval.sfn.a02",
@@ -62,13 +62,13 @@ const QUESTIONS = [
     "prompt": "Quatro instituições são descritas apenas por suas atividades. Qual descrição indica mais claramente um operador do sistema?",
     "options": [
       "Define diretrizes para moeda e crédito.",
-      "Fiscaliza participantes de um segmento.",
       "Recebe recursos de clientes e realiza operações financeiras autorizadas.",
+      "Fiscaliza participantes de um segmento.",
       "Delibera sobre orientações gerais de política econômica."
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Operadores executam atividades e serviços no mercado. Receber recursos e realizar operações financeiras é comportamento operacional.",
-    "distractorRationale": "A e D são funções normativas; B é função supervisora."
+    "distractorRationale": "A e D são funções normativas; C é função supervisora."
   },
   {
     "id": "eval.sfn.a03",
@@ -87,14 +87,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma questão afirma: “Como órgão superior do SFN, o CMN formula diretrizes da política da moeda e do crédito; a execução cotidiana dessas diretrizes cabe a entidades competentes, e não ao próprio Conselho como banco operacional.” A afirmação é:",
     "options": [
-      "Correta.",
       "Incorreta, pois o CMN é banco comercial.",
       "Incorreta, pois o CMN fiscaliza exclusivamente companhias abertas.",
+      "Correta.",
       "Incorreta, pois o CMN apenas administra o orçamento federal."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "O CMN é órgão normativo superior e formula políticas/diretrizes; não funciona como banco operacional.",
-    "distractorRationale": "B troca órgão normativo por operador; C desloca atribuição para o campo da CVM; D confunde SFN com execução orçamentária."
+    "distractorRationale": "A troca órgão normativo por operador; B desloca atribuição para o campo da CVM; D confunde SFN com execução orçamentária."
   },
   {
     "id": "eval.sfn.a04",
@@ -113,14 +113,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual conjunto corresponde à composição ensinada para o Conselho Monetário Nacional nesta versão do curso?",
     "options": [
-      "Ministro da Fazenda, Ministro do Planejamento e Orçamento e Presidente do Banco Central.",
       "Presidente da República, Presidente da CVM e Ministro da Fazenda.",
       "Ministro da Fazenda, Presidente do Banco do Brasil e Presidente da CAIXA.",
-      "Presidente do Banco Central, Presidente da CVM e Superintendente da SUSEP."
+      "Presidente do Banco Central, Presidente da CVM e Superintendente da SUSEP.",
+      "Ministro da Fazenda, Ministro do Planejamento e Orçamento e Presidente do Banco Central."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "A composição adotada no material é formada pelo Ministro da Fazenda, pelo Ministro do Planejamento e Orçamento e pelo Presidente do BCB.",
-    "distractorRationale": "B, C e D incluem autoridades que não compõem o colegiado apresentado."
+    "distractorRationale": "A, B e C incluem autoridades que não compõem o colegiado apresentado."
   },
   {
     "id": "eval.sfn.a05",
@@ -166,14 +166,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma instituição financeira precisa usar estruturas mantidas pela autoridade monetária para movimentar e liquidar recursos no relacionamento entre instituições. Qual função do Banco Central ajuda a compreender esse papel?",
     "options": [
-      "Banco dos bancos.",
       "Atendimento bancário de varejo.",
+      "Banco dos bancos.",
       "Administração de fundos de pensão.",
       "Fiscalização de ofertas públicas de ações."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "A expressão “banco dos bancos” resume relações e estruturas do Banco Central voltadas ao funcionamento entre instituições, não ao atendimento bancário comum do público.",
-    "distractorRationale": "B descreve operador de varejo; C remete à previdência fechada; D ao mercado de valores mobiliários."
+    "distractorRationale": "A descreve operador de varejo; C remete à previdência fechada; D ao mercado de valores mobiliários."
   },
   {
     "id": "eval.sfn.a07",
@@ -192,14 +192,14 @@ const QUESTIONS = [
     ],
     "prompt": "Após analisar cenário macroeconômico e riscos, um colegiado define a meta de uma taxa básica que orienta a execução da política monetária. Qual colegiado é esse?",
     "options": [
-      "Copom.",
       "CVM.",
       "CNSP.",
+      "Copom.",
       "PREVIC."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "O Copom define a meta para a Taxa Selic e orientações estratégicas da política monetária.",
-    "distractorRationale": "B atua em valores mobiliários; C em diretrizes de seguros; D supervisiona previdência complementar fechada."
+    "distractorRationale": "A atua em valores mobiliários; B em diretrizes de seguros; D supervisiona previdência complementar fechada."
   },
   {
     "id": "eval.sfn.a08",
@@ -218,14 +218,14 @@ const QUESTIONS = [
     ],
     "prompt": "Um enunciado descreve um colegiado que funciona no âmbito do Banco Central e é formado pelo Presidente e pelos Diretores da própria instituição. Qual colegiado foi descrito?",
     "options": [
-      "Copom.",
       "CMN.",
       "CVM.",
-      "CNSP."
+      "CNSP.",
+      "Copom."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "A composição Presidente + Diretores do Banco Central identifica o Copom no conteúdo ensinado.",
-    "distractorRationale": "B possui composição diferente; C é autarquia do mercado de valores mobiliários; D é conselho do segmento de seguros."
+    "distractorRationale": "A possui composição diferente; B é autarquia do mercado de valores mobiliários; C é conselho do segmento de seguros."
   },
   {
     "id": "eval.sfn.a09",
@@ -272,14 +272,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual situação aponta mais diretamente para a esfera da CVM, e não para a supervisão bancária tradicional do Banco Central?",
     "options": [
-      "Integridade de uma oferta pública de valores mobiliários.",
       "Funcionamento de conta corrente em banco comercial.",
+      "Integridade de uma oferta pública de valores mobiliários.",
       "Autorização de administradora de consórcio.",
       "Supervisão de uma cooperativa de crédito."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "A CVM atua no mercado de valores mobiliários e ofertas públicas; as demais situações se relacionam mais diretamente ao BCB.",
-    "distractorRationale": "B, C e D estão ligados a participantes/atividades supervisionados pelo Banco Central."
+    "distractorRationale": "A, C e D estão ligados a participantes/atividades supervisionados pelo Banco Central."
   },
   {
     "id": "eval.sfn.a11",
@@ -298,14 +298,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma instituição reúne, sob a mesma organização, uma carteira comercial e uma carteira de investimento. Considerando apenas a regra de carteiras ensinada, essa configuração é compatível com a classificação de:",
     "options": [
-      "Banco múltiplo.",
       "Instituição de pagamento sem carteira bancária.",
       "Órgão normativo.",
+      "Banco múltiplo.",
       "Entidade fechada de previdência complementar."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Há pelo menos duas carteiras e uma delas é comercial ou de investimento, satisfazendo a regra básica estudada para banco múltiplo.",
-    "distractorRationale": "B não descreve a organização por carteiras bancárias; C não é operador; D pertence a outro segmento."
+    "distractorRationale": "A não descreve a organização por carteiras bancárias; B não é operador; D pertence a outro segmento."
   },
   {
     "id": "eval.sfn.a12",
@@ -325,14 +325,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma cooperativa de crédito segue regras e é supervisionada pelo Banco Central. Isso significa que ela:",
     "options": [
-      "Continua sendo participante operacional; ser supervisionada não a transforma em supervisor.",
       "Passa a integrar o CMN.",
       "Torna-se órgão normativo.",
-      "Assume a função do Copom."
+      "Assume a função do Copom.",
+      "Continua sendo participante operacional; ser supervisionada não a transforma em supervisor."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "A instituição supervisionada permanece operadora. Supervisor e supervisionado ocupam papéis diferentes.",
-    "distractorRationale": "B, C e D confundem sujeição à supervisão com mudança de natureza institucional."
+    "distractorRationale": "A, B e C confundem sujeição à supervisão com mudança de natureza institucional."
   },
   {
     "id": "eval.sfn.a13",
@@ -378,14 +378,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma prova apresenta um título de capitalização e pergunta qual autarquia fiscaliza esse mercado. A resposta correta é:",
     "options": [
-      "SUSEP.",
       "PREVIC.",
+      "SUSEP.",
       "Banco Central.",
       "CVM."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "O mercado de capitalização está entre os mercados fiscalizados pela SUSEP.",
-    "distractorRationale": "B cuida de previdência fechada; C e D possuem outros campos de supervisão."
+    "distractorRationale": "A cuida de previdência fechada; C e D possuem outros campos de supervisão."
   },
   {
     "id": "eval.sfn.a15",
@@ -404,14 +404,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma empresa é instituição de pagamento e gerencia contas de pagamento. Qual afirmação é compatível com o conteúdo estudado?",
     "options": [
-      "Ela não se torna instituição financeira por isso e não pode exercer atividade privativa de instituição financeira por conta própria.",
       "Ela automaticamente se torna banco comercial.",
       "Ela pode definir a meta Selic.",
+      "Ela não se torna instituição financeira por isso e não pode exercer atividade privativa de instituição financeira por conta própria.",
       "Ela substitui o Banco Central na supervisão do arranjo."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Instituição de pagamento não é instituição financeira e não pode exercer atividades privativas destas apenas por atuar em pagamentos.",
-    "distractorRationale": "B confunde categorias; C e D atribuem competências públicas a operador privado."
+    "distractorRationale": "A confunde categorias; B e D atribuem competências públicas a operador privado."
   },
   {
     "id": "eval.sfn.a16",
@@ -430,14 +430,14 @@ const QUESTIONS = [
     ],
     "prompt": "No arranjo Pix, a infraestrutura centralizada gerida pelo Banco Central que liquida transações entre instituições distintas, uma a uma, é:",
     "options": [
-      "SPI.",
       "CMN.",
       "CVM.",
-      "PREVIC."
+      "PREVIC.",
+      "SPI."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "O SPI é a infraestrutura centralizada de liquidação de pagamentos instantâneos e opera em liquidação bruta em tempo real.",
-    "distractorRationale": "B, C e D são órgãos/entidades com outras finalidades."
+    "distractorRationale": "A, B e C são órgãos/entidades com outras finalidades."
   },
   {
     "id": "eval.sfn.b01",
@@ -456,14 +456,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma entidade recebe competência para verificar se participantes cumprem regras, aplicar supervisão em seu campo e acompanhar riscos do segmento. Sem saber seu nome, a função descrita é principalmente de:",
     "options": [
-      "Entidade supervisora.",
       "Órgão normativo.",
       "Cliente institucional.",
+      "Entidade supervisora.",
       "Operador de varejo."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Fiscalizar e fazer cumprir regras em determinado campo caracteriza função supervisora.",
-    "distractorRationale": "B formula diretrizes; C não é categoria funcional do SFN; D executa serviços e operações."
+    "distractorRationale": "A formula diretrizes; B não é categoria funcional do SFN; D executa serviços e operações."
   },
   {
     "id": "eval.sfn.b02",
@@ -482,14 +482,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual sequência representa corretamente a passagem da regra geral para a atividade no mercado?",
     "options": [
-      "Normativo formula diretrizes → supervisor acompanha o cumprimento → operador executa atividades.",
       "Operador formula diretrizes → cliente fiscaliza → supervisor concede crédito.",
       "Supervisor cria clientes → operador fiscaliza → normativo atende o público.",
-      "Cliente define política → normativo empresta → operador fiscaliza."
+      "Cliente define política → normativo empresta → operador fiscaliza.",
+      "Normativo formula diretrizes → supervisor acompanha o cumprimento → operador executa atividades."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "A sequência reproduz a divisão funcional ensinada: formulação, supervisão e operação.",
-    "distractorRationale": "B, C e D trocam as funções entre os grupos."
+    "distractorRationale": "A, B e C trocam as funções entre os grupos."
   },
   {
     "id": "eval.sfn.b03",
@@ -534,14 +534,14 @@ const QUESTIONS = [
     ],
     "prompt": "Em uma ata hipotética do CMN, qual membro deve aparecer como presidente do colegiado conforme a composição estudada?",
     "options": [
-      "Ministro da Fazenda.",
       "Presidente da CVM.",
+      "Ministro da Fazenda.",
       "Superintendente da SUSEP.",
       "Presidente do Banco do Brasil."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "O Ministro da Fazenda preside o CMN na composição adotada no curso.",
-    "distractorRationale": "B, C e D não exercem essa presidência."
+    "distractorRationale": "A, C e D não exercem essa presidência."
   },
   {
     "id": "eval.sfn.b05",
@@ -560,14 +560,14 @@ const QUESTIONS = [
     ],
     "prompt": "A execução de políticas monetária, cambial e de crédito, dentro das competências legais, é associada principalmente a qual instituição?",
     "options": [
-      "Banco Central.",
       "CVM.",
       "PREVIC.",
+      "Banco Central.",
       "Banco comercial."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "O BCB executa políticas monetária, cambial e de crédito e supervisiona o sistema em seu campo.",
-    "distractorRationale": "B e C são supervisores de outros segmentos; D é operador."
+    "distractorRationale": "A e B são supervisores de outros segmentos; D é operador."
   },
   {
     "id": "eval.sfn.b06",
@@ -587,14 +587,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual afirmação deve ser rejeitada?",
     "options": [
-      "“O Banco Central é o órgão normativo superior do SFN, acima do CMN.”",
       "“O Banco Central supervisiona instituições em sua competência.”",
       "“O Banco Central executa políticas em sua competência.”",
-      "“CMN e Banco Central possuem funções institucionais distintas.”"
+      "“CMN e Banco Central possuem funções institucionais distintas.”",
+      "“O Banco Central é o órgão normativo superior do SFN, acima do CMN.”"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "O órgão normativo superior é o CMN. O BCB possui funções supervisoras, regulatórias e executivas, mas não substitui essa posição do Conselho.",
-    "distractorRationale": "B, C e D refletem a distinção ensinada."
+    "distractorRationale": "A, B e C refletem a distinção ensinada."
   },
   {
     "id": "eval.sfn.b07",
@@ -639,14 +639,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual afirmação organiza corretamente o uso da palavra “Selic” no conteúdo estudado?",
     "options": [
-      "O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.",
       "Selic é o nome de um banco comercial que concede empréstimos ao público.",
+      "O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.",
       "Selic é uma modalidade de previdência complementar fechada.",
       "Selic é o órgão que fiscaliza companhias abertas."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "A aula distingue a origem do nome Selic e o uso da expressão taxa Selic no contexto dos juros básicos e de sua meta.",
-    "distractorRationale": "B, C e D confundem a expressão com instituições/segmentos sem relação com essa definição."
+    "distractorRationale": "A, C e D confundem a expressão com instituições/segmentos sem relação com essa definição."
   },
   {
     "id": "eval.sfn.b09",
@@ -666,14 +666,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma investigação envolve manipulação de mercado em negociações de valores mobiliários e proteção dos investidores. Qual entidade está no centro dessa atribuição?",
     "options": [
-      "CVM.",
       "SUSEP.",
       "PREVIC.",
+      "CVM.",
       "Copom."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Integridade do mercado de valores mobiliários, repressão a fraudes/manipulações e proteção de investidores estão no campo da CVM.",
-    "distractorRationale": "B, C e D atuam em segmentos diferentes."
+    "distractorRationale": "A, B e D atuam em segmentos diferentes."
   },
   {
     "id": "eval.sfn.b10",
@@ -692,14 +692,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual palavra-chave, isoladamente, é a pista mais forte para investigar a competência da CVM no contexto apresentado pelo curso?",
     "options": [
-      "Fundo de investimento.",
       "Depósito à vista.",
       "Consórcio.",
-      "Previdência complementar fechada."
+      "Previdência complementar fechada.",
+      "Fundo de investimento."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "Fundos de investimento aparecem entre os participantes/estruturas do mercado de valores mobiliários sujeitos à esfera da CVM.",
-    "distractorRationale": "B remete a banco comercial; C ao BCB; D à PREVIC."
+    "distractorRationale": "A remete a banco comercial; B ao BCB; C à PREVIC."
   },
   {
     "id": "eval.sfn.b11",
@@ -746,14 +746,14 @@ const QUESTIONS = [
     ],
     "prompt": "Uma financeira é autorizada e fiscalizada pelo Banco Central. Qual conclusão é correta?",
     "options": [
-      "A financeira continua sendo operadora; o BCB exerce a função supervisora.",
       "A financeira passa a ser órgão normativo.",
+      "A financeira continua sendo operadora; o BCB exerce a função supervisora.",
       "A financeira passa a integrar o Copom.",
       "A financeira assume competência sobre companhias abertas."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "Ser supervisionado não converte o participante em supervisor; a financeira continua no lado operacional.",
-    "distractorRationale": "B, C e D atribuem funções públicas incompatíveis."
+    "distractorRationale": "A, C e D atribuem funções públicas incompatíveis."
   },
   {
     "id": "eval.sfn.b13",
@@ -773,14 +773,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual par está corretamente associado?",
     "options": [
-      "Previdência complementar aberta — SUSEP; previdência complementar fechada — PREVIC.",
       "Previdência complementar aberta — PREVIC; fechada — Copom.",
       "Aberta — CVM; fechada — Banco Central.",
+      "Previdência complementar aberta — SUSEP; previdência complementar fechada — PREVIC.",
       "Aberta — CMN; fechada — CNSP."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "A SUSEP supervisiona a previdência complementar aberta; a PREVIC, as entidades fechadas.",
-    "distractorRationale": "B, C e D trocam os supervisores."
+    "distractorRationale": "A, B e D trocam os supervisores."
   },
   {
     "id": "eval.sfn.b14",
@@ -799,14 +799,14 @@ const QUESTIONS = [
     ],
     "prompt": "No segmento de seguros privados, qual relação funcional está correta?",
     "options": [
-      "CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua competência.",
       "SUSEP fixa a meta Selic e CNSP supervisiona bancos.",
       "PREVIC define política monetária e SUSEP fiscaliza companhias abertas.",
-      "CVM normatiza previdência fechada e CNSP administra consórcios."
+      "CVM normatiza previdência fechada e CNSP administra consórcios.",
+      "CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua competência."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "O CNSP exerce função normativa do segmento; a SUSEP é entidade supervisora dos mercados de seguros, previdência aberta, capitalização e resseguro.",
-    "distractorRationale": "B, C e D misturam competências de segmentos distintos."
+    "distractorRationale": "A, B e C misturam competências de segmentos distintos."
   },
   {
     "id": "eval.sfn.b15",
@@ -851,14 +851,14 @@ const QUESTIONS = [
     ],
     "prompt": "Qual descrição representa melhor o Sistema de Pagamentos Brasileiro (SPB)?",
     "options": [
-      "Conjunto de infraestruturas, arranjos, regras e participantes que permitem transferências e liquidação de obrigações.",
       "Um único banco comercial responsável por todo pagamento no país.",
+      "Conjunto de infraestruturas, arranjos, regras e participantes que permitem transferências e liquidação de obrigações.",
       "Um fundo de investimento administrado pela CVM.",
       "Um órgão colegiado que define a meta Selic."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "O SPB é um sistema composto por infraestruturas, arranjos, regras e participantes; não uma instituição bancária isolada.",
-    "distractorRationale": "B reduz o sistema a um banco; C e D pertencem a outros conceitos."
+    "distractorRationale": "A reduz o sistema a um banco; C e D pertencem a outros conceitos."
   }
 ];
 
@@ -907,10 +907,15 @@ export function validateAssessmentCatalog(sourceIds = new Set()) {
     const form = assessmentQuestionsForForm(formId);
     if (form.length !== FORM_SIZE) errors.push(`${formId}:wrong-size`);
     const lessons = new Map();
-    for (const item of form) lessons.set(item.primaryLessonId,(lessons.get(item.primaryLessonId)||0)+1);
+    const answers = new Map([[0,0],[1,0],[2,0],[3,0]]);
+    for (const item of form) {
+      lessons.set(item.primaryLessonId,(lessons.get(item.primaryLessonId)||0)+1);
+      answers.set(item.answer,(answers.get(item.answer)||0)+1);
+    }
     for (const topicId of REQUIRED_TOPIC_IDS.filter((id)=>id!=='banking.sfn.boss')) {
       if (lessons.get(topicId)!==2) errors.push(`${formId}:unbalanced:${topicId}`);
     }
+    for (const [answer,count] of answers) if (count!==4) errors.push(`${formId}:answer-position:${answer}:${count}`);
   }
   const formA = new Set(assessmentQuestionsForForm('A').map((item)=>item.id));
   for (const item of assessmentQuestionsForForm('B')) if (formA.has(item.id)) errors.push(`${item.id}:cross-form-duplicate`);

@@ -27,7 +27,10 @@ A estrutura foi gerada a partir do rascunho editorial do documento 44 e recebe v
 - tamanho e equilíbrio A/B;
 - ausência de sobreposição;
 - alternativas/resposta válidas;
+- **distribuição equilibrada da posição correta: 4×A, 4×B, 4×C e 4×D em cada forma**;
 - vínculo de aula, competência, ensino e fonte conhecida.
+
+A primeira revisão automatizada detectou um viés editorial relevante no rascunho V1: 30 das 32 respostas corretas estavam na alternativa A. O documento 44 foi reordenado para o rascunho V2 e o catálogo de produção passou a rejeitar qualquer regressão desse balanceamento.
 
 A revisão factual/editorial humana do banco continua necessária antes de chamar a experiência de homologada.
 
