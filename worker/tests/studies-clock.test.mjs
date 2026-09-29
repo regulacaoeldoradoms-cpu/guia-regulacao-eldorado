@@ -63,6 +63,20 @@ test('página antiga ou módulo sem dependências tem fallback nulo', () => {
   assert.equal(create({ root: { ownerDocument: {}, querySelector: () => null }, send(){} }),null);
 });
 
+test('cronômetro retomado parte do tempo já confirmado sem duplicar segundos', async () => {
+  const sent=[];const h=harness(async(id,seconds)=>{sent.push(seconds);return {sessionId:id,durationSeconds:seconds,checkpointed:true,timeProtocol:1};});
+  h.controller.start('resume',true,125);
+  assert.equal(h.controller.snapshot().durationSeconds,125);
+  assert.equal(h.controller.snapshot().savedSeconds,125);
+  assert.equal(h.nodes.studyTimer.textContent,'02:05');
+  h.tick();h.tick();
+  assert.equal(h.controller.snapshot().durationSeconds,127);
+  await h.controller.flush();
+  assert.deepEqual(sent,[127]);
+  assert.equal(h.controller.snapshot().savedSeconds,127);
+  h.controller.stop();
+});
+
 test('checkpoint aos 30 s preserva sessão aberta e transmite só ID e total', async () => {
   const sent=[];const h=harness(async(id,seconds)=>{sent.push([id,seconds]);return {sessionId:id,durationSeconds:seconds,checkpointed:true,timeProtocol:1};});
   h.controller.start('one',true);

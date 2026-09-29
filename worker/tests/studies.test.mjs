@@ -133,19 +133,23 @@ test('backend do Chefe usa a rodada atual e só premia após aprovação', () =>
 });
 
 
-test('retomada de missão reutiliza só aulas normais e não vaza gabarito', () => {
+test('retomada preserva histórico e sessão ativa sem vazar gabarito', () => {
   const backend = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
   const frontend = fs.readFileSync(new URL('../../js/studies.js', import.meta.url), 'utf8');
 
   assert.match(backend, /attemptedQuestionsMap/);
   assert.match(backend, /GROUP BY topic_id, question_id/);
-  assert.match(backend, /attemptedQuestions: await attemptedQuestionsMap/);
+  assert.match(backend, /attemptedQuestions,/);
+  assert.match(backend, /resumableStudySession/);
+  assert.match(backend, /answeredQuestionIds/);
+  assert.match(backend, /resumeProtocol: 1/);
 
   assert.match(frontend, /historicalAnsweredFor/);
-  assert.match(frontend, /state\.activeReview/);
-  assert.match(frontend, /mission\.kind === 'boss'/);
+  assert.match(frontend, /resumableMission/);
+  assert.match(frontend, /restoreRoundAnswers/);
+  assert.match(frontend, /Retomar:/);
   assert.match(frontend, /Respondida em sessão anterior/);
-  assert.match(frontend, /Responder novamente/);
+  assert.match(frontend, /Resposta já registrada nesta sessão/);
 
   const bootstrapMission = backend.slice(
     backend.indexOf('function publicMission'),
@@ -153,6 +157,12 @@ test('retomada de missão reutiliza só aulas normais e não vaza gabarito', () 
   );
   assert.doesNotMatch(bootstrapMission, /answer:/);
   assert.doesNotMatch(bootstrapMission, /correctOption/);
+
+  const resumable = backend.slice(
+    backend.indexOf('async function resumableStudySession'),
+    backend.indexOf('async function handleBootstrap')
+  );
+  assert.doesNotMatch(resumable, /selected_option|correctOption|explanation/);
 });
 
 

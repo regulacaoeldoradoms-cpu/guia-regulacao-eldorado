@@ -6,8 +6,9 @@
   const MAX_SAMPLE_GAP_MS = 5000;
   const SAVE_EVERY_MS = 30000;
 
-  function createAccumulator(now = () => performance.now()) {
-    let last = now(), milliseconds = 0, running = false, stopped = false;
+  function createAccumulator(now = () => performance.now(), initialSeconds = 0) {
+    const initial = Number.isFinite(Number(initialSeconds)) ? Math.max(0, Math.min(MAX_SECONDS, Math.floor(Number(initialSeconds)))) : 0;
+    let last = now(), milliseconds = initial * 1000, running = false, stopped = false;
     function sample() {
       const current = now();
       const delta = current - last;
@@ -130,11 +131,12 @@
       button.disabled = true;
     }
 
-    function start(sessionId, supported = false) {
+    function start(sessionId, supported = false, initialSeconds = 0) {
       reset();
       if (typeof sessionId !== 'string' || !sessionId) return false;
-      const record = { id: sessionId, clock: createAccumulator(now), supported: supported === true,
-        paused: false, closed: false, ended: false, saved: 0, wanted: 0, busy: null, error: false,
+      const initial = Number.isFinite(Number(initialSeconds)) ? Math.max(0, Math.min(MAX_SECONDS, Math.floor(Number(initialSeconds)))) : 0;
+      const record = { id: sessionId, clock: createAccumulator(now, initial), supported: supported === true,
+        paused: false, closed: false, ended: false, saved: initial, wanted: initial, busy: null, error: false,
         lastSave: now(), interval: null };
       current = record;
       record.clock.setRunning(!doc.hidden && !pageHidden);

@@ -113,6 +113,15 @@
     return state.data?.missions?.find((mission, index) => !completed(mission) && isUnlocked(index)) || null;
   }
 
+  function resumableMission() {
+    const resumable = state.data?.resumableSession;
+    if (!resumable?.sessionId || !resumable?.missionId) return null;
+    const mission = state.data?.missions?.find((item) => item.id === resumable.missionId) || null;
+    if (!mission) return null;
+    const review = resumable.reviewId ? { id: resumable.reviewId } : null;
+    return { mission, review, resumable };
+  }
+
   function retentionLabel(evidence) {
     if (!evidence || evidence.status === 'not_observed') return 'Retenção: sem revisão posterior';
     if (evidence.status === 'historical_unscored') {
@@ -160,6 +169,7 @@
       }
     }
 
+    const resume = resumableMission();
     const grid = $('missionGrid');
     grid.innerHTML = data.missions.map((mission, index) => {
       const done = completed(mission);
@@ -167,9 +177,15 @@
       const progress = data.progress[mission.topicId];
       const evidence = data.learningEvidence?.[mission.topicId];
       const boss = mission.kind === 'boss';
-      const label = done ? 'Concluída' : unlocked ? (boss ? 'Chefe disponível' : 'Disponível') : 'Bloqueada';
+      const isActive = resume?.mission.id === mission.id;
+      const blockedByActive = Boolean(resume && !isActive);
+      const label = isActive ? 'Sessão em andamento'
+        : done ? 'Concluída'
+          : unlocked && !blockedByActive ? (boss ? 'Chefe disponível' : 'Disponível')
+            : blockedByActive ? 'Retome a sessão atual' : 'Bloqueada';
       const requirement = boss && mission.passScore ? ` · mínimo ${mission.passScore}%` : '';
-      return `<button class="study-mission ${done ? 'done' : ''} ${boss ? 'boss' : ''}" type="button" data-mission-id="${mission.id}" ${unlocked ? '' : 'disabled'}>
+      const disabled = !isActive && (!unlocked || blockedByActive);
+      return `<button class="study-mission ${done ? 'done' : ''} ${boss ? 'boss' : ''}" type="button" data-mission-id="${mission.id}" ${disabled ? 'disabled' : ''}>
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
@@ -179,13 +195,20 @@
     }).join('');
 
     grid.querySelectorAll('[data-mission-id]').forEach((button) => {
-      button.addEventListener('click', () => openMission(button.dataset.missionId));
+      button.addEventListener('click', () => {
+        if (resume?.mission.id === button.dataset.missionId) resumeMission(resume);
+        else openMission(button.dataset.missionId);
+      });
     });
 
     const next = nextMission();
-    $('continueStudy').disabled = !next;
-    $('continueStudy').textContent = next ? `Continuar: ${next.shortTitle}` : 'Conteúdo atual concluído';
-    $('continueStudy').onclick = next ? () => openMission(next.id) : null;
+    $('continueStudy').disabled = !resume && !next;
+    $('continueStudy').textContent = resume
+      ? `Retomar: ${resume.mission.shortTitle}`
+      : next ? `Continuar: ${next.shortTitle}` : 'Conteúdo atual concluído';
+    $('continueStudy').onclick = resume
+      ? () => resumeMission(resume)
+      : next ? () => openMission(next.id) : null;
   }
 
   async function load() {
@@ -288,18 +311,15 @@
     updateFocusProgress();
   }
 
-  function startTimer(supportsCheckpoints) {
-    if (clock) clock.start(state.sessionId, supportsCheckpoints);
+  function startTimer(supportsCheckpoints, initialSeconds = 0) {
+    if (clock) clock.start(state.sessionId, supportsCheckpoints, initialSeconds);
     else {
       $('studyTimer').textContent = '—';
       if ($('studyTimerStatus')) $('studyTimerStatus').textContent = 'Cronômetro indisponível; atualize a página.';
     }
   }
 
-  async function openMission(id, review = null) {
-    if (state.activeMission || state.leaving) return;
-    const mission = state.data?.missions?.find((item) => item.id === id);
-    if (!mission) return;
+  function enterFocus(mission, review = null) {
     const generation = ++state.generation;
     state.activeMission = mission;
     state.activeReview = review;
@@ -317,6 +337,45 @@
     $('studyFocus').hidden = false;
     document.body.style.overflow = 'hidden';
     renderMission(mission);
+    return generation;
+  }
+
+  function restoreRoundAnswers(questionIds = []) {
+    const valid = new Set(state.activeMission?.questions?.map((question) => question.id) || []);
+    for (const questionId of Array.isArray(questionIds) ? questionIds : []) {
+      if (!valid.has(questionId)) continue;
+      state.answered.set(questionId, 'resume');
+      const card = document.querySelector(`[data-question-id="${CSS.escape(questionId)}"]`);
+      if (!card) continue;
+      card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
+      const button = card.querySelector('[data-answer-question]');
+      const feedback = card.querySelector('[data-feedback]');
+      if (button) { button.disabled = true; button.textContent = 'Respondida'; }
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.className = 'study-feedback prior';
+        feedback.textContent = 'Resposta já registrada nesta sessão. Continue de onde parou.';
+      }
+    }
+    updateFocusProgress();
+  }
+
+  function resumeMission(entry = resumableMission()) {
+    if (!entry || state.activeMission || state.leaving) return;
+    const { mission, review, resumable } = entry;
+    const generation = enterFocus(mission, review);
+    state.sessionId = resumable.sessionId;
+    restoreRoundAnswers(resumable.answeredQuestionIds);
+    startTimer(state.data?.timeProtocol === 1 && state.data?.resumeProtocol === 1, resumable.durationSeconds || 0);
+    status('Sessão recuperada. Continue de onde parou; o tempo anterior já confirmado foi preservado.', true);
+    if (generation !== state.generation) return;
+  }
+
+  async function openMission(id, review = null) {
+    if (state.activeMission || state.leaving) return;
+    const mission = state.data?.missions?.find((item) => item.id === id);
+    if (!mission) return;
+    const generation = enterFocus(mission, review);
     status('Registrando a rodada. A leitura já está disponível.', true);
     try {
       const response = await auth.api('/api/studies/sessions', {
