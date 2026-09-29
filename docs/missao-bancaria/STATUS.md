@@ -176,6 +176,14 @@ Preservado:
 
 Teste adicional cobre 600 eventos distribuídos sobre 20 dias e impede regressão para `LIMIT 500`.
 
+## Roteiro preparado — homologação humana da Fase 1
+
+Documento: `46-ROTEIRO-HOMOLOGACAO-FASE1.md`.
+
+Foi preparado um roteiro de aceite humano separado dos testes técnicos. Ele cobre acesso/isolamento, clareza do dashboard, ensino antes da prática, persistência/retomada, conclusão/conquista, revisão/retenção, sequência e uso em desktop/celular.
+
+O roteiro não cria dados fictícios nem exige manipular datas produtivas. Cenários dependentes de tempo natural podem permanecer pendentes sem transformar CI verde em homologação automática.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
