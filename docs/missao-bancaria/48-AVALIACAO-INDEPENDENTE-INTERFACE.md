@@ -72,6 +72,19 @@ A suíte Chromium passa a cobrir:
 8. correção/explicação só aparece depois do fechamento;
 9. histórico do painel é atualizado.
 
+## Isolamento durante forma ativa
+
+A interface não pode virar uma rota indireta de consulta enquanto uma forma independente está em andamento.
+
+Por isso:
+- o estado da avaliação é carregado antes de liberar a grade de missões;
+- quando existe Forma A/B ativa, todos os cartões de aula/revisão ficam indisponíveis para abertura;
+- o botão principal do dashboard passa a priorizar **Retomar avaliação: Forma X**;
+- `openMission` possui um segundo gate no cliente antes de renderizar o texto da aula;
+- o backend continua sendo a autoridade final e também recusa sessão comum enquanto a avaliação estiver ativa.
+
+Isso evita a janela em que o usuário poderia sair da forma, abrir uma aula para consultar o conteúdo e voltar à mesma avaliação sem encerrá-la.
+
 ## Preservação
 
 A UI não:
