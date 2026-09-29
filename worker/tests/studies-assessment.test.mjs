@@ -58,6 +58,14 @@ test('catálogo independente possui 32 itens balanceados e fontes conhecidas',()
   assert.doesNotMatch(JSON.stringify(PUBLISHED_MISSIONS),/eval\.sfn\./);
 });
 
+test('alternativas independentes evitam pista grosseira de comprimento',()=>{
+  for(const item of ASSESSMENT_QUESTIONS){
+    const lengths=item.options.map(option=>String(option).length);
+    const spread=Math.max(...lengths)-Math.min(...lengths);
+    assert.ok(spread<=35,`${item.id} tem diferença excessiva de comprimento entre alternativas: ${spread}`);
+  }
+});
+
 test('itens independentes não repetem literalmente nem quase copiam os prompts de treino',()=>{
   const training=PUBLISHED_MISSIONS.flatMap(mission=>(mission.questions||[]).map(question=>({
     id:question.id,prompt:question.prompt
