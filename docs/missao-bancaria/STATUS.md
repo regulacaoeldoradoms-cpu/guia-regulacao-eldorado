@@ -262,7 +262,8 @@ Implementado em draft:
 - fechamento apenas após 16 respostas;
 - correção e diagnóstico somente após encerrar;
 - histórico resumido de formas concluídas;
-- grade de missões e revisões bloqueada enquanto uma forma independente estiver ativa, com o botão principal priorizando a retomada da avaliação.
+- grade de missões e revisões bloqueada enquanto uma forma independente estiver ativa, com o botão principal priorizando a retomada da avaliação;
+- falha ao consultar o estado da avaliação é tratada de forma fail-closed: aulas permanecem temporariamente bloqueadas até o estado ser confirmado.
 
 O fluxo usa nós DOM/`textContent` para os itens recebidos do backend. A UI não concede XP, não altera cobertura nem calcula prontidão.
 
