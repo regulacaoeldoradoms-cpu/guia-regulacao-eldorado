@@ -190,7 +190,7 @@ test('Fase 7E mantém somente a raiz aquecida e pastas comuns seguem refresh aut
   assert.match(client, /refreshWarmedRootFolderInBackground\(\)/);
   assert.match(client, /source:\s*'cache'/);
   assert.match(client, /cache_state:\s*'hit'/);
-  assert.match(client, /await api\('\/api\/documents\/drive\/list'/);
+  assert.match(client, /await readApi\('\/api\/documents\/drive\/list'/);
   assert.doesNotMatch(client, /warmedPriorityFolder|applyWarmedFolderSnapshot|portal:documents-warm-updated/);
   assert.doesNotMatch(worker, /Consulta \[2026\]|Exames \[2026\]|priorityFolders|warmPriorityFolders/i);
   assert.doesNotMatch(performanceClient, /prefetchPriorityDocumentFiles|schedulePriorityDocumentFilesWarm|PortalDocumentCache/);
