@@ -201,6 +201,25 @@ Implementado em draft:
 
 O bootstrap comum continua sem enviar o banco `eval.sfn.*`. A UI ainda não foi implementada e a revisão factual/editorial final dos 32 itens continua pendente antes de homologação.
 
+## Nova entrega empilhada — interface da avaliação independente
+
+Documento: `48-AVALIACAO-INDEPENDENTE-INTERFACE.md`.  
+Branch: `feat/missao-bancaria-avaliacao-independente-ui`, empilhada sobre o backend independente.
+
+Implementado em draft:
+- painel de estado A/B no dashboard;
+- modo próprio de avaliação, separado da aula;
+- 16 itens por forma;
+- resposta individual sem feedback de correção;
+- retomada da mesma forma ativa;
+- fechamento apenas após 16 respostas;
+- correção e diagnóstico somente após encerrar;
+- histórico resumido de formas concluídas.
+
+O fluxo usa nós DOM/`textContent` para os itens recebidos do backend. A UI não concede XP, não altera cobertura nem calcula prontidão.
+
+A suíte Chromium ganhou cenários específicos para ausência de consulta durante a rodada, neutralidade do feedback, retomada e correção apenas no fechamento.
+
 ## Próximos recortes autorizados
 
 Concluir CI e integração elegível da retomada, sequência histórica e backend da avaliação independente; verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
