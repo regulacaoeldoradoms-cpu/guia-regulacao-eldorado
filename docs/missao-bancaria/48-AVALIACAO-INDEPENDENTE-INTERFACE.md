@@ -81,9 +81,10 @@ Por isso:
 - quando existe Forma A/B ativa, todos os cartões de aula/revisão ficam indisponíveis para abertura;
 - o botão principal do dashboard passa a priorizar **Retomar avaliação: Forma X**;
 - `openMission` possui um segundo gate no cliente antes de renderizar o texto da aula;
-- o backend continua sendo a autoridade final e também recusa sessão comum enquanto a avaliação estiver ativa.
+- o backend continua sendo a autoridade final e também recusa sessão comum enquanto a avaliação estiver ativa;
+- se o endpoint de estado da avaliação não puder ser confirmado, a grade fica temporariamente bloqueada em vez de liberar a leitura por suposição.
 
-Isso evita a janela em que o usuário poderia sair da forma, abrir uma aula para consultar o conteúdo e voltar à mesma avaliação sem encerrá-la.
+Isso evita tanto a janela em que o usuário poderia sair da forma, abrir uma aula para consultar o conteúdo e voltar à mesma avaliação sem encerrá-la quanto um fail-open durante falha de rede do endpoint de avaliação.
 
 ## Preservação
 
