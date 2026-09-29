@@ -131,6 +131,9 @@ test('V34.6: intenção ativa autorrepara capacidade antes de negar a Telemedici
   assert.match(access, /latestAuditAction/);
   assert.match(access, /if \(ENABLED_AUDIT_ACTIONS\.has\(action\)\)/);
   assert.match(access, /repairTelemedicineAccess/);
+  assert.match(access, /V34\.6\.1: a decisão é revalidada dentro do próprio batch transacional/);
+  assert.match(access, /COALESCE\(\(\$\{activeIntentSql\}\), ''\) IN \('baseline_enabled','granted','auto_repaired'\)/);
+  assert.match(access, /const \[state, latest\] = await Promise\.all/);
   assert.match(access, /action TEXT NOT NULL CHECK\(action IN \('baseline_enabled','granted','revoked','auto_repaired'\)\)/);
   assert.match(access, /Linhas desabilitadas permanecem intocadas/);
 });
