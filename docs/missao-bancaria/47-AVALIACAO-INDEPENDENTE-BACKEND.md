@@ -151,7 +151,7 @@ O roteador real com SQLite também cobre GET/POST sem vazamento de correção.
 
 - interface da avaliação independente ainda não foi implementada;
 - a forma B depende de tempo real entre as medições;
-- o banco autoral ainda deve passar revisão factual/editorial final;
+- o banco autoral recebeu revisão editorial/factual V3; homologação humana de clareza/dificuldade continua necessária;
 - esta branch permanece empilhada e não deve ser promovida antes das dependências técnicas.
 
 ## Hardening de concorrência — 29/09/2026
@@ -170,11 +170,20 @@ Testes executam `Promise.all` no início e no fechamento para impedir regressão
 
 O bootstrap passa a anunciar `assessmentProtocol: 1`. A interface só aplica o bloqueio fail-closed do estado da avaliação quando esse protocolo está presente; um frontend novo sobre Worker antigo continua permitindo o fluxo clássico de aulas sem fingir que a avaliação independente existe.
 
+## Revisão editorial/factual V3 — 29/09/2026
+
+Documento: `49-REVISAO-EDITORIAL-AVALIACAO-INDEPENDENTE.md`.
+
+O catálogo foi elevado para `ASSESSMENT_VERSION = 2` porque alternativas exibidas ao aluno foram reescritas para reduzir pistas por comprimento/forma sem mudar competência, fonte, ID ou posição correta.
+
+A suíte agora também impede diferença grosseira de comprimento (>35 caracteres) entre alternativas de um mesmo item. A revisão dirigida confirmou os pontos institucionais mais sensíveis nas fontes oficiais já cadastradas.
+
+Isso não substitui homologação humana nem calibração psicométrica.
+
 ## Próxima etapa
 
-1. concluir e integrar retomada + sequência histórica;
-2. validar CI deste backend;
-3. revisar os 32 itens;
-4. implementar interface;
-5. testar fluxo de navegador sem consulta durante a rodada;
-6. integrar somente com todos os gates aprovados.
+1. concluir CI da revisão editorial V2;
+2. concluir CI e integração da interface independente;
+3. testar fluxo de navegador sem consulta durante a rodada;
+4. verificar publicação de frontend e Worker separadamente;
+5. executar o roteiro humano da Fase 1 sem declarar prontidão automática.
