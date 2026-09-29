@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { PUBLISHED_MISSIONS, STUDY_SOURCES, missionById, questionById, sourceMap, validateTeachingCatalog } from '../studies-content/manifest.js';
 import { PUBLISHED_MISSIONS as BASE } from '../studies-content/banking-sfn.js';
 import { INTRO_APPLICATIONS, validateIntroApplications } from '../studies-content/sfn-aplicacao-v1.js';
@@ -10,10 +11,62 @@ import { PAYMENTS_REVIEW_APPLICATIONS, validatePaymentsReviewApplications } from
 import { SFN_LESSONS_V2 } from '../studies-content/sfn-aulas-v2.js';
 import { reviseFundamentalsSections } from '../studies-content/sfn-fundamentos-revisados.js';
 import { reviseSegmentsSections } from '../studies-content/sfn-segmentos-revisados.js';
+import {
+  APPLICATION_DEFINITIONS,
+  attachApplicationDefinition,
+  validateApplicationCatalog
+} from '../studies-content/application-registry.js';
 
 const expectedMissionIds = ['banking.sfn.introducao', 'banking.sfn.cmn', 'banking.sfn.bacen', 'banking.sfn.copom', 'banking.sfn.cvm', 'banking.sfn.operadores', 'banking.sfn.seguros-previdencia', 'banking.sfn.pagamentos-consorcios', 'banking.sfn.boss'];
 const previousTasks = [...INTRO_APPLICATIONS, ...Object.values(MONETARY_APPLICATIONS).flat(), ...Object.values(MARKET_APPLICATIONS).flat(), ...Object.values(OPERATORS_INSURANCE_APPLICATIONS).flat()];
 const allTasks = [...previousTasks, ...Object.values(PAYMENTS_REVIEW_APPLICATIONS).flat()];
+
+test('Fase 2 usa um catálogo declarativo único para as 27 aplicações atuais', () => {
+  assert.equal(APPLICATION_DEFINITIONS.length, 9);
+  assert.equal(APPLICATION_DEFINITIONS.reduce((total, item) => total + item.tasks.length, 0), 27);
+  assert.deepEqual(validateApplicationCatalog(PUBLISHED_MISSIONS, sourceMap()), []);
+
+  const manifest = fs.readFileSync(new URL('../studies-content/manifest.js', import.meta.url), 'utf8');
+  assert.match(manifest, /\.map\(attachApplications\)/);
+  assert.doesNotMatch(manifest, /\.map\(attach(?:Intro|Monetary|Market|OperatorsInsurance|PaymentsReview)Applications\)/);
+});
+
+test('motor declarativo anexa uma missão nova sem criar função específica por aula', () => {
+  const tasks = Object.freeze([Object.freeze({
+    id: 'apply.fixture.nova.v1',
+    version: 1,
+    kind: 'self-explanation',
+    title: 'Aplicação sintética',
+    prompt: 'Explique o conceito com suas palavras.',
+    model: 'Modelo sintético.',
+    criteria: Object.freeze(['Critério sintético.']),
+    sectionIds: Object.freeze(['resumo']),
+    sourceIds: Object.freeze(['source.fixture'])
+  })]);
+  const mission = Object.freeze({
+    id: 'fixture.new-mission',
+    order: 99,
+    kind: 'lesson',
+    sourceIds: Object.freeze(['source.fixture']),
+    sections: Object.freeze([
+      Object.freeze({ id: 'resumo', heading: 'Resumo', body: 'Ensino sintético para teste.' })
+    ])
+  });
+  const definition = Object.freeze({
+    missionId: mission.id,
+    anchorSectionId: 'resumo',
+    applicationVersion: 1,
+    extendSources: false,
+    requireLessonSources: true,
+    tasks
+  });
+
+  const attached = attachApplicationDefinition(mission, definition);
+  assert.notStrictEqual(attached, mission);
+  assert.strictEqual(attached.sections[0].applicationTasks, tasks);
+  assert.equal(attached.sections[0].applicationVersion, 1);
+  assert.strictEqual(attached.sourceIds, mission.sourceIds);
+});
 
 test('catálogo servido mantém ensino e casos iniciais com fontes existentes', () => {
   assert.deepEqual(validateTeachingCatalog(), []);
