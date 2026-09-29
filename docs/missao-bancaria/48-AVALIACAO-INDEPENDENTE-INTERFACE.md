@@ -50,6 +50,15 @@ Após o fechamento:
 
 A tela explicita que o resultado é evidência de aplicação, não aprovação, domínio total ou prontidão de prova.
 
+## Isolamento entre estudo e avaliação
+
+O isolamento é bidirecional:
+- avaliação ativa bloqueia missões e revisões até a forma ser retomada/encerrada;
+- sessão de estudo retomável bloqueia o botão de iniciar avaliação até a sessão atual ser concluída/encerrada;
+- além do gate visual, o backend rejeita a tentativa cruzada com códigos de conflito específicos.
+
+Isso evita duas rodadas pedagógicas simultâneas e reduz fragmentação de histórico/tempo sem depender apenas do frontend.
+
 ## Segurança de interface
 
 Os itens são renderizados com criação de nós DOM e `textContent`, não por interpolação de HTML do servidor.
