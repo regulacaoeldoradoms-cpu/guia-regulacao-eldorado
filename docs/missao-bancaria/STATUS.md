@@ -1,10 +1,10 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 29/09/2026 — interface independente integrada; frontend e Worker publicados; Fase 1 em homologação humana.
+Atualizado em 29/09/2026 — Fase 1 aceita; Fase 2 aberta; primeiro recorte do motor pedagógico em desenvolvimento.
 
 ## Estado e autorização
 
-**Fase ativa: Fase 1. Ensino por leitura antes da avaliação.** Wellyton autorizou desenvolvimento, testes e integrações elegíveis sem acesso imediato nem nova confirmação por pequena etapa. Não confundir autorização com aprendizagem observada. Aplicar os documentos 24 e 26: subdividir a produção sem omitir o ensino.
+**Fase ativa: Fase 2. Motor pedagógico reutilizável.** Wellyton aprovou explicitamente a Fase 1 e autorizou o avanço em 29/09/2026. Ensino por leitura antes da avaliação continua obrigatório em toda unidade. Aplicar os documentos 24 e 26: subdividir a produção sem omitir ensino e preservar integralmente o progresso já conquistado.
 
 Fonte oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 
@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência do projeto nesta etapa: motor técnico ~90%; Fase 1 ~96% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~31%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência após o aceite: Fase 1 = 100% encerrada; motor técnico ~91%; Fase 2 iniciada (~5% antes da integração do Recorte A); cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~31%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -307,10 +307,28 @@ O documento mapeia os 12 critérios originais da fase contra o estado atual, reg
 - o roteiro humano do documento 46 continua obrigatório;
 - a Fase 2 não deve começar antes do aceite explícito da Fase 1.
 
-## Próximos recortes autorizados
+## Aceite da Fase 1 e abertura da Fase 2
 
-A integração da #541, a publicação do frontend e a publicação produtiva do Worker foram confirmadas. O próximo gate é executar o roteiro humano do documento 46 e registrar aceite explícito antes de abrir formalmente a Fase 2. Retomada, sequência histórica, retenção e backend da avaliação independente já estão integrados. Não declarar a Fase 1 homologada nem abrir formalmente a Fase 2 antes do aceite humano explícito.
+Documento: `51-ACEITE-FASE1-ABERTURA-FASE2.md`.
+
+Em 29/09/2026, após o fechamento técnico e a confirmação de publicação de frontend e Worker, Wellyton declarou: **“esta aprovado pode ir para a fase 2”**. A Fase 1 fica encerrada por aceite explícito. O registro é global e não inventa preenchimento item a item do roteiro H1–H14.
+
+A aprovação da fase não significa curso completo, domínio certificado ou prontidão de prova. A cobertura curricular permanece em 1/43 blocos publicados.
+
+## Fase 2 — Recorte A em desenvolvimento
+
+Documento: `52-FASE2-CATALOGO-PEDAGOGICO-DECLARATIVO.md`.  
+Branch: `feat/missao-bancaria-fase2-catalogo-pedagogico`.
+
+Primeiro acoplamento atacado:
+- o manifesto de produção deixa de encadear cinco funções `attach*` específicas de grupos de aulas;
+- `application-registry.js` centraliza a composição por dados;
+- as nove missões e 27 atividades atuais continuam com os mesmos IDs e objetos de conteúdo;
+- um teste sintético prova que uma nova missão usa `attachApplicationDefinition` sem nova função específica por aula;
+- módulos antigos de autoria permanecem nesta etapa para compatibilidade e não são removidos às pressas.
+
+Próximo recorte depois da integração: contrato reutilizável de feedback de questão, com motivo da resposta correta, motivo da escolha incorreta e indicação do conceito/trecho a revisar, mantendo compatibilidade com o banco atual.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
-Histórico de incidentes: erro inicial “Rota não encontrada” motivou #492/#494; #493 sem merge; #491/#496/#497 substituídas. Não reintroduzir versões abandonadas ou alterar gates para esconder falhas. A Fase 1 continua aberta.
+Histórico de incidentes: erro inicial “Rota não encontrada” motivou #492/#494; #493 sem merge; #491/#496/#497 substituídas. Não reintroduzir versões abandonadas ou alterar gates para esconder falhas. A Fase 1 está encerrada; a Fase 2 está ativa.
