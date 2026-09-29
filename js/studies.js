@@ -21,6 +21,7 @@
     completing: false,
     pendingAnswers: new Set(),
     assessmentState: null,
+    assessmentUnavailable: false,
     activeAssessment: null,
     assessmentAnswers: new Set(),
     assessmentPending: new Set(),
@@ -219,11 +220,20 @@
   async function loadAssessmentState(refreshDashboard = true) {
     try {
       state.assessmentState = await auth.api('/api/studies/assessments/banking.sfn-foundation', { method:'GET' });
+      state.assessmentUnavailable = false;
       renderAssessmentPanel();
     } catch (_) {
       state.assessmentState = null;
+      state.assessmentUnavailable = true;
       const panel = $('assessmentPanel');
-      if (panel) panel.hidden = true;
+      if (panel) panel.hidden = false;
+      if ($('assessmentMeta')) $('assessmentMeta').textContent = 'Não foi possível confirmar o estado da avaliação. As aulas ficam temporariamente bloqueadas para não quebrar o isolamento de uma forma eventualmente ativa.';
+      if ($('startAssessment')) {
+        $('startAssessment').disabled = true;
+        $('startAssessment').onclick = null;
+        $('startAssessment').textContent = 'Avaliação indisponível';
+      }
+      assessmentMessage('Tente novamente quando a conexão com a avaliação for restabelecida.');
     }
     if (refreshDashboard && state.data) renderDashboard();
   }
@@ -482,6 +492,7 @@
     renderCurriculum(data.curriculum);
 
     const activeAssessment = state.assessmentState?.active || null;
+    const assessmentUnavailable = state.assessmentUnavailable === true;
     const review = Array.isArray(data.reviews) && data.reviews.length ? data.reviews[0] : null;
     const reviewPanel = $('reviewPanel');
     if (reviewPanel) {
@@ -489,13 +500,15 @@
       if (review) {
         $('reviewTitle').textContent = `Revisão ${review.cycle}: ${review.title}`;
         const due = formatReviewDue(review.dueAt);
-        $('reviewMeta').textContent = activeAssessment
-          ? `Retome primeiro a Forma ${activeAssessment.formId} da avaliação independente.`
-          : due
+        $('reviewMeta').textContent = assessmentUnavailable
+          ? 'A revisão aguarda a confirmação do estado da avaliação independente.'
+          : activeAssessment
+            ? `Retome primeiro a Forma ${activeAssessment.formId} da avaliação independente.`
+            : due
             ? `Vencida desde ${due}. Refaça a minibatalha para consolidar o conteúdo.`
             : 'Refaça a minibatalha para consolidar o conteúdo.';
-        $('startReview').disabled = Boolean(activeAssessment);
-        $('startReview').onclick = activeAssessment ? null : () => openMission(review.missionId, review);
+        $('startReview').disabled = assessmentUnavailable || Boolean(activeAssessment);
+        $('startReview').onclick = assessmentUnavailable || activeAssessment ? null : () => openMission(review.missionId, review);
       } else {
         $('startReview').disabled = true;
         $('startReview').onclick = null;
@@ -513,13 +526,14 @@
       const isActive = resume?.mission.id === mission.id;
       const blockedByActive = Boolean(resume && !isActive);
       const blockedByAssessment = Boolean(activeAssessment);
-      const label = blockedByAssessment ? `Retome avaliação · Forma ${activeAssessment.formId}`
+      const label = assessmentUnavailable ? 'Aguardando estado da avaliação'
+        : blockedByAssessment ? `Retome avaliação · Forma ${activeAssessment.formId}`
         : isActive ? 'Sessão em andamento'
           : done ? 'Concluída'
             : unlocked && !blockedByActive ? (boss ? 'Chefe disponível' : 'Disponível')
               : blockedByActive ? 'Retome a sessão atual' : 'Bloqueada';
       const requirement = boss && mission.passScore ? ` · mínimo ${mission.passScore}%` : '';
-      const disabled = blockedByAssessment || (!isActive && (!unlocked || blockedByActive));
+      const disabled = assessmentUnavailable || blockedByAssessment || (!isActive && (!unlocked || blockedByActive));
       return `<button class="study-mission ${done ? 'done' : ''} ${boss ? 'boss' : ''}" type="button" data-mission-id="${mission.id}" ${disabled ? 'disabled' : ''}>
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
@@ -537,15 +551,19 @@
     });
 
     const next = nextMission();
-    $('continueStudy').disabled = !activeAssessment && !resume && !next;
-    $('continueStudy').textContent = activeAssessment
-      ? `Retomar avaliação: Forma ${activeAssessment.formId}`
-      : resume
+    $('continueStudy').disabled = assessmentUnavailable || (!activeAssessment && !resume && !next);
+    $('continueStudy').textContent = assessmentUnavailable
+      ? 'Aguardando confirmação da avaliação'
+      : activeAssessment
+        ? `Retomar avaliação: Forma ${activeAssessment.formId}`
+        : resume
         ? `Retomar: ${resume.mission.shortTitle}`
         : next ? `Continuar: ${next.shortTitle}` : 'Conteúdo atual concluído';
-    $('continueStudy').onclick = activeAssessment
-      ? startAssessment
-      : resume
+    $('continueStudy').onclick = assessmentUnavailable
+      ? null
+      : activeAssessment
+        ? startAssessment
+        : resume
         ? () => resumeMission(resume)
         : next ? () => openMission(next.id) : null;
   }
@@ -558,7 +576,9 @@
       // uma janela de consulta entre o bootstrap e a descoberta de uma forma ativa.
       await loadAssessmentState(false);
       renderDashboard();
-      status('');
+      status(state.assessmentUnavailable
+        ? 'Não foi possível confirmar o estado da avaliação independente. As aulas permanecem bloqueadas até a reconexão.'
+        : '');
     } catch (error) {
       status(error.message || 'Não foi possível carregar a Missão Bancária.');
     }
@@ -703,7 +723,7 @@
   }
 
   function resumeMission(entry = resumableMission()) {
-    if (!entry || state.activeMission || state.leaving || state.assessmentState?.active) return;
+    if (!entry || state.activeMission || state.leaving || state.assessmentUnavailable || state.assessmentState?.active) return;
     const { mission, review, resumable } = entry;
     const generation = enterFocus(mission, review);
     state.sessionId = resumable.sessionId;
@@ -715,6 +735,11 @@
 
   async function openMission(id, review = null) {
     if (state.activeMission || state.leaving) return;
+    if (state.assessmentUnavailable) {
+      status('Aguarde a confirmação do estado da avaliação independente antes de abrir uma aula.');
+      $('assessmentPanel')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
     if (state.assessmentState?.active) {
       status(`Retome a Forma ${state.assessmentState.active.formId} da avaliação independente antes de consultar uma missão.`);
       $('assessmentPanel')?.scrollIntoView({ behavior:'smooth', block:'center' });
