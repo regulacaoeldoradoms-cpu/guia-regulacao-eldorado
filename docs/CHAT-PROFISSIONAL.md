@@ -128,3 +128,15 @@ Essa recusa não impede a conversa profissional.
 - `js/portal-chat.js` — gate cliente por cargo e link `Ver perfil`;
 - `css/portal-chat-profile-link.css` — apresentação responsiva do link;
 - `.github/workflows/validate-portal-chat.yml` — validações automáticas da integração, do chat profissional e do gate social cidadão↔cidadão.
+
+
+## Controles do cabeçalho
+
+Decisão permanente registrada em 29/09/2026:
+
+- **sem conversa ativa**, o cabeçalho exibe apenas o controle de fechar/recolher o chat; o botão **Voltar** permanece oculto porque não existe nível anterior dentro do chat;
+- **com uma conversa ativa**, o botão **Voltar** aparece e retorna à lista de contatos;
+- o ícone **Fechar (X)** e o ícone **Voltar** devem ser renderizados pelo próprio componente do chat em modo claro e escuro, sem depender da inicialização opcional da camada global de interações;
+- o atributo `hidden` dos controles deve prevalecer sobre qualquer regra visual genérica do botão.
+
+Essa regra é apenas de interface e não altera contatos, mensagens, amizade, presença, permissões ou autorização no Worker.
