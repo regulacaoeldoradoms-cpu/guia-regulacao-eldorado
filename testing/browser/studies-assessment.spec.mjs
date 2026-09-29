@@ -18,7 +18,7 @@ const questions=Array.from({length:16},(_,index)=>({
   competencyIds:[`competencia.${index%8+1}`]
 }));
 
-async function setup(page){
+async function setup(page,{assessmentUnavailable=false}={}){
   const errors=[],unexpected=[];
   page.on('pageerror',error=>errors.push(error.message));
   const payload={
@@ -34,6 +34,7 @@ async function setup(page){
   };
   const auth=`
     window.__assessmentAnswers=new Set();
+    window.__assessmentUnavailable=${JSON.stringify(assessmentUnavailable)};
     window.__assessmentState={
       blockId:'banking.sfn-foundation',assessmentVersion:1,contentVersion:2,
       prerequisitesComplete:true,availableForm:'A',nextEligibleAt:'',completed:[],active:null
@@ -46,7 +47,10 @@ async function setup(page){
       api:async(route,options={})=>{
         window.__studyCalls.push({route,method:options.method||'GET',body:options.body||''});
         if(route==='/api/studies/bootstrap')return structuredClone(${JSON.stringify(payload)});
-        if(route==='/api/studies/assessments/banking.sfn-foundation')return structuredClone(window.__assessmentState);
+        if(route==='/api/studies/assessments/banking.sfn-foundation'){
+          if(window.__assessmentUnavailable)throw new Error('Falha sintética do estado da avaliação');
+          return structuredClone(window.__assessmentState);
+        }
         if(route==='/api/studies/assessments/banking.sfn-foundation/start'){
           window.__assessmentState.active={assessmentId:'11111111-1111-1111-1111-111111111111',formId:'A',startedAt:'2026-09-29T12:00:00Z',
             answeredCount:window.__assessmentAnswers.size,total:16};
@@ -111,6 +115,20 @@ async function setup(page){
   await expect(page.locator('#assessmentPanel')).toBeVisible();
   return {errors,unexpected};
 }
+
+test('falha ao confirmar estado da avaliação bloqueia aulas em vez de abrir consulta',async({page})=>{
+  const {errors,unexpected}=await setup(page,{assessmentUnavailable:true});
+  await expect(page.locator('#assessmentPanel')).toBeVisible();
+  await expect(page.locator('#startAssessment')).toBeDisabled();
+  await expect(page.locator('#continueStudy')).toBeDisabled();
+  await expect(page.locator('#continueStudy')).toHaveText('Aguardando confirmação da avaliação');
+  for (const button of await page.locator('#missionGrid [data-mission-id]').all()) {
+    await expect(button).toBeDisabled();
+  }
+  await expect(page.locator('#studyStatus')).toContainText('aulas permanecem bloqueadas');
+  expect(errors).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
 
 test('Forma A abre sem consulta e resposta individual não revela correção',async({page})=>{
   const {errors,unexpected}=await setup(page);
