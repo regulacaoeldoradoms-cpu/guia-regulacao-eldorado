@@ -66,7 +66,7 @@ async function setup(page){
           if(window.__assessmentAnswers.size!==16)throw new Error('Responda todos os itens');
           const items=window.__assessmentQuestions.map((question,index)=>({
             questionId:question.id,selectedOption:0,correct:index<12,correctOption:index<12?0:1,
-            explanation:`Explicação sintética pós-rodada ${index+1}.`,primaryLessonId:question.primaryLessonId,
+            explanation:'Explicação sintética pós-rodada '+(index+1)+'.',primaryLessonId:question.primaryLessonId,
             teaches:['Trecho sintético'],competencyIds:question.competencyIds,sourceIds:['fonte.sintetica']
           }));
           window.__assessmentState.active=null;
