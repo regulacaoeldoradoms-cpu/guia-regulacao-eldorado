@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência após o aceite: Fase 1 = 100% encerrada; motor técnico ~91%; Fase 2 iniciada (~5% antes da integração do Recorte A); cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~31%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~92%; Fase 2 ~12% após a integração do Recorte A e durante o piloto do Recorte B; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~32%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -315,19 +315,32 @@ Em 29/09/2026, após o fechamento técnico e a confirmação de publicação de 
 
 A aprovação da fase não significa curso completo, domínio certificado ou prontidão de prova. A cobertura curricular permanece em 1/43 blocos publicados.
 
-## Fase 2 — Recorte A em desenvolvimento
+## Fase 2 — Recorte A integrado
 
 Documento: `52-FASE2-CATALOGO-PEDAGOGICO-DECLARATIVO.md`.  
-Branch: `feat/missao-bancaria-fase2-catalogo-pedagogico`.
+PR #547 integrada na `main` em `419e10644173effb548a230c82bd62476a21aa2e`.
 
-Primeiro acoplamento atacado:
-- o manifesto de produção deixa de encadear cinco funções `attach*` específicas de grupos de aulas;
+Resultado:
+- o manifesto de produção deixou de encadear cinco funções `attach*` específicas de grupos de aulas;
 - `application-registry.js` centraliza a composição por dados;
-- as nove missões e 27 atividades atuais continuam com os mesmos IDs e objetos de conteúdo;
-- um teste sintético prova que uma nova missão usa `attachApplicationDefinition` sem nova função específica por aula;
-- módulos antigos de autoria permanecem nesta etapa para compatibilidade e não são removidos às pressas.
+- as nove missões e 27 atividades mantiveram IDs e conteúdo;
+- 22/22 workflows da PR ficaram verdes antes do merge;
+- GitHub/Cloudflare Pages do merge foi publicado com sucesso;
+- o Workers Builds associado ao merge #547 encerrou em falha, portanto o código do Recorte A está em `main`, mas esta entrega isolada não é registrada como nova versão de Worker produtiva.
 
-Próximo recorte depois da integração: contrato reutilizável de feedback de questão, com motivo da resposta correta, motivo da escolha incorreta e indicação do conceito/trecho a revisar, mantendo compatibilidade com o banco atual.
+## Fase 2 — Recorte B em desenvolvimento
+
+Documento: `53-FASE2-FEEDBACK-PEDAGOGICO.md`.  
+Branch: `feat/missao-bancaria-fase2-feedback-pedagogico`.
+
+Piloto:
+- nove questões das três primeiras missões recebem justificativa específica para cada alternativa;
+- o backend só devolve o motivo da escolha e referências de releitura depois da tentativa;
+- o bootstrap continua sem gabarito, explicação ou catálogo de motivos;
+- o frontend diferencia “por que sua escolha não funciona”, “resposta correta”, “por que é correta” e oferece “Rever conceito”;
+- questões antigas e Worker anterior permanecem compatíveis quando os campos novos não existirem.
+
+Depois da validação deste piloto, ampliar o mesmo contrato às demais questões do bloco sem criar outro renderer.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
