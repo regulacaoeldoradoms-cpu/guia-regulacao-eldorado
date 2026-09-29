@@ -1,6 +1,6 @@
 'use strict';
 
-export const ASSESSMENT_VERSION = 1;
+export const ASSESSMENT_VERSION = 2;
 export const BLOCK_ID = 'banking.sfn-foundation';
 export const BLOCK_CONTENT_VERSION = 2;
 export const FORM_IDS = Object.freeze(['A','B']);
@@ -87,10 +87,10 @@ const QUESTIONS = [
     ],
     "prompt": "Uma questão afirma: “Como órgão superior do SFN, o CMN formula diretrizes da política da moeda e do crédito; a execução cotidiana dessas diretrizes cabe a entidades competentes, e não ao próprio Conselho como banco operacional.” A afirmação é:",
     "options": [
-      "Incorreta, pois o CMN é banco comercial.",
-      "Incorreta, pois o CMN fiscaliza exclusivamente companhias abertas.",
-      "Correta.",
-      "Incorreta, pois o CMN apenas administra o orçamento federal."
+      "Incorreta, porque o CMN atua como banco comercial.",
+      "Incorreta, porque essa competência pertence exclusivamente à CVM.",
+      "Correta, porque separa formulação normativa e execução.",
+      "Incorreta, porque o CMN atua apenas no orçamento federal."
     ],
     "answer": 2,
     "explanation": "O CMN é órgão normativo superior e formula políticas/diretrizes; não funciona como banco operacional.",
@@ -325,10 +325,10 @@ const QUESTIONS = [
     ],
     "prompt": "Uma cooperativa de crédito segue regras e é supervisionada pelo Banco Central. Isso significa que ela:",
     "options": [
-      "Passa a integrar o CMN.",
-      "Torna-se órgão normativo.",
-      "Assume a função do Copom.",
-      "Continua sendo participante operacional; ser supervisionada não a transforma em supervisor."
+      "Passa a integrar a estrutura deliberativa do CMN como membro.",
+      "Torna-se entidade supervisora do segmento por estar sujeita às regras.",
+      "Assume competência do Copom para decisões de política monetária.",
+      "Permanece operadora; a supervisão do BCB não muda sua natureza."
     ],
     "answer": 3,
     "explanation": "A instituição supervisionada permanece operadora. Supervisor e supervisionado ocupam papéis diferentes.",
@@ -404,10 +404,10 @@ const QUESTIONS = [
     ],
     "prompt": "Uma empresa é instituição de pagamento e gerencia contas de pagamento. Qual afirmação é compatível com o conteúdo estudado?",
     "options": [
-      "Ela automaticamente se torna banco comercial.",
-      "Ela pode definir a meta Selic.",
-      "Ela não se torna instituição financeira por isso e não pode exercer atividade privativa de instituição financeira por conta própria.",
-      "Ela substitui o Banco Central na supervisão do arranjo."
+      "Passa a ser banco comercial e pode captar depósitos à vista apenas por manter contas de pagamento.",
+      "Pode definir a meta Selic e conceder crédito por participar do sistema de pagamentos.",
+      "Continua sendo instituição de pagamento e não pode exercer atividade privativa de instituição financeira.",
+      "Substitui o Banco Central na regulação e fiscalização dos participantes do arranjo."
     ],
     "answer": 2,
     "explanation": "Instituição de pagamento não é instituição financeira e não pode exercer atividades privativas destas apenas por atuar em pagamentos.",
@@ -485,7 +485,7 @@ const QUESTIONS = [
       "Operador formula diretrizes → cliente fiscaliza → supervisor concede crédito.",
       "Supervisor cria clientes → operador fiscaliza → normativo atende o público.",
       "Cliente define política → normativo empresta → operador fiscaliza.",
-      "Normativo formula diretrizes → supervisor acompanha o cumprimento → operador executa atividades."
+      "Normativo formula diretrizes → supervisor fiscaliza → operador executa atividades."
     ],
     "answer": 3,
     "explanation": "A sequência reproduz a divisão funcional ensinada: formulação, supervisão e operação.",
@@ -508,7 +508,7 @@ const QUESTIONS = [
     ],
     "prompt": "Qual atividade seria incompatível com a caracterização do CMN como colegiado normativo superior?",
     "options": [
-      "Atender correntistas e conceder empréstimos diretamente como atividade bancária cotidiana.",
+      "Atender correntistas e conceder crédito diretamente ao público.",
       "Formular política da moeda e do crédito.",
       "Estabelecer diretrizes gerais para o sistema.",
       "Orientar por normas a atuação das entidades competentes."
@@ -613,9 +613,9 @@ const QUESTIONS = [
     ],
     "prompt": "Após uma decisão do Copom, um cliente conclui que todo empréstimo bancário deverá ter exatamente a mesma taxa definida pelo colegiado. Qual correção é adequada?",
     "options": [
-      "O Copom define a meta para a Selic; a taxa de um contrato também depende de condições como prazo, risco e custos.",
+      "O Copom define a meta Selic; a taxa do empréstimo depende também de risco, prazo e custos.",
       "A conclusão está correta: a meta Selic é obrigatoriamente a taxa de todo empréstimo.",
-      "O Copom define apenas taxas de seguros privados.",
+      "O Copom atua apenas no mercado de seguros e define taxas obrigatórias para apólices privadas.",
       "A taxa de cada empréstimo é definida diretamente pelo CMN para cada cliente."
     ],
     "answer": 0,
@@ -640,9 +640,9 @@ const QUESTIONS = [
     "prompt": "Qual afirmação organiza corretamente o uso da palavra “Selic” no conteúdo estudado?",
     "options": [
       "Selic é o nome de um banco comercial que concede empréstimos ao público.",
-      "O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.",
-      "Selic é uma modalidade de previdência complementar fechada.",
-      "Selic é o órgão que fiscaliza companhias abertas."
+      "Selic nomeia o sistema de liquidação e custódia; a meta da taxa Selic é definida pelo Copom.",
+      "Selic é modalidade de previdência complementar fechada supervisionada pela PREVIC.",
+      "Selic é a entidade responsável por fiscalizar companhias abertas e fundos de investimento."
     ],
     "answer": 1,
     "explanation": "A aula distingue a origem do nome Selic e o uso da expressão taxa Selic no contexto dos juros básicos e de sua meta.",
@@ -747,7 +747,7 @@ const QUESTIONS = [
     "prompt": "Uma financeira é autorizada e fiscalizada pelo Banco Central. Qual conclusão é correta?",
     "options": [
       "A financeira passa a ser órgão normativo.",
-      "A financeira continua sendo operadora; o BCB exerce a função supervisora.",
+      "A financeira segue como operadora; o BCB é seu supervisor.",
       "A financeira passa a integrar o Copom.",
       "A financeira assume competência sobre companhias abertas."
     ],
@@ -773,10 +773,10 @@ const QUESTIONS = [
     ],
     "prompt": "Qual par está corretamente associado?",
     "options": [
-      "Previdência complementar aberta — PREVIC; fechada — Copom.",
+      "Aberta — PREVIC; fechada — SUSEP.",
       "Aberta — CVM; fechada — Banco Central.",
-      "Previdência complementar aberta — SUSEP; previdência complementar fechada — PREVIC.",
-      "Aberta — CMN; fechada — CNSP."
+      "Aberta — SUSEP; fechada — PREVIC.",
+      "Aberta — CNSP; fechada — CMN."
     ],
     "answer": 2,
     "explanation": "A SUSEP supervisiona a previdência complementar aberta; a PREVIC, as entidades fechadas.",
@@ -802,7 +802,7 @@ const QUESTIONS = [
       "SUSEP fixa a meta Selic e CNSP supervisiona bancos.",
       "PREVIC define política monetária e SUSEP fiscaliza companhias abertas.",
       "CVM normatiza previdência fechada e CNSP administra consórcios.",
-      "CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua competência."
+      "CNSP define diretrizes e normas; SUSEP supervisiona e fiscaliza o segmento."
     ],
     "answer": 3,
     "explanation": "O CNSP exerce função normativa do segmento; a SUSEP é entidade supervisora dos mercados de seguros, previdência aberta, capitalização e resseguro.",
@@ -825,7 +825,7 @@ const QUESTIONS = [
     ],
     "prompt": "Uma propaganda afirma que a simples adesão a um grupo de consórcio garante contemplação imediata. À luz do conteúdo estudado, a afirmação é:",
     "options": [
-      "Incorreta; consórcio é mecanismo de autofinanciamento em grupo e adesão não garante contemplação imediata.",
+      "Incorreta; consórcio é autofinanciamento e não garante contemplação imediata.",
       "Correta; todo consórcio funciona como empréstimo instantâneo.",
       "Correta; o Banco Central entrega o bem na adesão.",
       "Incorreta apenas porque consórcios são fiscalizados pela CVM."
@@ -851,10 +851,10 @@ const QUESTIONS = [
     ],
     "prompt": "Qual descrição representa melhor o Sistema de Pagamentos Brasileiro (SPB)?",
     "options": [
-      "Um único banco comercial responsável por todo pagamento no país.",
-      "Conjunto de infraestruturas, arranjos, regras e participantes que permitem transferências e liquidação de obrigações.",
-      "Um fundo de investimento administrado pela CVM.",
-      "Um órgão colegiado que define a meta Selic."
+      "Um banco único que centraliza e executa todos os pagamentos do país.",
+      "Rede de regras, infraestruturas e participantes usada para pagamentos e liquidações.",
+      "Um fundo financeiro supervisionado exclusivamente pela CVM.",
+      "Um colegiado do Banco Central responsável por definir a meta Selic."
     ],
     "answer": 1,
     "explanation": "O SPB é um sistema composto por infraestruturas, arranjos, regras e participantes; não uma instituição bancária isolada.",
