@@ -92,7 +92,8 @@ Por isso:
 - `openMission` possui um segundo gate no cliente antes de renderizar o texto da aula;
 - o backend continua sendo a autoridade final e também recusa sessão comum enquanto a avaliação estiver ativa;
 - se o bootstrap anunciar `assessmentProtocol: 1` e o endpoint de estado não puder ser confirmado, a grade fica temporariamente bloqueada em vez de liberar a leitura por suposição;
-- se o bootstrap for de um Worker antigo sem esse protocolo, a avaliação é ocultada e o fluxo clássico de aulas permanece utilizável.
+- se o bootstrap for de um Worker antigo sem esse protocolo, a avaliação é ocultada e o fluxo clássico de aulas permanece utilizável;
+- a suíte Chromium cobre explicitamente os dois lados desse contrato: **fail-closed** quando o protocolo novo existe e **compatibilidade clássica** quando o Worker ainda não o anuncia.
 
 Isso evita tanto a janela em que o usuário poderia sair da forma, abrir uma aula para consultar o conteúdo e voltar à mesma avaliação sem encerrá-la quanto um fail-open durante falha de rede do endpoint novo, sem quebrar compatibilidade com Worker anterior.
 
