@@ -127,3 +127,21 @@ O perfil exibido no painel e a capacidade `auth_telemedicine_access.enabled` sã
 7. Sair do perfil continua exigindo `telemedicineAccess: false`, conforme V34.3.
 
 Assim, o Desenvolvedor consegue reparar com uma única gravação uma conta antiga cujo seletor já mostrava Telemedicina, sem depender de manipulação direta do D1 e sem reativar automaticamente contas revogadas.
+
+## Complemento V34.5 — resiliência de rede no painel de usuários
+
+Decisão registrada em 28/09/2026 após o painel `/admin/usuarios/` exibir `Failed to fetch` ao carregar **Contas cadastradas**.
+
+A mensagem é produzida pelo navegador quando a requisição não recebe uma resposta HTTP utilizável; portanto ela é tratada como falha de transporte, não como decisão de autorização.
+
+Regra V34.5:
+
+1. somente a leitura `GET /api/admin/users` recebe repetição automática;
+2. a tentativa inicial pode ser seguida por no máximo duas repetições, após 350 ms e 900 ms;
+3. somente erros de rede compatíveis com `TypeError: Failed to fetch`, `NetworkError`, `Load failed` ou equivalentes são repetidos;
+4. respostas HTTP reais, inclusive 401, 403, 409, 429, 500 e 503, não são repetidas;
+5. operações de criação, edição, troca de senha e demais gravações não entram no retry, evitando duplicidade;
+6. se as três tentativas falharem, o painel mostra mensagem operacional clara e botão **Tentar novamente**;
+7. o arquivo administrativo recebe nova URL versionada para evitar reutilização do JavaScript anterior pelo cache.
+
+A medida não altera permissões nem concede acesso. Ela apenas torna a leitura administrativa tolerante a falhas transitórias de conectividade.
