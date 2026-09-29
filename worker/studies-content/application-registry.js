@@ -52,7 +52,10 @@ export function attachApplicationDefinition(mission, item) {
 }
 
 export function attachApplications(mission, definitions = APPLICATION_DEFINITIONS) {
-  const item = definitions.find((entry) => entry.missionId === mission?.id);
+  // Array.map passa (item, index, array). Somente um array fornecido
+  // explicitamente pode substituir o catálogo padrão; índices são ignorados.
+  const catalog = Array.isArray(definitions) ? definitions : APPLICATION_DEFINITIONS;
+  const item = catalog.find((entry) => entry.missionId === mission?.id);
   return item ? attachApplicationDefinition(mission, item) : mission;
 }
 
