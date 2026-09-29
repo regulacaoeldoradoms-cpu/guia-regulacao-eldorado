@@ -39,13 +39,21 @@ async function fixture(t) {
     }));
   },{context});
   const rounds=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-rounds.js',import.meta.url),'utf8'),{context});
-  await rounds.link(()=>{throw new Error('Import não esperado no serviço');});await rounds.evaluate();
+  await rounds.link(()=>{throw new Error('Import não esperado no serviço de rodadas');});await rounds.evaluate();
+  const assessmentContent=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies-assessment-content/sfn-foundation-v1.js',import.meta.url),'utf8'),{context});
+  await assessmentContent.link(()=>{throw new Error('Import não esperado no conteúdo de avaliação');});await assessmentContent.evaluate();
+  const assessments=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-assessments.js',import.meta.url),'utf8'),{context});
+  await assessments.link((specifier)=>{
+    if(specifier==='./studies-assessment-content/sfn-foundation-v1.js')return assessmentContent;
+    throw new Error(`Import não previsto na avaliação: ${specifier}`);
+  });await assessments.evaluate();
   const route=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies.js',import.meta.url),'utf8'),{context});
   await route.link((specifier)=>{
     if(specifier==='./auth-management-flex.js')return auth;
     if(specifier==='./studies-content/manifest.js')return catalog;
     if(specifier==='./studies-content/curriculum-v1.js')return curriculum;
     if(specifier==='./study-rounds.js')return rounds;
+    if(specifier==='./study-assessments.js')return assessments;
     throw new Error(`Import não previsto: ${specifier}`);
   });
   await route.evaluate();
