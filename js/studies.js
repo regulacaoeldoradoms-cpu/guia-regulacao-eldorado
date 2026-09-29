@@ -113,6 +113,15 @@
     return state.data?.missions?.find((mission, index) => !completed(mission) && isUnlocked(index)) || null;
   }
 
+  function retentionLabel(evidence) {
+    if (!evidence || evidence.status === 'not_observed') return 'Retenção: sem revisão posterior';
+    if (evidence.status === 'historical_unscored') {
+      return `Retenção: ${evidence.completedCycles}/${evidence.totalCycles} revisões registradas · histórico sem nota isolável`;
+    }
+    const score = Number.isFinite(Number(evidence.latestScore)) ? ` · última: ${evidence.latestScore}%` : '';
+    return `Retenção: ${evidence.scoredCycles}/${evidence.totalCycles} revisões com resultado${score} · ${evidence.label.toLowerCase()}`;
+  }
+
   function renderDashboard() {
     const data = state.data;
     if (!data) return;
@@ -156,6 +165,7 @@
       const done = completed(mission);
       const unlocked = isUnlocked(index);
       const progress = data.progress[mission.topicId];
+      const evidence = data.learningEvidence?.[mission.topicId];
       const boss = mission.kind === 'boss';
       const label = done ? 'Concluída' : unlocked ? (boss ? 'Chefe disponível' : 'Disponível') : 'Bloqueada';
       const requirement = boss && mission.passScore ? ` · mínimo ${mission.passScore}%` : '';
@@ -164,6 +174,7 @@
         <h3>${mission.order}. ${mission.title}</h3>
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
         <p>${progress ? `Acerto nas tentativas: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
+        <p>${retentionLabel(evidence)}</p>
       </button>`;
     }).join('');
 
