@@ -47,11 +47,14 @@ async function fixture(t) {
     if(specifier==='./studies-assessment-content/sfn-foundation-v1.js')return assessmentContent;
     throw new Error(`Import não previsto na avaliação: ${specifier}`);
   });await assessments.evaluate();
+  const questionFeedback=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies-content/question-feedback-v1.js',import.meta.url),'utf8'),{context});
+  await questionFeedback.link(()=>{throw new Error('Import não esperado no feedback de questões');});await questionFeedback.evaluate();
   const route=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies.js',import.meta.url),'utf8'),{context});
   await route.link((specifier)=>{
     if(specifier==='./auth-management-flex.js')return auth;
     if(specifier==='./studies-content/manifest.js')return catalog;
     if(specifier==='./studies-content/curriculum-v1.js')return curriculum;
+    if(specifier==='./studies-content/question-feedback-v1.js')return questionFeedback;
     if(specifier==='./study-rounds.js')return rounds;
     if(specifier==='./study-assessments.js')return assessments;
     throw new Error(`Import não previsto: ${specifier}`);
