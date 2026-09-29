@@ -1,6 +1,24 @@
 # Central de Documentos — Status
 
-Última atualização: 28/09/2026.
+Última atualização: 29/09/2026.
+
+## Central de Documentos — recuperação de falhas transitórias de conexão — PUBLICADA — 29/09/2026
+
+Relato de produção: o Titon exibiu em momentos diferentes **“Falha temporária na Central de Documentos.”** e **“Failed to fetch”** enquanto o PDF já permanecia visível. A segunda mensagem é a exceção nativa de transporte do navegador quando `fetch` não recebe resposta HTTP; a primeira é a resposta genérica usada pelo Worker para falhas documentais não classificadas. Não foi atribuída uma causa interna específica ao Worker sem log que a comprove.
+
+Diagnóstico confirmado no código: as leituras da Central encerravam na primeira oscilação de rede/edge. A correção ficou restrita ao mecanismo observável e reversível: leituras seguras passam a repetir no máximo duas vezes, após **350 ms** e **900 ms**, para falhas transitórias de transporte e respostas 500/502/503/504 elegíveis. Cobertura: acesso à Central, preferências, configuração de IA, listagem/pesquisa do Drive, download local do PDF e aquecimento privado do Service Worker.
+
+Proteção contra duplicidade preservada: **renomear, sincronizar, substituir PDF, salvar cópia, OAuth e demais gravações não recebem retry automático**. O fluxo de Drive continua considerando salvamento concluído somente depois da confirmação real do backend/Google Drive. O erro de transporte persistente deixa de expor `Failed to fetch` cru e informa que a reconexão automática não conseguiu concluir a leitura.
+
+Observabilidade: novo evento técnico `documents_read_retry` contém somente rota, classe de operação, número da tentativa e classe `network/server`; não inclui nome de arquivo, ID do Drive, nome de paciente ou conteúdo documental.
+
+Entrega efetiva: PR **#536** mesclada em `9c18b14729821ac1ac98c4fade24596d58feeace`. Arquivos funcionais publicados: `js/documents.js`, `portal-sw.js` e `documentos/index.html`; teste focal em `worker/tests/documents-ui.test.mjs`. O candidato foi reconciliado com a `main` antes do merge. Uma hipótese inicial de alterar a preparação de preferências no Worker foi descartada por falta de evidência direta e removida antes da liberação; o reparo final **não altera o runtime do Worker**.
+
+Validação do merge: **Validar Central de Documentos — Fases 1–6** success (run `36600526823`); GitHub Pages **pages build and deployment** success (run `36600524175`, concluído 16:50:20 UTC); Cloudflare Pages success; **Workers Builds: yellow-wave-d0a1guia-regulacao-ia** success no merge, confirmando que a falha de build observada em heads intermediários não permaneceu na versão integrada. Auditorias Chromium pesadas ainda em execução no momento deste registro não são declaradas aprovadas antecipadamente.
+
+Risco residual: retry reduz falhas transitórias, mas não corrige uma indisponibilidade persistente do Worker, Google Drive ou rede. Se o banner reaparecer após esta versão, a próxima investigação deve capturar somente endpoint técnico/status/classe de erro, sem dados do documento, para localizar a origem exata.
+
+**Próxima ação exata:** revisão humana em produção de listagem/pesquisa, abertura de PDFs e operações locais do Titon. Se houver novo erro, registrar horário e ação que o precedeu; não repetir gravações destrutivas e não considerar sincronização concluída sem confirmação do Drive.
 
 ## Chat global em todos os módulos — IMPLEMENTADO E PUBLICADO — 28/09/2026
 
@@ -221,18 +239,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fases 0–6 e 7G.6 não reiniciadas. |
-| Subfase / objetivo atual | Chat global #520 implementado/publicado em todos os módulos autenticados; revisão visual humana pendente. |
-| Última ação concluída | Merge #520 `6227311f` e GitHub Pages success: run `36420891455`, job `108923279238`, deployment `6709665051`. |
-| Branch atual | Funcional `feat/global-chat-all-modules-20260928` integrada; registro final em `docs/global-chat-release-20260928`. |
-| PR atual | #520 merged; esta PR documental consolida o handoff do chat global. |
-| Último commit relevante | Head funcional `de45ca3d`; merge real `6227311f460b73ae575f38912f17bd75c3829110`; base anterior `1d333183`. |
-| Checks e testes | Chat, Social V1, Conselho V1, interações, Barra Global, governança e checks rápidos pertinentes success; Pages success. Auditorias pesadas em execução no merge não foram antecipadas como aprovadas. |
-| Decisões tomadas | Chat é recurso global em módulos autenticados; Login/Cadastro/página pública sem chat; autorização profissional/social permanece no Worker; primeiro acesso obrigatório sem chat até troca de senha. |
-| Justificativas | Manter conversa disponível durante o trabalho em qualquer módulo sem duplicar código, polling ou timers. |
-| Alternativas descartadas | Chat manual por página; ampliar contatos autorizados; manter cidadão no diretório profissional; carregar chat em superfícies públicas; duplicar scripts existentes. |
-| Ações externas concluídas | #520 integrada e publicada pelo GitHub Pages. Nenhuma credencial, OAuth, segredo, Drive, IA ou dado clínico foi alterado. |
-| Pendências e bloqueios | Revisão visual do chat nos módulos; resultados finais das auditorias pesadas já iniciadas; Worker Build segue frente separada. |
-| Riscos conhecidos | Pode haver sobreposição visual específica em algum módulo/mobile; autorização não mudou; testes sintéticos não substituem revisão real do navegador. |
-| Métricas / observabilidade | Nenhuma telemetria nova e nenhum dado sensível; evidências desta unidade são checks e deploy. |
-| Próxima ação exata | Revisar launcher/conversa em Telemedicina, Documentos, Agenda, Guia Médico, Conselho e Configurações; corrigir apenas divergências concretas. |
-| Arquivos e fontes principais | `js/portal-global-chat.js`; `js/portal-chat.js`; `js/portal-chat-switch-optimizer.js`; `docs/CHAT-PROFISSIONAL.md`; `worker/tests/global-chat.test.mjs`; PR #520; Pages run `36420891455`; este status; Guia Mestre 1.1. |
+| Subfase / objetivo atual | Reparar recorrência de falhas transitórias da Central/Titon; correção #536 integrada e publicada, revisão humana em produção pendente. |
+| Última ação concluída | PR #536 mesclada em `9c18b147`; GitHub Pages run `36600524175` success; Worker Build do merge success. |
+| Branch atual | Funcional `fix/documents-transient-fetch-retry-20260929` integrada; registro final em `docs/documents-network-retry-release-20260929`. |
+| PR atual | #536 merged; PR documental desta branch deve consolidar este handoff. |
+| Último commit relevante | Merge funcional `9c18b14729821ac1ac98c4fade24596d58feeace`; head funcional `46f1e36a`. |
+| Checks e testes | Central Fases 1–6 e bundle de staging success; GitHub Pages e Cloudflare Pages success; Worker Build do merge success. Auditorias Chromium pesadas ainda em execução no registro e não antecipadas como aprovadas. |
+| Decisões tomadas | Retry automático somente para leituras seguras; no máximo duas repetições (350/900 ms); gravações Drive/OAuth continuam sem retry automático; hipótese de D1/preferências não comprovada foi removida. |
+| Justificativas | Os relatos reais mostraram falha transitória de transporte e erro genérico da Central; recuperar leitura é seguro, enquanto repetir gravação pode duplicar efeitos. |
+| Alternativas descartadas | Retry global em `auth.api`; repetir mutações; alterar Worker sem evidência; mascarar erro persistente indefinidamente. |
+| Ações externas concluídas | #536 integrada; publicação estática e build Worker do merge confirmados. Nenhum segredo, OAuth, permissão, conteúdo de PDF ou dado clínico foi alterado. |
+| Pendências e bloqueios | Revisão humana no navegador produtivo e resultado final das auditorias pesadas já iniciadas. |
+| Riscos conhecidos | Falha persistente de rede/Worker/Drive continuará visível após duas tentativas; sincronizações só valem após confirmação real do Drive. |
+| Métricas / observabilidade | `documents_read_retry` registra apenas operação/tentativa/classe de falha; sem identificadores ou conteúdo sensível. |
+| Próxima ação exata | Testar produção normalmente. Se reaparecer falha, correlacionar horário + ação + endpoint técnico/status, sem dados do documento, antes de nova alteração. |
+| Arquivos e fontes principais | `js/documents.js`; `portal-sw.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; PR #536; merge `9c18b147`; Pages run `36600524175`; este status; Guia Mestre 1.1. |
