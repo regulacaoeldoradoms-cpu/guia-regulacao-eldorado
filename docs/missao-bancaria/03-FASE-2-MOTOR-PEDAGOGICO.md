@@ -13,7 +13,7 @@ Recorte A: **catálogo pedagógico declarativo**, documentado em `52-FASE2-CATAL
 
 A primeira correção estrutural remove do manifesto a necessidade de conhecer funções de anexação específicas por grupo de aulas. O conteúdo existente deve permanecer idêntico para o usuário e para o histórico; a mudança é arquitetural e prepara a publicação incremental exigida por esta fase.
 
-Depois deste recorte, priorizar o contrato reutilizável de feedback de erro antes de expandir o currículo.
+O Recorte A foi integrado pela PR #547. O Recorte B ativo está em `53-FASE2-FEEDBACK-PEDAGOGICO.md`: contrato reutilizável de feedback pós-resposta, começando por Introdução, CMN e Banco Central antes de expandir ao restante do bloco.
 
 ### Unidade pedagógica padrão
 Cada missão deve suportar:
