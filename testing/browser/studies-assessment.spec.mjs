@@ -18,7 +18,7 @@ const questions=Array.from({length:16},(_,index)=>({
   competencyIds:[`competencia.${index%8+1}`]
 }));
 
-async function setup(page,{assessmentUnavailable=false,resumableSession=null}={}){
+async function setup(page,{assessmentUnavailable=false,resumableSession=null,legacyWorker=false}={}){
   const errors=[],unexpected=[];
   page.on('pageerror',error=>errors.push(error.message));
   const payload={
@@ -33,6 +33,7 @@ async function setup(page,{assessmentUnavailable=false,resumableSession=null}={}
       estimatedMinutes:10,xp:100,kind:id.endsWith('.boss')?'boss':'lesson',passScore:id.endsWith('.boss')?75:0,questions:[]})),
     resumableSession:structuredClone(resumableSession)
   };
+  if(legacyWorker)delete payload.assessmentProtocol;
   const auth=`
     window.__assessmentAnswers=new Set();
     window.__assessmentUnavailable=${JSON.stringify(assessmentUnavailable)};
@@ -116,6 +117,15 @@ async function setup(page,{assessmentUnavailable=false,resumableSession=null}={}
   await expect(page.locator('#assessmentPanel')).toBeVisible();
   return {errors,unexpected};
 }
+
+test('frontend novo mantém aulas utilizáveis com Worker antigo sem assessmentProtocol',async({page})=>{
+  const {errors,unexpected}=await setup(page,{assessmentUnavailable:true,legacyWorker:true});
+  await expect(page.locator('#assessmentPanel')).toBeHidden();
+  await expect(page.locator('#missionGrid [data-mission-id]').first()).toBeEnabled();
+  await expect(page.locator('#studyStatus')).not.toContainText('aulas permanecem bloqueadas');
+  expect(errors).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
 
 test('falha ao confirmar estado da avaliação bloqueia aulas em vez de abrir consulta',async({page})=>{
   const {errors,unexpected}=await setup(page,{assessmentUnavailable:true});
