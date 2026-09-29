@@ -154,6 +154,18 @@ O roteador real com SQLite também cobre GET/POST sem vazamento de correção.
 - o banco autoral ainda deve passar revisão factual/editorial final;
 - esta branch permanece empilhada e não deve ser promovida antes das dependências técnicas.
 
+## Hardening de concorrência — 29/09/2026
+
+Antes de expor a interface, o serviço recebeu proteção adicional para chamadas simultâneas:
+
+- dois pedidos concorrentes de início convergem para a mesma rodada ativa;
+- o índice parcial de rodada ativa continua sendo a última barreira no banco;
+- conflito de criação não vira segunda avaliação nem erro genérico: o serviço recupera a rodada que venceu a corrida;
+- dois fechamentos simultâneos devolvem exatamente o mesmo `result_json` persistido, inclusive o mesmo `completedAt`;
+- a resposta final deixa de depender do relógio local de uma requisição que perdeu a corrida de atualização.
+
+Testes executam `Promise.all` no início e no fechamento para impedir regressão dessa propriedade.
+
 ## Próxima etapa
 
 1. concluir e integrar retomada + sequência histórica;
