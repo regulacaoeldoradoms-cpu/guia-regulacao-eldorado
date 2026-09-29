@@ -23,6 +23,7 @@ async function setup(page,{assessmentUnavailable=false}={}){
   page.on('pageerror',error=>errors.push(error.message));
   const payload={
     user:{username:'wellyton',name:'Estudante sintético'},
+    assessmentProtocol:1,
     metrics:{xp:0,level:1,levelTitle:'Recruta',nextLevelXp:150,hoursSeconds:0,questions:0,accuracy:0,reviewsDue:0,
       publishedMissions:9,plannedMissions:9,campaignAvailability:100,completedPublished:9,availableCompletion:100,
       streak:{current:1,best:1}},
