@@ -201,6 +201,32 @@ test('sessão ativa antiga não é sugerida como retomada automática',async t=>
   assert.equal(sql.prepare('SELECT status FROM study_sessions WHERE session_id=?').get(id).status,'active');
 });
 
+test('missão comum e avaliação independente não podem ficar ativas ao mesmo tempo',async t=>{
+  const {sql,call,start,lesson}=await fixture(t);
+  const topics=[
+    'banking.sfn.introducao','banking.sfn.cmn','banking.sfn.bacen','banking.sfn.copom',
+    'banking.sfn.cvm','banking.sfn.operadores','banking.sfn.seguros-previdencia',
+    'banking.sfn.pagamentos-consorcios','banking.sfn.boss'
+  ];
+  await call('bootstrap');
+  const insert=sql.prepare(`INSERT INTO study_topic_progress(
+    username, topic_id, coverage_state, mastery_score, content_version_seen
+  ) VALUES ('wellyton', ?, 3, 0, 2)`);
+  for(const topic of topics)insert.run(topic);
+
+  const sessionId=await start(lesson);
+  const blockedAssessment=await call('assessments/banking.sfn-foundation/start',{});
+  assert.equal(blockedAssessment.status,409);
+  assert.equal(blockedAssessment.body.code,'STUDY_SESSION_RESUME_REQUIRED');
+  assert.equal((await call('sessions/'+sessionId,{durationSeconds:0},{method:'PATCH'})).status,200);
+
+  const assessment=await call('assessments/banking.sfn-foundation/start',{});
+  assert.equal(assessment.status,201);
+  const blockedMission=await call('sessions',{missionId:lesson.id});
+  assert.equal(blockedMission.status,409);
+  assert.equal(blockedMission.body.code,'STUDY_ASSESSMENT_RESUME_REQUIRED');
+});
+
 test('rota de avaliação independente não vaza gabarito e mantém idempotência',async t=>{
   const {sql,call}=await fixture(t);
   const topics=[
