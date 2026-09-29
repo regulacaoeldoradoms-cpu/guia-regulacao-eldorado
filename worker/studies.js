@@ -15,6 +15,7 @@ import {
   sourceMap
 } from './studies-content/manifest.js';
 import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
+import { questionFeedbackById } from './studies-content/question-feedback-v1.js';
 import {
   StudyAssessmentError,
   ensureAssessmentSchema,
@@ -602,11 +603,18 @@ async function handleAttempt(request, env, user, origin) {
   const mastery = total ? Math.round((hits / total) * 1000) / 10 : 0;
   await upsertPracticeProgress(env, user.username, found.mission, mastery);
 
+  const pedagogicalFeedback = questionFeedbackById(found.question.id);
+  const reviewRefs = Array.isArray(found.mission.teaching?.questionCoverage?.[found.question.id])
+    ? found.mission.teaching.questionCoverage[found.question.id]
+    : [];
+
   return json({
     correct,
     recorded: result.recorded,
     correctOption: found.question.answer,
     explanation: found.question.explanation,
+    selectedFeedback: correct ? '' : pedagogicalFeedback?.optionReasons?.[Number(body.selectedOption)] || '',
+    reviewRefs: reviewRefs.map((ref) => ({ missionId: ref.missionId, sectionId: ref.sectionId })),
     masteryScore: mastery
   }, 200, origin);
 }
