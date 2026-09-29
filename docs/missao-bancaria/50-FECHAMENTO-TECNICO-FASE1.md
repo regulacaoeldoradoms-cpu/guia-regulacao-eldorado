@@ -2,7 +2,7 @@
 
 Data: 29/09/2026.  
 Estado: **candidata a homologação humana; Fase 1 ainda não aceita**.  
-Dependência imediata: comprovação da publicação produtiva do Worker e, depois, homologação humana.
+Dependência imediata: homologação humana da Fase 1.
 
 ## 1. O que este documento significa
 
@@ -10,7 +10,7 @@ Este registro não encerra a Fase 1 por conta própria.
 
 Ele consolida que o motor MVP e o primeiro bloco real chegaram ao ponto em que o trabalho restante para o aceite da fase deve ser principalmente:
 1. interface independente #541 integrada em `main` (`9e5bebac7713b8ad7540aa31c6878e50e6b7faac`) após CI e auditoria global verdes;
-2. frontend confirmado por `Validar site`, `Validar Missao Bancaria` e `pages build and deployment` pós-merge em `success`; Worker produtivo ainda requer comprovação separada;
+2. frontend confirmado por `Validar site`, `Validar Missao Bancaria` e `pages build and deployment` pós-merge em `success`; Worker produtivo confirmado pelo Workers Builds `109558351269` no merge #544 e novamente pelo check `109653080446` no merge #545;
 3. executar o roteiro humano do documento 46;
 4. corrigir qualquer falha encontrada;
 5. registrar o aceite explícito.
@@ -147,7 +147,7 @@ Para aceite:
 ## 7. Ordem segura a partir daqui
 
 1. manter registrado que #541 está integrada e Pages está publicada;
-2. resolver ou comprovar a publicação produtiva do Worker, sem tratar a presença do código em `main` como deploy;
+2. manter registrados os checks separados de frontend e Worker, sem confundir preview com produção;
 3. executar homologação humana da Fase 1;
 4. corrigir falhas, se houver;
 5. obter aceite explícito;
