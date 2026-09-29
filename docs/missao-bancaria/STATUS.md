@@ -261,7 +261,8 @@ Implementado em draft:
 - retomada da mesma forma ativa;
 - fechamento apenas após 16 respostas;
 - correção e diagnóstico somente após encerrar;
-- histórico resumido de formas concluídas.
+- histórico resumido de formas concluídas;
+- grade de missões e revisões bloqueada enquanto uma forma independente estiver ativa, com o botão principal priorizando a retomada da avaliação.
 
 O fluxo usa nós DOM/`textContent` para os itens recebidos do backend. A UI não concede XP, não altera cobertura nem calcula prontidão.
 
