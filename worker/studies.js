@@ -260,10 +260,10 @@ function dayNumber(key) {
   return Math.floor(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86400000);
 }
 
-export function computeStudyStreak(activityTimestamps, now = new Date(), timeZone = STUDY_TIME_ZONE) {
-  const days = [...new Set((Array.isArray(activityTimestamps) ? activityTimestamps : [])
-    .map((value) => localDayKey(value, timeZone))
-    .filter(Boolean))]
+export function computeStudyStreakDays(dayKeys, now = new Date(), timeZone = STUDY_TIME_ZONE) {
+  const days = [...new Set((Array.isArray(dayKeys) ? dayKeys : [])
+    .map((value) => String(value || '').trim())
+    .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value)))]
     .sort()
     .reverse();
 
@@ -297,25 +297,31 @@ export function computeStudyStreak(activityTimestamps, now = new Date(), timeZon
   };
 }
 
+export function computeStudyStreak(activityTimestamps, now = new Date(), timeZone = STUDY_TIME_ZONE) {
+  const days = (Array.isArray(activityTimestamps) ? activityTimestamps : [])
+    .map((value) => localDayKey(value, timeZone))
+    .filter(Boolean);
+  return computeStudyStreakDays(days, now, timeZone);
+}
+
 async function studyStreak(env, username) {
-  const result = await env.AUTH_DB.prepare(`SELECT activity_at FROM (
-      SELECT attempted_at AS activity_at
+  const result = await env.AUTH_DB.prepare(`SELECT day FROM (
+      SELECT date(attempted_at, '-4 hours') AS day
       FROM study_attempts
-      WHERE username=?
-      UNION ALL
-      SELECT finished_at AS activity_at
+      WHERE username=? AND attempted_at IS NOT NULL
+      UNION
+      SELECT date(finished_at, '-4 hours') AS day
       FROM study_sessions
       WHERE username=? AND status='finished' AND duration_seconds >= 60 AND finished_at IS NOT NULL
-      UNION ALL
-      SELECT created_at AS activity_at
+      UNION
+      SELECT date(created_at, '-4 hours') AS day
       FROM study_xp_events
-      WHERE username=?
+      WHERE username=? AND created_at IS NOT NULL
     )
-    WHERE activity_at IS NOT NULL
-    ORDER BY activity_at DESC
-    LIMIT 500`).bind(username, username, username).all();
+    WHERE day IS NOT NULL
+    ORDER BY day DESC`).bind(username, username, username).all();
 
-  return computeStudyStreak((result.results || []).map((row) => row.activity_at));
+  return computeStudyStreakDays((result.results || []).map((row) => row.day));
 }
 
 export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
@@ -479,19 +485,66 @@ async function dueReviewRows(env, username) {
   }).filter(Boolean);
 }
 
+async function resumableStudySession(env, username) {
+  const row = await env.AUTH_DB.prepare(`SELECT r.session_id, r.mission_id, r.mode, r.review_id,
+      r.content_version, s.started_at, s.duration_seconds
+    FROM study_rounds r
+    JOIN study_sessions s ON s.session_id=r.session_id
+    WHERE r.username=? AND s.username=? AND r.status='active' AND s.status='active'
+      AND s.started_at >= datetime('now','-12 hours')
+    ORDER BY s.started_at DESC LIMIT 1`).bind(username, username).first();
+  if (!row) return null;
+
+  const mission = missionById(row.mission_id);
+  if (!mission || Number(row.content_version) !== Number(mission.contentVersion)) return null;
+
+  if (row.mode === 'review') {
+    const review = await env.AUTH_DB.prepare(`SELECT status,
+        CASE WHEN due_at <= datetime('now') THEN 1 ELSE 0 END AS due
+      FROM study_reviews WHERE review_id=? AND username=? AND topic_id=? LIMIT 1`)
+      .bind(row.review_id, username, mission.topicId).first();
+    if (!review || review.status !== 'pending' || Number(review.due) !== 1) return null;
+  }
+
+  const answers = await env.AUTH_DB.prepare(`SELECT x.question_id
+    FROM study_round_answers x
+    JOIN study_attempts a ON a.attempt_id=x.attempt_id
+    WHERE x.session_id=? AND a.username=? AND a.topic_id=?
+    ORDER BY x.question_id`).bind(row.session_id, username, mission.topicId).all();
+
+  return {
+    sessionId: row.session_id,
+    missionId: mission.id,
+    mode: row.mode,
+    reviewId: row.review_id || null,
+    startedAt: row.started_at,
+    durationSeconds: Math.max(0, Number(row.duration_seconds || 0)),
+    answeredQuestionIds: (answers.results || []).map((item) => String(item.question_id || '')).filter(Boolean)
+  };
+}
+
 async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
+  const [metricValues, learningEvidence, attemptedQuestions, reviews, resumableSession] = await Promise.all([
+    metrics(env, user.username, progress),
+    learningEvidenceMap(env, user.username),
+    attemptedQuestionsMap(env, user.username),
+    dueReviewRows(env, user.username),
+    resumableStudySession(env, user.username)
+  ]);
   return json({
     user,
     roundProtocol: 1,
     timeProtocol: 1,
+    resumeProtocol: 1,
     contentRelease: 'sfn-v1.2',
-    metrics: await metrics(env, user.username, progress),
+    metrics: metricValues,
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
-    learningEvidence: await learningEvidenceMap(env, user.username),
-    attemptedQuestions: await attemptedQuestionsMap(env, user.username),
-    reviews: await dueReviewRows(env, user.username),
+    learningEvidence,
+    attemptedQuestions,
+    reviews,
+    resumableSession,
     missions: PUBLISHED_MISSIONS.map(publicMission),
     sources: STUDY_SOURCES
   }, 200, origin);
@@ -700,6 +753,17 @@ async function handleStartSession(request, env, user, origin) {
   const body = await readStudyBody(request);
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
+
+  const active = await resumableStudySession(env, user.username);
+  if (active) {
+    const activeMission = missionById(active.missionId);
+    throw new StudyRoundError(
+      `Retome a sessão em andamento — ${activeMission?.shortTitle || activeMission?.title || 'missão atual'} — antes de iniciar outra rodada.`,
+      409,
+      'STUDY_SESSION_RESUME_REQUIRED'
+    );
+  }
+
   await assertMissionPrerequisite(env, user.username, mission, body.reviewId ?? null);
   const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
   return json(result, 201, origin);

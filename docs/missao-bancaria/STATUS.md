@@ -143,6 +143,47 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 
 Placar de referência do projeto nesta etapa: motor técnico ~81%; Fase 1 ~90% tecnicamente, ainda sem homologação humana; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~30%.
 
+## Nova entrega empilhada — retomada controlada de sessão
+
+Documento: `42-RETOMADA-CONTROLADA-DE-SESSAO.md`.  
+Branch: `feat/missao-bancaria-retomada-sessao`, empilhada sobre a evidência de retenção.
+
+O bootstrap passa a anunciar `resumeProtocol: 1` e pode devolver uma `resumableSession` quando existir uma rodada ativa compatível iniciada nas últimas 12 horas.
+
+Ao retomar:
+- a mesma sessão/rodada é reutilizada; nenhuma nova é criada;
+- backend recusa nova rodada com `STUDY_SESSION_RESUME_REQUIRED` enquanto houver sessão retomável;
+- os demais cartões ficam bloqueados até retomar/encerrar a sessão atual;
+- IDs das respostas já gravadas naquela rodada são restaurados sem reenviar alternativas;
+- o tempo parte do total já confirmado pelo servidor e checkpoints seguintes continuam cumulativos;
+- revisão usa o `reviewId` validado pelo backend e não depende do limite visual de dez revisões;
+- sessão encerrada ou antiga demais deixa de ser sugerida, sem ser apagada silenciosamente.
+
+Sem schema novo, XP, conquista, cobertura ou prontidão alterados. Testes do roteador real cobrem retomada, encerramento e janela temporal; o cronômetro cobre retomada a partir do tempo salvo.
+
+## Nova correção empilhada — sequência histórica sem truncamento
+
+Documento: `43-SEQUENCIA-HISTORICA-SEM-TRUNCAMENTO.md`.  
+Branch: `fix/missao-bancaria-sequencia-historica`, empilhada sobre a retomada controlada de sessão.
+
+A sequência deixa de buscar os 500 eventos mais recentes e passa a agregar dias locais distintos no banco antes de enviá-los ao cálculo. Isso impede que grande volume de questões em poucos dias apague artificialmente séries antigas.
+
+Preservado:
+- mesmas fontes de atividade legítima;
+- sessão só conta quando encerrada e com pelo menos 60 segundos;
+- abertura do módulo não cria sequência;
+- nenhum schema ou dado histórico é reescrito.
+
+Teste adicional cobre 600 eventos distribuídos sobre 20 dias e impede regressão para `LIMIT 500`.
+
+## Roteiro preparado — homologação humana da Fase 1
+
+Documento: `46-ROTEIRO-HOMOLOGACAO-FASE1.md`.
+
+Foi preparado um roteiro de aceite humano separado dos testes técnicos. Ele cobre acesso/isolamento, clareza do dashboard, ensino antes da prática, persistência/retomada, conclusão/conquista, revisão/retenção, sequência e uso em desktop/celular.
+
+O roteiro não cria dados fictícios nem exige manipular datas produtivas. Cenários dependentes de tempo natural podem permanecer pendentes sem transformar CI verde em homologação automática.
+
 ## Especificação preparada — avaliação independente
 
 Documento: `41-AVALIACAO-INDEPENDENTE.md`.  
@@ -181,7 +222,7 @@ Continua sem código de produção: implementação só começa depois da integr
 
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 

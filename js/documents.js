@@ -89,6 +89,66 @@
   const DEFAULT_VIEWER_ZOOM_SCALE = 1.14;
   const MIN_VIEWER_ZOOM_SCALE = 0.45;
   const MAX_VIEWER_ZOOM_SCALE = 3;
+  const DOCUMENT_READ_RETRY_DELAYS_MS = Object.freeze([350, 900]);
+  const DOCUMENT_READ_LABELS = Object.freeze({
+    '/api/documents/access': 'access',
+    '/api/documents/preferences': 'preferences',
+    '/api/documents/ai/config': 'ai_config',
+    '/api/documents/drive/list': 'drive_list',
+    '/api/documents/drive/search': 'drive_search'
+  });
+
+  function isTransientDocumentReadError(error) {
+    if (!error) return false;
+    const status = Number(error.status || 0);
+    const code = String(error.code || '');
+    if ([500, 502, 503, 504].includes(status)) {
+      return !code
+        || code === 'DOCUMENTS_TEMPORARILY_UNAVAILABLE'
+        || code === 'DOCUMENTS_PREFERENCES_UNAVAILABLE';
+    }
+    if (status > 0) return false;
+    const name = String(error.name || '');
+    const message = String(error.message || '');
+    return name === 'TypeError'
+      && /failed to fetch|network\s*error|networkerror|load failed|fetch failed/i.test(message);
+  }
+
+  async function waitDocumentReadRetry(ms) {
+    if (ms > 0) await new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  async function withDocumentReadRetry(operation, { label = 'document_read' } = {}) {
+    if (typeof operation !== 'function') throw new TypeError('Operação de leitura inválida.');
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= DOCUMENT_READ_RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        return await operation(attempt + 1);
+      } catch (error) {
+        lastError = error;
+        if (!isTransientDocumentReadError(error) || attempt >= DOCUMENT_READ_RETRY_DELAYS_MS.length) break;
+        capture('documents_read_retry', {
+          route: '/documentos/',
+          operation: String(label || 'document_read'),
+          attempt: attempt + 2,
+          reason: Number(error.status || 0) > 0 ? 'server' : 'network'
+        });
+        await waitDocumentReadRetry(DOCUMENT_READ_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+
+    if (lastError && Number(lastError.status || 0) === 0 && isTransientDocumentReadError(lastError)) {
+      const normalized = new Error(
+        'Falha temporária de conexão com a Central de Documentos. A reconexão automática não conseguiu concluir esta leitura.'
+      );
+      normalized.name = 'DocumentsNetworkError';
+      normalized.code = 'DOCUMENTS_NETWORK_UNAVAILABLE';
+      throw normalized;
+    }
+
+    throw lastError || new Error('Falha temporária ao ler a Central de Documentos.');
+  }
 
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
@@ -582,13 +642,16 @@
   }
 
   async function fetchPdfBlob(item, { signal = null } = {}) {
-    const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
-      method: 'GET',
-      headers: auth.authorizationHeader(),
-      cache: 'no-store',
-      credentials: 'omit',
-      ...(signal ? { signal } : {})
-    });
+    const response = await withDocumentReadRetry(() => fetch(
+      `${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`,
+      {
+        method: 'GET',
+        headers: auth.authorizationHeader(),
+        cache: 'no-store',
+        credentials: 'omit',
+        ...(signal ? { signal } : {})
+      }
+    ), { label: 'pdf_content' });
     if (!response.ok) {
       let message = `Não foi possível abrir o PDF (${response.status}).`;
       if ((response.headers.get('Content-Type') || '').includes('application/json')) {
@@ -868,7 +931,7 @@
     try {
       const payload = warmed && typeof warmed === 'object'
         ? warmed
-        : await api('/api/documents/preferences', { method: 'GET' });
+        : await readApi('/api/documents/preferences', { method: 'GET' });
       state.editorColorPalette = normalizeEditorColorPalette(payload?.colorPalette);
       state.viewerZoomScale = normalizeViewerZoomScale(payload?.viewerZoomScale);
       state.documentAiFieldOrder = normalizeTitonFieldOrder(payload?.fieldOrder);
@@ -3578,6 +3641,13 @@
     return auth.api(path, options);
   }
 
+  function readApi(path, options = {}) {
+    return withDocumentReadRetry(
+      () => auth.api(path, options),
+      { label: DOCUMENT_READ_LABELS[path] || 'document_read' }
+    );
+  }
+
   function pdfBaseName(value) {
     return String(value || '').replace(/\.pdf$/i, '').trim();
   }
@@ -5070,7 +5140,7 @@
     try {
       const payload = warmed && typeof warmed === 'object'
         ? warmed
-        : await api('/api/documents/ai/config', { method: 'GET' });
+        : await readApi('/api/documents/ai/config', { method: 'GET' });
       state.documentAiConfig = payload?.ai || null;
       if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
     } catch (_) {
@@ -5673,7 +5743,7 @@
   }
 
   async function loadAccess() {
-    state.access = await api('/api/documents/access', { method: 'GET' });
+    state.access = await readApi('/api/documents/access', { method: 'GET' });
     state.user = auth.getCachedUser() || state.user;
     renderAccessState();
   }
@@ -6072,7 +6142,7 @@
   }
 
   async function refreshWarmedRootFolderInBackground() {
-    const payload = await api('/api/documents/drive/list', {
+    const payload = await readApi('/api/documents/drive/list', {
       method: 'POST',
       body: JSON.stringify({
         parentRef: '',
@@ -6289,7 +6359,7 @@
     }
 
     try {
-      const payload = await api('/api/documents/drive/list', {
+      const payload = await readApi('/api/documents/drive/list', {
         method: 'POST',
         body: JSON.stringify({
           parentRef,
@@ -6384,7 +6454,7 @@
     }
 
     try {
-      const payload = await api('/api/documents/drive/search', {
+      const payload = await readApi('/api/documents/drive/search', {
         method: 'POST',
         body: JSON.stringify({
           query: value,
