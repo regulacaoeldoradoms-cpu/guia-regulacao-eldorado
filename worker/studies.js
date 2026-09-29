@@ -763,6 +763,15 @@ async function handleStartSession(request, env, user, origin) {
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
 
+  const assessment = await getAssessmentState(env.AUTH_DB, user.username);
+  if (assessment.active) {
+    throw new StudyRoundError(
+      `Retome a Forma ${assessment.active.formId} da avaliação independente antes de iniciar outra missão.`,
+      409,
+      'STUDY_ASSESSMENT_RESUME_REQUIRED'
+    );
+  }
+
   const active = await resumableStudySession(env, user.username);
   if (active) {
     const activeMission = missionById(active.missionId);
@@ -799,6 +808,15 @@ async function handleAssessmentState(env, user, origin) {
 }
 
 async function handleAssessmentStart(env, user, origin) {
+  const activeStudy = await resumableStudySession(env, user.username);
+  if (activeStudy) {
+    const mission = missionById(activeStudy.missionId);
+    throw new StudyRoundError(
+      `Retome a sessão em andamento — ${mission?.shortTitle || mission?.title || 'missão atual'} — antes de iniciar a avaliação independente.`,
+      409,
+      'STUDY_SESSION_RESUME_REQUIRED'
+    );
+  }
   const result = await startIndependentAssessment(env.AUTH_DB, user.username);
   return json(result, 201, origin);
 }
