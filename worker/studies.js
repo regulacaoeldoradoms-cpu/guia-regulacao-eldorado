@@ -546,6 +546,7 @@ async function handleBootstrap(env, user, origin) {
     roundProtocol: 1,
     timeProtocol: 1,
     resumeProtocol: 1,
+    assessmentProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: metricValues,
     progress,
