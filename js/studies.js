@@ -136,6 +136,328 @@
     return `Retenção: ${evidence.scoredCycles}/${evidence.totalCycles} revisões com resultado${score} · ${evidence.label.toLowerCase()}`;
   }
 
+  function assessmentMessage(text) {
+    const el = $('assessmentStatus');
+    if (el) el.textContent = text || '';
+  }
+
+  function formatAssessmentDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('pt-BR', {
+      day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+  }
+
+  function lessonLabel(id) {
+    return state.data?.missions?.find((mission) => mission.id === id)?.shortTitle
+      || state.data?.missions?.find((mission) => mission.id === id)?.title
+      || id;
+  }
+
+  function renderAssessmentPanel() {
+    const panel = $('assessmentPanel');
+    if (!panel) return;
+    const data = state.assessmentState;
+    if (!data) {
+      panel.hidden = true;
+      return;
+    }
+
+    panel.hidden = false;
+    const history = $('assessmentHistory');
+    history.replaceChildren();
+    for (const item of data.completed || []) {
+      const chip = document.createElement('span');
+      chip.className = 'study-assessment-chip';
+      chip.textContent = `Forma ${item.formId}: ${item.score}% · ${formatAssessmentDate(item.completedAt)}`;
+      history.append(chip);
+    }
+
+    const button = $('startAssessment');
+    button.disabled = true;
+    button.onclick = null;
+
+    if (data.active) {
+      $('assessmentMeta').textContent = `Forma ${data.active.formId} em andamento · ${data.active.answeredCount}/${data.active.total} respostas registradas.`;
+      button.textContent = `Retomar Forma ${data.active.formId}`;
+      button.disabled = false;
+      button.onclick = startAssessment;
+      return;
+    }
+
+    if (data.availableForm) {
+      $('assessmentMeta').textContent = data.availableForm === 'A'
+        ? 'Forma A disponível. São 16 questões inéditas, sem consulta e sem feedback até o encerramento.'
+        : 'Forma B disponível após o intervalo mínimo. Ela usa outros 16 itens, sem repetir a Forma A.';
+      button.textContent = `Iniciar Forma ${data.availableForm}`;
+      button.disabled = false;
+      button.onclick = startAssessment;
+      return;
+    }
+
+    if (!data.prerequisitesComplete) {
+      $('assessmentMeta').textContent = 'Disponível depois de concluir as oito aulas e o Chefe do primeiro bloco.';
+      button.textContent = 'Avaliação ainda bloqueada';
+      return;
+    }
+
+    if (data.nextEligibleAt) {
+      const when = formatAssessmentDate(data.nextEligibleAt);
+      $('assessmentMeta').textContent = when
+        ? `Forma B ficará disponível a partir de ${when}.`
+        : 'Forma B aguardando o intervalo mínimo de sete dias.';
+      button.textContent = 'Aguardando Forma B';
+      return;
+    }
+
+    $('assessmentMeta').textContent = 'As formas independentes disponíveis nesta versão já foram concluídas.';
+    button.textContent = 'Formas concluídas';
+  }
+
+  async function loadAssessmentState() {
+    try {
+      state.assessmentState = await auth.api('/api/studies/assessments/banking.sfn-foundation', { method:'GET' });
+      renderAssessmentPanel();
+    } catch (_) {
+      state.assessmentState = null;
+      const panel = $('assessmentPanel');
+      if (panel) panel.hidden = true;
+    }
+  }
+
+  function updateAssessmentProgress() {
+    const round = state.activeAssessment;
+    if (!round) return;
+    const total = round.questions?.length || 0;
+    const answered = Math.min(total, state.assessmentAnswers.size);
+    $('assessmentProgressLabel').textContent = `${answered} de ${total} respostas registradas`;
+    const progress = $('assessmentProgress');
+    progress.setAttribute('aria-valuenow', String(answered));
+    progress.setAttribute('aria-valuemax', String(total));
+    progress.setAttribute('aria-valuetext', `${answered} de ${total} respostas registradas`);
+    $('assessmentProgressBar').style.width = total ? `${Math.round(answered / total * 100)}%` : '0%';
+    $('completeAssessment').disabled = !total || answered < total || state.assessmentPending.size > 0 || state.assessmentCompleting;
+  }
+
+  function markAssessmentAnswered(card) {
+    card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
+    const button = card.querySelector('[data-assessment-answer]');
+    const feedback = card.querySelector('[data-assessment-feedback]');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Resposta registrada';
+    }
+    if (feedback) {
+      feedback.hidden = false;
+      feedback.textContent = 'Resposta registrada. A correção só aparece depois de encerrar a forma.';
+    }
+  }
+
+  function renderAssessmentRound(round) {
+    state.activeAssessment = round;
+    state.assessmentAnswers = new Set(Array.isArray(round.answeredQuestionIds) ? round.answeredQuestionIds : []);
+    state.assessmentPending.clear();
+    state.assessmentCompleting = false;
+    $('assessmentResult').hidden = true;
+    $('assessmentResultSummary').textContent = '';
+    $('assessmentDiagnostics').replaceChildren();
+    $('assessmentReviewList').replaceChildren();
+    $('completeAssessment').hidden = false;
+    $('assessmentFocusTitle').textContent = `Forma ${round.formId} · Avaliação independente`;
+    $('assessmentQuestionList').replaceChildren();
+
+    round.questions.forEach((question, index) => {
+      const card = document.createElement('article');
+      card.className = 'study-assessment-question';
+      card.dataset.assessmentQuestionId = question.id;
+
+      const title = document.createElement('strong');
+      title.textContent = `${index + 1}. ${question.prompt}`;
+      const fieldset = document.createElement('fieldset');
+
+      question.options.forEach((option, optionIndex) => {
+        const label = document.createElement('label');
+        label.className = 'study-assessment-option';
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = `assessment-${question.id}`;
+        input.value = String(optionIndex);
+        const text = document.createElement('span');
+        text.textContent = option;
+        label.append(input, text);
+        fieldset.append(label);
+      });
+
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.dataset.assessmentAnswer = question.id;
+      save.textContent = 'Registrar resposta';
+      const feedback = document.createElement('div');
+      feedback.className = 'study-assessment-feedback';
+      feedback.dataset.assessmentFeedback = '';
+      feedback.hidden = true;
+
+      card.append(title, fieldset, save, feedback);
+      $('assessmentQuestionList').append(card);
+
+      save.addEventListener('click', () => answerAssessmentQuestion(question.id));
+      if (state.assessmentAnswers.has(question.id)) markAssessmentAnswered(card);
+    });
+
+    updateAssessmentProgress();
+  }
+
+  async function startAssessment() {
+    if (state.activeMission || state.leaving || state.activeAssessment) return;
+    const button = $('startAssessment');
+    button.disabled = true;
+    const previousText = button.textContent;
+    button.textContent = 'Abrindo avaliação...';
+    try {
+      const round = await auth.api('/api/studies/assessments/banking.sfn-foundation/start', {
+        method:'POST', body:'{}'
+      });
+      const topbar = document.querySelector('.study-topbar');
+      if (topbar) topbar.inert = true;
+      $('studyDashboard').hidden = true;
+      $('studyAssessmentFocus').hidden = false;
+      document.body.style.overflow = 'hidden';
+      renderAssessmentRound(round);
+      assessmentMessage('');
+      $('assessmentFocusTitle').focus({ preventScroll:true });
+    } catch (error) {
+      assessmentMessage(error.message || 'Não foi possível abrir a avaliação independente.');
+      await loadAssessmentState();
+    } finally {
+      button.textContent = previousText;
+      renderAssessmentPanel();
+    }
+  }
+
+  async function answerAssessmentQuestion(questionId) {
+    const round = state.activeAssessment;
+    if (!round || state.assessmentCompleting || state.assessmentPending.has(questionId) || state.assessmentAnswers.has(questionId)) return;
+    const card = document.querySelector(`[data-assessment-question-id="${CSS.escape(questionId)}"]`);
+    const selected = card?.querySelector('input:checked');
+    const feedback = card?.querySelector('[data-assessment-feedback]');
+    if (!selected) {
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = 'Escolha uma alternativa antes de registrar.';
+      }
+      return;
+    }
+
+    const button = card.querySelector('[data-assessment-answer]');
+    button.disabled = true;
+    state.assessmentPending.add(questionId);
+    updateAssessmentProgress();
+    try {
+      const result = await auth.api(`/api/studies/assessments/${encodeURIComponent(round.assessmentId)}/answers`, {
+        method:'POST',
+        body:JSON.stringify({ questionId, selectedOption:Number(selected.value) })
+      });
+      if (result.questionId !== questionId) throw new Error('Confirmação de resposta inválida.');
+      state.assessmentAnswers.add(questionId);
+      markAssessmentAnswered(card);
+      assessmentMessage('');
+    } catch (error) {
+      button.disabled = false;
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = error.message || 'Não foi possível confirmar a resposta.';
+      }
+    } finally {
+      state.assessmentPending.delete(questionId);
+      updateAssessmentProgress();
+    }
+  }
+
+  function renderAssessmentResult(result) {
+    $('assessmentResult').hidden = false;
+    $('completeAssessment').hidden = true;
+    $('assessmentResultSummary').textContent = `${result.score}% · ${result.correct}/${result.total} respostas corretas`;
+
+    const diagnostics = $('assessmentDiagnostics');
+    diagnostics.replaceChildren();
+    for (const item of result.diagnostics || []) {
+      const card = document.createElement('div');
+      card.className = 'study-assessment-diagnostic';
+      const labels = (item.lessonIds || []).map(lessonLabel).join(', ');
+      card.textContent = `${labels || item.competencyId}: ${item.correct}/${item.total} · ${item.accuracy}%`;
+      diagnostics.append(card);
+    }
+
+    if (Array.isArray(result.recommendedLessonIds) && result.recommendedLessonIds.length) {
+      const card = document.createElement('div');
+      card.className = 'study-assessment-diagnostic';
+      card.textContent = 'Revisar: ' + result.recommendedLessonIds.map(lessonLabel).join(', ');
+      diagnostics.append(card);
+    }
+
+    const questions = new Map((state.activeAssessment?.questions || []).map((question) => [question.id, question]));
+    const list = $('assessmentReviewList');
+    list.replaceChildren();
+    (result.items || []).forEach((item, index) => {
+      const question = questions.get(item.questionId);
+      if (!question) return;
+      const card = document.createElement('article');
+      card.className = 'study-assessment-review-item';
+      card.dataset.correct = String(item.correct);
+      const title = document.createElement('strong');
+      title.textContent = `${index + 1}. ${question.prompt}`;
+      const chosen = document.createElement('p');
+      chosen.textContent = `Sua resposta: ${question.options[item.selectedOption] ?? '—'}`;
+      const correct = document.createElement('p');
+      correct.textContent = `Resposta correta: ${question.options[item.correctOption] ?? '—'}`;
+      const explanation = document.createElement('p');
+      explanation.textContent = item.explanation || '';
+      card.append(title, chosen, correct, explanation);
+      list.append(card);
+    });
+    $('assessmentResult').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  async function completeAssessment() {
+    const round = state.activeAssessment;
+    if (!round || state.assessmentCompleting || state.assessmentPending.size) return;
+    if (state.assessmentAnswers.size < (round.questions?.length || 0)) return;
+    state.assessmentCompleting = true;
+    updateAssessmentProgress();
+    assessmentMessage('Corrigindo a forma...');
+    try {
+      const result = await auth.api(`/api/studies/assessments/${encodeURIComponent(round.assessmentId)}/complete`, {
+        method:'POST', body:'{}'
+      });
+      renderAssessmentResult(result);
+      assessmentMessage('Forma concluída. O resultado não altera XP nem prontidão automaticamente.');
+      await loadAssessmentState();
+    } catch (error) {
+      assessmentMessage(error.message || 'Não foi possível encerrar a avaliação.');
+    } finally {
+      state.assessmentCompleting = false;
+      updateAssessmentProgress();
+    }
+  }
+
+  async function leaveAssessment() {
+    if (!state.activeAssessment) return;
+    state.activeAssessment = null;
+    state.assessmentAnswers.clear();
+    state.assessmentPending.clear();
+    state.assessmentCompleting = false;
+    $('studyAssessmentFocus').hidden = true;
+    $('studyDashboard').hidden = false;
+    document.body.style.overflow = '';
+    const topbar = document.querySelector('.study-topbar');
+    if (topbar) topbar.inert = false;
+    await loadAssessmentState();
+    const target = $('startAssessment').disabled ? $('assessmentTitle') : $('startAssessment');
+    target.focus?.({ preventScroll:true });
+  }
+
   function renderDashboard() {
     const data = state.data;
     if (!data) return;
@@ -221,6 +543,7 @@
     try {
       state.data = await auth.api('/api/studies/bootstrap', { method: 'GET' });
       renderDashboard();
+      await loadAssessmentState();
       status('');
     } catch (error) {
       status(error.message || 'Não foi possível carregar a Missão Bancária.');
@@ -538,6 +861,8 @@
 
   $('leaveFocus').addEventListener('click', leaveFocus);
   $('completeMission').addEventListener('click', completeMission);
+  $('leaveAssessment').addEventListener('click', leaveAssessment);
+  $('completeAssessment').addEventListener('click', completeAssessment);
   $('markDoubt').addEventListener('click', () => {
     state.doubt = !state.doubt;
     $('markDoubt').textContent = state.doubt ? 'Dúvida marcada' : 'Marcar dúvida';
