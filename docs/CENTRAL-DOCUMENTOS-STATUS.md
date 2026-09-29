@@ -12,9 +12,9 @@ Proteção contra duplicidade preservada: **renomear, sincronizar, substituir PD
 
 Observabilidade: novo evento técnico `documents_read_retry` contém somente rota, classe de operação, número da tentativa e classe `network/server`; não inclui nome de arquivo, ID do Drive, nome de paciente ou conteúdo documental.
 
-Entrega efetiva: PR **#536** mesclada em `9c18b14729821ac1ac98c4fade24596d58feeace`. Arquivos funcionais publicados: `js/documents.js`, `portal-sw.js` e `documentos/index.html`; teste focal em `worker/tests/documents-ui.test.mjs`. O candidato foi reconciliado com a `main` antes do merge. Uma hipótese inicial de alterar a preparação de preferências no Worker foi descartada por falta de evidência direta e removida antes da liberação; o reparo final **não altera o runtime do Worker**.
+Entrega efetiva: PR **#536** mesclada em `9c18b14729821ac1ac98c4fade24596d58feeace`. Arquivos funcionais publicados: `js/documents.js`, `portal-sw.js` e `documentos/index.html`; teste focal em `worker/tests/documents-ui.test.mjs`. O candidato foi reconciliado com a `main` antes do merge. Uma hipótese inicial de alterar a preparação de preferências no Worker foi descartada por falta de evidência direta e removida antes da liberação; o reparo final **não altera o runtime do Worker**. Complemento PR **#539** mesclado em `fa68c202df4c0507f5201ff47d2b9095a6842b4e`: a geração do Service Worker passou para `20260929-documents-1`, invalidando a página antiga em cache para que o navegador carregue imediatamente `documents.js?v=20260929-network-1`, sem depender de uma segunda navegação.
 
-Validação do merge: **Validar Central de Documentos — Fases 1–6** success (run `36600526823`); GitHub Pages **pages build and deployment** success (run `36600524175`, concluído 16:50:20 UTC); Cloudflare Pages success; **Workers Builds: yellow-wave-d0a1guia-regulacao-ia** success no merge, confirmando que a falha de build observada em heads intermediários não permaneceu na versão integrada. Auditorias Chromium pesadas ainda em execução no momento deste registro não são declaradas aprovadas antecipadamente.
+Validação consolidada: #536 teve **Validar Central de Documentos — Fases 1–6** success (run `36600526823`) e GitHub Pages success (run `36600524175`). No complemento #539, **Validar Central de Documentos — Fases 1–6** success (run `36601325464`), primeiro acesso e Barra Global success, GitHub Pages **pages build and deployment** success (run `36601320788`, deploy job `109519361262`), Cloudflare Pages success e **Workers Builds: yellow-wave-d0a1guia-regulacao-ia** success (check `109519706655`). Duas auditorias Chromium amplas ainda estavam em execução no momento deste registro e não são declaradas aprovadas antecipadamente.
 
 Risco residual: retry reduz falhas transitórias, mas não corrige uma indisponibilidade persistente do Worker, Google Drive ou rede. Se o banner reaparecer após esta versão, a próxima investigação deve capturar somente endpoint técnico/status/classe de erro, sem dados do documento, para localizar a origem exata.
 
@@ -239,18 +239,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fases 0–6 e 7G.6 não reiniciadas. |
-| Subfase / objetivo atual | Reparar recorrência de falhas transitórias da Central/Titon; correção #536 integrada e publicada, revisão humana em produção pendente. |
-| Última ação concluída | PR #536 mesclada em `9c18b147`; GitHub Pages run `36600524175` success; Worker Build do merge success. |
-| Branch atual | Funcional `fix/documents-transient-fetch-retry-20260929` integrada; registro final em `docs/documents-network-retry-release-20260929`. |
-| PR atual | #536 merged; PR documental desta branch deve consolidar este handoff. |
-| Último commit relevante | Merge funcional `9c18b14729821ac1ac98c4fade24596d58feeace`; head funcional `46f1e36a`. |
-| Checks e testes | Central Fases 1–6 e bundle de staging success; GitHub Pages e Cloudflare Pages success; Worker Build do merge success. Auditorias Chromium pesadas ainda em execução no registro e não antecipadas como aprovadas. |
-| Decisões tomadas | Retry automático somente para leituras seguras; no máximo duas repetições (350/900 ms); gravações Drive/OAuth continuam sem retry automático; hipótese de D1/preferências não comprovada foi removida. |
-| Justificativas | Os relatos reais mostraram falha transitória de transporte e erro genérico da Central; recuperar leitura é seguro, enquanto repetir gravação pode duplicar efeitos. |
-| Alternativas descartadas | Retry global em `auth.api`; repetir mutações; alterar Worker sem evidência; mascarar erro persistente indefinidamente. |
-| Ações externas concluídas | #536 integrada; publicação estática e build Worker do merge confirmados. Nenhum segredo, OAuth, permissão, conteúdo de PDF ou dado clínico foi alterado. |
-| Pendências e bloqueios | Revisão humana no navegador produtivo e resultado final das auditorias pesadas já iniciadas. |
+| Subfase / objetivo atual | Recorrência de falhas transitórias da Central/Titon corrigida e publicada; revisão humana em produção é o próximo aceite. |
+| Última ação concluída | #536 integrada em `9c18b147`; complemento de invalidação de cache #539 integrado em `fa68c202`; GitHub Pages run `36601320788` e Worker Build `109519706655` success. |
+| Branch atual | Nenhuma funcional pendente; esta branch documental `docs/documents-network-retry-final-20260929` registra o fechamento técnico. |
+| PR atual | #536 e #539 merged; somente registro documental final desta unidade. |
+| Último commit relevante | `fa68c202df4c0507f5201ff47d2b9095a6842b4e` — renovação de cache para entrega imediata do reparo de rede. |
+| Checks e testes | Central Fases 1–6, primeiro acesso, Barra Global, GitHub Pages, Cloudflare Pages e Worker Build success no estado final. Duas auditorias Chromium amplas ainda em execução no registro; não antecipar resultado. |
+| Decisões tomadas | Retry automático somente para leituras seguras, no máximo duas repetições (350/900 ms); mutações Drive/OAuth sem retry; cache de navegação renovado para `20260929-documents-1`; hipótese de Worker/D1 sem evidência foi descartada. |
+| Justificativas | O erro real `Failed to fetch` comprova falha de transporte sem resposta HTTP. Repetir leitura é idempotente; repetir gravação pode duplicar efeitos. A troca de geração do SW evita servir uma página antiga antes da atualização em segundo plano. |
+| Alternativas descartadas | Retry global em `auth.api`; repetir mutações; alterar Worker sem evidência; depender de segunda atualização manual da página; mascarar indisponibilidade persistente. |
+| Ações externas concluídas | #536/#539 integradas e publicadas; nenhuma credencial, OAuth, permissão, conteúdo de PDF ou dado clínico foi alterado. |
+| Pendências e bloqueios | Revisão humana em produção; consultar os resultados finais das auditorias Chromium já iniciadas sem reiniciá-las. |
 | Riscos conhecidos | Falha persistente de rede/Worker/Drive continuará visível após duas tentativas; sincronizações só valem após confirmação real do Drive. |
 | Métricas / observabilidade | `documents_read_retry` registra apenas operação/tentativa/classe de falha; sem identificadores ou conteúdo sensível. |
-| Próxima ação exata | Testar produção normalmente. Se reaparecer falha, correlacionar horário + ação + endpoint técnico/status, sem dados do documento, antes de nova alteração. |
-| Arquivos e fontes principais | `js/documents.js`; `portal-sw.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; PR #536; merge `9c18b147`; Pages run `36600524175`; este status; Guia Mestre 1.1. |
+| Próxima ação exata | Usar a Central normalmente em produção e validar listagem/pesquisa/abertura do Titon. Se reaparecer falha, correlacionar horário + ação + endpoint técnico/status, sem dados do documento, antes de nova alteração. |
+| Arquivos e fontes principais | `js/documents.js`; `portal-sw.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; PRs #536/#539; merges `9c18b147`/`fa68c202`; Pages run `36601320788`; este status; Guia Mestre 1.1. |
