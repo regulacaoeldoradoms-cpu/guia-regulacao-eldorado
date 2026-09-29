@@ -131,6 +131,13 @@ test('Forma A abre sem consulta e resposta individual não revela correção',as
   await page.locator('#leaveAssessment').click();
   await expect(page.locator('#studyDashboard')).toBeVisible();
   await expect(page.locator('#startAssessment')).toHaveText('Retomar Forma A');
+  await expect(page.locator('#continueStudy')).toHaveText('Retomar avaliação: Forma A');
+  await expect(page.locator('#missionGrid [data-mission-id]')).toHaveCount(9);
+  for (const button of await page.locator('#missionGrid [data-mission-id]').all()) {
+    await expect(button).toBeDisabled();
+  }
+  const calls=await page.evaluate(()=>window.__studyCalls.map(item=>item.route));
+  expect(calls.filter(route=>route==='/api/studies/sessions')).toEqual([]);
   await page.locator('#startAssessment').click();
   await expect(page.locator('[data-assessment-question-id]').first().locator('input').first()).toBeDisabled();
   expect(errors).toEqual([]);
