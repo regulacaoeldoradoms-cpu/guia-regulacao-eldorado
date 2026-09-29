@@ -18,7 +18,7 @@ const questions=Array.from({length:16},(_,index)=>({
   competencyIds:[`competencia.${index%8+1}`]
 }));
 
-async function setup(page,{assessmentUnavailable=false}={}){
+async function setup(page,{assessmentUnavailable=false,resumableSession=null}={}){
   const errors=[],unexpected=[];
   page.on('pageerror',error=>errors.push(error.message));
   const payload={
@@ -31,7 +31,7 @@ async function setup(page,{assessmentUnavailable=false}={}){
     learningEvidence:{},attemptedQuestions:{},reviews:[],curriculum:null,
     missions:lessonIds.map((id,index)=>({id,topicId:id,order:index+1,title:`Missão ${index+1}`,shortTitle:`Missão ${index+1}`,
       estimatedMinutes:10,xp:100,kind:id.endsWith('.boss')?'boss':'lesson',passScore:id.endsWith('.boss')?75:0,questions:[]})),
-    resumableSession:null
+    resumableSession:structuredClone(resumableSession)
   };
   const auth=`
     window.__assessmentAnswers=new Set();
@@ -127,6 +127,27 @@ test('falha ao confirmar estado da avaliação bloqueia aulas em vez de abrir co
     await expect(button).toBeDisabled();
   }
   await expect(page.locator('#studyStatus')).toContainText('aulas permanecem bloqueadas');
+  expect(errors).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
+
+test('sessão de estudo retomável impede iniciar avaliação em paralelo',async({page})=>{
+  const {errors,unexpected}=await setup(page,{resumableSession:{
+    sessionId:'22222222-2222-2222-2222-222222222222',
+    missionId:'banking.sfn.introducao',
+    mode:'lesson',
+    reviewId:null,
+    startedAt:'2026-09-29T13:00:00Z',
+    durationSeconds:90,
+    answeredQuestionIds:[]
+  }});
+  await expect(page.locator('#assessmentPanel')).toBeVisible();
+  await expect(page.locator('#startAssessment')).toBeDisabled();
+  await expect(page.locator('#startAssessment')).toHaveText('Sessão de estudo em andamento');
+  await expect(page.locator('#assessmentMeta')).toContainText('Finalize ou encerre primeiro');
+  await expect(page.locator('#continueStudy')).toContainText('Retomar:');
+  const calls=await page.evaluate(()=>window.__studyCalls.map(item=>item.route));
+  expect(calls.filter(route=>route==='/api/studies/assessments/banking.sfn-foundation/start')).toEqual([]);
   expect(errors).toEqual([]);
   expect(unexpected).toEqual([]);
 });
