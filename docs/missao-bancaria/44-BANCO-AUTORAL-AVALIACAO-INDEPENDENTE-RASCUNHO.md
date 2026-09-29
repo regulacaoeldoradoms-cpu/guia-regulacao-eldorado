@@ -132,25 +132,25 @@ D. Banco comercial.
 
 **Distratores:** B é colegiado normativo; C pertence ao segmento de seguros; D é operador.
 
-## A06 — banco dos bancos aplicado
+## A06 — banco dos bancos em uma necessidade interbancária
 
 **ID:** `eval.sfn.a06`  
 **Aula primária:** `banking.sfn.bacen`  
-**teaches:** “Funções que aparecem em prova”  
+**teaches:** seção `banco-dos-bancos`  
 **sources:** `bcb.competencias`
 
-**Enunciado:** Em uma explicação sobre a infraestrutura bancária, aparece a função de atuar perante as próprias instituições financeiras, em vez de prestar conta corrente ao público em geral. A expressão tradicional que resume essa função é:
+**Enunciado:** Uma instituição financeira precisa usar estruturas mantidas pela autoridade monetária para movimentar e liquidar recursos no relacionamento entre instituições. Qual função do Banco Central ajuda a compreender esse papel?
 
 A. Banco dos bancos.  
-B. Banco de investimentos do Tesouro.  
-C. Operador de valores mobiliários.  
-D. Conselho de crédito.
+B. Atendimento bancário de varejo.  
+C. Administração de fundos de pensão.  
+D. Fiscalização de ofertas públicas de ações.
 
 **Resposta:** A.
 
-**Explicação:** “Banco dos bancos” é expressão tradicional associada a uma das funções do Banco Central.
+**Explicação:** A expressão “banco dos bancos” resume relações e estruturas do Banco Central voltadas ao funcionamento entre instituições, não ao atendimento bancário comum do público.
 
-**Distratores:** B, C e D não descrevem essa função institucional do BCB.
+**Distratores:** B descreve operador de varejo; C remete à previdência fechada; D ao mercado de valores mobiliários.
 
 ## A07 — decisão de política monetária
 
@@ -172,25 +172,25 @@ D. PREVIC.
 
 **Distratores:** B atua em valores mobiliários; C em diretrizes de seguros; D supervisiona previdência complementar fechada.
 
-## A08 — estrutura do Copom
+## A08 — reconhecer o colegiado pela composição
 
 **ID:** `eval.sfn.a08`  
 **Aula primária:** `banking.sfn.copom`  
-**teaches:** “Onde o Copom fica” + “Ritmo das reuniões”  
+**teaches:** seções `nome` e `composicao`  
 **sources:** `bcb.copom`
 
-**Enunciado:** Qual combinação descreve corretamente o Copom conforme a regulamentação usada no curso?
+**Enunciado:** Um enunciado descreve um colegiado que funciona no âmbito do Banco Central e é formado pelo Presidente e pelos Diretores da própria instituição. Qual colegiado foi descrito?
 
-A. Funciona no BCB, é composto por seu Presidente e Diretores e realiza oito reuniões ordinárias por ano.  
-B. Funciona na CVM, é composto por companhias abertas e se reúne mensalmente.  
-C. Funciona no CMN, é composto por bancos comerciais e fixa impostos.  
-D. Funciona na SUSEP, é composto por seguradoras e define a taxa de câmbio.
+A. Copom.  
+B. CMN.  
+C. CVM.  
+D. CNSP.
 
 **Resposta:** A.
 
-**Explicação:** O Copom está no âmbito do BCB, é composto pelo Presidente e Diretores e, na norma usada no curso, realiza oito reuniões ordinárias anuais.
+**Explicação:** A composição Presidente + Diretores do Banco Central identifica o Copom no conteúdo ensinado.
 
-**Distratores:** B, C e D deslocam instituição, composição e competência.
+**Distratores:** B possui composição diferente; C é autarquia do mercado de valores mobiliários; D é conselho do segmento de seguros.
 
 ## A09 — identificar CVM pelo objeto
 
@@ -232,25 +232,25 @@ D. Supervisão de uma cooperativa de crédito.
 
 **Distratores:** B, C e D estão ligados a participantes/atividades supervisionados pelo Banco Central.
 
-## A11 — banco múltiplo por carteiras
+## A11 — reconhecer banco múltiplo em uma configuração nova
 
 **ID:** `eval.sfn.a11`  
 **Aula primária:** `banking.sfn.operadores`  
-**teaches:** “Banco comercial e banco múltiplo”  
+**teaches:** seções `carteira`, `multiplo` e `exemplo-carteiras`  
 **sources:** `cmn.bancos.5060`
 
-**Enunciado:** Uma instituição pretende organizar-se como banco múltiplo. Qual configuração atende à regra básica ensinada?
+**Enunciado:** Uma instituição reúne, sob a mesma organização, uma carteira comercial e uma carteira de investimento. Considerando apenas a regra de carteiras ensinada, essa configuração é compatível com a classificação de:
 
-A. Duas carteiras, sendo uma delas comercial ou de investimento.  
-B. Uma única carteira de qualquer natureza.  
-C. Duas carteiras exclusivamente de seguros.  
-D. Três carteiras, desde que nenhuma seja comercial nem de investimento.
+A. Banco múltiplo.  
+B. Instituição de pagamento sem carteira bancária.  
+C. Órgão normativo.  
+D. Entidade fechada de previdência complementar.
 
 **Resposta:** A.
 
-**Explicação:** O banco múltiplo deve possuir ao menos duas carteiras, sendo uma comercial ou de investimento.
+**Explicação:** Há pelo menos duas carteiras e uma delas é comercial ou de investimento, satisfazendo a regra básica estudada para banco múltiplo.
 
-**Distratores:** B não atinge o mínimo; C usa segmento que não substitui as carteiras bancárias exigidas; D exclui justamente a condição necessária.
+**Distratores:** B não descreve a organização por carteiras bancárias; C não é operador; D pertence a outro segmento.
 
 ## A12 — supervisionado continua operador
 
@@ -476,45 +476,45 @@ D. “CMN e Banco Central possuem funções institucionais distintas.”
 
 **Distratores:** B, C e D refletem a distinção ensinada.
 
-## B07 — duas sessões do Copom
+## B07 — meta Selic não é a taxa de todo contrato
 
 **ID:** `eval.sfn.b07`  
 **Aula primária:** `banking.sfn.copom`  
-**teaches:** “Ritmo das reuniões”  
+**teaches:** seções `selic`, `meta` e `relacao`  
 **sources:** `bcb.copom`
 
-**Enunciado:** Nas reuniões ordinárias do Copom descritas no curso, as duas sessões cumprem, em linhas gerais, quais funções?
+**Enunciado:** Após uma decisão do Copom, um cliente conclui que todo empréstimo bancário deverá ter exatamente a mesma taxa definida pelo colegiado. Qual correção é adequada?
 
-A. Apresentações técnicas e decisão da meta para a Selic.  
-B. Aprovação de orçamento federal e concessão de crédito.  
-C. Fiscalização de seguradoras e julgamento de ofertas públicas.  
-D. Registro de consórcios e autorização de fundos de pensão.
+A. O Copom define a meta para a Selic; a taxa de um contrato também depende de condições como prazo, risco e custos.  
+B. A conclusão está correta: a meta Selic é obrigatoriamente a taxa de todo empréstimo.  
+C. O Copom define apenas taxas de seguros privados.  
+D. A taxa de cada empréstimo é definida diretamente pelo CMN para cada cliente.
 
 **Resposta:** A.
 
-**Explicação:** A regulamentação estudada organiza a reunião ordinária em sessão de apresentações técnicas e sessão de decisão da meta Selic.
+**Explicação:** A aula diferencia a meta da taxa básica das taxas específicas dos contratos de crédito.
 
-**Distratores:** B, C e D atribuem matérias de outros órgãos/segmentos.
+**Distratores:** B confunde meta macroeconômica com preço individual; C desloca o assunto para seguros; D atribui análise individual de contrato ao CMN.
 
-## B08 — composição versus competência do Copom
+## B08 — dois sentidos relacionados à palavra Selic
 
 **ID:** `eval.sfn.b08`  
 **Aula primária:** `banking.sfn.copom`  
-**teaches:** “Onde o Copom fica” + “A decisão central”  
+**teaches:** seções `selic` e `meta`  
 **sources:** `bcb.copom`
 
-**Enunciado:** Qual alternativa combina corretamente composição e competência?
+**Enunciado:** Qual afirmação organiza corretamente o uso da palavra “Selic” no conteúdo estudado?
 
-A. Presidente e Diretores do BCB — definição da meta para a Taxa Selic.  
-B. Ministros do CMN — fiscalização de companhias abertas.  
-C. Diretores da CVM — definição da meta Selic.  
-D. Presidentes dos bancos públicos — supervisão de previdência fechada.
+A. O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.  
+B. Selic é o nome de um banco comercial que concede empréstimos ao público.  
+C. Selic é uma modalidade de previdência complementar fechada.  
+D. Selic é o órgão que fiscaliza companhias abertas.
 
 **Resposta:** A.
 
-**Explicação:** O Copom é composto pelo Presidente e Diretores do BCB e define a meta Selic.
+**Explicação:** A aula distingue a origem do nome Selic e o uso da expressão taxa Selic no contexto dos juros básicos e de sua meta.
 
-**Distratores:** B, C e D combinam participantes e competências de forma incorreta.
+**Distratores:** B, C e D confundem a expressão com instituições/segmentos sem relação com essa definição.
 
 ## B09 — proteção do investidor e manipulação
 
