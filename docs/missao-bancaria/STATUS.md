@@ -184,6 +184,42 @@ Foi preparado um roteiro de aceite humano separado dos testes técnicos. Ele cob
 
 O roteiro não cria dados fictícios nem exige manipular datas produtivas. Cenários dependentes de tempo natural podem permanecer pendentes sem transformar CI verde em homologação automática.
 
+## Especificação preparada — avaliação independente
+
+Documento: `41-AVALIACAO-INDEPENDENTE.md`.  
+Branch documental: `docs/missao-bancaria-avaliacao-independente`, baseada na cadeia até a evidência de retenção.
+
+Objetivo: impedir que questões já vistas no ensino/revisão sejam usadas sozinhas como prova de domínio. A especificação separa um banco autoral de avaliação, inicialmente com **32 itens inéditos** do primeiro bloco de SFN, divididos em duas formas A/B de 16 itens sem sobreposição. A forma B só fica elegível sete dias após a forma A. Durante a rodada não há feedback de acerto por item; gabarito/explicação só aparecem no fechamento. Continua sem XP por participação e sem alterar prontidão automaticamente.
+
+A implementação de produção **não começa antes da estabilização/integração da cadeia #510–#512**. O documento registra schema sugerido, isolamento, prevenção de vazamento, diagnóstico por competência e testes obrigatórios.
+
+## Autoria preparada — banco independente A/B
+
+Documento: `44-BANCO-AUTORAL-AVALIACAO-INDEPENDENTE-RASCUNHO.md`.
+
+Foi preparado um rascunho editorial com **32 itens inéditos**, distribuídos em duas formas A/B de 16 questões sem sobreposição, com dois itens primários por cada uma das oito aulas em cada forma.
+
+Cada item registra aula/trecho ensinado, fontes, resposta, explicação e motivo dos distratores. O arquivo permanece **fora do produto**: não é importado pelo Worker, não aparece no bootstrap e não altera XP, cobertura, retenção ou prontidão.
+
+Antes de virar catálogo de produção ainda são obrigatórias revisão semântica contra treino/Chefe, conferência factual nas fontes, revisão de dificuldade/pistas e testes de isolamento.
+
+## Arquitetura preparada — avaliação independente
+
+Documento: `45-SCHEMA-E-API-AVALIACAO-INDEPENDENTE.md`.
+
+Foi definida uma proposta aditiva com tabelas próprias `study_assessment_rounds` e `study_assessment_answers`, sem alterar o CHECK de `study_rounds.mode`.
+
+A proposta fixa:
+- elegibilidade A/B e intervalo de sete dias;
+- conjunto de itens congelado;
+- resposta idempotente sem revelar correção durante a rodada;
+- fechamento idempotente;
+- isolamento do banco de treino;
+- versionamento/invalidação sem apagar histórico;
+- diagnóstico por competência sem alterar prontidão automaticamente.
+
+Continua sem código de produção: implementação só começa depois da integração/estabilidade da #512.
+
 ## Nova entrega empilhada — backend da avaliação independente
 
 Documento: `47-AVALIACAO-INDEPENDENTE-BACKEND.md`.  
@@ -222,7 +258,7 @@ A suíte Chromium ganhou cenários específicos para ausência de consulta duran
 
 ## Próximos recortes autorizados
 
-Concluir CI e integração elegível da retomada, sequência histórica e backend da avaliação independente; verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois concluir a integração da retomada e desta correção histórica; os limites técnicos pós-cronômetro ficam então concentrados em validação/publicação e homologação humana. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
