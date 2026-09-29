@@ -404,10 +404,10 @@ const QUESTIONS = [
     ],
     "prompt": "Uma empresa é instituição de pagamento e gerencia contas de pagamento. Qual afirmação é compatível com o conteúdo estudado?",
     "options": [
-      "Passa a ser banco comercial apenas por manter contas de pagamento.",
-      "Pode definir a meta Selic por operar diretamente no sistema de pagamentos.",
+      "Passa a ser banco comercial e pode captar depósitos à vista apenas por manter contas de pagamento.",
+      "Pode definir a meta Selic e conceder crédito por participar do sistema de pagamentos.",
       "Continua sendo instituição de pagamento e não pode exercer atividade privativa de instituição financeira.",
-      "Substitui o Banco Central na regulação dos participantes do arranjo."
+      "Substitui o Banco Central na regulação e fiscalização dos participantes do arranjo."
     ],
     "answer": 2,
     "explanation": "Instituição de pagamento não é instituição financeira e não pode exercer atividades privativas destas apenas por atuar em pagamentos.",
@@ -615,7 +615,7 @@ const QUESTIONS = [
     "options": [
       "O Copom define a meta Selic; a taxa do empréstimo depende também de risco, prazo e custos.",
       "A conclusão está correta: a meta Selic é obrigatoriamente a taxa de todo empréstimo.",
-      "O Copom define apenas taxas de seguros privados.",
+      "O Copom atua apenas no mercado de seguros e define taxas obrigatórias para apólices privadas.",
       "A taxa de cada empréstimo é definida diretamente pelo CMN para cada cliente."
     ],
     "answer": 0,
@@ -641,8 +641,8 @@ const QUESTIONS = [
     "options": [
       "Selic é o nome de um banco comercial que concede empréstimos ao público.",
       "Selic nomeia o sistema de liquidação e custódia; a meta da taxa Selic é definida pelo Copom.",
-      "Selic é uma modalidade de previdência complementar fechada.",
-      "Selic é o órgão que fiscaliza companhias abertas."
+      "Selic é modalidade de previdência complementar fechada supervisionada pela PREVIC.",
+      "Selic é a entidade responsável por fiscalizar companhias abertas e fundos de investimento."
     ],
     "answer": 1,
     "explanation": "A aula distingue a origem do nome Selic e o uso da expressão taxa Selic no contexto dos juros básicos e de sua meta.",
