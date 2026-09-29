@@ -16,6 +16,7 @@ const DOCUMENT_WORKER_ORIGINS = new Set([
 const DOCUMENTS_WARM_TTL_MS = 90 * 1000;
 const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
 const DOCUMENTS_WARM_PAGE_SIZE = 20;
+const DOCUMENTS_WARM_RETRY_DELAYS_MS = Object.freeze([350, 900]);
 const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
   '/vendor/pdfjs-legacy/pdf.min.mjs',
   '/vendor/pdfjs-legacy/pdf.worker.min.mjs',
@@ -162,17 +163,34 @@ async function fetchDocumentWarmJson(endpoint, pathname, authorization, options 
   if (options.body !== undefined && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const response = await fetch(endpoint + pathname, {
-    method: options.method || 'GET',
-    mode: 'cors',
-    credentials: 'omit',
-    cache: 'no-store',
-    redirect: 'error',
-    headers,
-    ...(options.body !== undefined ? { body: options.body } : {})
-  });
-  if (!response.ok) return null;
-  return response.json().catch(() => null);
+
+  for (let attempt = 0; attempt <= DOCUMENTS_WARM_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const response = await fetch(endpoint + pathname, {
+        method: options.method || 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+        redirect: 'error',
+        headers,
+        ...(options.body !== undefined ? { body: options.body } : {})
+      });
+      if (response.ok) return response.json().catch(() => null);
+
+      const retryable = [500, 502, 503, 504].includes(Number(response.status || 0));
+      if (!retryable || attempt >= DOCUMENTS_WARM_RETRY_DELAYS_MS.length) return null;
+      try { await response.body?.cancel?.(); } catch (_) {}
+    } catch (error) {
+      if (String(error?.name || '') === 'AbortError' || attempt >= DOCUMENTS_WARM_RETRY_DELAYS_MS.length) {
+        return null;
+      }
+    }
+
+    const delay = DOCUMENTS_WARM_RETRY_DELAYS_MS[attempt];
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  return null;
 }
 
 
