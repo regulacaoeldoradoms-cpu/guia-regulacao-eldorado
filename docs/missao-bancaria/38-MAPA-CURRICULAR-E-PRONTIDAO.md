@@ -1,7 +1,7 @@
 # MISSÃO BANCÁRIA — MAPA CURRICULAR E CRITÉRIOS DE PRONTIDÃO
 
 Data: 27/09/2026.  
-Fase ativa: Fase 1.  
+Fase ativa: Fase 2.  
 Branch inicial: `feat/missao-bancaria-mapa-curricular`, empilhada sobre a entrega de tempo da PR #509.
 
 ## 1. Problema corrigido

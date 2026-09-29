@@ -1,7 +1,7 @@
 # MISSÃO BANCÁRIA — DOSSIÊ MESTRE V1
 
 Data de criação: 25/09/2026  
-Status: planejamento documental; nenhum código de produto autorizado por este documento isoladamente.
+Status: Fase 1 aceita em 29/09/2026; Fase 2 — motor pedagógico reutilizável — ativa.
 
 ## 1. Objetivo
 
