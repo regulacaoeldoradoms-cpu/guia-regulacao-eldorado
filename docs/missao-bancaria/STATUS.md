@@ -237,10 +237,21 @@ Implementado em draft:
 
 O bootstrap comum continua sem enviar o banco `eval.sfn.*`. A UI ainda não foi implementada e a revisão factual/editorial final dos 32 itens continua pendente antes de homologação.
 
+## Hardening adicional — avaliação independente sob concorrência
+
+Branch: `fix/missao-bancaria-avaliacao-concorrencia`, sobre o backend já integrado.
+
+O início e o fechamento da avaliação independente passam a ser determinísticos mesmo sob duas requisições simultâneas:
+- início concorrente converge para uma única rodada ativa;
+- fechamento concorrente retorna o mesmo resultado persistido;
+- nenhum XP, cobertura, prontidão ou histórico de treino é alterado.
+
+A suíte ganhou cenários explícitos de concorrência para início e fechamento.
+
 ## Nova entrega empilhada — interface da avaliação independente
 
 Documento: `48-AVALIACAO-INDEPENDENTE-INTERFACE.md`.  
-Branch: `feat/missao-bancaria-avaliacao-independente-ui`, empilhada sobre o backend independente.
+Branch: `feat/missao-bancaria-avaliacao-independente-ui`, sobre o backend independente já integrado.
 
 Implementado em draft:
 - painel de estado A/B no dashboard;
