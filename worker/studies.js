@@ -15,6 +15,14 @@ import {
   sourceMap
 } from './studies-content/manifest.js';
 import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
+import {
+  StudyAssessmentError,
+  ensureAssessmentSchema,
+  getAssessmentState,
+  startIndependentAssessment,
+  recordIndependentAssessmentAnswer,
+  completeIndependentAssessment
+} from './study-assessments.js';
 
 const ALLOWED_USERNAME = 'wellyton';
 const STUDY_TIME_ZONE = 'America/Campo_Grande';
@@ -144,6 +152,7 @@ async function ensureStudySchema(env) {
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_sessions_user_finished ON study_sessions(username, finished_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_reviews_user_due ON study_reviews(username, status, due_at)').run();
     await ensureRoundSchema(db);
+    await ensureAssessmentSchema(db);
     schemaReady.add(db);
     return true;
   })().catch((error) => {
@@ -785,6 +794,32 @@ async function handleTimeCheckpoint(request, pathname, env, user, origin) {
   return json(result, 200, origin);
 }
 
+async function handleAssessmentState(env, user, origin) {
+  return json(await getAssessmentState(env.AUTH_DB, user.username), 200, origin);
+}
+
+async function handleAssessmentStart(env, user, origin) {
+  const result = await startIndependentAssessment(env.AUTH_DB, user.username);
+  return json(result, 201, origin);
+}
+
+async function handleAssessmentAnswer(request, pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/assessments\/([a-f0-9-]+)\/answers$/i);
+  if (!match) return json({ error: 'Avaliação não encontrada.' }, 404, origin);
+  const body = await readStudyBody(request);
+  const result = await recordIndependentAssessmentAnswer(
+    env.AUTH_DB, user.username, match[1], body.questionId, body.selectedOption
+  );
+  return json(result, 200, origin);
+}
+
+async function handleAssessmentComplete(pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/assessments\/([a-f0-9-]+)\/complete$/i);
+  if (!match) return json({ error: 'Avaliação não encontrada.' }, 404, origin);
+  const result = await completeIndependentAssessment(env.AUTH_DB, user.username, match[1]);
+  return json(result, 200, origin);
+}
+
 export async function handleStudiesRoute(request, env, origin, originAllowed = true) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
@@ -799,6 +834,18 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     if (request.method === 'GET' && url.pathname === '/api/studies/achievements') {
       return await handleAchievements(env, user, origin);
+    }
+    if (request.method === 'GET' && url.pathname === '/api/studies/assessments/banking.sfn-foundation') {
+      return await handleAssessmentState(env, user, origin);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/studies/assessments/banking.sfn-foundation/start') {
+      return await handleAssessmentStart(env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/assessments\/[a-f0-9-]+\/answers$/i.test(url.pathname)) {
+      return await handleAssessmentAnswer(request, url.pathname, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/assessments\/[a-f0-9-]+\/complete$/i.test(url.pathname)) {
+      return await handleAssessmentComplete(url.pathname, env, user, origin);
     }
     if (request.method === 'POST' && url.pathname === '/api/studies/attempts') {
       return await handleAttempt(request, env, user, origin);
@@ -820,7 +867,7 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     return json({ error: 'Rota de estudos não encontrada.' }, 404, origin);
   } catch (error) {
-    if (error instanceof StudyRoundError) {
+    if (error instanceof StudyRoundError || error instanceof StudyAssessmentError) {
       return json({ error: error.message, code: error.code }, error.status, origin);
     }
     throw error;
