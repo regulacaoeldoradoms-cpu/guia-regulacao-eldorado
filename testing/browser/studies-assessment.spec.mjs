@@ -84,6 +84,8 @@ async function setup(page){
       }
     };`;
 
+  await page.addInitScript(auth);
+
   await page.route('**/*',async route=>{
     const url=new URL(route.request().url());
     if(url.origin!==origin){unexpected.push(url.origin+url.pathname);return route.abort();}
@@ -93,7 +95,7 @@ async function setup(page){
       html=html.replace(/<link rel="preconnect"[^>]*>/g,'');
       return route.fulfill({contentType:'text/html',body:html});
     }
-    if(pathname==='/js/auth-client.js')return route.fulfill({contentType:'text/javascript',body:auth});
+    if(pathname==='/js/auth-client.js')return route.fulfill({contentType:'text/javascript',body:''});
     if(pathname==='/js/studies.js'){
       return route.fulfill({contentType:'text/javascript',body:await readFile(path.join(root,'js/studies.js'),'utf8')});
     }
