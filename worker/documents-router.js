@@ -297,7 +297,25 @@ async function setDocumentAiPreferences(env, username, input = {}) {
   return { fieldOrder };
 }
 
+async function ensureDocumentPreferenceSchemas(env) {
+  if (!env.AUTH_DB) return false;
+  try {
+    // Evita três operações DDL concorrentes em cold start do Worker.
+    await ensureEditorPreferencesSchema(env);
+    await ensureViewerPreferencesSchema(env);
+    await ensureDocumentAiPreferencesSchema(env);
+    return true;
+  } catch (_) {
+    throw new DriveIntegrationError(
+      'DOCUMENTS_PREFERENCES_UNAVAILABLE',
+      'Preferências documentais temporariamente indisponíveis.',
+      503
+    );
+  }
+}
+
 async function documentsPreferencesFor(env, username) {
+  await ensureDocumentPreferenceSchemas(env);
   const [editor, viewer, documentAi] = await Promise.all([
     editorPreferencesFor(env, username),
     viewerPreferencesFor(env, username),
