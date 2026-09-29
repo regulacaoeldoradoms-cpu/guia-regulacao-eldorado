@@ -97,7 +97,7 @@ D. Incorreta, pois o CMN apenas administra o orçamento federal.
 **ID:** `eval.sfn.a04`  
 **Aula primária:** `banking.sfn.cmn`  
 **teaches:** “Composição atual”  
-**sources:** `bcb.cmn`
+**sources:** `fazenda.cmn.apresentacao`
 
 **Enunciado:** Qual conjunto corresponde à composição ensinada para o Conselho Monetário Nacional nesta versão do curso?
 
@@ -421,7 +421,7 @@ D. Orientar por normas a atuação das entidades competentes.
 **ID:** `eval.sfn.b04`  
 **Aula primária:** `banking.sfn.cmn`  
 **teaches:** “Composição atual”  
-**sources:** `bcb.cmn`
+**sources:** `fazenda.cmn.apresentacao`
 
 **Enunciado:** Em uma ata hipotética do CMN, qual membro deve aparecer como presidente do colegiado conforme a composição estudada?
 
