@@ -31,6 +31,7 @@ test('visualizador mantém 114% como fallback e aceita zoom inicial persistido',
 
 test('Titon aplica o último zoom manual da conta aos próximos PDFs', () => {
   const client = read('js/documents.js');
+  const router = read('worker/documents-router.js');
 
   assert.match(client, /DEFAULT_VIEWER_ZOOM_SCALE = 1\.14/);
   assert.match(client, /viewerZoomScale: null/);
@@ -1832,7 +1833,6 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
 test('Fase 7 reconecta leituras transitórias sem repetir gravações documentais', () => {
   const client = read('js/documents.js');
   const serviceWorker = read('portal-sw.js');
-  const router = read('worker/documents-router.js');
 
   assert.match(client, /DOCUMENT_READ_RETRY_DELAYS_MS = Object\.freeze\(\[350, 900\]\)/);
   assert.match(client, /function isTransientDocumentReadError\(/);
