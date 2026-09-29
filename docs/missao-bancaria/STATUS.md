@@ -263,7 +263,7 @@ Implementado em draft:
 - correção e diagnóstico somente após encerrar;
 - histórico resumido de formas concluídas;
 - grade de missões e revisões bloqueada enquanto uma forma independente estiver ativa, com o botão principal priorizando a retomada da avaliação;
-- falha ao consultar o estado da avaliação é tratada de forma fail-closed: aulas permanecem temporariamente bloqueadas até o estado ser confirmado.
+- com `assessmentProtocol: 1`, falha ao consultar o estado da avaliação é tratada de forma fail-closed: aulas permanecem temporariamente bloqueadas até o estado ser confirmado; bootstrap antigo sem o protocolo mantém o fluxo clássico compatível.
 
 O fluxo usa nós DOM/`textContent` para os itens recebidos do backend. A UI não concede XP, não altera cobertura nem calcula prontidão.
 
