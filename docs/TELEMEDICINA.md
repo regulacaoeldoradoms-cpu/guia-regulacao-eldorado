@@ -410,3 +410,16 @@ A autorização de Técnico em Telemedicina passa a ter proteção de integridad
 
 Isso transforma a prevenção de regressão em regra de backend e de banco, não apenas em comportamento do formulário administrativo.
 
+## Conexão administrativa V34.7 — 29/09/2026
+
+O carregamento de **Usuários e acessos** foi ajustado para não depender de uma sequência de consultas D1 por conta.
+
+- capacidades de Telemedicina são lidas em lote;
+- a última intenção de auditoria é agregada em lote;
+- somente divergências reais acionam autorreparo;
+- o preflight CORS de `/api/admin/users` responde antes de qualquer acesso ao banco;
+- o GET autenticado continua fazendo toda a validação server-side;
+- a repetição automática de rede da V34.5 permanece como fallback, não como mecanismo de desempenho.
+
+A medida evita que o crescimento da quantidade de contas transforme o painel administrativo em uma rota progressivamente mais lenta ou sujeita a falha de transporte.
+
