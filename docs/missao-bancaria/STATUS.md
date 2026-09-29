@@ -235,7 +235,7 @@ Implementado em draft:
 - diagnóstico final por competência e aula;
 - zero XP, zero alteração de cobertura e zero alteração automática de prontidão.
 
-O bootstrap comum continua sem enviar o banco `eval.sfn.*`. A UI ainda não foi implementada e a revisão factual/editorial final dos 32 itens continua pendente antes de homologação.
+O bootstrap comum continua sem enviar o banco `eval.sfn.*`. A interface está em validação na #541. O banco recebeu revisão editorial/factual V3; a homologação humana de clareza/dificuldade continua pendente.
 
 ## Hardening adicional — avaliação independente sob concorrência
 
@@ -247,6 +247,20 @@ O início e o fechamento da avaliação independente passam a ser determinístic
 - nenhum XP, cobertura, prontidão ou histórico de treino é alterado.
 
 A suíte ganhou cenários explícitos de concorrência para início e fechamento.
+
+## Revisão editorial/factual da avaliação independente
+
+Documento: `49-REVISAO-EDITORIAL-AVALIACAO-INDEPENDENTE.md`.
+
+O catálogo independente passa a `ASSESSMENT_VERSION = 2` após revisão das alternativas com maior risco de pista por comprimento. IDs, competências, fontes e posições corretas foram preservados.
+
+Guardrails adicionados:
+- nenhuma semelhança lexical alta com os prompts do treino no teste atual;
+- equilíbrio 4×A/4×B/4×C/4×D por forma mantido;
+- diferença de comprimento entre alternativas limitada por teste de regressão;
+- conferência dirigida de CMN, BCB, Copom, CVM, banco múltiplo, SUSEP/PREVIC, instituição de pagamento, SPI/SPB e consórcio.
+
+Isso melhora a qualidade editorial, mas não é homologação humana nem certificação de prontidão.
 
 ## Próximos recortes autorizados
 
