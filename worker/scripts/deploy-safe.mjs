@@ -25,6 +25,8 @@ export const SAFE_DEPLOY = Object.freeze({
   worker: 'yellow-wave-d0a1guia-regulacao-ia',
   wranglerVersion: '4.135.0',
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
+  adminUsersApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/admin/users',
+  portalOrigin: 'https://regulacaoeldoradoms.com.br',
   candidateMessage: 'Portal: candidato validado pelo gate de deploy seguro',
   candidateTag: 'portal-safe-deploy',
   postDeployAttempts: 15,
@@ -444,6 +446,64 @@ export function classifyAgendaProbe(status) {
   };
 }
 
+export function classifyAdminUsersProbe(preflightStatus, getStatus, preflightOrigin = '', getOrigin = '') {
+  const expectedOrigin = SAFE_DEPLOY.portalOrigin;
+  return {
+    preflightStatus: Number(preflightStatus || 0),
+    getStatus: Number(getStatus || 0),
+    healthy: Number(preflightStatus || 0) === 204
+      && Number(getStatus || 0) === 401
+      && preflightOrigin === expectedOrigin
+      && getOrigin === expectedOrigin
+  };
+}
+
+async function probeAdminUsers(fetcher = fetch) {
+  let preflight;
+  let response;
+  try {
+    preflight = await fetcher(SAFE_DEPLOY.adminUsersApi, {
+      method: 'OPTIONS',
+      redirect: 'manual',
+      cache: 'no-store',
+      headers: {
+        Origin: SAFE_DEPLOY.portalOrigin,
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'authorization,content-type'
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+    response = await fetcher(SAFE_DEPLOY.adminUsersApi, {
+      method: 'GET',
+      redirect: 'manual',
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+        Origin: SAFE_DEPLOY.portalOrigin
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch {
+    throw new SafeDeployError('ADMIN_USERS_NAO_RESPONDE');
+  }
+  return classifyAdminUsersProbe(
+    preflight.status,
+    response.status,
+    String(preflight.headers?.get?.('Access-Control-Allow-Origin') || ''),
+    String(response.headers?.get?.('Access-Control-Allow-Origin') || '')
+  );
+}
+
+async function waitForAdminUsers(fetcher = fetch) {
+  let last = null;
+  for (let attempt = 0; attempt < SAFE_DEPLOY.postDeployAttempts; attempt += 1) {
+    last = await probeAdminUsers(fetcher);
+    if (last.healthy) return last;
+    await new Promise((resolve) => setTimeout(resolve, SAFE_DEPLOY.postDeployDelayMs));
+  }
+  return last || { preflightStatus: 0, getStatus: 0, healthy: false };
+}
+
 async function probeAgenda(fetcher = fetch) {
   let response;
   try {
@@ -621,12 +681,18 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     const activeAfterPromotion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(activeAfterPromotion === candidateVersion, 'PROMOCAO_NAO_ATIVOU_CANDIDATA');
 
-    console.log('6/7 Confirmando Agenda após a promoção...');
+    console.log('6/8 Confirmando Agenda após a promoção...');
     const agenda = await waitForAgenda(fetcher);
     must(agenda.healthy, agenda.firebaseBroken ? 'AGENDA_FIREBASE_503_APOS_DEPLOY' : 'AGENDA_NAO_PASSOU_POS_DEPLOY');
     safeLine('agendaHttpAnonimo', agenda.status);
 
-    console.log('7/7 Reconfirmando versão e bindings em produção...');
+    console.log('7/8 Confirmando preflight e barreira anônima de Usuários e acessos...');
+    const adminUsers = await waitForAdminUsers(fetcher);
+    must(adminUsers.healthy, 'ADMIN_USERS_NAO_PASSOU_POS_DEPLOY');
+    safeLine('adminUsersPreflightHttp', adminUsers.preflightStatus);
+    safeLine('adminUsersGetAnonimoHttp', adminUsers.getStatus);
+
+    console.log('8/8 Reconfirmando versão e bindings em produção...');
     const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
     validateCandidateBindings(activeView, versionView(finalVersion, readConfig, tempRoot));
@@ -635,8 +701,14 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     console.log('');
     console.log('DEPLOY_SEGURO_CONCLUIDO');
     safeLine('workerVersion', finalVersion);
-    console.log('resultado=versao candidata validada antes do trafego e Agenda confirmada depois da promocao');
-    return { originalVersion, candidateVersion, status: agenda.status };
+    console.log('resultado=versao candidata validada; Agenda e Usuarios/acessos confirmados apos promocao');
+    return {
+      originalVersion,
+      candidateVersion,
+      status: agenda.status,
+      adminUsersStatus: adminUsers.getStatus,
+      adminUsersPreflightStatus: adminUsers.preflightStatus
+    };
   } catch (error) {
     if (promotionStarted && !completed && UUID.test(originalVersion)) {
       try {

@@ -21,6 +21,7 @@ import {
   injectAuthDbDatabaseId,
   injectRequiredSecrets,
   classifyAgendaProbe,
+  classifyAdminUsersProbe,
   wranglerArgs,
   wranglerCliPath
 } from '../scripts/deploy-safe.mjs';
@@ -323,6 +324,17 @@ test('probe anônimo da Agenda distingue saudável de Firebase ausente', () => {
   assert.deepEqual(classifyAgendaProbe(403), { status: 403, healthy: true, firebaseBroken: false });
   assert.deepEqual(classifyAgendaProbe(401), { status: 401, healthy: true, firebaseBroken: false });
   assert.deepEqual(classifyAgendaProbe(503), { status: 503, healthy: false, firebaseBroken: true });
+});
+
+test('probe pós-deploy de Usuários exige preflight CORS e GET anônimo protegido', () => {
+  assert.deepEqual(
+    classifyAdminUsersProbe(204, 401, SAFE_DEPLOY.portalOrigin, SAFE_DEPLOY.portalOrigin),
+    { preflightStatus: 204, getStatus: 401, healthy: true }
+  );
+  assert.equal(classifyAdminUsersProbe(500, 401, SAFE_DEPLOY.portalOrigin, SAFE_DEPLOY.portalOrigin).healthy, false);
+  assert.equal(classifyAdminUsersProbe(204, 500, SAFE_DEPLOY.portalOrigin, SAFE_DEPLOY.portalOrigin).healthy, false);
+  assert.equal(classifyAdminUsersProbe(204, 401, '', SAFE_DEPLOY.portalOrigin).healthy, false);
+  assert.equal(classifyAdminUsersProbe(204, 401, SAFE_DEPLOY.portalOrigin, '').healthy, false);
 });
 
 test('gate usa Wrangler local fixado pelo package.json sem passar por npx', () => {

@@ -83,3 +83,109 @@ Regra V34.2:
 6. A mesma regra é aplicada ao backend principal da Telemedicina, ao roteador V2 e à Agenda espelhada.
 
 Não há concessão por nome, cargo textual, frontend ou sessão antiga. A fonte de verdade continua sendo exclusivamente a capacidade server-side.
+
+## Complemento V34.3 — persistência da autorização e revogação explícita
+
+Decisão permanente registrada em 28/09/2026 após nova recorrência de `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor` em uma conta operacional já destinada ao módulo.
+
+### Diagnóstico da recorrência
+
+A correção V34.2 continua válida: as rotas protegidas usam `auth_telemedicine_access` como fonte de verdade e autocorrigem o papel-base `recepcao`. Portanto, quando uma sessão válida chega à tela da Telemedicina, mas uma gravação recebe o `403` acima, o problema não é mais a divergência transitória do papel-base: a capacidade persistida está ausente ou desabilitada.
+
+A revisão do código encontrou uma via de revogação acidental no fluxo administrativo. O formulário de edição enviava `role` em toda gravação, mesmo quando o operador alterava apenas nome, cargo textual ou estado da conta. O backend interpretava qualquer `PATCH` cujo `role` não fosse `telemedicina` como ordem para gravar `auth_telemedicine_access.enabled = 0`. Como o papel-base de uma conta de Telemedicina é internamente `recepcao`, uma edição administrativa comum podia derrubar a capacidade lógica sem intenção de revogá-la.
+
+A interface ainda podia permanecer aberta por alguns instantes porque a sessão do navegador mantém o perfil lógico em cache e faz revalidação em segundo plano. Nesse intervalo, a API já consultava o D1 em tempo real e recusava a gravação, produzindo exatamente a combinação "tela aberta + 403 ao salvar".
+
+### Regra V34.3
+
+1. Editar nome, cargo textual, status ativo ou funções independentes não altera a capacidade de Telemedicina.
+2. O frontend administrativo somente envia `role` quando o perfil realmente foi alterado.
+3. Sair do perfil lógico `telemedicina` envia também `telemedicineAccess: false`.
+4. O backend somente grava `enabled = 0` quando recebe essa revogação explícita de um Desenvolvedor.
+5. Se uma conta com capacidade ativa receber pedido de mudança de perfil sem revogação explícita, a alteração é recusada em vez de remover silenciosamente o acesso.
+6. Selecionar explicitamente o perfil `telemedicina` continua concedendo a capacidade e normalizando o papel-base.
+7. A autorização das APIs permanece server-side; nenhuma confiança é transferida para cache, botão, cargo textual ou nome do usuário.
+
+Com essa regra, uma conta destinada permanentemente à operação da Telemedicina permanece autorizada até que o Desenvolvedor execute uma mudança de perfil que contenha revogação explícita.
+
+## Complemento V34.4 — o rótulo visual não substitui a capacidade server-side
+
+Decisão permanente registrada em 28/09/2026 após confirmação de um estado incoerente no painel administrativo: a conta podia aparecer com **Perfil de acesso: Técnico em Telemedicina** e **Acesso ativo**, mas a API de registro de consulta ainda retornar `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor`.
+
+### Causa
+
+O perfil exibido no painel e a capacidade `auth_telemedicine_access.enabled` são informações relacionadas, mas não eram apresentadas de forma suficientemente explícita quando havia uma inconsistência histórica. Uma conta legada podia manter o rótulo lógico `telemedicina` enquanto a capacidade server-side permanecia desabilitada. Nesse caso, o seletor visual parecia correto, porém a API fazia corretamente a validação da capacidade persistida e bloqueava a gravação.
+
+### Regra V34.4
+
+1. O painel administrativo passa a distinguir o rótulo lógico da autorização técnica real.
+2. Se a conta aparecer como `telemedicina` mas `telemedicineAccess !== true`, a interface mostra **Telemedicina: autorização técnica pendente**.
+3. Abrir a edição nessa condição exibe aviso de inconsistência.
+4. Manter **Técnico em Telemedicina** selecionado e clicar em **Salvar alterações** passa a ser uma concessão explícita: o frontend envia `role: telemedicina` e `telemedicineAccess: true`.
+5. O backend aceita a concessão somente quando o papel solicitado também é `telemedicina`; `telemedicineAccess: true` isolado é rejeitado.
+6. A concessão executa o fluxo canônico `setTelemedicineAccess(..., true)`, que grava a capacidade server-side e normaliza o papel-base interno para `recepcao`.
+7. Sair do perfil continua exigindo `telemedicineAccess: false`, conforme V34.3.
+
+Assim, o Desenvolvedor consegue reparar com uma única gravação uma conta antiga cujo seletor já mostrava Telemedicina, sem depender de manipulação direta do D1 e sem reativar automaticamente contas revogadas.
+
+## Complemento V34.5 — resiliência de rede no painel de usuários
+
+Decisão registrada em 28/09/2026 após o painel `/admin/usuarios/` exibir `Failed to fetch` ao carregar **Contas cadastradas**.
+
+A mensagem é produzida pelo navegador quando a requisição não recebe uma resposta HTTP utilizável; portanto ela é tratada como falha de transporte, não como decisão de autorização.
+
+Regra V34.5:
+
+1. somente a leitura `GET /api/admin/users` recebe repetição automática;
+2. a tentativa inicial pode ser seguida por no máximo duas repetições, após 350 ms e 900 ms;
+3. somente erros de rede compatíveis com `TypeError: Failed to fetch`, `NetworkError`, `Load failed` ou equivalentes são repetidos;
+4. respostas HTTP reais, inclusive 401, 403, 409, 429, 500 e 503, não são repetidas;
+5. operações de criação, edição, troca de senha e demais gravações não entram no retry, evitando duplicidade;
+6. se as três tentativas falharem, o painel mostra mensagem operacional clara e botão **Tentar novamente**;
+7. o arquivo administrativo recebe nova URL versionada para evitar reutilização do JavaScript anterior pelo cache.
+
+A medida não altera permissões nem concede acesso. Ela apenas torna a leitura administrativa tolerante a falhas transitórias de conectividade.
+
+## Complemento V34.6 — integridade permanente da autorização
+
+Decisão permanente registrada em 29/09/2026 após confirmação de que a conta operacional voltou a funcionar depois do reparo V34.4/V34.5. O objetivo desta etapa é impedir que uma nova regressão silenciosa volte a desabilitar a capacidade de Telemedicina.
+
+### Defesa em profundidade
+
+A partir da V34.6, a capacidade `auth_telemedicine_access` recebe três camadas adicionais:
+
+1. **Concessão e revogação deixam de compartilhar um setter genérico.** O backend passa a expor caminhos distintos: `grantTelemedicineAccess` e `revokeTelemedicineAccess`.
+2. **Revogar exige intenção explícita.** A revogação só é aceita com o motivo técnico `profile-change`, emitido pelo fluxo administrativo quando o Desenvolvedor realmente troca o perfil.
+3. **O D1 passa a bloquear revogações acidentais no próprio banco.** Triggers recusam transição `enabled=1 -> enabled=0`, inserção já desabilitada e exclusão da linha de capacidade sem uma intenção de revogação válida.
+4. **A intenção de revogação existe somente dentro do mesmo batch transacional.** A intenção temporária, a mudança para `enabled=0`, o registro de auditoria e a limpeza da intenção são executados juntos.
+5. **Toda capacidade ativa recebe uma âncora de auditoria.** Contas que já estavam habilitadas quando a V34.6 entrou em produção recebem `baseline_enabled`; contas historicamente desabilitadas não são reativadas por inferência.
+6. **O runtime autorrepara divergências incompatíveis com a última intenção.** Se a linha estiver ausente/desabilitada, mas a última ação persistida continuar sendo `baseline_enabled`, `granted` ou `auto_repaired`, o backend restaura a capacidade e o papel-base antes de negar a operação.
+7. **Revogação legítima sempre prevalece.** Quando a última ação é `revoked`, não há autorreparo.
+
+A trilha `auth_telemedicine_access_audit` armazena somente identidade operacional da conta, ator técnico, ação, motivo e data; não contém dados de pacientes nem conteúdo clínico.
+
+### Resultado esperado
+
+Uma conta cuja última decisão administrativa seja **Técnico em Telemedicina** não deve perder o acesso por edição comum, código legado, exclusão acidental da linha ou escrita `enabled=0` sem intenção explícita. Mesmo se uma divergência física for introduzida por regressão futura, a primeira verificação server-side deve restaurar o estado coerente antes de retornar 403.
+
+## Complemento V34.7 — conexão do painel administrativo sem N+1 D1
+
+Decisão permanente registrada em 29/09/2026 após `/admin/usuarios/` continuar exibindo falha de conexão mesmo com conectividade geral disponível.
+
+### Diagnóstico técnico
+
+O painel não fazia apenas uma leitura de usuários. Depois de obter a lista-base, a camada flexível decorava cada conta individualmente com a capacidade de Telemedicina. Após a V34.6, cada conta sem capacidade ativa podia exigir também uma leitura da última intenção de auditoria. Isso criava um padrão **N+1** de consultas D1: quanto mais contas existissem, mais leituras sequenciais eram executadas dentro de uma única requisição administrativa.
+
+Além disso, o `OPTIONS` CORS necessário ao navegador passava pela reconciliação global antes de chegar ao preflight específico do painel. Em um cold start, essa etapa podia tocar D1 antes mesmo de o navegador obter autorização para enviar o GET autenticado. Quando a camada de transporte era interrompida nesse ponto, o navegador expunha apenas `TypeError: Failed to fetch`.
+
+### Regra V34.7
+
+1. `decorateTelemedicineUsers` deve carregar capacidades de Telemedicina em lote, não executar `decorateTelemedicineUser` sequencialmente para cada conta.
+2. A última intenção de auditoria também é obtida em uma consulta agregada por usuário.
+3. Somente contas realmente inconsistentes entram no autorreparo V34.6; contas comuns não geram leituras adicionais individuais.
+4. O `OPTIONS /api/admin/users*` deve ser respondido antes de qualquer migração, D1, Firebase ou outra inicialização de backend.
+5. O endpoint continua validando sessão e permissões normalmente no GET/PATCH/POST real; nenhuma autorização foi transferida ao frontend.
+6. O retry V34.5 continua sendo apenas contingência de transporte. Ele não é a solução principal para sobrecarga do endpoint.
+
+A lista administrativa passa, portanto, a ter custo de leitura praticamente constante em relação ao número de usuários, preservando a mesma regra de autorização.
+
