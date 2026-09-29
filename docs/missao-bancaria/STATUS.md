@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 29/09/2026 — interface independente integrada; frontend publicado; Worker produtivo ainda sem comprovação desta cadeia.
+Atualizado em 29/09/2026 — interface independente integrada; frontend e Worker publicados; Fase 1 em homologação humana.
 
 ## Estado e autorização
 
@@ -303,13 +303,13 @@ A Fase 1 passa a ter um registro consolidado de prontidão **técnica candidata*
 
 O documento mapeia os 12 critérios originais da fase contra o estado atual, registra que backend/retomada/retenção/sequência/avaliação independente possuem cobertura automatizada e mantém explícito que:
 - a interface independente #541 foi integrada e o frontend teve GitHub Pages pós-merge em `success`;
-- o Worker produtivo continua exigindo comprovação separada: Workers Builds falhou repetidamente desde #537, portanto `main` não é prova de publicação do backend;
+- o Worker produtivo foi confirmado separadamente: o merge #544 (`2a3379882ba2f4b4a00de182d521ad91f19c88f9`) teve Workers Builds `109558351269` em `success`; o merge documental #545 (`342a7033c17a227915b0197d2c7d34232a26671a`), já contendo o mesmo backend, voltou a ter Workers Builds `109653080446` em `success`. As falhas vistas em heads de PR eram previews e não devem ser confundidas com o deploy produtivo final;
 - o roteiro humano do documento 46 continua obrigatório;
 - a Fase 2 não deve começar antes do aceite explícito da Fase 1.
 
 ## Próximos recortes autorizados
 
-A integração da #541 e a publicação do frontend foram confirmadas. Resolver ou comprovar a publicação produtiva do Worker e então executar o roteiro humano do documento 46. Retomada, sequência histórica, retenção e backend da avaliação independente já estão integrados. Não declarar a Fase 1 homologada nem abrir formalmente a Fase 2 antes do aceite humano explícito.
+A integração da #541, a publicação do frontend e a publicação produtiva do Worker foram confirmadas. O próximo gate é executar o roteiro humano do documento 46 e registrar aceite explícito antes de abrir formalmente a Fase 2. Retomada, sequência histórica, retenção e backend da avaliação independente já estão integrados. Não declarar a Fase 1 homologada nem abrir formalmente a Fase 2 antes do aceite humano explícito.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
