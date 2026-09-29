@@ -1,4 +1,4 @@
-# MISSÃO BANCÁRIA — BANCO AUTORAL DA AVALIAÇÃO INDEPENDENTE — RASCUNHO V1
+# MISSÃO BANCÁRIA — BANCO AUTORAL DA AVALIAÇÃO INDEPENDENTE — RASCUNHO V2
 
 Data: 29/09/2026.  
 Fase ativa: Fase 1.  
@@ -28,6 +28,8 @@ Cada item registra:
 
 As alternativas foram escritas para exigir distinção/aplicação, não mera lembrança da posição da alternativa usada no treino.
 
+A distribuição das alternativas corretas foi balanceada editorialmente: cada forma possui quatro respostas em A, quatro em B, quatro em C e quatro em D, evitando pista por posição.
+
 ---
 
 # FORMA A
@@ -41,16 +43,16 @@ As alternativas foram escritas para exigir distinção/aplicação, não mera le
 
 **Enunciado:** Uma entidade não atende clientes nem executa operações de crédito. Sua função central é estabelecer diretrizes gerais que serão observadas por outros participantes do sistema. Em qual grupo funcional ela se enquadra?
 
-A. Operadores  
-B. Órgãos normativos  
+A. Órgãos normativos  
+B. Operadores  
 C. Instituições de pagamento  
 D. Intermediários de mercado
 
-**Resposta:** B.
+**Resposta:** A.
 
 **Explicação:** O elemento decisivo é a função de formular diretrizes gerais. Isso caracteriza órgão normativo, independentemente do nome da entidade.
 
-**Distratores:** A confunde execução com formulação; C é espécie de participante operacional; D descreve atuação de mercado, não função normativa.
+**Distratores:** B confunde execução com formulação; C é espécie de participante operacional; D descreve atuação de mercado, não função normativa.
 
 ## A02 — reconhecer o operador em situação concreta
 
@@ -62,15 +64,15 @@ D. Intermediários de mercado
 **Enunciado:** Quatro instituições são descritas apenas por suas atividades. Qual descrição indica mais claramente um operador do sistema?
 
 A. Define diretrizes para moeda e crédito.  
-B. Fiscaliza participantes de um segmento.  
-C. Recebe recursos de clientes e realiza operações financeiras autorizadas.  
+B. Recebe recursos de clientes e realiza operações financeiras autorizadas.  
+C. Fiscaliza participantes de um segmento.  
 D. Delibera sobre orientações gerais de política econômica.
 
-**Resposta:** C.
+**Resposta:** B.
 
 **Explicação:** Operadores executam atividades e serviços no mercado. Receber recursos e realizar operações financeiras é comportamento operacional.
 
-**Distratores:** A e D são funções normativas; B é função supervisora.
+**Distratores:** A e D são funções normativas; C é função supervisora.
 
 ## A03 — relação CMN/execução
 
@@ -81,16 +83,16 @@ D. Delibera sobre orientações gerais de política econômica.
 
 **Enunciado:** Uma questão afirma: “Como órgão superior do SFN, o CMN formula diretrizes da política da moeda e do crédito; a execução cotidiana dessas diretrizes cabe a entidades competentes, e não ao próprio Conselho como banco operacional.” A afirmação é:
 
-A. Correta.  
-B. Incorreta, pois o CMN é banco comercial.  
-C. Incorreta, pois o CMN fiscaliza exclusivamente companhias abertas.  
+A. Incorreta, pois o CMN é banco comercial.  
+B. Incorreta, pois o CMN fiscaliza exclusivamente companhias abertas.  
+C. Correta.  
 D. Incorreta, pois o CMN apenas administra o orçamento federal.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** O CMN é órgão normativo superior e formula políticas/diretrizes; não funciona como banco operacional.
 
-**Distratores:** B troca órgão normativo por operador; C desloca atribuição para o campo da CVM; D confunde SFN com execução orçamentária.
+**Distratores:** A troca órgão normativo por operador; B desloca atribuição para o campo da CVM; D confunde SFN com execução orçamentária.
 
 ## A04 — composição do CMN em cenário de substituição
 
@@ -101,16 +103,16 @@ D. Incorreta, pois o CMN apenas administra o orçamento federal.
 
 **Enunciado:** Qual conjunto corresponde à composição ensinada para o Conselho Monetário Nacional nesta versão do curso?
 
-A. Ministro da Fazenda, Ministro do Planejamento e Orçamento e Presidente do Banco Central.  
-B. Presidente da República, Presidente da CVM e Ministro da Fazenda.  
-C. Ministro da Fazenda, Presidente do Banco do Brasil e Presidente da CAIXA.  
-D. Presidente do Banco Central, Presidente da CVM e Superintendente da SUSEP.
+A. Presidente da República, Presidente da CVM e Ministro da Fazenda.  
+B. Ministro da Fazenda, Presidente do Banco do Brasil e Presidente da CAIXA.  
+C. Presidente do Banco Central, Presidente da CVM e Superintendente da SUSEP.  
+D. Ministro da Fazenda, Ministro do Planejamento e Orçamento e Presidente do Banco Central.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** A composição adotada no material é formada pelo Ministro da Fazenda, pelo Ministro do Planejamento e Orçamento e pelo Presidente do BCB.
 
-**Distratores:** B, C e D incluem autoridades que não compõem o colegiado apresentado.
+**Distratores:** A, B e C incluem autoridades que não compõem o colegiado apresentado.
 
 ## A05 — distinguir execução/supervisão de formulação superior
 
@@ -141,16 +143,16 @@ D. Banco comercial.
 
 **Enunciado:** Uma instituição financeira precisa usar estruturas mantidas pela autoridade monetária para movimentar e liquidar recursos no relacionamento entre instituições. Qual função do Banco Central ajuda a compreender esse papel?
 
-A. Banco dos bancos.  
-B. Atendimento bancário de varejo.  
+A. Atendimento bancário de varejo.  
+B. Banco dos bancos.  
 C. Administração de fundos de pensão.  
 D. Fiscalização de ofertas públicas de ações.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** A expressão “banco dos bancos” resume relações e estruturas do Banco Central voltadas ao funcionamento entre instituições, não ao atendimento bancário comum do público.
 
-**Distratores:** B descreve operador de varejo; C remete à previdência fechada; D ao mercado de valores mobiliários.
+**Distratores:** A descreve operador de varejo; C remete à previdência fechada; D ao mercado de valores mobiliários.
 
 ## A07 — decisão de política monetária
 
@@ -161,16 +163,16 @@ D. Fiscalização de ofertas públicas de ações.
 
 **Enunciado:** Após analisar cenário macroeconômico e riscos, um colegiado define a meta de uma taxa básica que orienta a execução da política monetária. Qual colegiado é esse?
 
-A. Copom.  
-B. CVM.  
-C. CNSP.  
+A. CVM.  
+B. CNSP.  
+C. Copom.  
 D. PREVIC.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** O Copom define a meta para a Taxa Selic e orientações estratégicas da política monetária.
 
-**Distratores:** B atua em valores mobiliários; C em diretrizes de seguros; D supervisiona previdência complementar fechada.
+**Distratores:** A atua em valores mobiliários; B em diretrizes de seguros; D supervisiona previdência complementar fechada.
 
 ## A08 — reconhecer o colegiado pela composição
 
@@ -181,16 +183,16 @@ D. PREVIC.
 
 **Enunciado:** Um enunciado descreve um colegiado que funciona no âmbito do Banco Central e é formado pelo Presidente e pelos Diretores da própria instituição. Qual colegiado foi descrito?
 
-A. Copom.  
-B. CMN.  
-C. CVM.  
-D. CNSP.
+A. CMN.  
+B. CVM.  
+C. CNSP.  
+D. Copom.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** A composição Presidente + Diretores do Banco Central identifica o Copom no conteúdo ensinado.
 
-**Distratores:** B possui composição diferente; C é autarquia do mercado de valores mobiliários; D é conselho do segmento de seguros.
+**Distratores:** A possui composição diferente; B é autarquia do mercado de valores mobiliários; C é conselho do segmento de seguros.
 
 ## A09 — identificar CVM pelo objeto
 
@@ -221,16 +223,16 @@ D. Copom.
 
 **Enunciado:** Qual situação aponta mais diretamente para a esfera da CVM, e não para a supervisão bancária tradicional do Banco Central?
 
-A. Integridade de uma oferta pública de valores mobiliários.  
-B. Funcionamento de conta corrente em banco comercial.  
+A. Funcionamento de conta corrente em banco comercial.  
+B. Integridade de uma oferta pública de valores mobiliários.  
 C. Autorização de administradora de consórcio.  
 D. Supervisão de uma cooperativa de crédito.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** A CVM atua no mercado de valores mobiliários e ofertas públicas; as demais situações se relacionam mais diretamente ao BCB.
 
-**Distratores:** B, C e D estão ligados a participantes/atividades supervisionados pelo Banco Central.
+**Distratores:** A, C e D estão ligados a participantes/atividades supervisionados pelo Banco Central.
 
 ## A11 — reconhecer banco múltiplo em uma configuração nova
 
@@ -241,16 +243,16 @@ D. Supervisão de uma cooperativa de crédito.
 
 **Enunciado:** Uma instituição reúne, sob a mesma organização, uma carteira comercial e uma carteira de investimento. Considerando apenas a regra de carteiras ensinada, essa configuração é compatível com a classificação de:
 
-A. Banco múltiplo.  
-B. Instituição de pagamento sem carteira bancária.  
-C. Órgão normativo.  
+A. Instituição de pagamento sem carteira bancária.  
+B. Órgão normativo.  
+C. Banco múltiplo.  
 D. Entidade fechada de previdência complementar.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** Há pelo menos duas carteiras e uma delas é comercial ou de investimento, satisfazendo a regra básica estudada para banco múltiplo.
 
-**Distratores:** B não descreve a organização por carteiras bancárias; C não é operador; D pertence a outro segmento.
+**Distratores:** A não descreve a organização por carteiras bancárias; B não é operador; D pertence a outro segmento.
 
 ## A12 — supervisionado continua operador
 
@@ -261,16 +263,16 @@ D. Entidade fechada de previdência complementar.
 
 **Enunciado:** Uma cooperativa de crédito segue regras e é supervisionada pelo Banco Central. Isso significa que ela:
 
-A. Continua sendo participante operacional; ser supervisionada não a transforma em supervisor.  
-B. Passa a integrar o CMN.  
-C. Torna-se órgão normativo.  
-D. Assume a função do Copom.
+A. Passa a integrar o CMN.  
+B. Torna-se órgão normativo.  
+C. Assume a função do Copom.  
+D. Continua sendo participante operacional; ser supervisionada não a transforma em supervisor.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** A instituição supervisionada permanece operadora. Supervisor e supervisionado ocupam papéis diferentes.
 
-**Distratores:** B, C e D confundem sujeição à supervisão com mudança de natureza institucional.
+**Distratores:** A, B e C confundem sujeição à supervisão com mudança de natureza institucional.
 
 ## A13 — aberta x fechada por vínculo
 
@@ -301,16 +303,16 @@ D. Copom.
 
 **Enunciado:** Uma prova apresenta um título de capitalização e pergunta qual autarquia fiscaliza esse mercado. A resposta correta é:
 
-A. SUSEP.  
-B. PREVIC.  
+A. PREVIC.  
+B. SUSEP.  
 C. Banco Central.  
 D. CVM.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** O mercado de capitalização está entre os mercados fiscalizados pela SUSEP.
 
-**Distratores:** B cuida de previdência fechada; C e D possuem outros campos de supervisão.
+**Distratores:** A cuida de previdência fechada; C e D possuem outros campos de supervisão.
 
 ## A15 — instituição de pagamento e crédito próprio
 
@@ -321,16 +323,16 @@ D. CVM.
 
 **Enunciado:** Uma empresa é instituição de pagamento e gerencia contas de pagamento. Qual afirmação é compatível com o conteúdo estudado?
 
-A. Ela não se torna instituição financeira por isso e não pode exercer atividade privativa de instituição financeira por conta própria.  
-B. Ela automaticamente se torna banco comercial.  
-C. Ela pode definir a meta Selic.  
+A. Ela automaticamente se torna banco comercial.  
+B. Ela pode definir a meta Selic.  
+C. Ela não se torna instituição financeira por isso e não pode exercer atividade privativa de instituição financeira por conta própria.  
 D. Ela substitui o Banco Central na supervisão do arranjo.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** Instituição de pagamento não é instituição financeira e não pode exercer atividades privativas destas apenas por atuar em pagamentos.
 
-**Distratores:** B confunde categorias; C e D atribuem competências públicas a operador privado.
+**Distratores:** A confunde categorias; B e D atribuem competências públicas a operador privado.
 
 ## A16 — SPI e forma de liquidação
 
@@ -341,16 +343,16 @@ D. Ela substitui o Banco Central na supervisão do arranjo.
 
 **Enunciado:** No arranjo Pix, a infraestrutura centralizada gerida pelo Banco Central que liquida transações entre instituições distintas, uma a uma, é:
 
-A. SPI.  
-B. CMN.  
-C. CVM.  
-D. PREVIC.
+A. CMN.  
+B. CVM.  
+C. PREVIC.  
+D. SPI.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** O SPI é a infraestrutura centralizada de liquidação de pagamentos instantâneos e opera em liquidação bruta em tempo real.
 
-**Distratores:** B, C e D são órgãos/entidades com outras finalidades.
+**Distratores:** A, B e C são órgãos/entidades com outras finalidades.
 
 ---
 
@@ -365,16 +367,16 @@ D. PREVIC.
 
 **Enunciado:** Uma entidade recebe competência para verificar se participantes cumprem regras, aplicar supervisão em seu campo e acompanhar riscos do segmento. Sem saber seu nome, a função descrita é principalmente de:
 
-A. Entidade supervisora.  
-B. Órgão normativo.  
-C. Cliente institucional.  
+A. Órgão normativo.  
+B. Cliente institucional.  
+C. Entidade supervisora.  
 D. Operador de varejo.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** Fiscalizar e fazer cumprir regras em determinado campo caracteriza função supervisora.
 
-**Distratores:** B formula diretrizes; C não é categoria funcional do SFN; D executa serviços e operações.
+**Distratores:** A formula diretrizes; B não é categoria funcional do SFN; D executa serviços e operações.
 
 ## B02 — sequência lógica de funções
 
@@ -385,16 +387,16 @@ D. Operador de varejo.
 
 **Enunciado:** Qual sequência representa corretamente a passagem da regra geral para a atividade no mercado?
 
-A. Normativo formula diretrizes → supervisor acompanha o cumprimento → operador executa atividades.  
-B. Operador formula diretrizes → cliente fiscaliza → supervisor concede crédito.  
-C. Supervisor cria clientes → operador fiscaliza → normativo atende o público.  
-D. Cliente define política → normativo empresta → operador fiscaliza.
+A. Operador formula diretrizes → cliente fiscaliza → supervisor concede crédito.  
+B. Supervisor cria clientes → operador fiscaliza → normativo atende o público.  
+C. Cliente define política → normativo empresta → operador fiscaliza.  
+D. Normativo formula diretrizes → supervisor acompanha o cumprimento → operador executa atividades.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** A sequência reproduz a divisão funcional ensinada: formulação, supervisão e operação.
 
-**Distratores:** B, C e D trocam as funções entre os grupos.
+**Distratores:** A, B e C trocam as funções entre os grupos.
 
 ## B03 — CMN não é supervisor operacional
 
@@ -425,16 +427,16 @@ D. Orientar por normas a atuação das entidades competentes.
 
 **Enunciado:** Em uma ata hipotética do CMN, qual membro deve aparecer como presidente do colegiado conforme a composição estudada?
 
-A. Ministro da Fazenda.  
-B. Presidente da CVM.  
+A. Presidente da CVM.  
+B. Ministro da Fazenda.  
 C. Superintendente da SUSEP.  
 D. Presidente do Banco do Brasil.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** O Ministro da Fazenda preside o CMN na composição adotada no curso.
 
-**Distratores:** B, C e D não exercem essa presidência.
+**Distratores:** A, C e D não exercem essa presidência.
 
 ## B05 — execução de política cambial
 
@@ -445,16 +447,16 @@ D. Presidente do Banco do Brasil.
 
 **Enunciado:** A execução de políticas monetária, cambial e de crédito, dentro das competências legais, é associada principalmente a qual instituição?
 
-A. Banco Central.  
-B. CVM.  
-C. PREVIC.  
+A. CVM.  
+B. PREVIC.  
+C. Banco Central.  
 D. Banco comercial.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** O BCB executa políticas monetária, cambial e de crédito e supervisiona o sistema em seu campo.
 
-**Distratores:** B e C são supervisores de outros segmentos; D é operador.
+**Distratores:** A e B são supervisores de outros segmentos; D é operador.
 
 ## B06 — erro clássico sobre BCB
 
@@ -465,16 +467,16 @@ D. Banco comercial.
 
 **Enunciado:** Qual afirmação deve ser rejeitada?
 
-A. “O Banco Central é o órgão normativo superior do SFN, acima do CMN.”  
-B. “O Banco Central supervisiona instituições em sua competência.”  
-C. “O Banco Central executa políticas em sua competência.”  
-D. “CMN e Banco Central possuem funções institucionais distintas.”
+A. “O Banco Central supervisiona instituições em sua competência.”  
+B. “O Banco Central executa políticas em sua competência.”  
+C. “CMN e Banco Central possuem funções institucionais distintas.”  
+D. “O Banco Central é o órgão normativo superior do SFN, acima do CMN.”
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** O órgão normativo superior é o CMN. O BCB possui funções supervisoras, regulatórias e executivas, mas não substitui essa posição do Conselho.
 
-**Distratores:** B, C e D refletem a distinção ensinada.
+**Distratores:** A, B e C refletem a distinção ensinada.
 
 ## B07 — meta Selic não é a taxa de todo contrato
 
@@ -505,16 +507,16 @@ D. A taxa de cada empréstimo é definida diretamente pelo CMN para cada cliente
 
 **Enunciado:** Qual afirmação organiza corretamente o uso da palavra “Selic” no conteúdo estudado?
 
-A. O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.  
-B. Selic é o nome de um banco comercial que concede empréstimos ao público.  
+A. Selic é o nome de um banco comercial que concede empréstimos ao público.  
+B. O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.  
 C. Selic é uma modalidade de previdência complementar fechada.  
 D. Selic é o órgão que fiscaliza companhias abertas.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** A aula distingue a origem do nome Selic e o uso da expressão taxa Selic no contexto dos juros básicos e de sua meta.
 
-**Distratores:** B, C e D confundem a expressão com instituições/segmentos sem relação com essa definição.
+**Distratores:** A, C e D confundem a expressão com instituições/segmentos sem relação com essa definição.
 
 ## B09 — proteção do investidor e manipulação
 
@@ -525,16 +527,16 @@ D. Selic é o órgão que fiscaliza companhias abertas.
 
 **Enunciado:** Uma investigação envolve manipulação de mercado em negociações de valores mobiliários e proteção dos investidores. Qual entidade está no centro dessa atribuição?
 
-A. CVM.  
-B. SUSEP.  
-C. PREVIC.  
+A. SUSEP.  
+B. PREVIC.  
+C. CVM.  
 D. Copom.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** Integridade do mercado de valores mobiliários, repressão a fraudes/manipulações e proteção de investidores estão no campo da CVM.
 
-**Distratores:** B, C e D atuam em segmentos diferentes.
+**Distratores:** A, B e D atuam em segmentos diferentes.
 
 ## B10 — fundos de investimento como pista
 
@@ -545,16 +547,16 @@ D. Copom.
 
 **Enunciado:** Qual palavra-chave, isoladamente, é a pista mais forte para investigar a competência da CVM no contexto apresentado pelo curso?
 
-A. Fundo de investimento.  
-B. Depósito à vista.  
-C. Consórcio.  
-D. Previdência complementar fechada.
+A. Depósito à vista.  
+B. Consórcio.  
+C. Previdência complementar fechada.  
+D. Fundo de investimento.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** Fundos de investimento aparecem entre os participantes/estruturas do mercado de valores mobiliários sujeitos à esfera da CVM.
 
-**Distratores:** B remete a banco comercial; C ao BCB; D à PREVIC.
+**Distratores:** A remete a banco comercial; B ao BCB; C à PREVIC.
 
 ## B11 — banco comercial reconhecido pela atividade
 
@@ -585,16 +587,16 @@ D. Supervisão de entidades fechadas de previdência.
 
 **Enunciado:** Uma financeira é autorizada e fiscalizada pelo Banco Central. Qual conclusão é correta?
 
-A. A financeira continua sendo operadora; o BCB exerce a função supervisora.  
-B. A financeira passa a ser órgão normativo.  
+A. A financeira passa a ser órgão normativo.  
+B. A financeira continua sendo operadora; o BCB exerce a função supervisora.  
 C. A financeira passa a integrar o Copom.  
 D. A financeira assume competência sobre companhias abertas.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** Ser supervisionado não converte o participante em supervisor; a financeira continua no lado operacional.
 
-**Distratores:** B, C e D atribuem funções públicas incompatíveis.
+**Distratores:** A, C e D atribuem funções públicas incompatíveis.
 
 ## B13 — aberta x fechada pelo supervisor
 
@@ -605,16 +607,16 @@ D. A financeira assume competência sobre companhias abertas.
 
 **Enunciado:** Qual par está corretamente associado?
 
-A. Previdência complementar aberta — SUSEP; previdência complementar fechada — PREVIC.  
-B. Previdência complementar aberta — PREVIC; fechada — Copom.  
-C. Aberta — CVM; fechada — Banco Central.  
+A. Previdência complementar aberta — PREVIC; fechada — Copom.  
+B. Aberta — CVM; fechada — Banco Central.  
+C. Previdência complementar aberta — SUSEP; previdência complementar fechada — PREVIC.  
 D. Aberta — CMN; fechada — CNSP.
 
-**Resposta:** A.
+**Resposta:** C.
 
 **Explicação:** A SUSEP supervisiona a previdência complementar aberta; a PREVIC, as entidades fechadas.
 
-**Distratores:** B, C e D trocam os supervisores.
+**Distratores:** A, B e D trocam os supervisores.
 
 ## B14 — CNSP x SUSEP
 
@@ -625,16 +627,16 @@ D. Aberta — CMN; fechada — CNSP.
 
 **Enunciado:** No segmento de seguros privados, qual relação funcional está correta?
 
-A. CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua competência.  
-B. SUSEP fixa a meta Selic e CNSP supervisiona bancos.  
-C. PREVIC define política monetária e SUSEP fiscaliza companhias abertas.  
-D. CVM normatiza previdência fechada e CNSP administra consórcios.
+A. SUSEP fixa a meta Selic e CNSP supervisiona bancos.  
+B. PREVIC define política monetária e SUSEP fiscaliza companhias abertas.  
+C. CVM normatiza previdência fechada e CNSP administra consórcios.  
+D. CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua competência.
 
-**Resposta:** A.
+**Resposta:** D.
 
 **Explicação:** O CNSP exerce função normativa do segmento; a SUSEP é entidade supervisora dos mercados de seguros, previdência aberta, capitalização e resseguro.
 
-**Distratores:** B, C e D misturam competências de segmentos distintos.
+**Distratores:** A, B e C misturam competências de segmentos distintos.
 
 ## B15 — consórcio sem promessa de contemplação
 
@@ -665,16 +667,16 @@ D. Incorreta apenas porque consórcios são fiscalizados pela CVM.
 
 **Enunciado:** Qual descrição representa melhor o Sistema de Pagamentos Brasileiro (SPB)?
 
-A. Conjunto de infraestruturas, arranjos, regras e participantes que permitem transferências e liquidação de obrigações.  
-B. Um único banco comercial responsável por todo pagamento no país.  
+A. Um único banco comercial responsável por todo pagamento no país.  
+B. Conjunto de infraestruturas, arranjos, regras e participantes que permitem transferências e liquidação de obrigações.  
 C. Um fundo de investimento administrado pela CVM.  
 D. Um órgão colegiado que define a meta Selic.
 
-**Resposta:** A.
+**Resposta:** B.
 
 **Explicação:** O SPB é um sistema composto por infraestruturas, arranjos, regras e participantes; não uma instituição bancária isolada.
 
-**Distratores:** B reduz o sistema a um banco; C e D pertencem a outros conceitos.
+**Distratores:** A reduz o sistema a um banco; C e D pertencem a outros conceitos.
 
 ---
 
