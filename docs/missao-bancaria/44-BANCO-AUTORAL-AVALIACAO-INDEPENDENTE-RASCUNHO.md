@@ -704,3 +704,45 @@ Antes de qualquer item entrar no código:
 8. garantir que o bootstrap comum nunca importe este banco.
 
 A conclusão deste rascunho **não altera cobertura curricular, prontidão, XP nem percentual de aprendizado do usuário**.
+
+
+## 5. Referências estáveis de ensino para a conversão futura
+
+Na implementação, `teaches` deve usar IDs estáveis do catálogo, não somente o título legível da seção.
+
+| Item | missionId | sectionIds |
+|---|---|---|
+| A01 | banking.sfn.introducao | regras |
+| A02 | banking.sfn.introducao | intermediacao, operadores |
+| A03 | banking.sfn.cmn | papel, diferencas |
+| A04 | banking.sfn.cmn | composicao, exemplo-composicao |
+| A05 | banking.sfn.bacen | natureza, supervisao, politicas |
+| A06 | banking.sfn.bacen | banco-dos-bancos |
+| A07 | banking.sfn.copom | meta, exemplo-meta |
+| A08 | banking.sfn.copom | nome, composicao |
+| A09 | banking.sfn.cvm | mercado, exemplo-oferta |
+| A10 | banking.sfn.cvm | comparacao, supervisao |
+| A11 | banking.sfn.operadores | carteira, multiplo, exemplo-carteiras |
+| A12 | banking.sfn.operadores | papel, outros |
+| A13 | banking.sfn.seguros-previdencia | previdencia-fechada |
+| A14 | banking.sfn.seguros-previdencia | capitalizacao, susep |
+| A15 | banking.sfn.pagamentos-consorcios | instituicao |
+| A16 | banking.sfn.pagamentos-consorcios | spi, exemplo-pix |
+| B01 | banking.sfn.introducao | regras |
+| B02 | banking.sfn.introducao | regras, intermediacao, operadores |
+| B03 | banking.sfn.cmn | papel, diferencas |
+| B04 | banking.sfn.cmn | composicao |
+| B05 | banking.sfn.bacen | politicas |
+| B06 | banking.sfn.bacen | politicas, resumo |
+| B07 | banking.sfn.copom | selic, meta, relacao |
+| B08 | banking.sfn.copom | selic, meta |
+| B09 | banking.sfn.cvm | supervisao, exemplo-fraude |
+| B10 | banking.sfn.cvm | participantes |
+| B11 | banking.sfn.operadores | deposito, comercial |
+| B12 | banking.sfn.operadores | papel, outros |
+| B13 | banking.sfn.seguros-previdencia | previdencia-aberta, previdencia-fechada |
+| B14 | banking.sfn.seguros-previdencia | cnsp, susep, resumo |
+| B15 | banking.sfn.pagamentos-consorcios | consorcio, exemplo-consorcio |
+| B16 | banking.sfn.pagamentos-consorcios | spb |
+
+A revisão de 29/09 removeu dos itens independentes a cobrança do número/sessões ordinárias do Copom, porque esse detalhe permanece no arquivo-base histórico mas **não está no conjunto final de seções V2 servido pela missão atual**. A avaliação independente não pode cobrar conteúdo que não esteja no ensino efetivamente publicado.
