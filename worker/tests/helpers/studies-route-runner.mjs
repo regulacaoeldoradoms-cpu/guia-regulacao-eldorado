@@ -78,7 +78,7 @@ test('rota mantém os gates antes de inicializar as tabelas',async t=>{
 
 test('bootstrap continua sem gabaritos e anuncia protocolo de rodadas',async t=>{
   const {call}=await fixture(t);const r=await call('bootstrap');
-  assert.equal(r.status,200);assert.equal(r.body.roundProtocol,1);
+  assert.equal(r.status,200);assert.equal(r.body.roundProtocol,1);assert.equal(r.body.assessmentProtocol,1);
   for(const m of r.body.missions)for(const q of m.questions){assert.equal(q.answer,undefined);assert.equal(q.explanation,undefined);}
   assert.equal(r.headers.get('Cache-Control'),'no-store');
 });

@@ -166,6 +166,10 @@ Antes de expor a interface, o serviço recebeu proteção adicional para chamada
 
 Testes executam `Promise.all` no início e no fechamento para impedir regressão dessa propriedade.
 
+## Contrato de compatibilidade
+
+O bootstrap passa a anunciar `assessmentProtocol: 1`. A interface só aplica o bloqueio fail-closed do estado da avaliação quando esse protocolo está presente; um frontend novo sobre Worker antigo continua permitindo o fluxo clássico de aulas sem fingir que a avaliação independente existe.
+
 ## Próxima etapa
 
 1. concluir e integrar retomada + sequência histórica;
