@@ -19,7 +19,12 @@
     generation: 0,
     leaving: false,
     completing: false,
-    pendingAnswers: new Set()
+    pendingAnswers: new Set(),
+    assessmentState: null,
+    activeAssessment: null,
+    assessmentAnswers: new Set(),
+    assessmentPending: new Set(),
+    assessmentCompleting: false
   };
 
   const $ = (id) => document.getElementById(id);
