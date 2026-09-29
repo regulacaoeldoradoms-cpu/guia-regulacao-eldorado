@@ -108,6 +108,17 @@ test('Forma A inicia com 16 itens públicos e início repetido reutiliza a rodad
   assert.equal(sql.prepare("SELECT COUNT(*) n FROM study_assessment_rounds WHERE status='active'").get().n,1);
 });
 
+test('inícios concorrentes convergem para uma única rodada ativa',async t=>{
+  const {sql,db}=fixture(t);await ensureAssessmentSchema(db);seedPrerequisites(sql);
+  const [first,second]=await Promise.all([
+    startIndependentAssessment(db,'wellyton'),
+    startIndependentAssessment(db,'wellyton')
+  ]);
+  assert.equal(first.assessmentId,second.assessmentId);
+  assert.equal(first.formId,'A');assert.equal(second.formId,'A');
+  assert.equal(sql.prepare("SELECT COUNT(*) n FROM study_assessment_rounds WHERE status='active'").get().n,1);
+});
+
 test('resposta é idempotente e não revela correção durante a rodada',async t=>{
   const {sql,db}=fixture(t);await ensureAssessmentSchema(db);seedPrerequisites(sql);
   const round=await startIndependentAssessment(db,'wellyton');
@@ -140,6 +151,19 @@ test('fechamento incompleto falha; completo fixa score e resultado idempotente',
   assert.ok(result.diagnostics.length>=8);
   assert.deepEqual(await completeIndependentAssessment(db,'wellyton',round.assessmentId),result);
   assert.equal(sql.prepare("SELECT COUNT(*) n FROM study_assessment_rounds WHERE status='completed'").get().n,1);
+});
+
+test('fechamentos concorrentes devolvem exatamente o mesmo resultado persistido',async t=>{
+  const {sql,db}=fixture(t);await ensureAssessmentSchema(db);seedPrerequisites(sql);
+  const round=await startIndependentAssessment(db,'wellyton');await answerAll(db,round);
+  const [first,second]=await Promise.all([
+    completeIndependentAssessment(db,'wellyton',round.assessmentId),
+    completeIndependentAssessment(db,'wellyton',round.assessmentId)
+  ]);
+  assert.deepEqual(first,second);
+  const row=sql.prepare('SELECT status, result_json FROM study_assessment_rounds WHERE assessment_id=?').get(round.assessmentId);
+  assert.equal(row.status,'completed');
+  assert.deepEqual(first,JSON.parse(row.result_json));
 });
 
 test('Forma B exige sete dias e não reutiliza IDs da Forma A',async t=>{
