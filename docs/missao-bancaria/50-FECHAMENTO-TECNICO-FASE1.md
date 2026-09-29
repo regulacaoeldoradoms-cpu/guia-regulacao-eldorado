@@ -1,21 +1,20 @@
 # MISSÃO BANCÁRIA — FECHAMENTO TÉCNICO CANDIDATO DA FASE 1
 
 Data: 29/09/2026.  
-Estado: **candidata a homologação humana; Fase 1 ainda não aceita**.  
-Dependência imediata: homologação humana da Fase 1.
+Estado: **Fase 1 aceita e encerrada em 29/09/2026**.  
+Marco seguinte: Fase 2 aberta por autorização explícita de Wellyton.
 
 ## 1. O que este documento significa
 
-Este registro não encerra a Fase 1 por conta própria.
+Este documento nasceu como fechamento técnico candidato. Em 29/09/2026, após a publicação confirmada do frontend e do Worker, Wellyton concedeu o aceite humano global e autorizou a Fase 2.
 
-Ele consolida que o motor MVP e o primeiro bloco real chegaram ao ponto em que o trabalho restante para o aceite da fase deve ser principalmente:
+O estado técnico que fundamentou o aceite foi:
 1. interface independente #541 integrada em `main` (`9e5bebac7713b8ad7540aa31c6878e50e6b7faac`) após CI e auditoria global verdes;
 2. frontend confirmado por `Validar site`, `Validar Missao Bancaria` e `pages build and deployment` pós-merge em `success`; Worker produtivo confirmado pelo Workers Builds `109558351269` no merge #544 e novamente pelo check `109653080446` no merge #545;
-3. executar o roteiro humano do documento 46;
-4. corrigir qualquer falha encontrada;
-5. registrar o aceite explícito.
+3. roteiro humano disponível no documento 46;
+4. aceite explícito posterior registrado em `51-ACEITE-FASE1-ABERTURA-FASE2.md`.
 
-CI verde não substitui a homologação humana.
+CI verde não substituiu o aceite: a decisão final foi humana. O registro não fabrica marcações individuais para H1–H14.
 
 ## 2. Critérios técnicos da Fase 1
 
@@ -94,7 +93,7 @@ Backend já integrado:
 - início e fechamento seguros sob concorrência;
 - revisão editorial/factual V3 com guardrails de similaridade e comprimento.
 
-Interface candidata (#541):
+Interface integrada e publicada (#541):
 - painel de elegibilidade/estado;
 - modo próprio sem consulta à aula;
 - salvamento individual neutro;
@@ -102,7 +101,7 @@ Interface candidata (#541):
 - bloqueio cruzado com sessão de estudo;
 - correção e diagnóstico apenas no fechamento.
 
-Estado técnico: **backend integrado; interface aguardando gate final/merge**.
+Estado técnico: **backend e interface integrados e publicados antes do aceite da fase**.
 
 ## 4. Mapeamento para os 12 critérios originais da Fase 1
 
@@ -113,18 +112,17 @@ Estado técnico: **backend integrado; interface aguardando gate final/merge**.
 5. voltar — coberto, inclusive recuperação de sessão;
 6. progresso preservado — coberto;
 7. outra conta bloqueada — coberto;
-8. missão real ponta a ponta — produto suporta; confirmação humana pendente;
+8. missão real ponta a ponta — coberto tecnicamente e aceito humanamente no fechamento global;
 9. expansão sem apagar progresso — coberto por arquitetura/testes;
 10. campanha disponível x progresso pessoal — coberto;
 11. primeira conquista uma única vez — coberto;
 12. conquista em `/conquistas/` sem alterar segurança — coberto.
 
-Os itens 8 e a clareza dos demais continuam sujeitos ao roteiro humano.
+A clareza e a experiência de uso receberam aceite humano global em 29/09/2026. Falhas reais encontradas depois podem gerar correção sem desfazer silenciosamente o histórico.
 
-## 5. O que NÃO está sendo declarado
+## 5. O que o aceite NÃO significa
 
-Este fechamento técnico não significa:
-- Fase 1 homologada;
+O encerramento da Fase 1 não significa:
 - curso completo;
 - Conhecimentos Bancários completo;
 - prontidão de prova medida;
@@ -134,24 +132,19 @@ Este fechamento técnico não significa:
 
 A cobertura curricular publicada continua limitada ao primeiro bloco do mapa-base.
 
-## 6. Homologação humana obrigatória
+## 6. Homologação humana concluída
 
-Usar `46-ROTEIRO-HOMOLOGACAO-FASE1.md`.
+Wellyton declarou em 29/09/2026: **“esta aprovado pode ir para a fase 2”**.
 
-Para aceite:
-- H1–H10 e H13–H14 precisam ser aprovados;
-- H11/H12 podem permanecer pendentes somente por dependência temporal natural e sem evidência de falha;
-- qualquer problema que impeça estudar uma missão real ponta a ponta reabre correção técnica;
-- o resultado deve ser registrado no STATUS.
+Esse aceite global encerra a Fase 1 e está registrado no documento 51. Não foram inventados resultados item a item para H1–H14. Os cenários H11/H12, dependentes de passagem natural do tempo, continuam observáveis no uso normal e podem gerar correção caso revelem falha real.
 
-## 7. Ordem segura a partir daqui
+## 7. Continuidade após o aceite
 
-1. manter registrado que #541 está integrada e Pages está publicada;
-2. manter registrados os checks separados de frontend e Worker, sem confundir preview com produção;
-3. executar homologação humana da Fase 1;
-4. corrigir falhas, se houver;
-5. obter aceite explícito;
-6. **só então** abrir formalmente a Fase 2.
+1. preservar os checks separados de frontend e Worker;
+2. manter a Fase 1 como baseline aceita, sem reescrever progresso;
+3. desenvolver a Fase 2 conforme `03-FASE-2-MOTOR-PEDAGOGICO.md`;
+4. usar `52-FASE2-CATALOGO-PEDAGOGICO-DECLARATIVO.md` como primeiro recorte ativo;
+5. tratar regressões reais da Fase 1 como correções, não como motivo para apagar histórico.
 
 ## 8. Norte preservado
 
