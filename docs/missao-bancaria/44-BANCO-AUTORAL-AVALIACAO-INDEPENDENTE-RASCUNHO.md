@@ -1,8 +1,8 @@
-# MISSÃO BANCÁRIA — BANCO AUTORAL DA AVALIAÇÃO INDEPENDENTE — RASCUNHO V2
+# MISSÃO BANCÁRIA — BANCO AUTORAL DA AVALIAÇÃO INDEPENDENTE — REVISÃO EDITORIAL V3
 
 Data: 29/09/2026.  
 Fase ativa: Fase 1.  
-Estado: **rascunho editorial, fora do produto e não servido por API**.  
+Estado: **registro editorial do banco já convertido em catálogo backend; ainda sujeito à homologação humana/factual final**.  
 Dependência: especificação `41-AVALIACAO-INDEPENDENTE.md`.
 
 ## 1. Finalidade
@@ -15,7 +15,7 @@ Preparar o primeiro lote de 32 itens inéditos da avaliação independente do bl
 - nenhum ID abaixo pertence ao banco de treino `q.*`;
 - prefixo reservado: `eval.sfn.*`.
 
-Este arquivo **não é catálogo de produção**. Nenhum item deve entrar no bootstrap, revisão, Chefe ou frontend antes da integração da cadeia técnica e da revisão pedagógica/factual.
+Este arquivo é o registro editorial que originou o catálogo backend. O bootstrap comum continua sem enviar o banco completo; a interface recebe apenas os itens da forma iniciada, sem gabarito durante a rodada.
 
 ## 2. Convenções editoriais
 
@@ -83,10 +83,10 @@ D. Delibera sobre orientações gerais de política econômica.
 
 **Enunciado:** Uma questão afirma: “Como órgão superior do SFN, o CMN formula diretrizes da política da moeda e do crédito; a execução cotidiana dessas diretrizes cabe a entidades competentes, e não ao próprio Conselho como banco operacional.” A afirmação é:
 
-A. Incorreta, pois o CMN é banco comercial.  
-B. Incorreta, pois o CMN fiscaliza exclusivamente companhias abertas.  
-C. Correta.  
-D. Incorreta, pois o CMN apenas administra o orçamento federal.
+A. Incorreta, porque o CMN atua como banco comercial.  
+B. Incorreta, porque essa competência pertence exclusivamente à CVM.  
+C. Correta, porque separa formulação normativa e execução.  
+D. Incorreta, porque o CMN atua apenas no orçamento federal.
 
 **Resposta:** C.
 
@@ -263,10 +263,10 @@ D. Entidade fechada de previdência complementar.
 
 **Enunciado:** Uma cooperativa de crédito segue regras e é supervisionada pelo Banco Central. Isso significa que ela:
 
-A. Passa a integrar o CMN.  
-B. Torna-se órgão normativo.  
-C. Assume a função do Copom.  
-D. Continua sendo participante operacional; ser supervisionada não a transforma em supervisor.
+A. Passa a integrar a estrutura deliberativa do CMN como membro.  
+B. Torna-se entidade supervisora do segmento por estar sujeita às regras.  
+C. Assume competência do Copom para decisões de política monetária.  
+D. Permanece operadora; a supervisão do BCB não muda sua natureza.
 
 **Resposta:** D.
 
@@ -323,10 +323,10 @@ D. CVM.
 
 **Enunciado:** Uma empresa é instituição de pagamento e gerencia contas de pagamento. Qual afirmação é compatível com o conteúdo estudado?
 
-A. Ela automaticamente se torna banco comercial.  
-B. Ela pode definir a meta Selic.  
-C. Ela não se torna instituição financeira por isso e não pode exercer atividade privativa de instituição financeira por conta própria.  
-D. Ela substitui o Banco Central na supervisão do arranjo.
+A. Passa a ser banco comercial e pode captar depósitos à vista apenas por manter contas de pagamento.  
+B. Pode definir a meta Selic e conceder crédito por participar do sistema de pagamentos.  
+C. Continua sendo instituição de pagamento e não pode exercer atividade privativa de instituição financeira.  
+D. Substitui o Banco Central na regulação e fiscalização dos participantes do arranjo.
 
 **Resposta:** C.
 
@@ -390,7 +390,7 @@ D. Operador de varejo.
 A. Operador formula diretrizes → cliente fiscaliza → supervisor concede crédito.  
 B. Supervisor cria clientes → operador fiscaliza → normativo atende o público.  
 C. Cliente define política → normativo empresta → operador fiscaliza.  
-D. Normativo formula diretrizes → supervisor acompanha o cumprimento → operador executa atividades.
+D. Normativo formula diretrizes → supervisor fiscaliza → operador executa atividades.
 
 **Resposta:** D.
 
@@ -407,7 +407,7 @@ D. Normativo formula diretrizes → supervisor acompanha o cumprimento → opera
 
 **Enunciado:** Qual atividade seria incompatível com a caracterização do CMN como colegiado normativo superior?
 
-A. Atender correntistas e conceder empréstimos diretamente como atividade bancária cotidiana.  
+A. Atender correntistas e conceder crédito diretamente ao público.  
 B. Formular política da moeda e do crédito.  
 C. Estabelecer diretrizes gerais para o sistema.  
 D. Orientar por normas a atuação das entidades competentes.
@@ -487,9 +487,9 @@ D. “O Banco Central é o órgão normativo superior do SFN, acima do CMN.”
 
 **Enunciado:** Após uma decisão do Copom, um cliente conclui que todo empréstimo bancário deverá ter exatamente a mesma taxa definida pelo colegiado. Qual correção é adequada?
 
-A. O Copom define a meta para a Selic; a taxa de um contrato também depende de condições como prazo, risco e custos.  
+A. O Copom define a meta Selic; a taxa do empréstimo depende também de risco, prazo e custos.  
 B. A conclusão está correta: a meta Selic é obrigatoriamente a taxa de todo empréstimo.  
-C. O Copom define apenas taxas de seguros privados.  
+C. O Copom atua apenas no mercado de seguros e define taxas obrigatórias para apólices privadas.  
 D. A taxa de cada empréstimo é definida diretamente pelo CMN para cada cliente.
 
 **Resposta:** A.
@@ -508,9 +508,9 @@ D. A taxa de cada empréstimo é definida diretamente pelo CMN para cada cliente
 **Enunciado:** Qual afirmação organiza corretamente o uso da palavra “Selic” no conteúdo estudado?
 
 A. Selic é o nome de um banco comercial que concede empréstimos ao público.  
-B. O nome vem do Sistema Especial de Liquidação e de Custódia; no contexto de juros, fala-se na taxa básica cuja meta é definida pelo Copom.  
-C. Selic é uma modalidade de previdência complementar fechada.  
-D. Selic é o órgão que fiscaliza companhias abertas.
+B. Selic nomeia o sistema de liquidação e custódia; a meta da taxa Selic é definida pelo Copom.  
+C. Selic é modalidade de previdência complementar fechada supervisionada pela PREVIC.  
+D. Selic é a entidade responsável por fiscalizar companhias abertas e fundos de investimento.
 
 **Resposta:** B.
 
@@ -588,7 +588,7 @@ D. Supervisão de entidades fechadas de previdência.
 **Enunciado:** Uma financeira é autorizada e fiscalizada pelo Banco Central. Qual conclusão é correta?
 
 A. A financeira passa a ser órgão normativo.  
-B. A financeira continua sendo operadora; o BCB exerce a função supervisora.  
+B. A financeira segue como operadora; o BCB é seu supervisor.  
 C. A financeira passa a integrar o Copom.  
 D. A financeira assume competência sobre companhias abertas.
 
@@ -607,10 +607,10 @@ D. A financeira assume competência sobre companhias abertas.
 
 **Enunciado:** Qual par está corretamente associado?
 
-A. Previdência complementar aberta — PREVIC; fechada — Copom.  
+A. Aberta — PREVIC; fechada — SUSEP.  
 B. Aberta — CVM; fechada — Banco Central.  
-C. Previdência complementar aberta — SUSEP; previdência complementar fechada — PREVIC.  
-D. Aberta — CMN; fechada — CNSP.
+C. Aberta — SUSEP; fechada — PREVIC.  
+D. Aberta — CNSP; fechada — CMN.
 
 **Resposta:** C.
 
@@ -630,7 +630,7 @@ D. Aberta — CMN; fechada — CNSP.
 A. SUSEP fixa a meta Selic e CNSP supervisiona bancos.  
 B. PREVIC define política monetária e SUSEP fiscaliza companhias abertas.  
 C. CVM normatiza previdência fechada e CNSP administra consórcios.  
-D. CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua competência.
+D. CNSP define diretrizes e normas; SUSEP supervisiona e fiscaliza o segmento.
 
 **Resposta:** D.
 
@@ -647,7 +647,7 @@ D. CNSP fixa diretrizes/normas e SUSEP controla e fiscaliza os mercados sob sua 
 
 **Enunciado:** Uma propaganda afirma que a simples adesão a um grupo de consórcio garante contemplação imediata. À luz do conteúdo estudado, a afirmação é:
 
-A. Incorreta; consórcio é mecanismo de autofinanciamento em grupo e adesão não garante contemplação imediata.  
+A. Incorreta; consórcio é autofinanciamento e não garante contemplação imediata.  
 B. Correta; todo consórcio funciona como empréstimo instantâneo.  
 C. Correta; o Banco Central entrega o bem na adesão.  
 D. Incorreta apenas porque consórcios são fiscalizados pela CVM.
@@ -667,10 +667,10 @@ D. Incorreta apenas porque consórcios são fiscalizados pela CVM.
 
 **Enunciado:** Qual descrição representa melhor o Sistema de Pagamentos Brasileiro (SPB)?
 
-A. Um único banco comercial responsável por todo pagamento no país.  
-B. Conjunto de infraestruturas, arranjos, regras e participantes que permitem transferências e liquidação de obrigações.  
-C. Um fundo de investimento administrado pela CVM.  
-D. Um órgão colegiado que define a meta Selic.
+A. Um banco único que centraliza e executa todos os pagamentos do país.  
+B. Rede de regras, infraestruturas e participantes usada para pagamentos e liquidações.  
+C. Um fundo financeiro supervisionado exclusivamente pela CVM.  
+D. Um colegiado do Banco Central responsável por definir a meta Selic.
 
 **Resposta:** B.
 
@@ -693,9 +693,9 @@ D. Um órgão colegiado que define a meta Selic.
 | Seguros/previdência | A13, A14 | B13, B14 |
 | Pagamentos/consórcios | A15, A16 | B15, B16 |
 
-## 4. Revisão ainda obrigatória antes de virar catálogo
+## 4. Revisão editorial/factual e critérios de homologação
 
-Antes de qualquer item entrar no código:
+Antes de considerar o banco homologado para uso pedagógico:
 1. comparar semanticamente com as 38 questões de treino e as 12 do Chefe, rejeitando paráfrase excessivamente próxima;
 2. conferir cada resposta nas fontes oficiais já catalogadas;
 3. confirmar que todo conhecimento aparece na aula/trecho indicado;
@@ -707,6 +707,16 @@ Antes de qualquer item entrar no código:
 
 A conclusão deste rascunho **não altera cobertura curricular, prontidão, XP nem percentual de aprendizado do usuário**.
 
+
+
+
+### Revisão V3 — 29/09/2026
+
+Foi feita uma segunda passada editorial sobre as alternativas com foco em **pistas de comprimento e forma gramatical**. Os itens com maior diferença de tamanho entre a correta e os distratores foram reescritos sem mudar a competência avaliada nem a posição da resposta correta.
+
+Também foi feita conferência dirigida dos pontos factuais mais sensíveis nas fontes oficiais já adotadas no projeto: composição do CMN, competências do BCB, Copom/meta Selic, campo da CVM, banco múltiplo, SUSEP/PREVIC, instituição de pagamento, SPI/SPB e consórcio.
+
+O catálogo de produção foi elevado para `ASSESSMENT_VERSION = 2`. Rodadas de versão anterior permanecem históricas e não devem ser misturadas silenciosamente com a nova redação.
 
 ## 5. Referências estáveis de ensino para a conversão futura
 
