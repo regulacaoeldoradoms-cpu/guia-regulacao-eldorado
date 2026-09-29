@@ -289,8 +289,73 @@ export async function decorateTelemedicineUser(env, user) {
 }
 
 export async function decorateTelemedicineUsers(env, users) {
-  const output = [];
-  for (const user of Array.isArray(users) ? users : []) output.push(await decorateTelemedicineUser(env, user));
+  const list = Array.isArray(users) ? users : [];
+  if (!list.length) return [];
+  if (!(await ensureTelemedicineAccessSchema(env))) {
+    return list.map((user) => (
+      user?.role === 'admin'
+        ? { ...user, telemedicineAccess: true }
+        : { ...user, telemedicineAccess: false }
+    ));
+  }
+
+  // V34.7: a tela administrativa não pode executar uma consulta D1 por usuário.
+  // Carregamos capacidade e última intenção em lote; o custo fica praticamente
+  // constante mesmo quando a quantidade de contas cresce.
+  const [accessResult, auditResult] = await Promise.all([
+    env.AUTH_DB.prepare('SELECT username, enabled FROM auth_telemedicine_access').all(),
+    env.AUTH_DB.prepare(`SELECT audit.username, audit.action
+      FROM auth_telemedicine_access_audit audit
+      INNER JOIN (
+        SELECT username, MAX(id) AS id
+        FROM auth_telemedicine_access_audit
+        GROUP BY username
+      ) latest ON latest.id = audit.id`).all()
+  ]);
+
+  const enabledByUser = new Map(
+    (accessResult.results || [])
+      .map((row) => [normalizeUsername(row.username), Number(row.enabled || 0) === 1])
+      .filter(([username]) => Boolean(username))
+  );
+  const actionByUser = new Map(
+    (auditResult.results || [])
+      .map((row) => [normalizeUsername(row.username), String(row.action || '')])
+      .filter(([username]) => Boolean(username))
+  );
+
+  const repairCandidates = [];
+  for (const user of list) {
+    if (!user || user.role === 'admin') continue;
+    const username = normalizeUsername(user.username);
+    if (!username || enabledByUser.get(username) === true) continue;
+    if (ENABLED_AUDIT_ACTIONS.has(actionByUser.get(username) || '')) repairCandidates.push(username);
+  }
+
+  for (const username of [...new Set(repairCandidates)]) {
+    const repaired = await repairTelemedicineAccess(env, username, 'bulk-admin-list-integrity');
+    enabledByUser.set(username, repaired === true);
+  }
+
+  const roleRepairs = [];
+  const output = list.map((user) => {
+    if (!user || typeof user !== 'object') return user;
+    if (user.role === 'admin') return { ...user, telemedicineAccess: true };
+    const username = normalizeUsername(user.username);
+    const enabled = username && enabledByUser.get(username) === true;
+    if (!enabled) return { ...user, telemedicineAccess: false };
+    if (user.role !== UNDERLYING_ROLE) roleRepairs.push(username);
+    return {
+      ...user,
+      role: TELEMEDICINE_ROLE,
+      jobTitle: user.jobTitle || DEFAULT_JOB_TITLE,
+      telemedicineAccess: true
+    };
+  });
+
+  for (const username of [...new Set(roleRepairs.filter(Boolean))]) {
+    await ensureTelemedicineUnderlyingRole(env, username);
+  }
   return output;
 }
 

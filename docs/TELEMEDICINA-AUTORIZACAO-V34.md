@@ -168,3 +168,24 @@ A trilha `auth_telemedicine_access_audit` armazena somente identidade operaciona
 
 Uma conta cuja última decisão administrativa seja **Técnico em Telemedicina** não deve perder o acesso por edição comum, código legado, exclusão acidental da linha ou escrita `enabled=0` sem intenção explícita. Mesmo se uma divergência física for introduzida por regressão futura, a primeira verificação server-side deve restaurar o estado coerente antes de retornar 403.
 
+## Complemento V34.7 — conexão do painel administrativo sem N+1 D1
+
+Decisão permanente registrada em 29/09/2026 após `/admin/usuarios/` continuar exibindo falha de conexão mesmo com conectividade geral disponível.
+
+### Diagnóstico técnico
+
+O painel não fazia apenas uma leitura de usuários. Depois de obter a lista-base, a camada flexível decorava cada conta individualmente com a capacidade de Telemedicina. Após a V34.6, cada conta sem capacidade ativa podia exigir também uma leitura da última intenção de auditoria. Isso criava um padrão **N+1** de consultas D1: quanto mais contas existissem, mais leituras sequenciais eram executadas dentro de uma única requisição administrativa.
+
+Além disso, o `OPTIONS` CORS necessário ao navegador passava pela reconciliação global antes de chegar ao preflight específico do painel. Em um cold start, essa etapa podia tocar D1 antes mesmo de o navegador obter autorização para enviar o GET autenticado. Quando a camada de transporte era interrompida nesse ponto, o navegador expunha apenas `TypeError: Failed to fetch`.
+
+### Regra V34.7
+
+1. `decorateTelemedicineUsers` deve carregar capacidades de Telemedicina em lote, não executar `decorateTelemedicineUser` sequencialmente para cada conta.
+2. A última intenção de auditoria também é obtida em uma consulta agregada por usuário.
+3. Somente contas realmente inconsistentes entram no autorreparo V34.6; contas comuns não geram leituras adicionais individuais.
+4. O `OPTIONS /api/admin/users*` deve ser respondido antes de qualquer migração, D1, Firebase ou outra inicialização de backend.
+5. O endpoint continua validando sessão e permissões normalmente no GET/PATCH/POST real; nenhuma autorização foi transferida ao frontend.
+6. O retry V34.5 continua sendo apenas contingência de transporte. Ele não é a solução principal para sobrecarga do endpoint.
+
+A lista administrativa passa, portanto, a ter custo de leitura praticamente constante em relação ao número de usuários, preservando a mesma regra de autorização.
+

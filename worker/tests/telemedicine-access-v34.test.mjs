@@ -137,3 +137,26 @@ test('V34.6: intenção ativa autorrepara capacidade antes de negar a Telemedici
   assert.match(access, /action TEXT NOT NULL CHECK\(action IN \('baseline_enabled','granted','revoked','auto_repaired'\)\)/);
   assert.match(access, /Linhas desabilitadas permanecem intocadas/);
 });
+
+
+test('V34.7: lista administrativa usa decoração Telemedicina em lote', () => {
+  const access = read('worker/telemedicine-access.js');
+
+  assert.match(access, /SELECT username, enabled FROM auth_telemedicine_access/);
+  assert.match(access, /SELECT audit\.username, audit\.action[\s\S]+MAX\(id\) AS id/);
+  assert.match(access, /const \[accessResult, auditResult\] = await Promise\.all/);
+  assert.match(access, /repairCandidates/);
+  assert.match(access, /bulk-admin-list-integrity/);
+  assert.doesNotMatch(access, /for \(const user of Array\.isArray\(users\)[\s\S]+decorateTelemedicineUser/);
+});
+
+test('V34.7: preflight administrativo responde antes de migração ou acesso ao D1', () => {
+  const worker = read('worker/index.js');
+
+  const preflight = worker.indexOf("request.method === 'OPTIONS' && url.pathname.startsWith('/api/admin/users')");
+  const migration = worker.indexOf('await enforceDeveloperSeparation(env)');
+  assert.ok(preflight >= 0, 'preflight antecipado não encontrado');
+  assert.ok(migration >= 0, 'migração global não encontrada');
+  assert.ok(preflight < migration, 'preflight deve ocorrer antes de qualquer migração/D1');
+  assert.match(worker, /return handlePortalRoute\(request, env, origin, originAllowed\)/);
+});

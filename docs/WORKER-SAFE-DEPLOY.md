@@ -179,3 +179,17 @@ A versão não produtiva:
 - serve apenas como condição segura para permitir que o gate continue e crie **uma nova candidata própria**, que passa por toda a validação normal antes da promoção.
 
 Se qualquer binding divergir, o gate permanece fail-closed com `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`.
+
+## Smoke pós-deploy de Usuários e acessos — 29/09/2026
+
+O gate produtivo também verifica a conectividade administrativa após a promoção da candidata.
+
+Para `/api/admin/users`, o gate executa sem credenciais:
+
+1. um `OPTIONS` com `Origin: https://regulacaoeldoradoms.com.br`, método solicitado `GET` e headers `authorization,content-type`;
+2. exige HTTP 204 e `Access-Control-Allow-Origin` exatamente igual à origem do Portal;
+3. executa um `GET` anônimo;
+4. exige HTTP 401 e o mesmo header CORS.
+
+Essa combinação confirma que o Worker está acessível, o preflight necessário ao navegador está funcional e a barreira de autenticação continua fechada. Falha nessa verificação ocorre depois do início da promoção e aciona o rollback automático do gate, assim como os demais checks pós-deploy.
+
