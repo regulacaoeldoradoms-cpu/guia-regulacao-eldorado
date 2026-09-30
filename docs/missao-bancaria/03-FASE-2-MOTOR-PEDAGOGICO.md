@@ -13,7 +13,7 @@ Recorte A: **catálogo pedagógico declarativo**, documentado em `52-FASE2-CATAL
 
 A primeira correção estrutural remove do manifesto a necessidade de conhecer funções de anexação específicas por grupo de aulas. O conteúdo existente deve permanecer idêntico para o usuário e para o histórico; a mudança é arquitetural e prepara a publicação incremental exigida por esta fase.
 
-O Recorte A foi integrado pela PR #547. O Recorte B ativo está em `53-FASE2-FEEDBACK-PEDAGOGICO.md`: contrato reutilizável de feedback pós-resposta, começando por Introdução, CMN e Banco Central antes de expandir ao restante do bloco.
+O Recorte A foi integrado pela PR #547. O contrato reutilizável de feedback pós-resposta começou no Recorte B (#548) e foi expandido para Copom/CVM no Recorte B2 (#549). O recorte ativo B3 amplia o mesmo catálogo para Operadores e Seguros/Previdência, sem nova rota ou renderer.
 
 ### Unidade pedagógica padrão
 Cada missão deve suportar:
