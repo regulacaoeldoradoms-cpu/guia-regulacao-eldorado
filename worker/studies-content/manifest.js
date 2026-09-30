@@ -12,6 +12,7 @@ import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn
 import { OPERATORS_INSURANCE_SOURCES } from './sfn-aplicacao-operadores-seguros-v1.js';
 import { attachApplications } from './application-registry.js';
 import { MP_MISSIONS, MP_SOURCES } from './banking-markets-policy-v1.js';
+import { PC_MISSIONS, PC_SOURCES } from './banking-products-credit-v1.js';
 import {
   publishedCatalog,
   publicationSnapshot as buildPublicationSnapshot,
@@ -19,12 +20,14 @@ import {
 } from './publication-registry.js';
 
 const activeMpMissions = publishedCatalog(MP_MISSIONS);
+const activePcMissions = publishedCatalog(PC_MISSIONS);
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
-  ...OPERATORS_INSURANCE_SOURCES, ...(activeMpMissions.length ? MP_SOURCES : [])
+  ...OPERATORS_INSURANCE_SOURCES, ...(activeMpMissions.length ? MP_SOURCES : []),
+  ...(activePcMissions.length ? PC_SOURCES : [])
 ]);
 export const PLANNED_MISSIONS = Object.freeze([
-  ...BASE_PLANNED_MISSIONS, ...activeMpMissions.map(mission => Object.freeze({ id: mission.id, status: 'published' }))
+  ...BASE_PLANNED_MISSIONS, ...[...activeMpMissions, ...activePcMissions].map(mission => Object.freeze({ id: mission.id, status: 'published' }))
 ]);
 
 const INTRO_IDS = Object.freeze([
@@ -105,7 +108,7 @@ function teachMission(mission) {
 }
 
 export const PUBLISHED_MISSIONS = publishedCatalog(
-  [...BASE_MISSIONS.map(teachMission).map(attachApplications), ...MP_MISSIONS]
+  [...BASE_MISSIONS.map(teachMission).map(attachApplications), ...MP_MISSIONS, ...PC_MISSIONS]
 );
 
 export const publicationSnapshot = (progress = {}) =>
