@@ -23,9 +23,14 @@ const mission = {
 async function setup(page, mode = '') {
   const payload = {
     roundProtocol: 1, pedagogyProtocol: mode === 'pedagogy' ? 1 : 0,
+    errorPatternProtocol: mode === 'recurringErrors' ? 1 : 0,
     user: { username: 'wellyton', name: 'Estudante sintético' }, missions: [originMission, mission],
-    progress: { [originMission.topicId]: { coverageState: 3 } }, attemptedQuestions: {}, reviews: mode === 'review' ? [{ id: 'review-fixture', missionId: mission.id, title: 'Revisão sintética', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
-    metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0, publishedMissions: 2, plannedMissions: 9, campaignAvailability: 22.2, completedPublished: 1, campaignProgress: 0, availableCompletion: 50, streak: { current: 0, best: 0 } }
+    progress: { [originMission.topicId]: { coverageState: 3 } },
+    recurringErrors: mode === 'recurringErrors'
+      ? { [originMission.topicId]: { count:0,items:[] }, [mission.topicId]: { count:1,items:[{questionId:'q.fixture.0',wrongAttempts:2,totalAttempts:2,lastAttemptAt:'2026-09-29 22:00:00'}] } }
+      : {},
+    attemptedQuestions: {}, reviews: mode === 'review' ? [{ id: 'review-fixture', missionId: mission.id, title: 'Revisão sintética', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
+    metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0, recurringErrors: mode === 'recurringErrors' ? 1 : 0, publishedMissions: 2, plannedMissions: 9, campaignAvailability: 22.2, completedPublished: 1, campaignProgress: 0, availableCompletion: 50, streak: { current: 0, best: 0 } }
   };
   const errors = [], unexpected = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -216,5 +221,15 @@ test('protocolo pedagógico registra leitura concluída ao entrar na prática se
   expect(reading[0].route).toBe('/api/studies/sessions/session-1/reading-complete');
   expect(calls.filter(c=>c.route.endsWith('/sessions'))).toHaveLength(1);
   await expect(page.locator('#studyPracticePanel')).toBeVisible();
+  clean();
+});
+
+
+test('dashboard mostra somente erros recorrentes ativos quando o protocolo existe', async ({ page }) => {
+  const {clean}=await setup(page,'recurringErrors');
+  await expect(page.locator('#metricRecurringErrorsCard')).toBeVisible();
+  await expect(page.locator('#metricRecurringErrors')).toHaveText('1');
+  const card=page.locator('[data-mission-id="fixture.lesson"]');
+  await expect(card).toContainText('Erros recorrentes ativos: 1');
   clean();
 });
