@@ -1,12 +1,12 @@
-# MP — preparo técnico e proposta de ativação
+# MP — integração e ativação autorizada
 
-30/09/2026. [#564 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/564), sobre [#563](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/563). Código preparado: `b9e9aa482a656f8b6490323a4552ef5181dac888`; fonte editorial aprovada: `36a8f9c688a44faf13bf3de287f74e291402a182`. Fase 2 ativa, aceite humano não observado; Fase 3 não aberta. Nenhuma publicação desta entrega foi autorizada/executada.
+30/09/2026. [#564 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/564), sobre [#563](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/563). Código preparado: `b9e9aa482a656f8b6490323a4552ef5181dac888`; fonte editorial aprovada: `36a8f9c688a44faf13bf3de287f74e291402a182`. Fase 2 ativa, aceite humano não observado; Fase 3 não aberta. Publicação autorizada às 19:42 UTC; ativação local validada, integração/deploy ainda pendentes.
 
 ## Entrega preparada
 
 Nove aulas, revisão cumulativa e Chefe: **124 trechos, 40 exemplos, 84 questões/336 justificativas**. Ensino introdutório de mercados, moeda/pagamentos, inflação/juros reais, política/instrumentos monetários, QE em contexto estrangeiro e depósitos brasileiros, dívida pública, relações interbancárias e curva de juros. Referências BB/CAIXA continuam históricas; não é cobertura integral do bloco, edital ou prontidão.
 
-[Conversor offline](../../worker/scripts/studies-mp-candidate.mjs) e [conversão de apresentação](../../worker/scripts/studies-mp-presentation.mjs) produzem [dados do Worker](../../worker/studies-content/banking-markets-policy-v1.js), mantendo **todas as missões draft**. O manifesto/plano/mapa já consultam o registro existente de publicação. Enquanto draft, não incluem missões/fontes/denominadores novos na resposta ativa. Comparação com o SFN anterior confirmou igualdade de catálogo, fontes e plano visíveis. O grande arquivo de dados é gerado, não uma segunda fonte de autoria.
+[Conversor offline](../../worker/scripts/studies-mp-candidate.mjs) e [conversão de apresentação](../../worker/scripts/studies-mp-presentation.mjs) produzem [dados do Worker](../../worker/studies-content/banking-markets-policy-v1.js), com **11 missões publicadas na release autorizada** `markets-policy-intro-r1`. O manifesto/plano/mapa consultam o registro existente de publicação. O catálogo preparado tem 20 missões e dois blocos disponíveis. Testes preservam integralmente o SFN e demonstram que drafts continuam excluídos. O grande arquivo de dados é gerado, não uma segunda fonte de autoria.
 
 - IDs candidatos `banking.mp.*`, questões `q.` + ID editorial; fontes isoladas por unidade, conservando URL/versão/localização/data. Não renomeiam IDs SFN.
 - Recuperação aponta a trechos reais anteriores, incluindo origens da MP-R e Chefe. As justificativas só entram no feedback após responder; bootstrap não revela gabaritos.
@@ -15,7 +15,7 @@ Nove aulas, revisão cumulativa e Chefe: **124 trechos, 40 exemplos, 84 questõe
 - Links de origem abrem consulta dentro da sessão atual. Voltar preserva a parte/questão, seleção, resposta e foco; não abre rodada, concede XP ou conclui leitura. Resposta que termina durante consulta atualiza o DOM original.
 - Tempos de 20–30 minutos são estimativas didáticas: palavras/150 + dois minutos por questão, arredondados para cinco minutos. Não impõem duração nem controlam o cronômetro.
 
-Os corpos, formatos editoriais, exemplos, enunciados, alternativas, respostas e justificativas aprovados permanecem intactos. Nenhum arquivo em `rascunhos/` foi modificado nesta preparação. A revisão independente do Chefe aprovou seus 12 itens/48 justificativas em 36a8f9c; não foi repetida nem confundida com validação da apresentação.
+Ensino, formatos editoriais, exemplos, enunciados, alternativas, respostas e justificativas aprovados permanecem intactos; somente os dois avisos de status identificados abaixo foram retirados da cópia gerada. Nenhum arquivo em `rascunhos/` foi modificado nesta preparação. A revisão independente do Chefe aprovou seus 12 itens/48 justificativas em 36a8f9c; não foi repetida nem confundida com validação da apresentação.
 
 Comandos de reprodução, sem produção:
 
@@ -24,7 +24,7 @@ node worker/scripts/studies-mp-candidate.mjs --check-generated
 node worker/scripts/studies-mp-candidate.mjs --write
 ```
 
-O segundo apenas regenera dados draft. Não há ativação por URL, variável remota ou comando de deploy.
+O segundo regenera a release aprovada; a publicação em produção exige os gates e o deploy protegido separados. Não há ativação por URL ou variável remota.
 
 ## Correção SFN incluída no pacote — ainda não publicada
 
@@ -41,7 +41,7 @@ O serviço agora consulta uma lista separada de IDs persistidos; nenhuma migraç
 
 Chromium usa API simulada; SQLite não é D1. Não houve acesso a produção/D1, teste humano ou homologação produtiva. Não repetir revisão editorial ou suíte integral por mudanças só documentais. Antes de integrar, gates de CI na base/SHA efetivos continuam obrigatórios.
 
-## Proposta única ao usuário
+## Decisão agrupada aprovada
 
 Ativar o **pacote introdutório completo** de #563/#564, incluindo a correção SFN, com as referências históricas BB/CAIXA explicitamente preservadas e fontes verificadas em 30/09/2026. Não adotar silenciosamente edital atual nem abrir formalmente Fase 3.
 
@@ -52,20 +52,23 @@ Ativar o **pacote introdutório completo** de #563/#564, incluindo a correção 
 | 16–18 | MP-07, MP-08, MP-09 | divida-publica, interbancario, curva-juros |
 | 19–20 | MP-R, MP-CHEFE | revisao, boss |
 
-Recomendação: MP-01 após concluir o Chefe SFN; demais unidades em sequência, pela conclusão da missão anterior, conforme gate existente. 100 XP por aula/revisão; Chefe com 220 XP e 75% (9/12). Sem medalha MP nova. Aulas/revisões mantêm a regra atual de conclusão, sem transformar conclusão em domínio. Questões continuam expostas, fora de A/B; não implementar política adaptativa nesta entrega. Parâmetros seguem não aprovados no candidato.
+Aprovado em 30/09/2026 às 19:42 UTC: MP-01 após concluir o Chefe SFN; demais unidades em sequência, pela conclusão da missão anterior, conforme gate existente. 100 XP por aula/revisão; Chefe com 220 XP e 75% (9/12). Sem medalha MP nova. Aulas/revisões mantêm a regra atual de conclusão, sem transformar conclusão em domínio. Questões continuam expostas, fora de A/B; não implementar política adaptativa nesta entrega. Parâmetros aprovados e aplicados no candidato.
 
-Na ativação autorizada, retirar **somente dois avisos editoriais desatualizados**, preservando ensino e arquivos originais:
+Na ativação local autorizada, foram retirados **somente dois avisos editoriais desatualizados**, preservando ensino e arquivos originais:
 
 1. MP-R/acesso: “Hoje o conjunto inteiro continua em rascunho, fora do aplicativo.”
 2. MP-CHEFE/preparacao: “Hoje todos esses materiais são rascunhos fora do aplicativo.”
 
-A confirmação deve cobrir o pacote e os parâmetros juntos. Não pedir aprovação por aula/arquivo. Aceite humano pedagógico da Fase 2 permanece evidência separada; a autorização de publicação não o substitui.
+A confirmação cobriu pacote e parâmetros: usuário respondeu "sim, precisa ficar perguntando isso nao" (Sentinel_92b94c7904dc819192757a92ff6ef501). Não pedir aprovação por aula/arquivo ou etapa rotineira já autorizada. Aceite humano pedagógico da Fase 2 permanece evidência separada; a autorização de publicação não o substitui.
 
-## Gates restantes e próxima ação
+## Ativação validada e gates restantes
 
-1. Decisão explícita sobre a proposta agrupada, incluindo os dois avisos acima; nada aprovado por esta documentação.
-2. Conferir refs/base atuais; aplicar status publicado conjunto e ajuste editorial restrito, regenerar dados e adequar testes de disponibilidade ao catálogo ampliado. Reutilizar evidências válidas; executar somente verificações afetadas e CI/gates obrigatórios no SHA final.
-3. Após gates e autorização, integrar #563 → #564, usando a estratégia de dependência correta; publicação protegida por [WORKER-SAFE-DEPLOY.md](../WORKER-SAFE-DEPLOY.md). Sem renomear Worker, alterar bindings ou usar deploy direto. Confirmar frontend/Worker exatos e smoke proporcional.
-4. Registrar somente resultados reais do [checklist humano da Fase 2](68-MP01-RASCUNHO-E-REVISAO.md#checklist-humano-mínimo-da-fase-2). Não declarar fase aceita ou prontidão medida automaticamente.
+A release local tem 20 missões/122 questões (SFN 9/38 intacto; MP 11/84). Os testes antigos que fixavam o total em nove missões agora distinguem o SFN preservado do catálogo ampliado. Corrigida também uma asserção de identidade de array que falhava na CI apesar de conteúdo igual; nenhuma validação de conteúdo foi removida.
 
-Preparo técnico concluído para revisão da decisão; sem bloqueio de ambiente. Próxima ação concreta depende da autorização agrupada, não de nova auditoria do conteúdo.
+- Node 24.17.0: `npm run check` e **671 testes Worker aprovados**, zero falhas/skip.
+- **Sete Chromium MP aprovados** sobre o catálogo ativo: apresentação, consulta repetida, resposta pendente, interrupção/rede e exclusividade. Demais 40 testes/apresentação anteriores são reutilizados por escopo; CI obrigatória executará seu gate.
+- Artefato gerado conferido. Nenhum acesso a D1/produção nesta validação. Nenhuma revisão editorial nova de texto inalterado.
+
+Próxima ação: registrar/push da ativação, CI terminal no SHA final, integração #563 → #564 e publicação protegida por [WORKER-SAFE-DEPLOY.md](../WORKER-SAFE-DEPLOY.md). Não renomear Worker, alterar bindings ou usar deploy direto. Confirmar frontend/Worker exatos e smoke mínimo; não declarar sucesso antes disso.
+
+Aceite humano da Fase 2 continua separado e não observado. Registrar somente resultados reais do [checklist humano](68-MP01-RASCUNHO-E-REVISAO.md#checklist-humano-mínimo-da-fase-2). Preview legado permanece problema independente; exceção raster anterior não é ampliada para esta entrega.

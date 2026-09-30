@@ -7,7 +7,7 @@ import {
 import { validateQuestionFeedback } from '../studies-content/question-feedback-v1.js';
 import { compilePresentation } from './studies-mp-presentation.mjs';
 
-// Proposta de IDs estáveis e sequência; a aprovação de publicação ainda está pendente.
+// IDs, sequência, XP e limiar aprovados pelo usuário em 30/09/2026 às 19:42 UTC.
 export const MP_PLAN = Object.freeze([
   ['mp01', 'mercados'], ['mp02', 'moeda'], ['mp03', 'inflacao'],
   ['mp04', 'politica-monetaria'], ['mp05', 'instrumentos'], ['mp06', 'qe-depositos'],
@@ -46,6 +46,16 @@ export function compileMpCandidate(editorial) {
       throw new Error(`${plan.unit}: origem deve permanecer draft.`);
     }
     const draft = structuredClone(entry.draft);
+    // Retirada autorizada de avisos de status; fontes editoriais permanecem intactas.
+    const notice = {
+      mpr: ['acesso', 'Hoje o conjunto inteiro continua em rascunho, fora do aplicativo.'],
+      mpchefe: ['preparacao', 'Hoje todos esses materiais são rascunhos fora do aplicativo.']
+    }[plan.unit];
+    if (notice) {
+      const section = draft.sections.find(item => item.id === notice[0]);
+      if (!section?.body.includes(notice[1])) throw new Error(`${plan.unit}: aviso editorial esperado ausente.`);
+      section.body = section.body.replace(notice[1], '').trim();
+    }
     const presentation = text => compilePresentation(text, href => {
       if (href === '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md') return {
         href: 'https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/blob/36a8f9c688a44faf13bf3de287f74e291402a182/docs/missao-bancaria/71-MP-BLOCO-RASCUNHO-E-REVISAO.md'
@@ -87,7 +97,7 @@ export function compileMpCandidate(editorial) {
       };
     });
     // Conserva o texto aprovado e o inventário dos locais convertidos em apresentação.
-    // A publicação continua separada da renderização e depende de decisão explícita.
+    // A publicação foi autorizada; renderização não altera os demais textos.
     for (const [location, text] of [
       ...draft.sections.map(section => [`section:${section.id}`, section.body]),
       ...draft.questions.map(question => [`question:q.${question.id}`, question.prompt])
@@ -103,13 +113,13 @@ export function compileMpCandidate(editorial) {
       id: plan.id, topicId: plan.id, contentVersion: draft.contentVersion,
       order: plan.order, title: draft.title, shortTitle: draft.editorialKey,
       kind: draft.kind, objective: draft.objective,
-      // Valores de simulação, sujeitos à decisão agrupada; nada é publicado por este script.
+      // Parâmetros da aprovação agrupada, usando as regras de conclusão existentes.
       xp: draft.kind === 'boss' ? 220 : 100,
       passScore: draft.kind === 'boss' ? 75 : 0,
       // Estimativa didática, não limite: leitura a 150 palavras/min + 2 min por questão,
       // arredondada para o próximo múltiplo de 5. Não controla cronômetro ou conclusão.
       estimatedMinutes: Math.ceil((draft.sections.reduce((sum, section) => sum + section.body.split(/\s+/).length, 0) / 150 + questions.length * 2) / 5) * 5,
-      publication: { status: 'draft', releaseId: 'markets-policy-intro-r1', releaseSequence: 2, changeImpact: 'new' },
+      publication: { status: 'published', releaseId: 'markets-policy-intro-r1', releaseSequence: 2, changeImpact: 'new' },
       sourceIds: draft.sourceIds.map(remapSource),
       sections: draft.sections.map(section => ({ ...section, sourceIds: section.sourceIds.map(remapSource), ...rich(section.body) })),
       recall: draft.recall, questions,
@@ -117,7 +127,7 @@ export function compileMpCandidate(editorial) {
       candidate: {
         editorialId: draft.id, blockId: draft.candidateBlockId,
         prerequisiteId: index === 0 ? plan.prerequisiteId : MP_PLAN[index - 1].id,
-        parametersApproved: false
+        parametersApproved: true
       }
     };
   });
@@ -136,7 +146,7 @@ const errors = [
     errors.push('published-prerequisite-changed');
   }
   if (errors.length) throw new Error(`Candidato MP inválido: ${errors.join(', ')}`);
-  return { status: 'draft', missions, sources, feedback, readingRequirements };
+  return { status: 'published', missions, sources, feedback, readingRequirements };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -144,18 +154,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (process.argv.includes('--write') || process.argv.includes('--check-generated')) {
     const target = new URL('../studies-content/banking-markets-policy-v1.js', import.meta.url);
     const output = '// Gerado por node worker/scripts/studies-mp-candidate.mjs --write. Não editar.\n'
-      + '// Fonte editorial #563; todas as missões permanecem draft. Sem autorização de ativação.\n'
+      + '// Fonte editorial #563; publicação e parâmetros aprovados em 30/09/2026 às 19:42 UTC.\n'
       + `export const MP_MISSIONS = Object.freeze(${JSON.stringify(candidate.missions, null, 2)});\n`
       + `export const MP_SOURCES = Object.freeze(${JSON.stringify(candidate.sources, null, 2)});\n`;
     if (process.argv.includes('--write')) await writeFile(target, output);
     else if ((await readFile(target, 'utf8')).replace(/\r\n/g, '\n') !== output) throw new Error('Artefato MP desatualizado; regenere sem editar o conteúdo aprovado.');
-    console.log('Artefato MP draft: ' + (process.argv.includes('--write') ? 'gerado' : 'conferido'));
+    console.log('Artefato MP autorizado: ' + (process.argv.includes('--write') ? 'gerado' : 'conferido'));
   }
-  // Resumo, sem emitir um arquivo importável acidentalmente como conteúdo publicado.
+  // Resumo da release aprovada; deploy permanece sujeito ao gate separado.
   console.log(JSON.stringify({
     status: candidate.status, missions: candidate.missions.length,
     questions: candidate.feedback.length, optionReasons: candidate.feedback.reduce((sum, item) => sum + item.optionReasons.length, 0),
     sources: candidate.sources.length, readingRequirements: candidate.readingRequirements,
-    publicationReady: false
+    publicationReady: true
   }, null, 2));
 }

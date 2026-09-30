@@ -9,6 +9,7 @@ import { curriculumSnapshot } from '../studies-content/curriculum-v1.js';
 import { questionFeedbackById } from '../studies-content/question-feedback-v1.js';
 
 const editorial = await loadMpEditorial();
+const baseline = PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
 const before = structuredClone(editorial);
 const candidate = compileMpCandidate(editorial);
 
@@ -23,8 +24,8 @@ test('conversão MP preserva conteúdo aprovado e mapeia IDs, fontes e recupera�
     assert.equal(mission.topicId, mission.id);
     assert.equal(mission.order, index + 10);
     assert.equal(mission.candidate.prerequisiteId, index ? candidate.missions[index - 1].id : 'banking.sfn.boss');
-    assert.equal(mission.candidate.parametersApproved, false);
-    assert.deepEqual(mission.sections.map(s => [s.id, s.type, s.heading, s.body]), draft.sections.map(s => [s.id, s.type, s.heading, s.body]));
+    assert.equal(mission.candidate.parametersApproved, true);
+    assert.deepEqual(mission.sections.map(s => [s.id, s.type, s.heading, s.body]), draft.sections.map(s => [s.id, s.type, s.heading, s.body.replace('Hoje o conjunto inteiro continua em rascunho, fora do aplicativo.', '').replace('Hoje todos esses materiais são rascunhos fora do aplicativo.', '').trim()]));
     assert.deepEqual(mission.recall, draft.recall);
     for (const [qi, question] of mission.questions.entries()) {
       const original = draft.questions[qi];
@@ -45,15 +46,18 @@ test('conversão MP preserva conteúdo aprovado e mapeia IDs, fontes e recupera�
   }
 });
 
-test('candidato fica excluído: publicação, fontes, plano e mapa ativos continuam SFN', () => {
-  assert.ok(candidate.missions.every(mission => mission.publication.status === 'draft'));
-  assert.deepEqual(publishedCatalog([...PUBLISHED_MISSIONS, ...candidate.missions]), PUBLISHED_MISSIONS);
-  assert.deepEqual(publicationSnapshot([...PUBLISHED_MISSIONS, ...candidate.missions]), publicationSnapshot(PUBLISHED_MISSIONS));
-  assert.equal(PUBLISHED_MISSIONS.length, 9);
-  assert.equal(PLANNED_MISSIONS.length, 9);
-  assert.ok(STUDY_SOURCES.every(source => !source.id.startsWith('mp.')));
+test('release MP aprovada entra no catálogo; a mesma entrada draft continua excluída', () => {
+  assert.ok(candidate.missions.every(m => m.publication.status === 'published' && m.publication.releaseSequence === 2 && m.publication.changeImpact === 'new'));
+  const drafts = candidate.missions.map(m => ({ ...m, publication: { ...m.publication, status: 'draft' } }));
+  assert.deepEqual(publishedCatalog([...baseline, ...drafts]), baseline);
+  assert.equal(publicationSnapshot([...baseline, ...drafts]).newCount, 0);
+  assert.deepEqual(publishedCatalog([...baseline, ...candidate.missions]), PUBLISHED_MISSIONS);
+  assert.equal(PUBLISHED_MISSIONS.length, 20);
+  assert.equal(PLANNED_MISSIONS.length, 20);
+  assert.ok(candidate.sources.every(s => STUDY_SOURCES.some(active => active.id === s.id)));
+  assert.equal(publicationSnapshot(PUBLISHED_MISSIONS).newCount, 11);
   const map = curriculumSnapshot(PUBLISHED_MISSIONS);
-  assert.equal(map.publishedBlocks, 1);
+  assert.equal(map.publishedBlocks, 2);
   assert.equal(map.totalBlocks, 43);
   assert.equal(map.readiness.status, 'not_measured');
 });

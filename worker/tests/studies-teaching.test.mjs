@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { PUBLISHED_MISSIONS as original, PLANNED_MISSIONS as planned } from '../studies-content/banking-sfn.js';
 import { PUBLISHED_MISSIONS, PLANNED_MISSIONS, STUDY_SOURCES, missionById, missionByTopicId, questionById, sourceMap, validateTeachingCatalog } from '../studies-content/manifest.js';
 
+const sfn = PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
 const lesson = missionById('banking.sfn.introducao');
 
 test('introdução explica nomes antes de cobrar siglas', () => {
@@ -19,10 +20,10 @@ test('introdução explica nomes antes de cobrar siglas', () => {
 
 test('todas as missões atuais têm ensino, exemplos, consulta e resumo', () => {
   assert.deepEqual(validateTeachingCatalog(), []);
-  assert.equal(PUBLISHED_MISSIONS.length, 9);
-  assert.equal(PUBLISHED_MISSIONS.filter((mission) => mission.kind === 'boss').length, 1);
+  assert.equal(PUBLISHED_MISSIONS.length, 20);
+  assert.equal(PUBLISHED_MISSIONS.filter((mission) => mission.kind === 'boss').length, 2);
   for (const mission of PUBLISHED_MISSIONS) {
-    assert.equal(mission.contentVersion, 2);
+    assert.equal(mission.contentVersion, mission.id.startsWith('banking.sfn.') ? 2 : 1);
     for (const section of mission.sections) {
       assert.equal(typeof section.heading, 'string');
       assert.equal(typeof section.body, 'string');
@@ -33,8 +34,8 @@ test('todas as missões atuais têm ensino, exemplos, consulta e resumo', () => 
 });
 
 test('correção do curso inteiro preserva IDs, questões, recompensas e regras do Chefe', () => {
-  assert.equal(PUBLISHED_MISSIONS.length, original.length);
-  assert.strictEqual(PLANNED_MISSIONS, planned);
+  assert.equal(sfn.length, original.length);
+  assert.deepEqual(PLANNED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.')), planned);
   for (const before of original) {
     const after = missionById(before.id);
     assert.equal(after.id, before.id);
@@ -47,9 +48,9 @@ test('correção do curso inteiro preserva IDs, questões, recompensas e regras 
   }
 });
 
-test('as 38 questões apontam para trechos reais de ensino', () => {
+test('as 122 questões apontam para trechos reais de ensino', () => {
   const total = PUBLISHED_MISSIONS.reduce((sum, mission) => sum + mission.questions.length, 0);
-  assert.equal(total, 38);
+  assert.equal(total, 122);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.strictEqual(missionByTopicId(mission.topicId), mission);
     for (const question of mission.questions) {
@@ -114,6 +115,6 @@ test('fontes de todas as aulas são únicas e resolvíveis', () => {
   for (const source of STUDY_SOURCES) {
     const url = new URL(source.url);
     assert.equal(url.protocol, 'https:');
-    assert.ok(url.hostname === 'www.gov.br' || url.hostname.endsWith('.bcb.gov.br') || url.hostname === 'www.bb.com.br' || url.hostname === 'www.caixa.gov.br' || url.hostname === 'www.planalto.gov.br');
+    assert.ok(url.hostname === 'www.gov.br' || url.hostname.endsWith('.bcb.gov.br') || url.hostname === 'www.bb.com.br' || url.hostname === 'www.caixa.gov.br' || url.hostname === 'www.planalto.gov.br' || url.hostname === 'www.ecb.europa.eu' || url.hostname === 'www.bankofengland.co.uk');
   }
 });

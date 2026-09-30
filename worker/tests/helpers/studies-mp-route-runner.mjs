@@ -4,15 +4,16 @@ import vm from 'node:vm';
 import fs from 'node:fs';
 import { fixture } from './studies-route-fixture.mjs';
 import { loadMpEditorial, compileMpCandidate } from '../../scripts/studies-mp-candidate.mjs';
-import { PUBLISHED_MISSIONS, STUDY_SOURCES } from '../../studies-content/manifest.js';
+import { PUBLISHED_MISSIONS as LIVE_MISSIONS, STUDY_SOURCES } from '../../studies-content/manifest.js';
 import { publishedCatalog, publicationSnapshot } from '../../studies-content/publication-registry.js';
 import { curriculumSnapshot } from '../../studies-content/curriculum-v1.js';
 
+const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
 const candidate = compileMpCandidate(await loadMpEditorial());
-// Somente nesta fixture em memória simulamos futura publicação. Não existe flag de ativação no runtime.
-const mp = candidate.missions.map(mission => ({ ...mission, publication: { ...mission.publication, status: 'published' } }));
+// Release real aprovada; baseline SFN separado permite verificar a transição sem dados produtivos.
+const mp = candidate.missions;
 
-test('manifesto e mapa reais incluem o pacote apenas na simulação de status publicado', async () => {
+test('manifesto e mapa reais incluem o pacote com status publicado aprovado', async () => {
   const context = vm.createContext({});
   const cache = new Map();
   const replacement = new vm.SyntheticModule(['MP_MISSIONS', 'MP_SOURCES'], function () {
@@ -45,7 +46,7 @@ test('manifesto e mapa reais incluem o pacote apenas na simulação de status pu
 });
 async function setup(t, missions) {
   return fixture(t, {
-    missions, sources: [...STUDY_SOURCES, ...candidate.sources],
+    missions, sources: STUDY_SOURCES,
     publicationSnapshot: progress => publicationSnapshot(missions, progress), curriculumSnapshot
   });
 }
@@ -68,7 +69,7 @@ async function finish(call, start, mission, choices = mission.questions.map(ques
 }
 
 test('draft inacessível e autorização exclusiva antes de inicializar persistência', async t => {
-  const missions = publishedCatalog([...PUBLISHED_MISSIONS, ...candidate.missions]);
+  const missions = publishedCatalog([...PUBLISHED_MISSIONS, ...candidate.missions.map(m => ({ ...m, publication: { ...m.publication, status: 'draft' } }))]);
   const { sql, call } = await setup(t, missions);
   assert.equal((await call('bootstrap', undefined, { identity: null })).status, 401);
   assert.equal((await call('bootstrap', undefined, { identity: { username: 'outro' } })).status, 403);
@@ -134,7 +135,7 @@ test('adição simulada preserva SFN, XP, tentativas, conquista, revisões, aval
   assert.deepEqual(after.publication.newMissionIds, mp.map(mission => mission.id));
   assert.equal(after.publication.revisionRecommendedCount, 0);
   assert.equal(after.curriculum.readiness.status, 'not_measured');
-  assert.equal(after.curriculum.publishedBlocks, 1); // mapa ativo ainda não declara cobertura MP.
+  assert.equal(after.curriculum.publishedBlocks, 2); // mapa da release ativa declara o recorte MP.
 });
 
 test('MP-R preserva recuperação nas aulas anteriores via referências do endpoint', async t => {
@@ -150,7 +151,7 @@ test('MP-R preserva recuperação nas aulas anteriores via referências do endpo
   assert.ok(response.body.reviewRefs.some(ref => ref.missionId !== mission.id));
 });
 
-test('Chefe MP respeita limiar proposto, XP único e não concede a conquista do SFN', async t => {
+test('Chefe MP respeita limiar aprovado, XP único e não concede a conquista do SFN', async t => {
   const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...mp]);
   await call('bootstrap');
   seedCompletion(sql, [...PUBLISHED_MISSIONS, ...mp.slice(0, -1)]);
