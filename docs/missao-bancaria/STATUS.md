@@ -465,3 +465,8 @@ Validação:
 - roteador real e navegador exibem o mesmo resultado.
 
 Próximo requisito após C3: publicação incremental de novas missões com preservação integral do histórico e indicador de conteúdo novo.
+
+
+### C3 — correção de ausência de evidência
+
+A interface de domínio recente foi endurecida para não converter `null` em `0` por coerção JavaScript. Quando não existe evidência, o resumo permanece `—` / **Ainda não medido**, e o cartão da missão não exibe `0%` artificial. Há teste Chromium específico para essa condição.
