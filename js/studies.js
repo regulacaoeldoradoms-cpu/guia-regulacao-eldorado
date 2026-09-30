@@ -498,6 +498,19 @@
       recurringCard.hidden = !supported;
       if (supported) $('metricRecurringErrors').textContent = String(Math.max(0, Number(m.recurringErrors || 0)));
     }
+    const domainCard = $('metricRecentDomainCard');
+    if (domainCard) {
+      const supported = Number(data.domainProtocol || 0) === 1;
+      domainCard.hidden = !supported;
+      if (supported) {
+        const score = Number(data.recentDomain?.overallScore);
+        const measured = Number.isFinite(score);
+        $('metricRecentDomain').textContent = measured ? `${score}%` : '—';
+        $('metricRecentDomainMeta').textContent = measured
+          ? `${data.recentDomain?.observedTopics || 0}/${data.recentDomain?.totalTopics || data.missions.length} tópicos com evidência`
+          : 'Ainda não medido';
+      }
+    }
     const streak = m.streak || { current:0, best:0, lastStudyDay:'' };
     $('metricStreak').textContent = `${streak.current} ${streak.current === 1 ? 'dia' : 'dias'}`;
     $('metricBestStreak').textContent = `Melhor: ${streak.best} ${streak.best === 1 ? 'dia' : 'dias'}`;
@@ -543,6 +556,12 @@
       const recurringLabel = Number(data.errorPatternProtocol || 0) === 1
         ? `Erros recorrentes ativos: ${Math.max(0, Number(recurring?.count || 0))}`
         : '';
+      const recentDomain = data.recentDomain?.byTopic?.[mission.topicId];
+      const domainLabel = Number(data.domainProtocol || 0) === 1
+        ? Number.isFinite(Number(recentDomain?.score))
+          ? `Domínio recente: ${recentDomain.score}% · ${recentDomain.label}`
+          : 'Domínio recente: ainda não medido'
+        : '';
       const boss = mission.kind === 'boss';
       const isActive = resume?.mission.id === mission.id;
       const blockedByActive = Boolean(resume && !isActive);
@@ -561,6 +580,7 @@
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
         ${pedagogical ? `<p>Etapa pedagógica: ${pedagogical.label}</p>` : ''}
         ${recurringLabel ? `<p>${recurringLabel}</p>` : ''}
+        ${domainLabel ? `<p>${domainLabel}</p>` : ''}
         <p>${progress ? `Acerto nas tentativas: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
         <p>${retentionLabel(evidence)}</p>
       </button>`;
