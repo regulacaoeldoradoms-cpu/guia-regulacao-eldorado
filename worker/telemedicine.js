@@ -390,7 +390,7 @@ async function updateSchedule(env, user, followupId, input = {}) {
     createdAt: now,
     createdBy: user.username
   });
-  return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
+  return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absenceNeedsRequest: false, absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
 }
 
 // V35 (14/09/2026): correções de situação preservam o histórico anterior,
