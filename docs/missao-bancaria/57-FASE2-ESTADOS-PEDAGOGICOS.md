@@ -15,7 +15,7 @@ Estados:
 3. Leitura concluída;
 4. Prática;
 5. Revisão;
-6. Consolidado.
+6. Ciclos concluídos.
 
 ## Fonte de verdade
 
@@ -65,10 +65,12 @@ Sessão ativa da missão, ainda sem a transição para prática.
 ### Revisão
 Conteúdo coberto (`coverage_state=3`) enquanto o ciclo posterior de revisão ainda não atingiu a evidência completa prevista.
 
-### Consolidado
+### Ciclos concluídos
 Conteúdo coberto + três ciclos previstos de revisão com resultado observados.
 
-**Consolidado não significa pronto para prova, domínio certificado ou probabilidade de aprovação.** É apenas um estado do ciclo pedagógico local.
+O rótulo anterior, “Consolidado”, foi substituído em 30/09/2026 porque três revisões com nota zero também satisfazem esse critério. **Ciclos concluídos não comprova domínio, espaçamento efetivo ou prontidão de prova.** O identificador de API `consolidated` permanece estável; nenhuma nota, conclusão, revisão ou data é migrada.
+
+Os vencimentos atuais (+1/+7/+30 dias) são ancorados na conclusão original. Após atraso, podem ficar disponíveis juntos e usar as mesmas questões do ensino. Essa limitação semântica/retencional não é uma regressão desta entrega. Política adaptativa e reagendamento dependem da decisão registrada na proposta do documento 63.
 
 ## Preservação
 
@@ -99,6 +101,6 @@ A suíte deve provar:
 - prática após a transição;
 - leitura concluída após sair sem responder;
 - revisão após cobertura;
-- consolidado somente com evidência prevista;
+- ciclos concluídos com três resultados, inclusive zero, sem certificar aprendizado;
 - ausência de regressão ao reabrir conteúdo coberto;
 - compatibilidade de frontend com Worker sem o protocolo.

@@ -133,7 +133,9 @@
     if (evidence.status === 'historical_unscored') {
       return `Retenção: ${evidence.completedCycles}/${evidence.totalCycles} revisões registradas · histórico sem nota isolável`;
     }
-    const score = Number.isFinite(Number(evidence.latestScore)) ? ` · última: ${evidence.latestScore}%` : '';
+    const rawScore = evidence.latestScore;
+    const hasScore = rawScore !== null && rawScore !== undefined && rawScore !== '' && Number.isFinite(Number(rawScore));
+    const score = hasScore ? ` · última: ${rawScore}%` : '';
     return `Retenção: ${evidence.scoredCycles}/${evidence.totalCycles} revisões com resultado${score} · ${evidence.label.toLowerCase()}`;
   }
 
@@ -608,6 +610,13 @@
     }).join('');
 
     grid.querySelectorAll('[data-mission-id]').forEach((button) => {
+      const mission = data.missions.find((item) => item.id === button.dataset.missionId);
+      const pedagogical = data.pedagogicalStates?.[mission?.topicId];
+      if (pedagogical?.id === 'consolidated' && pedagogical.explanation) {
+        const explanation = document.createElement('p');
+        explanation.textContent = pedagogical.explanation;
+        button.append(explanation);
+      }
       button.addEventListener('click', () => {
         if (resume?.mission.id === button.dataset.missionId) resumeMission(resume);
         else openMission(button.dataset.missionId);

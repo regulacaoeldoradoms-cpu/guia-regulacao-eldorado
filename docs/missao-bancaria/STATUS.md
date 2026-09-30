@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 29/09/2026 — Fase 1 aceita; Fase 2 aberta; primeiro recorte do motor pedagógico em desenvolvimento.
+Atualizado em 30/09/2026 — Fase 1 aceita; Fase 2 ativa, com cadeia C3/C4 conciliada em PRs draft e fechamento ainda candidato.
 
 ## Estado e autorização
 
@@ -528,3 +528,20 @@ A Fase 3 permanece fechada até esse aceite.
 ### C3 — correção de ausência de evidência
 
 A interface de domínio recente foi endurecida para não converter `null` em `0` por coerção JavaScript. Quando não existe evidência, o resumo permanece `—` / **Ainda não medido**, e o cartão da missão não exibe `0%` artificial. Há teste Chromium específico para essa condição.
+
+## Continuidade de 30/09 — cadeia conciliada e revisão semanticamente explícita
+
+- PR #555: conciliação por merge em `6b940527`, preservando os quatro commits posteriores do C3, o teste de domínio nulo e o teste de publicação incremental.
+- PR #556: atualização sobre essa cadeia em `9657ce8a`, preservando a matriz candidata e o roteiro humano. Nenhum desses merges foi feito na `main`.
+- Correção adicional: “Consolidado” passa a **Ciclos concluídos**, com explicação de que resultados registrados não comprovam domínio nem prontidão. O ID `consolidated`, os prazos e os dados permanecem; isso substitui somente a nomenclatura histórica descrita no C1 acima.
+- Última revisão sem nota deixa de mostrar `null%`; desempenho real zero permanece zero.
+- A seleção Chromium passou a incluir o teste existente de retomada de sessão, antes fora do arquivo de configuração usado pela CI.
+- O novo teste SQLite registra a limitação vigente: +1/+7/+30 podem vencer juntos e três notas zero encerram ciclos, sem reagendar datas. Repete conclusão para verificar XP idempotente e preserva histórico, conquistas, avaliações independentes e prontidão.
+
+**Conteúdo:** oito aulas + Chefe, 38 questões pontuadas e 32 itens A/B de avaliação independente; um bloco publicado entre 43 planejados, sem converter essa contagem em percentual do edital/produto. Nenhum novo conteúdo foi publicado nesta continuidade.
+
+**Funcionalidade:** correções conservadoras preparadas em branch isolada. Autorização continua exclusiva a `wellyton`; não houve migração, mudança adaptativa de revisão ou alteração dos módulos institucionais.
+
+**Validação:** evidências e limitações em `64-VALIDACAO-CONTINUIDADE-FASE2.md`. O estado de merge, build, publicação e homologação permanece separado. A Fase 2 não recebeu aceite nesta continuidade.
+
+Próximos passos e critérios objetivos: `63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md`. Integração/publicação de #554–557 autorizadas em 30/09, condicionadas aos checks concluídos e ao esclarecimento do build Worker, preservando `deploy:safe`. A API de logs respondeu 403 com a autenticação existente; o comando e primeiro erro do build foram solicitados pelo dashboard no chat principal. Uma falha global intermitente da Central foi isolada à sincronização do teste e sua correção é restrita ao arquivo de teste, conforme o documento 64. Permanecem pendentes a satisfação dessas condições, homologação/aceite da Fase 2, política futura de revisões e escopo curricular a adotar. Não abrir a Fase 3 automaticamente.

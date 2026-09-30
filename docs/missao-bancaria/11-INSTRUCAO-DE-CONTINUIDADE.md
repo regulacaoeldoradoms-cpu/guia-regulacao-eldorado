@@ -5,7 +5,7 @@ Use este arquivo como instrução curta para qualquer nova conversa, agente ou s
 ## Ordem obrigatória de leitura
 1. `docs/missao-bancaria/00-DOSSIE-MESTRE.md`;
 2. este arquivo;
-3. `24-CONTRATO-PEDAGOGICO-GLOBAL.md`, `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md` e `38-MAPA-CURRICULAR-E-PRONTIDAO.md`;
+3. `24-CONTRATO-PEDAGOGICO-GLOBAL.md`, `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`, `38-MAPA-CURRICULAR-E-PRONTIDAO.md` e [63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md](63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md);
 4. documento da fase ativa;
 5. `STATUS.md` e registro mais recente da entrega;
 6. código atual relacionado.

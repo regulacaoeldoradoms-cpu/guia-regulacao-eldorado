@@ -36,7 +36,9 @@ Cada missão deve suportar:
 - leitura concluída;
 - prática;
 - revisão;
-- consolidado.
+- ciclos concluídos (identificador legado `consolidated`).
+
+O último estado registra três ciclos com resultado, inclusive quando a nota é zero. Não certifica domínio, espaçamento efetivo ou prontidão. A política de revisão adaptativa permanece uma decisão posterior; ver `63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md`.
 
 ### Publicação incremental
 

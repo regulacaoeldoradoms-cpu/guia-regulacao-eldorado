@@ -166,6 +166,77 @@ test('rota exige nova rodada de revisão e credita uma única vez',async t=>{
   assert.equal((await call('reviews/'+review.review_id+'/complete',{sessionId:round})).body.xpGranted,0);
 });
 
+test('três revisões atrasadas continuam disponíveis juntas e nota zero conclui apenas ciclos',async t=>{
+  const {sql,call,start,answer,lesson}=await fixture(t);
+  const normal=await start();
+  await answer(lesson,normal,[1,1,1,1]);
+  const completionStartedAt=sql.prepare("SELECT unixepoch('now') now").get().now;
+  assert.equal((await call('missions/'+lesson.id+'/complete',{sessionId:normal})).status,200);
+  const completionEndedAt=sql.prepare("SELECT unixepoch('now') now").get().now;
+  assert.equal((await call('sessions/'+normal,{durationSeconds:0},{method:'PATCH'})).status,200);
+  const initial=(await call('bootstrap')).body;
+  const initialAchievements=sql.prepare('SELECT * FROM study_achievements ORDER BY achievement_id').all();
+  const initialAttempts=sql.prepare('SELECT * FROM study_attempts ORDER BY attempt_id').all();
+  assert.equal(initial.metrics.reviewsDue,0);
+
+  const schedule=sql.prepare('SELECT cycle,unixepoch(due_at) scheduledAt FROM study_reviews ORDER BY cycle').all();
+  assert.deepEqual(schedule.map(row=>row.cycle),[1,2,3]);
+  for(const [index,row] of schedule.entries()){
+    const delay=[1,7,30][index]*86400;
+    assert.ok(row.scheduledAt>=completionStartedAt+delay && row.scheduledAt<=completionEndedAt+delay);
+  }
+  // Apenas a fixture envelhece o calendário em 40 dias; o produto mantém os prazos originais.
+  sql.prepare("UPDATE study_reviews SET due_at=datetime(due_at,'-40 days')").run();
+  const overdue=sql.prepare('SELECT review_id,cycle,due_at FROM study_reviews ORDER BY cycle').all();
+  const allDue=(await call('bootstrap')).body;
+  assert.equal(allDue.metrics.reviewsDue,3);
+  assert.deepEqual(allDue.reviews.map(review=>review.id),overdue.map(review=>review.review_id));
+
+  for(const [index,review] of overdue.entries()){
+    const sessionId=await start(lesson,review.review_id);
+    const questionIds=JSON.parse(sql.prepare('SELECT question_ids FROM study_rounds WHERE session_id=?').get(sessionId).question_ids);
+    assert.deepEqual(questionIds,lesson.questions.map(question=>question.id));
+    await answer(lesson,sessionId,[1,1,1,1]);
+    const completed=await call('reviews/'+review.review_id+'/complete',{sessionId});
+    assert.equal(completed.status,200);
+    assert.equal(completed.body.xpGranted,20);
+    const replay=await call('reviews/'+review.review_id+'/complete',{sessionId});
+    assert.equal(replay.status,200);
+    assert.equal(replay.body.xpGranted,0);
+    assert.equal((await call('sessions/'+sessionId,{durationSeconds:0},{method:'PATCH'})).status,200);
+    const round=sql.prepare('SELECT score,status FROM study_rounds WHERE session_id=?').get(sessionId);
+    assert.equal(round.score,0);
+    assert.equal(round.status,'passed');
+
+    const bootstrap=(await call('bootstrap')).body;
+    assert.equal(bootstrap.metrics.reviewsDue,2-index);
+    assert.deepEqual(bootstrap.reviews.map(item=>item.id),overdue.slice(index+1).map(item=>item.review_id));
+    assert.equal(bootstrap.progress[lesson.topicId].coverageState,3);
+    assert.equal(bootstrap.progress[lesson.topicId].completedAt,initial.progress[lesson.topicId].completedAt);
+    assert.equal(bootstrap.progress[lesson.topicId].contentVersionSeen,initial.progress[lesson.topicId].contentVersionSeen);
+    assert.equal(bootstrap.learningEvidence[lesson.topicId].scoredCycles,index+1);
+    assert.equal(bootstrap.learningEvidence[lesson.topicId].latestScore,0);
+    assert.equal(bootstrap.recentDomain.byTopic[lesson.topicId].score,0);
+    assert.equal(bootstrap.recentDomain.byTopic[lesson.topicId].retentionScore,0);
+    assert.deepEqual(bootstrap.curriculum.readiness,initial.curriculum.readiness);
+    assert.equal(bootstrap.pedagogicalStates[lesson.topicId].id,index===2?'consolidated':'review');
+    // Concluir um ciclo não reagenda nenhum dos demais.
+    assert.deepEqual(sql.prepare('SELECT review_id,cycle,due_at FROM study_reviews ORDER BY cycle').all(),overdue);
+  }
+
+  const final=(await call('bootstrap')).body;
+  assert.equal(final.pedagogicalStates[lesson.topicId].label,'Ciclos concluídos');
+  assert.match(final.pedagogicalStates[lesson.topicId].explanation,/não comprova domínio nem prontidão/);
+  assert.equal(final.metrics.xp,initial.metrics.xp+60);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_attempts').get().n,16);
+  for(const attempt of initialAttempts){
+    assert.deepEqual(sql.prepare('SELECT * FROM study_attempts WHERE attempt_id=?').get(attempt.attempt_id),attempt);
+  }
+  assert.deepEqual(sql.prepare('SELECT * FROM study_achievements ORDER BY achievement_id').all(),initialAchievements);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_assessment_rounds').get().n,0);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_assessment_answers').get().n,0);
+});
+
 test('bootstrap oferece retomada da rodada ativa com respostas já registradas',async t=>{
   const {sql,call,start,lesson}=await fixture(t);
   const id=await start(lesson);

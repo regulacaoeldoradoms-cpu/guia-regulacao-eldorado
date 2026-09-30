@@ -42,9 +42,9 @@ Estados disponíveis:
 3. Leitura concluída;
 4. Prática;
 5. Revisão;
-6. Consolidado.
+6. Ciclos concluídos (ID legado `consolidated`).
 
-“Leitura concluída” é persistida somente na transição real para prática. “Consolidado” descreve o ciclo local de revisões e não significa prontidão de prova.
+“Leitura concluída” é persistida somente na transição real para prática. “Ciclos concluídos” descreve três resultados registrados, inclusive quando todos são zero, e não comprova domínio nem prontidão de prova. Os ciclos podem vencer juntos após atraso; a política atual não garante espaçamento entre as conclusões reais. O documento 63 propõe alternativas sem aprovar reagendamento ou revisão adaptativa.
 
 ### Feedback
 **Candidato a atendido.**

@@ -66,6 +66,20 @@ test('uma repetição do mesmo ciclo usa o registro mais recente sem contar duas
   assert.equal(result.latestScore, 80);
 });
 
+test('três ciclos atrasados concluídos no mesmo dia com zero registram execução, sem validar espaçamento ou domínio', () => {
+  const result = summarizeRetentionEvidence([1,2,3].map(cycle => ({
+    cycle, score: 0, completed_at: `2026-09-30 12:0${cycle}:00`
+  })));
+  assert.equal(result.completedCycles, 3);
+  assert.equal(result.scoredCycles, 3);
+  assert.equal(result.latestScore, 0);
+  assert.equal(result.latestCycle, 3);
+  assert.equal(result.lastReviewAt, '2026-09-30 12:03:00');
+  assert.equal(result.status, 'schedule_observed');
+  assert.equal(result.label, 'Ciclos previstos observados');
+  assert.doesNotMatch(result.label, /domínio|prontidão|aprovação|consolidado/i);
+});
+
 test('última revisão segue o horário concluído mesmo se os ciclos forem finalizados fora de ordem', () => {
   const result = summarizeRetentionEvidence([
     { cycle: 1, score: 90, completed_at: '2026-09-01 12:00:00' },

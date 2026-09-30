@@ -412,10 +412,17 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
     await page.locator('#editorBlank').click();
     await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
+    // PDF.js creates the page nodes before the asynchronous rebuild is ready.
+    // Keyboard shortcuts intentionally ignore input while that operation is busy.
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('#editorUndo')).toBeEnabled();
     await page.keyboard.press('Control+Z');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('#editorRedo')).toBeEnabled();
     await page.keyboard.press('Control+Shift+Z');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
 
     await page.locator('#editorMerge').click();
     await page.locator('#editorMergePosition').selectOption('after-page');
@@ -424,6 +431,68 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await page.locator('#editorMergeAfterPage').press('Control+Z');
     await expect(page.locator('#editorMergeAfterPage')).toHaveValue('2');
 
+    finishMonitoring();
+  });
+
+  test('atalhos de histórico ignoram refazer durante rebuild e permitem após conclusão', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await page.route('**/js/document-viewer.js', async (route) => {
+      const response = await route.fetch();
+      // Hold only the completion of a real, local PDF.js rebuild. No timers or
+      // runtime changes are needed to exercise the interval seen in CI.
+      await route.fulfill({ response, body: `${await response.text()}
+        {
+          const viewer = window.PortalPdfViewer;
+          window.PortalPdfViewer = Object.freeze({ ...viewer, async open(...args) {
+            const result = await viewer.open(...args);
+            const gate = window.__centralDocsHistoryGate;
+            if (gate) {
+              gate.arrived = true;
+              await gate.promise;
+            }
+            return result;
+          } });
+        }
+      ` });
+    });
+    await openLab(page);
+    await enterEditor(page);
+    await page.locator('#editorBlank').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
+    await expect(page.locator('#editorUndo')).toBeEnabled();
+    const revision = Number(await page.locator('html').getAttribute('data-editor-revision'));
+
+    await page.evaluate(() => {
+      const gate = { arrived: false };
+      gate.promise = new Promise((resolve) => { gate.release = resolve; });
+      window.__centralDocsHistoryGate = gate;
+    });
+    try {
+      await page.keyboard.press('Control+Z');
+      await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+      await expect.poll(() => page.evaluate(() => window.__centralDocsHistoryGate.arrived)).toBe(true);
+      await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'busy');
+      await expect(page.locator('#editorRedo')).toBeDisabled();
+      await page.keyboard.press('Control+Shift+Z');
+      await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+      await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'busy');
+    } finally {
+      await page.evaluate(() => {
+        window.__centralDocsHistoryGate.release();
+        delete window.__centralDocsHistoryGate;
+      });
+    }
+
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('html')).toHaveAttribute('data-editor-revision', String(revision + 1));
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+    await expect(page.locator('#editorRedo')).toBeEnabled();
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('html')).toHaveAttribute('data-editor-revision', String(revision + 2));
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
+    await expect(page.locator('#editorRedo')).toBeDisabled();
     finishMonitoring();
   });
 

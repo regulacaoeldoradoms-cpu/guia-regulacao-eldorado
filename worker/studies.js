@@ -395,8 +395,8 @@ export function derivePedagogicalState(mission, progressEntry = {}, evidence = {
     if (evidence?.status === 'schedule_observed') {
       return Object.freeze({
         id: 'consolidated',
-        label: 'Consolidado',
-        explanation: 'Os três ciclos previstos de revisão com resultado foram observados. Isso não mede prontidão de prova.'
+        label: 'Ciclos concluídos',
+        explanation: 'Os três ciclos previstos de revisão foram concluídos com resultado registrado, independentemente da nota. Concluir ciclos não comprova domínio nem prontidão de prova.'
       });
     }
     return Object.freeze({
