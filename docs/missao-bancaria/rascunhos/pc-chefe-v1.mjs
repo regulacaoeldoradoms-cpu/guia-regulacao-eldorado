@@ -711,7 +711,7 @@ export const PCCHEFE_DRAFT = {
     {
       "id": "pcchefe.q09",
       "topicId": "draft.pcchefe",
-      "prompt": "Conta aberta em 2011 recebeu em 2025 o depósito de R$900 do caso. Em um ciclo original de rendimento desse depósito, sacam-se R$250 e depois se depositam R$100 antes do aniversário. Para remunerar apenas o saldo que permaneceu nesse ciclo original, a taxa total hipotética dada é 0,8%. Qual leitura corresponde à aula?",
+      "prompt": "Uma conta de poupança aberta em 2011 recebeu em 2025 o depósito de R$900 do caso. Em um ciclo original de rendimento desse depósito, sacam-se R$250 e depois se depositam R$100 antes do aniversário. Para remunerar apenas o saldo que permaneceu nesse ciclo original, a taxa total hipotética dada é 0,8%. Qual leitura corresponde à aula?",
       "options": [
         "A abertura em 2011 torna todo depósito antigo e preserva base de R$900 apesar do saque.",
         "A reposição eleva retroativamente a base do ciclo original a R$750.",
