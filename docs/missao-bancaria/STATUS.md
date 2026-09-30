@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~94%; Fase 2 ~26% com o contrato de feedback do primeiro bloco concluído em branches B3/B4 e C1 em desenvolvimento; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~34%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~95%; Fase 2 ~32% com feedback completo do primeiro bloco, estados pedagógicos e erros recorrentes em cadeia de validação; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~35%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -377,3 +377,40 @@ Contrato:
 - três ciclos previstos de revisão com resultado podem produzir “Consolidado”, sem alterar o campo de prontidão.
 
 Próximo requisito após C1: erros recorrentes e domínio ponderado por recência.
+
+
+## Fase 2 — Recorte C2: erros recorrentes
+
+Documento: `58-FASE2-ERROS-RECORRENTES.md`.  
+Branch: `feat/missao-bancaria-fase2-erros-recorrentes`, empilhada sobre o Recorte C1.
+
+Critério ativo:
+- a mesma questão precisa ter pelo menos **dois erros históricos**;
+- a **tentativa mais recente precisa continuar errada**;
+- uma resposta correta posterior desativa o alerta;
+- as tentativas antigas permanecem preservadas;
+- nenhum histórico é apagado ou reescrito.
+
+Implementação:
+- sem nova tabela ou migração;
+- consulta derivada de `study_attempts`;
+- `errorPatternProtocol: 1` no bootstrap;
+- total ativo em `metrics.recurringErrors`;
+- mapa por tópico em `recurringErrors`;
+- dashboard exibe total somente quando o protocolo estiver disponível;
+- cartão da missão exibe quantidade ativa por tópico;
+- Worker antigo mantém compatibilidade porque o novo card fica oculto sem protocolo.
+
+Semântica:
+- “erro recorrente” é padrão de tentativa, não domínio;
+- não altera cobertura, XP, retenção, prontidão, avaliação independente ou conquistas;
+- a correção posterior remove apenas o alerta ativo, não o registro histórico.
+
+Validação:
+- dois erros consecutivos ativam o alerta;
+- tentativa correta posterior o desativa;
+- histórico permanece no banco;
+- navegador mostra o total e o contador por missão;
+- nenhuma rota de escrita nova é criada.
+
+Próximo requisito após C2: domínio ponderado por recência, mantendo-o separado de cobertura e prontidão.
