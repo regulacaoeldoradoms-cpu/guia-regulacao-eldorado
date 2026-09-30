@@ -544,4 +544,13 @@ A interface de domínio recente foi endurecida para não converter `null` em `0`
 
 **Validação:** evidências e limitações em `64-VALIDACAO-CONTINUIDADE-FASE2.md`. O estado de merge, build, publicação e homologação permanece separado. A Fase 2 não recebeu aceite nesta continuidade.
 
-Próximos passos e critérios objetivos: `63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md`. Integração/publicação de #554–557 autorizadas em 30/09, condicionadas aos checks concluídos e ao esclarecimento do build Worker, preservando `deploy:safe`. A API de logs respondeu 403 com a autenticação existente; o comando e primeiro erro do build foram solicitados pelo dashboard no chat principal. Uma falha global intermitente da Central foi isolada à sincronização do teste e sua correção é restrita ao arquivo de teste, conforme o documento 64. Permanecem pendentes a satisfação dessas condições, homologação/aceite da Fase 2, política futura de revisões e escopo curricular a adotar. Não abrir a Fase 3 automaticamente.
+Próximos passos e critérios objetivos: `63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md`. Integração/publicação de #554–557 autorizadas em 30/09, condicionadas aos checks concluídos e ao esclarecimento do build Worker, preservando `deploy:safe`. A API de logs respondeu 403; o usuário forneceu o log pelo chat principal. A falha foi localizada na validação da identidade do Worker pelo build, antes do upload; falta conferir seu vínculo/configuração no dashboard. Não há justificativa para renomear o Worker produtivo. Uma falha global intermitente da Central foi isolada à sincronização do teste e sua correção é restrita ao arquivo de teste, conforme o documento 64. Permanecem pendentes a satisfação dessas condições, homologação/aceite da Fase 2, política futura de revisões e escopo curricular a adotar. Não abrir a Fase 3 automaticamente.
+
+## Preparo curricular independente - 30/09
+
+- Documento 65 e matriz JSON: 70 entradas históricas de Conhecimentos Bancários, com BB/CAIXA separados, fontes/versões, objetivos propostos, evidências reais e lacunas. A numeração impressa `278` e a duplicidade 39/46 da CAIXA foram preservadas explicitamente.
+- Documento 66: especificação inicial de `banking.markets-policy` e `banking.products-credit`, com pré-requisitos, sequência, exemplos planejados, critérios de revisão e etapas A-F.
+- Nenhum item foi declarado integralmente coberto apenas por referência ao SFN. Nenhuma aula, questão, forma independente ou regra de revisão foi adicionada ao runtime.
+- Próxima ação: completar a etapa A das unidades MP-01, PC-01A e PC-01, conferindo fontes, vocabulário e vínculos antes da redação de questões. Escopo a adotar, revisão normativa, autoria, publicação e aceite continuam pendentes.
+
+Este preparo não muda os 43 blocos planejados, o único bloco publicado ou a prontidão do aluno. Não equivale à abertura formal da Fase 3.
