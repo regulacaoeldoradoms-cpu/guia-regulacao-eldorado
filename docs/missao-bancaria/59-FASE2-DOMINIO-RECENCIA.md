@@ -89,6 +89,8 @@ Tópicos ainda sem tentativa:
 - não entram na média;
 - continuam explicitamente sem evidência.
 
+O frontend aplica a mesma regra: `null`/ausência de score é renderizado como **Ainda não medido** (`—` no resumo), nunca convertido por coerção numérica em `0%`.
+
 Cobertura curricular continua mostrando separadamente quantos tópicos/blocos foram realmente estudados.
 
 ## Interface

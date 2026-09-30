@@ -524,3 +524,7 @@ A matriz de fechamento foi preparada sobre a cadeia até C4, mas **não encerra 
 - aceite explícito de Wellyton.
 
 A Fase 3 permanece fechada até esse aceite.
+
+### C3 — correção de ausência de evidência
+
+A interface de domínio recente foi endurecida para não converter `null` em `0` por coerção JavaScript. Quando não existe evidência, o resumo permanece `—` / **Ainda não medido**, e o cartão da missão não exibe `0%` artificial. Há teste Chromium específico para essa condição.
