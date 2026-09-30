@@ -316,7 +316,7 @@
             <label class="telemedicine-choice absence">
               <input type="radio" name="outcomeEditChoice" value="absence">
               <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v13H3v-13a2 2 0 0 1 2-2Z"/><path d="M7 2v5M17 2v5M3 9h18"/><path d="m8.5 12.5 7 7m0-7-7 7"/></svg></span>
-              <span><strong>Falta do paciente</strong><small>Registra a falta e deixa nova solicitação pendente.</small></span>
+              <span><strong>Falta do paciente</strong><small>Registra a falta e permite definir se haverá nova solicitação.</small></span>
             </label>
           </div>
         </fieldset>
