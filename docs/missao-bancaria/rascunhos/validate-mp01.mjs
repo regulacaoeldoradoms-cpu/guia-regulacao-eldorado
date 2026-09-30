@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { MP01_DRAFT as draft, SOURCES, EDITORIAL } from './mp-01-v1.mjs';
 import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js';
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
+
+const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
+assert(['mp01', 'mp02', 'mp03'].includes(unit), 'Unidade editorial desconhecida');
+const stem = `mp-${unit.slice(2)}-v1`;
+const content = await import(`./${stem}.mjs`);
+const { SOURCES, EDITORIAL } = content;
+const draft = content[`${unit.toUpperCase()}_DRAFT`];
+const unitFlag = unit === 'mp01' ? '' : ` --unit=${unit}`;
 
 const ids = entries => entries.map(entry => entry.id);
 const unique = entries => assert.equal(new Set(ids(entries)).size, entries.length);
@@ -19,7 +26,7 @@ assert.deepEqual(ids(publishedCatalog([...PUBLISHED_MISSIONS, draft])), ids(PUBL
 assert(!PUBLISHED_MISSIONS.some(mission => mission.id === draft.id));
 const sources = new Map(SOURCES.map(source => [source.id, source]));
 for (const source of SOURCES) {
-  assert(['www.gov.br', 'www.bcb.gov.br'].includes(new URL(source.url).hostname));
+  assert(['www.gov.br', 'www.bcb.gov.br', 'www.ecb.europa.eu'].includes(new URL(source.url).hostname));
   assert(source.checkedAt === '2026-09-30' && source.version && source.locator);
 }
 for (const sourceId of draft.sourceIds) assert(sources.has(sourceId));
@@ -47,9 +54,18 @@ for (const question of draft.questions) {
 }
 assert.deepEqual([...objectives].sort(), ['O1', 'O2', 'O3', 'O4', 'O5', 'O6']);
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
+for (const calculation of content.ARITHMETIC || []) {
+  assert.equal(calculation.values.length, 2);
+  assert(calculation.values.every(Number.isFinite));
+  assert(['add', 'subtract', 'multiply', 'divide'].includes(calculation.operation));
+  const [left, right] = calculation.values;
+  if (calculation.operation === 'divide') assert.notEqual(right, 0);
+  const result = { add: () => left + right, subtract: () => left - right, multiply: () => left * right, divide: () => left / right }[calculation.operation]();
+  assert(Math.abs(result - calculation.expected) < 1e-12, calculation.label);
+}
 
 // Uma única fonte editorial; a versão legível é gerada e conferida, nunca editada em paralelo.
-let markdown = `# MP-01 — ${draft.title}\n\n**Rascunho para revisão, não publicado.** ${EDITORIAL.stage}.\n\nFonte editorial: [mp-01-v1.mjs](mp-01-v1.mjs). Regenerar com \`node docs/missao-bancaria/rascunhos/validate-mp01.mjs --render\`.\n\nObjetivo: ${draft.objective}\n\n`;
+let markdown = `# ${draft.editorialKey} — ${draft.title}\n\n**Rascunho para revisão, não publicado.** ${EDITORIAL.stage}.\n\nFonte editorial: [${stem}.mjs](${stem}.mjs). Regenerar com \`node docs/missao-bancaria/rascunhos/validate-mp01.mjs${unitFlag} --render\`.\n\nObjetivo: ${draft.objective}\n\n`;
 for (const section of draft.sections) {
   markdown += `<a id="${section.id}"></a>\n\n## ${section.heading}\n\n${section.body}\n\n`;
   if (section.sourceIds.length) markdown += `Base conceitual: ${section.sourceIds.map(id => { const source = sources.get(id); return `[${source.label}](${source.url})`; }).join('; ')}. Consulta: 30/09/2026.\n\n`;
@@ -65,10 +81,11 @@ for (const [index, question] of draft.questions.entries()) {
 }
 markdown += '## Fontes e limites editoriais\n\n' + SOURCES.map(source => `- [${source.label}](${source.url}): ${source.version}; ${source.locator}; consulta ${source.checkedAt}.`).join('\n') + '\n\n';
 markdown += EDITORIAL.limits.map(text => `- ${text}`).join('\n') + '\n';
-const output = path.join(import.meta.dirname, 'mp-01-v1.md');
+const output = path.join(import.meta.dirname, `${stem}.md`);
 if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
-const related = ['mp-01-v1.mjs', 'mp-01-v1.md', 'validate-mp01.mjs', '../68-MP01-RASCUNHO-E-REVISAO.md', '../../../PROJECT_STATE.md'];
+const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md' }[unit];
+const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
   const file = path.resolve(import.meta.dirname, relative);
@@ -83,5 +100,5 @@ for (const relative of related) {
     localLinks++;
   }
 }
-console.log(JSON.stringify({ sections: draft.sections.length, workedExamples: draft.sections.filter(section => section.type === 'worked-example').length, questions: draft.questions.length, optionRationales: rationales, objectives: [...objectives].sort(), sources: SOURCES.length, publishedCatalogUnchanged: true, markdownMatchesSource: true, limits: 'Verificação estrutural; não atesta precisão, clareza humana ou homologação do aplicativo.' }, null, 2));
+console.log(JSON.stringify({ unit, sections: draft.sections.length, workedExamples: draft.sections.filter(section => section.type === 'worked-example').length, questions: draft.questions.length, optionRationales: rationales, objectives: [...objectives].sort(), sources: SOURCES.length, arithmeticChecks: (content.ARITHMETIC || []).length, publishedCatalogUnchanged: true, markdownMatchesSource: true, limits: 'Verificação estrutural; não atesta precisão, clareza humana ou homologação do aplicativo.' }, null, 2));
 console.log(JSON.stringify({ utf8Files: related.length, localLinks }));

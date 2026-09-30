@@ -21,7 +21,7 @@ Revisão factual/editorial realizada pelo autor: comparados os contrastes com as
 
 Foram evitadas as simplificações: dívida implica sempre empréstimo bancário; banco só atua em um segmento; curtíssimo prazo sozinho classifica a operação; prestação de serviços equivale a assumir a dívida da emissora. Os casos são originais e fictícios. Não há taxa atual, cálculo de juros ou afirmação de regra normativa vigente. Liquidez está delimitada à disponibilidade para pagamentos, sem desenvolver instrumentos monetários. A cotação aparece somente como vocabulário, sem valores ou regras de contratação.
 
-**Estado A–F:** A reaproveitada; B/C/E redigidas; D revisada pelo autor, com clareza/revisão humana pendentes; F não iniciada. Não há publicação, teste com aluno, nova avaliação independente ou evidência de aprendizagem. As oito questões são prática exposta, não itens para ampliar A/B. BB/CAIXA continuam perfis históricos separados, com adoção do escopo pendente.
+**Estado A–F:** A reaproveitada; B/C/E redigidas; D revisada pelo autor e por revisão independente pontual, com duas correções aplicadas: responsabilidade pelo pagamento aos investidores na seção 4 e participantes explicitados como dois bancos na q04. Clareza/revisão humana continuam pendentes; F não iniciada. Não há publicação, teste com aluno, nova avaliação independente ou evidência de aprendizagem. As oito questões são prática exposta, não itens para ampliar A/B. BB/CAIXA continuam perfis históricos separados, com adoção do escopo pendente.
 
 ## Verificação direcionada
 
