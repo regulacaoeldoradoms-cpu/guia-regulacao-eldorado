@@ -84,3 +84,7 @@ O percurso completo revelou fundo computado branco dos dois radios mobile, oriun
 Verificação direcionada: **dois Chromium passaram**, desktop/mobile, com seis desfechos, opções condicionais, foco/seleção nativos e restante do fluxo sintético. Comparação de estilos original versus corrigido em claro/tela, escuro/tela e escuro/impressão confirmou somente a troca do fundo escuro de branco para `rgb(12, 30, 44)`; aparência, accent-color, cor, dimensões, visibilidade, pointer-events, tabIndex e disabled permaneceram iguais. Sintaxe/diff conferidos. Sem D1/produção.
 
 CI obrigatória final ainda deve terminar no SHA enviado. Não ampliar exceção raster anterior nem confundir preview legado com deploy principal protegido.
+
+### Sincronização da preferência no teste de contraste
+
+A CI em `d9edb297` passou 213/216 casos; três falharam no contraste durante troca de tema. A fixture mantinha a conta fictícia em escuro enquanto o teste aplicava claro só na página; `hydrateAccountPreferences()` reaplica a preferência da conta após 280 ms. Correção somente em `portal-dark-medical-contrast.spec.mjs`: atualizar a conta sintética via API interceptada, aplicar a preferência pelas APIs existentes e exercitar explicitamente a hidratação tardia. As mesmas asserções de seis blocos, marcadores, alertas, claro e print permanecem. **Quatro casos Chromium passaram**, desktop/mobile e conteúdo preenchido/vazio, sem espera fixa, skip ou novo CSS do Guia Médico. CI final ainda necessária no commit enviado.
