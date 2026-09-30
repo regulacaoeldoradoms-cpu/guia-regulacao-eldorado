@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 30/09/2026 — Fase 1 aceita; Fase 2 ativa, com cadeia C3/C4 conciliada em PRs draft e fechamento ainda candidato.
+Registro detalhado das entregas anteriores. Para estado atual, publicação verificada, testes reaproveitáveis e próxima ação, leia [PROJECT_STATE.md](../../PROJECT_STATE.md). Fase 1 aceita; Fase 2 permanece sem aceite humano. As pendências históricas abaixo não substituem o checkpoint atual.
 
 ## Estado e autorização
 

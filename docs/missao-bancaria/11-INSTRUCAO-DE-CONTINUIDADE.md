@@ -2,13 +2,10 @@
 
 Use este arquivo como instrução curta para qualquer nova conversa, agente ou sessão de desenvolvimento.
 
-## Ordem obrigatória de leitura
-1. `docs/missao-bancaria/00-DOSSIE-MESTRE.md`;
-2. este arquivo;
-3. `24-CONTRATO-PEDAGOGICO-GLOBAL.md`, `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`, `38-MAPA-CURRICULAR-E-PRONTIDAO.md` e [63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md](63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md);
-4. documento da fase ativa;
-5. `STATUS.md` e registro mais recente da entrega;
-6. código atual relacionado.
+## Leitura para retomar
+1. Leia [PROJECT_STATE.md](../../PROJECT_STATE.md) e as regras de [AGENTS.md](../../AGENTS.md) antes de iniciar.
+2. Consulte este arquivo e apenas os documentos/código necessários à tarefa. O Dossiê Mestre, contratos 24/26, mapa 38, critérios 63 e documento da fase continuam como referências quando pertinentes.
+3. Não reconstrua o histórico nem repita verificações ainda válidas já registradas. Atualize o checkpoint nos marcos, substituindo fatos antigos; `STATUS.md` preserva o registro detalhado anterior.
 
 ## Regra pedagógica transversal — decisão de 26/09/2026
 
@@ -44,7 +41,7 @@ Não tratar resumos, siglas expandidas, links para normas, cartões, XP ou pergu
 
 ## Instrução sugerida para nova sessão
 
-> Continue a Missão Bancária no repositório oficial. Leia o Dossiê Mestre, a Instrução de Continuidade, o Contrato Pedagógico Global, a Produção Pedagógica em Etapas, o Mapa Curricular e de Prontidão, o documento da fase ativa e o STATUS antes de alterar código. Preserve decisões aprovadas e confira a branch/main. Toda unidade deve ensinar por leitura antes de cobrar questões. Se o trabalho for grande, subdivida a produção em mais rodadas sem resumir ou omitir ensino. As questões verificam compreensão e aplicação depois da aula. Priorize a correção do material existente antes de novos mundos ou recompensas. Preserve progresso e registre implementação, revisão pedagógica, testes, publicação realmente verificada e pendências de homologação. Não antecipe fases sem necessidade.
+> Continue a Missão Bancária no repositório oficial. Comece por PROJECT_STATE.md e AGENTS.md; consulte somente as referências necessárias à tarefa. Reaproveite decisões e testes válidos registrados, confira a branch/main e preserve alterações concorrentes. Toda unidade deve ensinar por leitura antes de cobrar questões. Subdivida a produção sem resumir ou omitir ensino. Preserve progresso e atualize o checkpoint com resultados verificados e próxima ação. Não presuma aceite de fase nem autorização de publicação.
 
 ## Regra de conflito
 
