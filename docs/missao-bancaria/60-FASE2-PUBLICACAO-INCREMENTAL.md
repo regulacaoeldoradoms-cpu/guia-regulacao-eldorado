@@ -32,7 +32,7 @@ Inteiro crescente usado para distinguir a baseline de releases posteriores.
 - `editorial` — correção/clareza sem exigir refazer o conteúdo;
 - `conceptual` — mudança relevante que recomenda nova revisão quando o usuário já viu versão anterior.
 
-Metadados inválidos são erro de validação; não são silenciosamente corrigidos para um estado publicável.
+Metadados inválidos são erro de validação e também falham fechado na composição de `publishedCatalog()`; não são silenciosamente corrigidos para um estado publicável nem dependem apenas do CI para serem bloqueados.
 
 ## Baseline
 
@@ -132,7 +132,8 @@ Teste sintético:
 5. o progresso original é comparado integralmente antes/depois e permanece igual;
 6. uma quinta missão em `draft` permanece fora do catálogo;
 7. mudança editorial não pede revisão;
-8. mudança conceitual de versão já vista pede revisão.
+8. mudança conceitual de versão já vista pede revisão;
+9. metadado explícito inválido faz `publishedCatalog()` falhar fechado em runtime.
 
 ## Próximo passo
 
