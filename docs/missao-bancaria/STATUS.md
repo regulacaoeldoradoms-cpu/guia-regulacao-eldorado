@@ -504,3 +504,8 @@ Teste de aceite estrutural:
 - missão em `draft` não entra no catálogo publicado.
 
 Próximo passo depois do C4: consolidar a cadeia C1–C4 na `main`, confirmar publicação e executar a avaliação técnica/humana do critério de aceite da Fase 2 antes de encerrá-la.
+
+
+### Hardening do Recorte C4
+
+O registro de publicação foi reforçado para falhar fechado também em runtime: `publishedCatalog()` executa a validação dos metadados antes de compor o catálogo e interrompe a publicação quando houver `status`, `changeImpact`, `releaseId` ou `releaseSequence` explícitos inválidos. O teste do recorte exige essa falha; não há relaxamento de CI nem normalização silenciosa para `published`.
