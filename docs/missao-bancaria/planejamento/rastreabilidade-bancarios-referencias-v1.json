@@ -1,0 +1,4601 @@
+{
+  "schemaVersion": 1,
+  "documentaryOnly": true,
+  "phaseOpened": false,
+  "preparedOn": "2026-09-30",
+  "catalogCommit": "81f89b9eeb19dc84b77d77152f8e9fc663967585",
+  "curriculumVersion": 1,
+  "scope": "Somente Conhecimentos Bancários dos perfis históricos BB Agente Comercial e CAIXA TBN; não abrange integralmente outras disciplinas nem cargos de TI.",
+  "noCoveragePercentage": true,
+  "sources": [
+    {
+      "id": "edital.bb.2022-001.snapshot-2026-09-30",
+      "runtimeSourceId": "edital.bb.2022-001",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "referenceOnly": true,
+      "url": "https://www.bb.com.br/docs/portal/dipes/EditalSelExtern2022001.pdf",
+      "edition": "Edital 01 - 2022/001 BB, 22/12/2022",
+      "incorporatedChanges": [
+        "DOU 04/01/2023, seção 3, p.53",
+        "DOU 24/02/2023, seção 3, p.86",
+        "DOU 27/02/2023, seção 3, pp.86-87"
+      ],
+      "annex": "III",
+      "roleSection": "Agente Comercial",
+      "pages": [
+        34
+      ],
+      "verifiedAt": "2026-09-30",
+      "verification": "Leitura textual do PDF oficial via web; capa e seção específica conferidas.",
+      "currentLawVerified": false,
+      "sha256": null
+    },
+    {
+      "id": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "runtimeSourceId": "edital.caixa.2024-nm",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "referenceOnly": true,
+      "url": "https://www.caixa.gov.br/Downloads/concurso-publico-editais/EDITAL_N_01_2024_NM_DE_22_DE_FEVEREIRO_DE_2024_.pdf",
+      "edition": "Edital 01/2024/NM, 22/02/2024",
+      "incorporatedChanges": [
+        "DOU 27/02/2024, seção 3, edição 39, p.118"
+      ],
+      "annex": "IV",
+      "roleSection": "Técnico Bancário Novo",
+      "pages": [
+        33,
+        34
+      ],
+      "verifiedAt": "2026-09-30",
+      "verification": "Navegador de pesquisa apresentou loop de redirecionamento; download HTTPS direto autorizado retornou 200/application/pdf/759124 bytes; extração local e conferência visual das páginas 33–34.",
+      "currentLawVerified": false,
+      "sha256": "6ef6262ce9f0f8a1db5225d288251b1c3f3761fc8ae368f3d6c77b57ae50014b"
+    }
+  ],
+  "coverageStates": {
+    "recorte_publicado": "Cadeia real do bloco inicial, sem declaração de cobertura integral do item.",
+    "parcial_introdutorio": "Parte do ensino e alguns itens existentes; amplitude não coberta.",
+    "somente_prerequisito": "Vocabulário ou contexto; sem prática/avaliação específica suficiente.",
+    "lacuna": "Sem cadeia publicada encontrada."
+  },
+  "evidenceBundles": {
+    "SFN": {
+      "status": "recorte_publicado",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.introducao",
+          "contentVersion": 2,
+          "sectionIds": [
+            "nome",
+            "cotidiano",
+            "vocabulario",
+            "intermediacao",
+            "juros",
+            "regras",
+            "cmn",
+            "bcb",
+            "operadores",
+            "analogia",
+            "exemplo-operador",
+            "exemplo-conselho",
+            "alternativas",
+            "consulta",
+            "autoavaliacao"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.cmn",
+          "contentVersion": 2,
+          "sectionIds": [
+            "nome",
+            "papel",
+            "finalidade",
+            "diferencas",
+            "composicao",
+            "exemplo-orientacao",
+            "exemplo-composicao",
+            "glossario",
+            "resumo"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.bacen",
+          "contentVersion": 2,
+          "sectionIds": [
+            "nome",
+            "natureza",
+            "supervisao",
+            "politicas",
+            "banco-dos-bancos",
+            "circulante",
+            "exemplo-supervisao",
+            "exemplo-nomes",
+            "glossario",
+            "resumo"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.copom",
+          "contentVersion": 2,
+          "sectionIds": [
+            "nome",
+            "juros",
+            "selic",
+            "meta",
+            "composicao",
+            "relacao",
+            "exemplo-meta",
+            "exemplo-composicao",
+            "glossario",
+            "resumo"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.cvm",
+          "contentVersion": 2,
+          "sectionIds": [
+            "nome",
+            "acoes",
+            "mercado",
+            "participantes",
+            "supervisao",
+            "comparacao",
+            "exemplo-oferta",
+            "exemplo-fraude",
+            "glossario",
+            "resumo"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.operadores",
+          "contentVersion": 2,
+          "sectionIds": [
+            "papel",
+            "deposito",
+            "comercial",
+            "carteira",
+            "multiplo",
+            "outros",
+            "exemplo-papel",
+            "exemplo-carteiras",
+            "glossario",
+            "resumo"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.seguros-previdencia",
+          "contentVersion": 2,
+          "sectionIds": [
+            "seguro",
+            "susep",
+            "cnsp",
+            "previdencia-aberta",
+            "previdencia-fechada",
+            "capitalizacao",
+            "exemplo-aberto",
+            "exemplo-fechado",
+            "glossario",
+            "resumo"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.pagamentos-consorcios",
+          "contentVersion": 2,
+          "sectionIds": [
+            "spb",
+            "arranjo",
+            "instituicao",
+            "pix",
+            "spi",
+            "consorcio",
+            "exemplo-pix",
+            "exemplo-consorcio",
+            "glossario",
+            "resumo"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.sfn.01",
+        "q.sfn.02",
+        "q.sfn.03",
+        "q.cmn.01",
+        "q.cmn.02",
+        "q.cmn.03",
+        "q.bc.01",
+        "q.bc.02",
+        "q.bc.03",
+        "q.copom.01",
+        "q.copom.02",
+        "q.copom.03",
+        "q.cvm.01",
+        "q.cvm.02",
+        "q.cvm.03",
+        "q.oper.01",
+        "q.oper.02",
+        "q.oper.03",
+        "q.segprev.01",
+        "q.segprev.02",
+        "q.segprev.03",
+        "q.segprev.04",
+        "q.pag.01",
+        "q.pag.02",
+        "q.pag.03",
+        "q.pag.04",
+        "q.boss.01",
+        "q.boss.02",
+        "q.boss.03",
+        "q.boss.04",
+        "q.boss.05",
+        "q.boss.06",
+        "q.boss.07",
+        "q.boss.08",
+        "q.boss.09",
+        "q.boss.10",
+        "q.boss.11",
+        "q.boss.12"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a01",
+        "eval.sfn.a02",
+        "eval.sfn.a03",
+        "eval.sfn.a04",
+        "eval.sfn.a05",
+        "eval.sfn.a06",
+        "eval.sfn.a07",
+        "eval.sfn.a08",
+        "eval.sfn.a09",
+        "eval.sfn.a10",
+        "eval.sfn.a11",
+        "eval.sfn.a12",
+        "eval.sfn.a13",
+        "eval.sfn.a14",
+        "eval.sfn.a15",
+        "eval.sfn.a16",
+        "eval.sfn.b01",
+        "eval.sfn.b02",
+        "eval.sfn.b03",
+        "eval.sfn.b04",
+        "eval.sfn.b05",
+        "eval.sfn.b06",
+        "eval.sfn.b07",
+        "eval.sfn.b08",
+        "eval.sfn.b09",
+        "eval.sfn.b10",
+        "eval.sfn.b11",
+        "eval.sfn.b12",
+        "eval.sfn.b13",
+        "eval.sfn.b14",
+        "eval.sfn.b15",
+        "eval.sfn.b16"
+      ],
+      "limit": "Oito aulas e Chefe do bloco SFN inicial. A existência desta cadeia não certifica exaustividade do item amplo do edital nem domínio do aluno."
+    },
+    "MERCADOS": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.introducao",
+          "contentVersion": 2,
+          "sectionIds": [
+            "intermediacao",
+            "vocabulario"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.operadores",
+          "contentVersion": 2,
+          "sectionIds": [
+            "deposito",
+            "comercial"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.cvm",
+          "contentVersion": 2,
+          "sectionIds": [
+            "acoes",
+            "mercado"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.sfn.02",
+        "q.oper.02",
+        "q.cvm.01"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a10",
+        "eval.sfn.b11"
+      ],
+      "limit": "Há intermediação, crédito, depósito e capitais; faltam tratamento comparativo dos quatro mercados, operações e avaliação específica."
+    },
+    "POLITICA": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.bacen",
+          "contentVersion": 2,
+          "sectionIds": [
+            "politicas"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.copom",
+          "contentVersion": 2,
+          "sectionIds": [
+            "juros",
+            "selic",
+            "meta",
+            "relacao"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.bc.01",
+        "q.bc.03",
+        "q.copom.02",
+        "q.boss.03"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a07",
+        "eval.sfn.b07",
+        "eval.sfn.b08"
+      ],
+      "limit": "Há papel do BCB, meta Selic e transmissão inicial; não há unidade completa de instrumentos convencionais, QE, compromissadas ou depósitos remunerados."
+    },
+    "SELIC": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.copom",
+          "contentVersion": 2,
+          "sectionIds": [
+            "selic",
+            "meta"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.copom.02",
+        "q.boss.03"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a07",
+        "eval.sfn.b07",
+        "eval.sfn.b08"
+      ],
+      "limit": "Sistema/taxa/meta aparecem; operações compromissadas e depósitos remunerados continuam sem ensino/prática completos."
+    },
+    "TITULOS": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.copom",
+          "contentVersion": 2,
+          "sectionIds": [
+            "selic"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "Título público aparece como vocabulário para Selic. Não ensina orçamento, financiamento público ou gestão da dívida."
+    },
+    "PRODUTOS": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.seguros-previdencia",
+          "contentVersion": 2,
+          "sectionIds": [
+            "seguro",
+            "previdencia-aberta",
+            "previdencia-fechada",
+            "capitalizacao"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.pagamentos-consorcios",
+          "contentVersion": 2,
+          "sectionIds": [
+            "consorcio",
+            "exemplo-consorcio"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.segprev.01",
+        "q.segprev.02",
+        "q.segprev.04",
+        "q.pag.03",
+        "q.pag.04",
+        "q.boss.10"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a13",
+        "eval.sfn.a14",
+        "eval.sfn.b13",
+        "eval.sfn.b15"
+      ],
+      "limit": "Ensina noções e supervisão de alguns produtos e consórcio. Não cobre todos os produtos, contratação, custos, riscos e regras. Programas sociais e benefícios integram também a lacuna quando o vínculo for ao item 19 da CAIXA; não são atribuídos ao item 5 do BB."
+    },
+    "CAPITAIS": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.cvm",
+          "contentVersion": 2,
+          "sectionIds": [
+            "acoes",
+            "mercado",
+            "participantes",
+            "supervisao",
+            "exemplo-oferta"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.cvm.01",
+        "q.cvm.02",
+        "q.cvm.03",
+        "q.boss.04"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a09",
+        "eval.sfn.a10",
+        "eval.sfn.b09",
+        "eval.sfn.b10"
+      ],
+      "limit": "CVM, instrumentos e mercados primário/secundário têm introdução. O bloco completo e a avaliação da amplitude do item permanecem pendentes."
+    },
+    "CAMBIO": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.bacen",
+          "contentVersion": 2,
+          "sectionIds": [
+            "politicas"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "A aula define câmbio e execução de política cambial; não ensina instituições autorizadas ou operações. A questão B05 avalia o papel do BCB, não a competência completa de câmbio."
+    },
+    "INTERBANCARIO": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.bacen",
+          "contentVersion": 2,
+          "sectionIds": [
+            "banco-dos-bancos"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "O papel do banco dos bancos prepara vocabulário; não há unidade sobre instrumentos/operações do mercado interbancário."
+    },
+    "VAREJO": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.operadores",
+          "contentVersion": 2,
+          "sectionIds": [
+            "comercial",
+            "deposito"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "Operações simples de banco comercial ilustram a função; tesouraria, varejo e recuperação não têm cadeia de ensino/prática/avaliação própria."
+    },
+    "JUROS": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.introducao",
+          "contentVersion": 2,
+          "sectionIds": [
+            "juros"
+          ]
+        },
+        {
+          "missionId": "banking.sfn.copom",
+          "contentVersion": 2,
+          "sectionIds": [
+            "juros",
+            "selic"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "Há vocabulário de juros, inflação e Selic; não há curva de juros nem tratamento suficiente de taxas nominais e reais."
+    },
+    "CORRESPONDENTE": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.introducao",
+          "contentVersion": 2,
+          "sectionIds": [
+            "alternativas"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "Um parágrafo define o prestador; regulamentação, serviços e responsabilidades não formam unidade estudável completa."
+    },
+    "CONTAS": {
+      "status": "somente_prerequisito",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.operadores",
+          "contentVersion": 2,
+          "sectionIds": [
+            "deposito",
+            "comercial"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [],
+      "assessmentQuestionIds": [],
+      "limit": "Depósito à vista e banco comercial não ensinam documentação, abertura ou movimentação de contas."
+    },
+    "PIX": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.pagamentos-consorcios",
+          "contentVersion": 2,
+          "sectionIds": [
+            "pix",
+            "spi",
+            "instituicao",
+            "exemplo-pix"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.pag.02",
+        "q.boss.09"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a16"
+      ],
+      "limit": "Arranjo, instituição e SPI ensinados. Faltam regras e casos de uso mais amplos do item, com fontes versionadas e prática correspondente."
+    },
+    "SPB": {
+      "status": "parcial_introdutorio",
+      "lessonRefs": [
+        {
+          "missionId": "banking.sfn.pagamentos-consorcios",
+          "contentVersion": 2,
+          "sectionIds": [
+            "spb",
+            "arranjo",
+            "instituicao",
+            "pix",
+            "spi",
+            "exemplo-pix"
+          ]
+        }
+      ],
+      "practiceQuestionIds": [
+        "q.pag.01",
+        "q.pag.02",
+        "q.boss.08",
+        "q.boss.09"
+      ],
+      "assessmentQuestionIds": [
+        "eval.sfn.a15",
+        "eval.sfn.a16",
+        "eval.sfn.b16"
+      ],
+      "limit": "Introdução ao SPB e Pix/SPI; não certifica exaustividade das infraestruturas, participantes, riscos e liquidação do SPB."
+    }
+  },
+  "runtimeCatalogEvidence": {
+    "missions": [
+      {
+        "missionId": "banking.sfn.introducao",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "bcb.sfn",
+          "cvm.educacao.estrutura-sfn",
+          "fazenda.cmn.apresentacao"
+        ],
+        "sections": [
+          {
+            "id": "nome",
+            "type": "explanation",
+            "heading": "1. Você não precisa conhecer as siglas para começar"
+          },
+          {
+            "id": "cotidiano",
+            "type": "explanation",
+            "heading": "2. Parta de situações que você já conhece"
+          },
+          {
+            "id": "vocabulario",
+            "type": "glossary",
+            "heading": "3. Quatro palavras antes de seguir"
+          },
+          {
+            "id": "intermediacao",
+            "type": "worked-example",
+            "heading": "4. Exemplo: Ana e uma oficina"
+          },
+          {
+            "id": "juros",
+            "type": "explanation",
+            "heading": "5. E o que são juros?"
+          },
+          {
+            "id": "regras",
+            "type": "explanation",
+            "heading": "6. Por que não basta existir um banco?"
+          },
+          {
+            "id": "cmn",
+            "type": "explanation",
+            "heading": "7. Órgãos normativos: as orientações gerais"
+          },
+          {
+            "id": "bcb",
+            "type": "explanation",
+            "heading": "8. Entidades supervisoras: fiscalização e execução"
+          },
+          {
+            "id": "operadores",
+            "type": "explanation",
+            "heading": "9. Operadores: os serviços e as operações"
+          },
+          {
+            "id": "analogia",
+            "type": "worked-example",
+            "heading": "10. Uma comparação para organizar a memória"
+          },
+          {
+            "id": "exemplo-operador",
+            "type": "worked-example",
+            "heading": "11. Exemplo resolvido: observe o verbo"
+          },
+          {
+            "id": "exemplo-conselho",
+            "type": "worked-example",
+            "heading": "12. Exemplo resolvido: não troque as instituições"
+          },
+          {
+            "id": "alternativas",
+            "type": "glossary",
+            "heading": "13. Palavras que também podem aparecer nas alternativas"
+          },
+          {
+            "id": "consulta",
+            "type": "summary",
+            "heading": "14. Seu resumo de consulta"
+          },
+          {
+            "id": "autoavaliacao",
+            "type": "summary",
+            "heading": "15. Confira se a ideia ficou clara antes das questões"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.sfn.papeis.v1",
+            "anchorSectionId": "autoavaliacao",
+            "teachingSectionIds": [
+              "regras",
+              "cmn",
+              "bcb",
+              "operadores"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.sfn.norma.v1",
+            "anchorSectionId": "autoavaliacao",
+            "teachingSectionIds": [
+              "cmn",
+              "bcb",
+              "exemplo-operador"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.sfn.intermediacao.v1",
+            "anchorSectionId": "autoavaliacao",
+            "teachingSectionIds": [
+              "vocabulario",
+              "intermediacao",
+              "operadores"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.sfn.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "regras"
+              },
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "cmn"
+              }
+            ]
+          },
+          {
+            "id": "q.sfn.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "intermediacao"
+              },
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "operadores"
+              }
+            ]
+          },
+          {
+            "id": "q.sfn.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "cmn"
+              },
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "bcb"
+              },
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "exemplo-conselho"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.cmn",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "bcb.cmn",
+          "fazenda.cmn.apresentacao",
+          "planalto.bcb.lc179"
+        ],
+        "sections": [
+          {
+            "id": "nome",
+            "type": "explanation",
+            "heading": "1. O nome antes da sigla"
+          },
+          {
+            "id": "papel",
+            "type": "explanation",
+            "heading": "2. O que significa formular a política da moeda e do crédito?"
+          },
+          {
+            "id": "finalidade",
+            "type": "explanation",
+            "heading": "3. Por que essas orientações são necessárias?"
+          },
+          {
+            "id": "diferencas",
+            "type": "explanation",
+            "heading": "4. Conselho, Banco Central e banco comercial"
+          },
+          {
+            "id": "composicao",
+            "type": "explanation",
+            "heading": "5. Quem participa do conselho?"
+          },
+          {
+            "id": "exemplo-orientacao",
+            "type": "worked-example",
+            "heading": "6. Exemplo resolvido: orientação geral ou atendimento?"
+          },
+          {
+            "id": "exemplo-composicao",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: participante não é presidente"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "8. Vocabulário de consulta"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "9. O que levar para a prática"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.cmn.escala.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "papel",
+              "diferencas",
+              "exemplo-orientacao"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.cmn.composicao.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "composicao",
+              "exemplo-composicao",
+              "glossario"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.cmn.metas.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "diferencas",
+              "papel"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.cmn.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "nome"
+              },
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "papel"
+              },
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "diferencas"
+              }
+            ]
+          },
+          {
+            "id": "q.cmn.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "composicao"
+              },
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "exemplo-composicao"
+              }
+            ]
+          },
+          {
+            "id": "q.cmn.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "papel"
+              },
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "exemplo-orientacao"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.bacen",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "bcb.competencias",
+          "bcb.sfn",
+          "planalto.bcb.lc179"
+        ],
+        "sections": [
+          {
+            "id": "nome",
+            "type": "explanation",
+            "heading": "1. Banco Central: nome, abreviações e função"
+          },
+          {
+            "id": "natureza",
+            "type": "explanation",
+            "heading": "2. O que é uma autarquia?"
+          },
+          {
+            "id": "supervisao",
+            "type": "explanation",
+            "heading": "3. O que significa supervisionar?"
+          },
+          {
+            "id": "politicas",
+            "type": "explanation",
+            "heading": "4. Execução das políticas: traduzindo as palavras"
+          },
+          {
+            "id": "banco-dos-bancos",
+            "type": "explanation",
+            "heading": "5. Por que a expressão banco dos bancos?"
+          },
+          {
+            "id": "circulante",
+            "type": "explanation",
+            "heading": "6. Meio circulante sem mistério"
+          },
+          {
+            "id": "exemplo-supervisao",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: identifique a atividade"
+          },
+          {
+            "id": "exemplo-nomes",
+            "type": "worked-example",
+            "heading": "8. Exemplo resolvido: quando a palavra banco engana"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "9. Consulta rápida de termos"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "10. Antes das questões"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.bcb.nomes.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "nome",
+              "supervisao",
+              "exemplo-nomes"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.bcb.precos.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "politicas"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.bcb.escopo.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "supervisao",
+              "exemplo-supervisao"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.bc.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "supervisao"
+              },
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "politicas"
+              }
+            ]
+          },
+          {
+            "id": "q.bc.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "banco-dos-bancos"
+              }
+            ]
+          },
+          {
+            "id": "q.bc.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "politicas"
+              },
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "resumo"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.copom",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "bcb.copom",
+          "planalto.bcb.lc179"
+        ],
+        "sections": [
+          {
+            "id": "nome",
+            "type": "explanation",
+            "heading": "1. O nome completo do Copom"
+          },
+          {
+            "id": "juros",
+            "type": "explanation",
+            "heading": "2. Primeiro compreenda juros e inflação"
+          },
+          {
+            "id": "selic",
+            "type": "explanation",
+            "heading": "3. O que é a Selic?"
+          },
+          {
+            "id": "meta",
+            "type": "explanation",
+            "heading": "4. O que o Copom decide?"
+          },
+          {
+            "id": "composicao",
+            "type": "explanation",
+            "heading": "5. Quem participa?"
+          },
+          {
+            "id": "relacao",
+            "type": "explanation",
+            "heading": "6. Como isso pode aparecer no cotidiano?"
+          },
+          {
+            "id": "exemplo-meta",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: encontre a decisão descrita"
+          },
+          {
+            "id": "exemplo-composicao",
+            "type": "worked-example",
+            "heading": "8. Exemplo resolvido: compare os integrantes"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "9. Glossário desta aula"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "10. Prepare sua própria explicação"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.copom.contrato.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "meta",
+              "exemplo-meta",
+              "resumo"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.copom.tres-sentidos.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "selic",
+              "meta",
+              "glossario"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.copom.efeito.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "juros",
+              "relacao",
+              "meta"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.copom.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "nome"
+              }
+            ]
+          },
+          {
+            "id": "q.copom.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "selic"
+              },
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "meta"
+              }
+            ]
+          },
+          {
+            "id": "q.copom.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "composicao"
+              },
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "exemplo-composicao"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.cvm",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "cvm.papel",
+          "cvm.competencia",
+          "planalto.cvm.6385",
+          "planalto.sa.6404"
+        ],
+        "sections": [
+          {
+            "id": "nome",
+            "type": "explanation",
+            "heading": "1. Comissão de Valores Mobiliários, por extenso"
+          },
+          {
+            "id": "acoes",
+            "type": "explanation",
+            "heading": "2. Ação: uma participação, não um empréstimo"
+          },
+          {
+            "id": "mercado",
+            "type": "explanation",
+            "heading": "3. O que significa mercado de capitais?"
+          },
+          {
+            "id": "participantes",
+            "type": "explanation",
+            "heading": "4. Traduzindo os participantes"
+          },
+          {
+            "id": "supervisao",
+            "type": "explanation",
+            "heading": "5. O que a CVM faz nesse ambiente?"
+          },
+          {
+            "id": "comparacao",
+            "type": "explanation",
+            "heading": "6. CVM e Banco Central: observe o assunto"
+          },
+          {
+            "id": "exemplo-oferta",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: empresa que busca investidores"
+          },
+          {
+            "id": "exemplo-fraude",
+            "type": "worked-example",
+            "heading": "8. Exemplo resolvido: investigar não é prometer lucro"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "9. Termos para consultar"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "10. Da compreensão para as questões"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.cvm.destino.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "acoes",
+              "mercado",
+              "exemplo-oferta"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.cvm.participacao-divida.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "nome",
+              "acoes",
+              "resumo"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.cvm.fiscalizacao-risco.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "participantes",
+              "supervisao",
+              "exemplo-fraude"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.cvm.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "nome"
+              },
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "mercado"
+              }
+            ]
+          },
+          {
+            "id": "q.cvm.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "participantes"
+              }
+            ]
+          },
+          {
+            "id": "q.cvm.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "supervisao"
+              },
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "exemplo-oferta"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.operadores",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "bcb.sfn",
+          "bcb.supervisionadas",
+          "cmn.bancos.5060",
+          "bcb.bancos-multiplos.educacional",
+          "planalto.pagamentos.12865",
+          "cvm.educacao.estrutura-sfn"
+        ],
+        "sections": [
+          {
+            "id": "papel",
+            "type": "explanation",
+            "heading": "1. Operador é quem realiza as atividades"
+          },
+          {
+            "id": "deposito",
+            "type": "explanation",
+            "heading": "2. O que é um depósito à vista?"
+          },
+          {
+            "id": "comercial",
+            "type": "explanation",
+            "heading": "3. Banco comercial e crédito"
+          },
+          {
+            "id": "carteira",
+            "type": "explanation",
+            "heading": "4. Carteira não é uma lista de clientes, neste assunto"
+          },
+          {
+            "id": "multiplo",
+            "type": "explanation",
+            "heading": "5. Como reconhecer um banco múltiplo?"
+          },
+          {
+            "id": "outros",
+            "type": "explanation",
+            "heading": "6. Outros participantes sem misturar funções"
+          },
+          {
+            "id": "exemplo-papel",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: o banco que recebe um depósito"
+          },
+          {
+            "id": "exemplo-carteiras",
+            "type": "worked-example",
+            "heading": "8. Exemplo resolvido: aplique duas condições"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "9. Vocabulário operacional"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "10. O que conferir antes da minibatalha"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.oper.canais.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "carteira",
+              "multiplo",
+              "resumo"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.oper.papel.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "papel",
+              "comercial",
+              "exemplo-papel"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.oper.natureza.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "outros",
+              "papel"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.oper.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "papel"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "exemplo-papel"
+              }
+            ]
+          },
+          {
+            "id": "q.oper.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "deposito"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "comercial"
+              }
+            ]
+          },
+          {
+            "id": "q.oper.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "carteira"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "multiplo"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "exemplo-carteiras"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.seguros-previdencia",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "susep.sobre",
+          "susep.previdencia-aberta",
+          "previc.como-participar",
+          "previc.missao",
+          "planalto.previdencia.109",
+          "susep.faq.seguros.premio"
+        ],
+        "sections": [
+          {
+            "id": "seguro",
+            "type": "explanation",
+            "heading": "1. Antes dos supervisores, entenda seguro"
+          },
+          {
+            "id": "susep",
+            "type": "explanation",
+            "heading": "2. SUSEP: nome e campo de atuação"
+          },
+          {
+            "id": "cnsp",
+            "type": "explanation",
+            "heading": "3. CNSP: não é outro nome para SUSEP"
+          },
+          {
+            "id": "previdencia-aberta",
+            "type": "explanation",
+            "heading": "4. Previdência complementar aberta"
+          },
+          {
+            "id": "previdencia-fechada",
+            "type": "explanation",
+            "heading": "5. Previdência complementar fechada"
+          },
+          {
+            "id": "capitalizacao",
+            "type": "explanation",
+            "heading": "6. Capitalização também tem regras próprias"
+          },
+          {
+            "id": "exemplo-aberto",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: identifique a modalidade primeiro"
+          },
+          {
+            "id": "exemplo-fechado",
+            "type": "worked-example",
+            "heading": "8. Exemplo resolvido: vínculo com uma empresa"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "9. Siglas e termos para consulta"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "10. Organize sem decorar uma lista solta"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.segprev.premio.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "seguro",
+              "glossario"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.segprev.coletivo.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "previdencia-aberta",
+              "previdencia-fechada",
+              "exemplo-fechado"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.segprev.canal.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "capitalizacao",
+              "cnsp",
+              "resumo"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.segprev.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "susep"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "capitalizacao"
+              }
+            ]
+          },
+          {
+            "id": "q.segprev.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "previdencia-fechada"
+              }
+            ]
+          },
+          {
+            "id": "q.segprev.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "cnsp"
+              }
+            ]
+          },
+          {
+            "id": "q.segprev.04",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "previdencia-aberta"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "exemplo-aberto"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.pagamentos-consorcios",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "edital.bb.2022-001",
+          "edital.caixa.2024-nm",
+          "bcb.spb",
+          "bcb.instituicao-pagamento",
+          "bcb.spi",
+          "bcb.consorcio",
+          "planalto.pagamentos.12865",
+          "planalto.consorcios.11795"
+        ],
+        "sections": [
+          {
+            "id": "spb",
+            "type": "explanation",
+            "heading": "1. Pagamento tem infraestrutura por trás"
+          },
+          {
+            "id": "arranjo",
+            "type": "explanation",
+            "heading": "2. Arranjo de pagamento e instituição não são a mesma coisa"
+          },
+          {
+            "id": "instituicao",
+            "type": "explanation",
+            "heading": "3. Instituição de pagamento não é automaticamente banco"
+          },
+          {
+            "id": "pix",
+            "type": "explanation",
+            "heading": "4. Pix: o serviço que você reconhece"
+          },
+          {
+            "id": "spi",
+            "type": "explanation",
+            "heading": "5. SPI: a infraestrutura de liquidação"
+          },
+          {
+            "id": "consorcio",
+            "type": "explanation",
+            "heading": "6. Consórcio: dinheiro organizado em grupo"
+          },
+          {
+            "id": "exemplo-pix",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: da tela à liquidação"
+          },
+          {
+            "id": "exemplo-consorcio",
+            "type": "worked-example",
+            "heading": "8. Exemplo resolvido: de onde vêm os recursos?"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "9. Consulta rápida"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "10. Confira antes de responder"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.pag.arranjo.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "arranjo",
+              "spi",
+              "exemplo-pix"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.pag.aplicativo.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "instituicao",
+              "glossario"
+            ],
+            "originRefs": []
+          },
+          {
+            "id": "apply.pag.consorcio.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "consorcio",
+              "exemplo-consorcio"
+            ],
+            "originRefs": []
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.pag.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "instituicao"
+              }
+            ]
+          },
+          {
+            "id": "q.pag.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "pix"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "spi"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "exemplo-pix"
+              }
+            ]
+          },
+          {
+            "id": "q.pag.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "consorcio"
+              }
+            ]
+          },
+          {
+            "id": "q.pag.04",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "consorcio"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "exemplo-consorcio"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "missionId": "banking.sfn.boss",
+        "contentVersion": 2,
+        "publication": {
+          "status": "published",
+          "releaseId": "sfn-foundation-r1",
+          "releaseSequence": 1,
+          "changeImpact": "baseline"
+        },
+        "sourceIds": [
+          "bcb.sfn",
+          "bcb.cmn",
+          "bcb.competencias",
+          "bcb.copom",
+          "cvm.competencia",
+          "cmn.bancos.5060",
+          "susep.sobre",
+          "previc.missao",
+          "bcb.spb",
+          "bcb.instituicao-pagamento",
+          "bcb.spi",
+          "bcb.consorcio",
+          "planalto.cvm.6385",
+          "planalto.previdencia.109",
+          "planalto.pagamentos.12865",
+          "planalto.consorcios.11795",
+          "planalto.bcb.lc179"
+        ],
+        "sections": [
+          {
+            "id": "preparacao",
+            "type": "explanation",
+            "heading": "1. Material de revisão antes do desafio"
+          },
+          {
+            "id": "mapa-monetario",
+            "type": "explanation",
+            "heading": "2. Diretrizes, execução e decisão de juros"
+          },
+          {
+            "id": "mapa-capitais",
+            "type": "explanation",
+            "heading": "3. Valores mobiliários e operadores"
+          },
+          {
+            "id": "mapa-seguros",
+            "type": "explanation",
+            "heading": "4. Seguros e previdência"
+          },
+          {
+            "id": "mapa-pagamentos",
+            "type": "explanation",
+            "heading": "5. Pagamentos e consórcios"
+          },
+          {
+            "id": "exemplo",
+            "type": "worked-example",
+            "heading": "6. Exemplo resolvido: uma pergunta, três passos"
+          },
+          {
+            "id": "contraste",
+            "type": "worked-example",
+            "heading": "7. Exemplo resolvido: mude uma palavra e reavalie"
+          },
+          {
+            "id": "glossario",
+            "type": "glossary",
+            "heading": "8. Vocabulário de apoio"
+          },
+          {
+            "id": "resumo",
+            "type": "summary",
+            "heading": "9. Prepare-se sem transformar erro em punição"
+          }
+        ],
+        "formativeTasks": [
+          {
+            "id": "apply.boss.funcoes.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "mapa-monetario",
+              "mapa-capitais",
+              "glossario"
+            ],
+            "originRefs": [
+              {
+                "missionId": "banking.sfn.introducao",
+                "sectionId": "operadores"
+              },
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "papel"
+              },
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "politicas"
+              },
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "meta"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "papel"
+              }
+            ]
+          },
+          {
+            "id": "apply.boss.segmentos.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "mapa-capitais",
+              "mapa-seguros",
+              "exemplo",
+              "contraste"
+            ],
+            "originRefs": [
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "supervisao"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "previdencia-aberta"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "previdencia-fechada"
+              }
+            ]
+          },
+          {
+            "id": "apply.boss.pagamento-grupo.v1",
+            "anchorSectionId": "resumo",
+            "teachingSectionIds": [
+              "mapa-pagamentos",
+              "glossario",
+              "resumo"
+            ],
+            "originRefs": [
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "spi"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "consorcio"
+              }
+            ]
+          }
+        ],
+        "scoredQuestions": [
+          {
+            "id": "q.boss.01",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-monetario"
+              },
+              {
+                "missionId": "banking.sfn.cmn",
+                "sectionId": "papel"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.02",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-monetario"
+              },
+              {
+                "missionId": "banking.sfn.bacen",
+                "sectionId": "politicas"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.03",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-monetario"
+              },
+              {
+                "missionId": "banking.sfn.copom",
+                "sectionId": "meta"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.04",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-capitais"
+              },
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "exemplo"
+              },
+              {
+                "missionId": "banking.sfn.cvm",
+                "sectionId": "mercado"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.05",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-capitais"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "multiplo"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.06",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-seguros"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "susep"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.07",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-seguros"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "previdencia-fechada"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.08",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-pagamentos"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "instituicao"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.09",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-pagamentos"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "spi"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.10",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-pagamentos"
+              },
+              {
+                "missionId": "banking.sfn.pagamentos-consorcios",
+                "sectionId": "consorcio"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.11",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-seguros"
+              },
+              {
+                "missionId": "banking.sfn.seguros-previdencia",
+                "sectionId": "previdencia-aberta"
+              }
+            ]
+          },
+          {
+            "id": "q.boss.12",
+            "teachingRefs": [
+              {
+                "missionId": "banking.sfn.boss",
+                "sectionId": "mapa-capitais"
+              },
+              {
+                "missionId": "banking.sfn.operadores",
+                "sectionId": "papel"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "assessmentVersion": 2,
+    "assessmentContentVersion": 2,
+    "assessmentQuestions": [
+      {
+        "id": "eval.sfn.a01",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.classificacao-funcional"
+        ],
+        "primaryLessonId": "banking.sfn.introducao",
+        "sourceIds": [
+          "bcb.sfn"
+        ],
+        "teaches": [
+          "“Antes dos nomes, entenda a lógica” + “Três perguntas que resolvem muita questão”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a02",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.classificacao-funcional"
+        ],
+        "primaryLessonId": "banking.sfn.introducao",
+        "sourceIds": [
+          "bcb.sfn"
+        ],
+        "teaches": [
+          "“Três perguntas que resolvem muita questão”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a03",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.cmn-diretrizes"
+        ],
+        "primaryLessonId": "banking.sfn.cmn",
+        "sourceIds": [
+          "bcb.cmn"
+        ],
+        "teaches": [
+          "“O órgão superior” + “O que lembrar para prova”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a04",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.cmn-diretrizes"
+        ],
+        "primaryLessonId": "banking.sfn.cmn",
+        "sourceIds": [
+          "fazenda.cmn.apresentacao"
+        ],
+        "teaches": [
+          "“Composição atual”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a05",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.bcb-execucao-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.bacen",
+        "sourceIds": [
+          "bcb.competencias",
+          "bcb.sfn"
+        ],
+        "teaches": [
+          "“A ponte entre diretriz e execução” + “Pegadinha clássica”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a06",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.bcb-execucao-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.bacen",
+        "sourceIds": [
+          "bcb.competencias"
+        ],
+        "teaches": [
+          "seção `banco-dos-bancos`"
+        ]
+      },
+      {
+        "id": "eval.sfn.a07",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.copom-politica-monetaria"
+        ],
+        "primaryLessonId": "banking.sfn.copom",
+        "sourceIds": [
+          "bcb.copom"
+        ],
+        "teaches": [
+          "“A decisão central”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a08",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.copom-politica-monetaria"
+        ],
+        "primaryLessonId": "banking.sfn.copom",
+        "sourceIds": [
+          "bcb.copom"
+        ],
+        "teaches": [
+          "seções `nome` e `composicao`"
+        ]
+      },
+      {
+        "id": "eval.sfn.a09",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.cvm-valores-mobiliarios"
+        ],
+        "primaryLessonId": "banking.sfn.cvm",
+        "sourceIds": [
+          "cvm.papel",
+          "cvm.competencia"
+        ],
+        "teaches": [
+          "“O território da CVM” + “CVM não é Banco Central”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a10",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.cvm-valores-mobiliarios"
+        ],
+        "primaryLessonId": "banking.sfn.cvm",
+        "sourceIds": [
+          "cvm.competencia",
+          "bcb.supervisionadas"
+        ],
+        "teaches": [
+          "“CVM não é Banco Central”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a11",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.operadores-instituicoes"
+        ],
+        "primaryLessonId": "banking.sfn.operadores",
+        "sourceIds": [
+          "cmn.bancos.5060"
+        ],
+        "teaches": [
+          "seções `carteira`, `multiplo` e `exemplo-carteiras`"
+        ]
+      },
+      {
+        "id": "eval.sfn.a12",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.operadores-instituicoes"
+        ],
+        "primaryLessonId": "banking.sfn.operadores",
+        "sourceIds": [
+          "bcb.supervisionadas",
+          "bcb.sfn"
+        ],
+        "teaches": [
+          "“Não confunda operador com supervisor”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a13",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.seguros-previdencia-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.seguros-previdencia",
+        "sourceIds": [
+          "susep.previdencia-aberta",
+          "previc.como-participar"
+        ],
+        "teaches": [
+          "“Previdência aberta e fechada não são a mesma coisa”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a14",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.seguros-previdencia-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.seguros-previdencia",
+        "sourceIds": [
+          "susep.sobre"
+        ],
+        "teaches": [
+          "“Capitalização entra no mesmo radar da SUSEP”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a15",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.pagamentos-consorcios"
+        ],
+        "primaryLessonId": "banking.sfn.pagamentos-consorcios",
+        "sourceIds": [
+          "bcb.instituicao-pagamento"
+        ],
+        "teaches": [
+          "“Instituição de pagamento não é banco”"
+        ]
+      },
+      {
+        "id": "eval.sfn.a16",
+        "formId": "A",
+        "competencyIds": [
+          "sfn.pagamentos-consorcios"
+        ],
+        "primaryLessonId": "banking.sfn.pagamentos-consorcios",
+        "sourceIds": [
+          "bcb.spi"
+        ],
+        "teaches": [
+          "“Pix e SPI”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b01",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.classificacao-funcional"
+        ],
+        "primaryLessonId": "banking.sfn.introducao",
+        "sourceIds": [
+          "bcb.sfn"
+        ],
+        "teaches": [
+          "“Antes dos nomes, entenda a lógica”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b02",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.classificacao-funcional"
+        ],
+        "primaryLessonId": "banking.sfn.introducao",
+        "sourceIds": [
+          "bcb.sfn"
+        ],
+        "teaches": [
+          "“Três perguntas que resolvem muita questão”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b03",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.cmn-diretrizes"
+        ],
+        "primaryLessonId": "banking.sfn.cmn",
+        "sourceIds": [
+          "bcb.cmn"
+        ],
+        "teaches": [
+          "“O que lembrar para prova”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b04",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.cmn-diretrizes"
+        ],
+        "primaryLessonId": "banking.sfn.cmn",
+        "sourceIds": [
+          "fazenda.cmn.apresentacao"
+        ],
+        "teaches": [
+          "“Composição atual”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b05",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.bcb-execucao-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.bacen",
+        "sourceIds": [
+          "bcb.competencias"
+        ],
+        "teaches": [
+          "“Funções que aparecem em prova”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b06",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.bcb-execucao-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.bacen",
+        "sourceIds": [
+          "bcb.sfn",
+          "bcb.competencias"
+        ],
+        "teaches": [
+          "“Pegadinha clássica”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b07",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.copom-politica-monetaria"
+        ],
+        "primaryLessonId": "banking.sfn.copom",
+        "sourceIds": [
+          "bcb.copom"
+        ],
+        "teaches": [
+          "seções `selic`, `meta` e `relacao`"
+        ]
+      },
+      {
+        "id": "eval.sfn.b08",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.copom-politica-monetaria"
+        ],
+        "primaryLessonId": "banking.sfn.copom",
+        "sourceIds": [
+          "bcb.copom"
+        ],
+        "teaches": [
+          "seções `selic` e `meta`"
+        ]
+      },
+      {
+        "id": "eval.sfn.b09",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.cvm-valores-mobiliarios"
+        ],
+        "primaryLessonId": "banking.sfn.cvm",
+        "sourceIds": [
+          "cvm.papel",
+          "cvm.competencia"
+        ],
+        "teaches": [
+          "“Quem aparece sob sua supervisão”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b10",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.cvm-valores-mobiliarios"
+        ],
+        "primaryLessonId": "banking.sfn.cvm",
+        "sourceIds": [
+          "cvm.competencia"
+        ],
+        "teaches": [
+          "“Quem aparece sob sua supervisão”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b11",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.operadores-instituicoes"
+        ],
+        "primaryLessonId": "banking.sfn.operadores",
+        "sourceIds": [
+          "cmn.bancos.5060",
+          "bcb.supervisionadas"
+        ],
+        "teaches": [
+          "“Banco comercial e banco múltiplo”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b12",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.operadores-instituicoes"
+        ],
+        "primaryLessonId": "banking.sfn.operadores",
+        "sourceIds": [
+          "bcb.sfn",
+          "bcb.supervisionadas"
+        ],
+        "teaches": [
+          "“A pergunta de prova” + “Não confunda operador com supervisor”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b13",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.seguros-previdencia-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.seguros-previdencia",
+        "sourceIds": [
+          "susep.previdencia-aberta",
+          "previc.missao"
+        ],
+        "teaches": [
+          "“Previdência aberta e fechada não são a mesma coisa”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b14",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.seguros-previdencia-supervisao"
+        ],
+        "primaryLessonId": "banking.sfn.seguros-previdencia",
+        "sourceIds": [
+          "susep.sobre"
+        ],
+        "teaches": [
+          "“CNSP e SUSEP” + “Mapa mental”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b15",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.pagamentos-consorcios"
+        ],
+        "primaryLessonId": "banking.sfn.pagamentos-consorcios",
+        "sourceIds": [
+          "bcb.consorcio"
+        ],
+        "teaches": [
+          "“Consórcio é autofinanciamento”"
+        ]
+      },
+      {
+        "id": "eval.sfn.b16",
+        "formId": "B",
+        "competencyIds": [
+          "sfn.pagamentos-consorcios"
+        ],
+        "primaryLessonId": "banking.sfn.pagamentos-consorcios",
+        "sourceIds": [
+          "bcb.spb"
+        ],
+        "teaches": [
+          "“Sistema de Pagamentos Brasileiro”"
+        ]
+      }
+    ],
+    "sourceRecords": [
+      {
+        "id": "edital.bb.2022-001",
+        "label": "Banco do Brasil — Seleção Externa 2022/001",
+        "url": "https://www.bb.com.br/docs/portal/dipes/EditalSelExtern2022001.pdf",
+        "checkedAt": "2026-09-25",
+        "kind": "edital"
+      },
+      {
+        "id": "edital.caixa.2024-nm",
+        "label": "CAIXA — Edital nº 01/2024/NM",
+        "url": "https://www.caixa.gov.br/Downloads/concurso-publico-editais/EDITAL_N_01_2024_NM_DE_22_DE_FEVEREIRO_DE_2024_.pdf",
+        "checkedAt": "2026-09-25",
+        "kind": "edital"
+      },
+      {
+        "id": "bcb.sfn",
+        "label": "Banco Central — Sistema Financeiro Nacional",
+        "url": "https://www.bcb.gov.br/estabilidadefinanceira/sfn",
+        "checkedAt": "2026-09-25",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.cmn",
+        "label": "Banco Central — Secretaria do CMN",
+        "url": "https://www.bcb.gov.br/acessoinformacao/cmn",
+        "checkedAt": "2026-09-25",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.competencias",
+        "label": "Banco Central — Competências do Banco Central",
+        "url": "https://www.bcb.gov.br/meubc/faqs/p/competencias-do-banco-central-do-brasil",
+        "checkedAt": "2026-09-25",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.copom",
+        "label": "Banco Central — Resolução BCB nº 61 / Copom",
+        "url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=61&tipo=Resolu%C3%A7%C3%A3o+BCB",
+        "checkedAt": "2026-09-25",
+        "kind": "norma-oficial"
+      },
+      {
+        "id": "cvm.papel",
+        "label": "CVM — Qual o papel da CVM?",
+        "url": "https://www.gov.br/cvm/pt-br/acesso-a-informacao-cvm/perguntas-frequentes-da-cvm/teste-assunto/teste-combo-assunto",
+        "checkedAt": "2026-09-25",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "cvm.competencia",
+        "label": "CVM — Mandato Legal",
+        "url": "https://www.gov.br/cvm/pt-br/acesso-a-informacao-cvm/institucional/competencia",
+        "checkedAt": "2026-09-25",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.supervisionadas",
+        "label": "Banco Central — Instituições que o BC supervisiona",
+        "url": "https://www.bcb.gov.br/meubc/faqs/p/instituicoesqueobancocentralsupervisiona",
+        "checkedAt": "2026-09-25",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "cmn.bancos.5060",
+        "label": "CMN — Resolução nº 5.060/2023, versão vigente",
+        "url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=5060&tipo=Resolu%C3%A7%C3%A3o+CMN",
+        "checkedAt": "2026-09-25",
+        "kind": "norma-oficial"
+      },
+      {
+        "id": "susep.sobre",
+        "label": "SUSEP — competências e mercados supervisionados",
+        "url": "https://www.gov.br/susep/pt-br/acesso-a-informacao/institucional/sobre-a-susep",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "susep.previdencia-aberta",
+        "label": "SUSEP — Previdência Complementar Aberta",
+        "url": "https://www.gov.br/susep/pt-br/copy_of_planos-e-produtos/previdencia-complementar-aberta",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "previc.como-participar",
+        "label": "PREVIC — Previdência Complementar Fechada",
+        "url": "https://www.gov.br/previc/pt-br/licenciamento-e-habilitacao/como-participar",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "previc.missao",
+        "label": "PREVIC — missão institucional",
+        "url": "https://www.gov.br/previc/pt-br/acesso-a-informacao-1/institucional/missao-visao-e-valores",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.spb",
+        "label": "Banco Central — Sistema de Pagamentos Brasileiro",
+        "url": "https://www.bcb.gov.br/estabilidadefinanceira/spb",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.instituicao-pagamento",
+        "label": "Banco Central — Instituições de pagamento",
+        "url": "https://www.bcb.gov.br/estabilidadefinanceira/instituicaopagamento",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.spi",
+        "label": "Banco Central — Sistema de Pagamentos Instantâneos",
+        "url": "https://www.bcb.gov.br/estabilidadefinanceira/sistemapagamentosinstantaneos",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "bcb.consorcio",
+        "label": "Banco Central — FAQ Consórcio",
+        "url": "https://www.bcb.gov.br/meubc/faqs/s/consorcio",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "cvm.educacao.estrutura-sfn",
+        "label": "Portal do Investidor — estrutura e funções do Sistema Financeiro Nacional",
+        "url": "https://www.gov.br/investidor/pt-br/investir/como-investir/conheca-o-mercado-de-capitais/sistema-financeiro-nacional/",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "fazenda.cmn.apresentacao",
+        "label": "Ministério da Fazenda — Conselho Monetário Nacional",
+        "url": "https://www.gov.br/fazenda/pt-br/assuntos/cmn",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      },
+      {
+        "id": "planalto.bcb.lc179",
+        "label": "Lei Complementar nº 179/2021 — objetivos e autonomia do Banco Central (arts. 1º, 2º e 6º)",
+        "url": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp179.htm",
+        "checkedAt": "2026-09-26",
+        "kind": "norma-oficial"
+      },
+      {
+        "id": "planalto.cvm.6385",
+        "label": "Lei nº 6.385/1976 — valores mobiliários e competências da CVM (arts. 2º, 4º e 8º)",
+        "url": "https://www.planalto.gov.br/ccivil_03/leis/l6385.htm",
+        "kind": "norma-oficial",
+        "checkedAt": "2026-09-26"
+      },
+      {
+        "id": "planalto.sa.6404",
+        "label": "Lei nº 6.404/1976 — companhia aberta e fechada (art. 4º)",
+        "url": "https://www.planalto.gov.br/ccivil_03/leis/l6404consol.htm",
+        "kind": "norma-oficial",
+        "checkedAt": "2026-09-26"
+      },
+      {
+        "id": "bcb.bancos-multiplos.educacional",
+        "label": "BCB — explicação institucional de bancos múltiplos (página histórica, não consolidação normativa)",
+        "url": "https://www.bcb.gov.br/pre/composicao/bm.asp?frame=1",
+        "kind": "conteudo-oficial-historico",
+        "checkedAt": "2026-09-26"
+      },
+      {
+        "id": "planalto.previdencia.109",
+        "label": "Lei Complementar nº 109/2001 — previdência aberta e fechada (arts. 16, 31 e 36)",
+        "url": "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp109.htm",
+        "kind": "norma-oficial",
+        "checkedAt": "2026-09-26"
+      },
+      {
+        "id": "planalto.pagamentos.12865",
+        "label": "Lei nº 12.865/2013 — arranjos e instituições de pagamento (arts. 6º e 9º)",
+        "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12865.htm",
+        "kind": "norma-oficial",
+        "checkedAt": "2026-09-26"
+      },
+      {
+        "id": "planalto.consorcios.11795",
+        "label": "Lei nº 11.795/2008 — grupo, administradora e supervisão de consórcios (arts. 2º, 5º a 7º)",
+        "url": "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2008/lei/l11795.htm",
+        "kind": "norma-oficial",
+        "checkedAt": "2026-09-26"
+      },
+      {
+        "id": "susep.faq.seguros.premio",
+        "label": "SUSEP — perguntas sobre seguros: significado de prêmio (item 3)",
+        "url": "https://www.gov.br/susep/pt-br/acesso-a-informacao/perguntas-frequentes/pasta-das-perguntas-frequentes/perguntas-mais-frequentes-sobre-seguros",
+        "checkedAt": "2026-09-26",
+        "kind": "conteudo-oficial"
+      }
+    ],
+    "sourceVerificationLimit": "Registros de fontes do catálogo preservados como inventário. Datas/labels de vigência dessas fontes não foram reconferidos nesta matriz; somente os dois editais tiveram verificação externa nesta entrega."
+  },
+  "rows": [
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-01",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "1",
+      "sourceOrder": 1,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Estrutura, órgãos e instituições do SFN",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.1",
+        "statement": "Classificar a atuação normativa, supervisora, executora e operacional em situações concretas.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.sfn-foundation"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "SFN",
+      "coverageStatus": "recorte_publicado",
+      "missing": "Oito aulas e Chefe do bloco SFN inicial. A existência desta cadeia não certifica exaustividade do item amplo do edital nem domínio do aluno."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-02",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "2",
+      "sourceOrder": 2,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Mercados monetário, de crédito, de capitais e cambial",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.2",
+        "statement": "Distinguir objeto, participantes e operações de cada segmento.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy",
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "MERCADOS",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Há intermediação, crédito, depósito e capitais; faltam tratamento comparativo dos quatro mercados, operações e avaliação específica."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-03",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "3",
+      "sourceOrder": 3,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Moeda; política convencional e não convencional; QE; Selic; compromissadas; depósitos remunerados",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.3",
+        "statement": "Explicar instrumentos monetários e distinguir meta Selic, taxa, sistema e instrumentos de liquidez.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "POLITICA",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Há papel do BCB, meta Selic e transmissão inicial; não há unidade completa de instrumentos convencionais, QE, compromissadas ou depósitos remunerados."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-04",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "4",
+      "sourceOrder": 4,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Orçamento, títulos do Tesouro e dívida pública",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.4",
+        "statement": "Relacionar receitas, despesas, financiamento público e características básicas dos títulos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "TITULOS",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Título público aparece como vocabulário para Selic. Não ensina orçamento, financiamento público ou gestão da dívida."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-05",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "5",
+      "sourceOrder": 5,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Cartões, CDC, crédito rural, poupança, capitalização, previdência, consórcio, investimentos e seguros",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.5",
+        "statement": "Comparar finalidade, custos, riscos e condições dos produtos sem confundir produto e supervisor.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit",
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "PRODUTOS",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Ensina noções e supervisão de alguns produtos e consórcio. Não cobre todos os produtos, contratação, custos, riscos e regras."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-06",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "6",
+      "sourceOrder": 6,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Fundamentos do mercado de capitais",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.6",
+        "statement": "Distinguir emissão, negociação, instrumentos, participantes e riscos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "CAPITAIS",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "CVM, instrumentos e mercados primário/secundário têm introdução. O bloco completo e a avaliação da amplitude do item permanecem pendentes."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-07",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "7",
+      "sourceOrder": 7,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Instituições autorizadas e operações básicas de câmbio",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.7",
+        "statement": "Identificar participantes habilitados e interpretar operações cambiais básicas.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "CAMBIO",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "A aula define câmbio e execução de política cambial; não ensina instituições autorizadas ou operações. A questão B05 avalia o papel do BCB, não a competência completa de câmbio."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-08",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "8",
+      "sourceOrder": 8,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Regimes cambiais fixos, flutuantes e intermediários",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.8",
+        "statement": "Comparar regras de formação da taxa e intervenção em diferentes regimes.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-09",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "9",
+      "sourceOrder": 9,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Câmbio nominal e real",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.9",
+        "statement": "Distinguir cotação nominal e medida real em exemplos com preços relativos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-10",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "10",
+      "sourceOrder": 10,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Câmbio, exportações e importações",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.10",
+        "statement": "Explicar efeitos condicionais de variação cambial sobre comércio exterior.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-11",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "11",
+      "sourceOrder": 11,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Diferencial de juros, risco, fluxos de capitais e câmbio",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.11",
+        "statement": "Relacionar incentivos e riscos a fluxos internacionais sem prever uma cotação.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange",
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-12",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "12",
+      "sourceOrder": 12,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Operações interbancárias",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.12",
+        "statement": "Explicar necessidades de liquidez e transações entre instituições.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "INTERBANCARIO",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "O papel do banco dos bancos prepara vocabulário; não há unidade sobre instrumentos/operações do mercado interbancário."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-13",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "13",
+      "sourceOrder": 13,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Tesouraria, varejo e recuperação de crédito",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.13",
+        "statement": "Distinguir funções e fluxos do mercado bancário, incluindo recuperação.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy",
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "VAREJO",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Operações simples de banco comercial ilustram a função; tesouraria, varejo e recuperação não têm cadeia de ensino/prática/avaliação própria."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-14",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "14",
+      "sourceOrder": 14,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Juros de curto prazo, curva de juros, taxas nominal e real",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.14",
+        "statement": "Interpretar prazo e estrutura de taxas, distinguindo efeito da inflação.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "JUROS",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Há vocabulário de juros, inflação e Selic; não há curva de juros nem tratamento suficiente de taxas nominais e reais."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-15",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "15",
+      "sourceOrder": 15,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Aval, fiança, penhor mercantil, alienação fiduciária, hipoteca e fiança bancária",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.15",
+        "statement": "Comparar garantias pessoais e reais, sujeitos, objeto e limites.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-16",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "16",
+      "sourceOrder": 16,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Lavagem: conceito, etapas, prevenção; Lei 9.613/1998, Circular 3.978/2020 e Carta Circular 4.001/2020",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.16",
+        "statement": "Reconhecer etapas e aplicar medidas de prevenção segundo o recorte normativo escolhido.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.aml-anticorruption"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-17",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "17",
+      "sourceOrder": 17,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Autorregulação e normativos SARB",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.17",
+        "statement": "Distinguir autorregulação de regulação estatal e localizar normas pertinentes.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.rules"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-18",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "18",
+      "sourceOrder": 18,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Sigilo bancário e LC 105/2001",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.18",
+        "statement": "Identificar dever de sigilo e condições normativas de compartilhamento.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.privacy-security"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-19",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "19",
+      "sourceOrder": 19,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "LGPD e Lei 13.709/2018",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.19",
+        "statement": "Aplicar conceitos e princípios de proteção de dados ao contexto bancário.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.privacy-security"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-20",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "20",
+      "sourceOrder": 20,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Anticorrupção: Lei 12.846/2013 e Decreto 11.129/2022",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.20",
+        "statement": "Distinguir responsabilidades e medidas de integridade aplicáveis.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.aml-anticorruption"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-21",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "21",
+      "sourceOrder": 21,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Segurança cibernética: Resolução CMN 4.893/2021",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.21",
+        "statement": "Reconhecer os objetivos e requisitos da política cibernética do recorte adotado.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.privacy-security",
+        "informatics.security-data"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-22",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "22",
+      "sourceOrder": 22,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Ética, moral, valores, gestão da ética e Código de Ética BB",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.22",
+        "statement": "Justificar conduta profissional usando conceitos e o código específico do BB.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.integrity"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-23",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "23",
+      "sourceOrder": 23,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Política socioambiental do Banco do Brasil",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.23",
+        "statement": "Relacionar compromissos e decisões institucionais à política específica do BB.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.aml-anticorruption"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "bb.agente-comercial.2022-001.banking.source-order-24",
+      "examProfileId": "bb.agente-comercial.2022-001",
+      "sourceDocumentId": "edital.bb.2022-001.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "24",
+      "sourceOrder": 24,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "ASG, economia sustentável, financiamentos e mercado PJ",
+      "plannedCompetency": {
+        "planningId": "plan.bb.agente-comercial.2022-001.banking.24",
+        "statement": "Analisar relações entre fatores ASG, financiamento e clientes pessoa jurídica.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "ethics-compliance.aml-anticorruption",
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "perfil_nao_associado_a_area_no_mapa_atual",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-01",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "1",
+      "sourceOrder": 1,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Estatuto Social da CAIXA",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.1",
+        "statement": "Localizar finalidade, estrutura e atribuições na versão do estatuto selecionada.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-02",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "2",
+      "sourceOrder": 2,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Estrutura, órgãos e instituições do SFN",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.2",
+        "statement": "Classificar a atuação normativa, supervisora, executora e operacional em situações concretas.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.sfn-foundation"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "SFN",
+      "coverageStatus": "recorte_publicado",
+      "missing": "Oito aulas e Chefe do bloco SFN inicial. A existência desta cadeia não certifica exaustividade do item amplo do edital nem domínio do aluno."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-03",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "3",
+      "sourceOrder": 3,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Mercados monetário, de crédito, de capitais e cambial",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.3",
+        "statement": "Distinguir objeto, participantes e operações de cada segmento.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy",
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "MERCADOS",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Há intermediação, crédito, depósito e capitais; faltam tratamento comparativo dos quatro mercados, operações e avaliação específica."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-04",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "4",
+      "sourceOrder": 4,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Bancos na era digital: tendências e desafios",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.4",
+        "statement": "Explicar mudanças de serviços, operação e riscos no ambiente digital.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-05",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "5",
+      "sourceOrder": 5,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Internet banking",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.5",
+        "statement": "Distinguir serviços, acesso e riscos do canal de internet banking.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-06",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "6",
+      "sourceOrder": 6,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Mobile banking",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.6",
+        "statement": "Analisar características e uso seguro do canal móvel.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-07",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "7",
+      "sourceOrder": 7,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Novos modelos de negócios",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.7",
+        "statement": "Comparar propostas de valor, operações e riscos dos novos modelos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-08",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "8",
+      "sourceOrder": 8,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Fintechs, startups e big techs",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.8",
+        "statement": "Distinguir tipos de organização e papéis no ecossistema financeiro.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-09",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "9",
+      "sourceOrder": 9,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Shadow banking",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.9",
+        "statement": "Explicar intermediação fora do modelo bancário tradicional e seus riscos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-10",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "10",
+      "sourceOrder": 10,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Moedas e ativos digitais: blockchain, bitcoin e criptomoedas",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.10",
+        "statement": "Distinguir tecnologia, ativo, moeda e riscos sem equipará-los automaticamente.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-11",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "11",
+      "sourceOrder": 11,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Correspondentes bancários",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.11",
+        "statement": "Distinguir contratante e prestador, serviços e responsabilidades.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit",
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "CORRESPONDENTE",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Um parágrafo define o prestador; regulamentação, serviços e responsabilidades não formam unidade estudável completa."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-12",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "12",
+      "sourceOrder": 12,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Pix",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.12",
+        "statement": "Distinguir arranjo, participantes, infraestrutura e regras de funcionamento.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "PIX",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Arranjo, instituição e SPI ensinados. Faltam regras e casos de uso mais amplos do item, com fontes versionadas e prática correspondente."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-13",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "13",
+      "sourceOrder": 13,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Open finance",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.13",
+        "statement": "Explicar compartilhamento, participantes, consentimento e finalidades.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-14",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "14",
+      "sourceOrder": 14,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Moedas digitais de bancos centrais e DREX",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.14",
+        "statement": "Distinguir proposta institucional, tecnologia e funções de outros ativos digitais.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-15",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "15",
+      "sourceOrder": 15,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Transformação digital no SFN",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.15",
+        "statement": "Analisar mudanças de processos, relacionamento e riscos no sistema.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-16",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "16",
+      "sourceOrder": 16,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Moeda; políticas monetárias convencionais e não convencionais; QE",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.16",
+        "statement": "Comparar instrumentos, objetivos, condições e limites da política monetária.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "POLITICA",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Há papel do BCB, meta Selic e transmissão inicial; não há unidade completa de instrumentos convencionais, QE, compromissadas ou depósitos remunerados."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-17",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "17",
+      "sourceOrder": 17,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Selic, compromissadas e depósitos remunerados no BCB",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.17",
+        "statement": "Distinguir meta, taxa e sistema Selic e explicar instrumentos de liquidez.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "SELIC",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Sistema/taxa/meta aparecem; operações compromissadas e depósitos remunerados continuam sem ensino/prática completos."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-18",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "18",
+      "sourceOrder": 18,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Orçamento, títulos do Tesouro e dívida pública",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.18",
+        "statement": "Relacionar receitas, despesas, financiamento público e características básicas dos títulos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "TITULOS",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Título público aparece como vocabulário para Selic. Não ensina orçamento, financiamento público ou gestão da dívida."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-19",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "19",
+      "sourceOrder": 19,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Programas sociais e benefícios; cartões, CDC, crédito rural, poupança, capitalização, previdência, consórcio, investimentos e seguros",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.19",
+        "statement": "Comparar produtos e separar regras de benefícios e programas específicos da CAIXA.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit",
+        "banking.capital-exchange",
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "PRODUTOS",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Ensina noções e supervisão de alguns produtos e consórcio. Não cobre todos os produtos, contratação, custos, riscos e regras. Também faltam programas sociais e benefícios previstos neste item da CAIXA."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-20",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "20",
+      "sourceOrder": 20,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Fundamentos do mercado de capitais",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.20",
+        "statement": "Distinguir emissão, negociação, instrumentos, participantes e riscos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "CAPITAIS",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "CVM, instrumentos e mercados primário/secundário têm introdução. O bloco completo e a avaliação da amplitude do item permanecem pendentes."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-21",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "21",
+      "sourceOrder": 21,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Instituições autorizadas e operações básicas de câmbio",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.21",
+        "statement": "Identificar participantes habilitados e interpretar operações cambiais básicas.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "CAMBIO",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "A aula define câmbio e execução de política cambial; não ensina instituições autorizadas ou operações. A questão B05 avalia o papel do BCB, não a competência completa de câmbio."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-22",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "22",
+      "sourceOrder": 22,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Regimes cambiais fixos, flutuantes e intermediários",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.22",
+        "statement": "Comparar regras de formação da taxa e intervenção em diferentes regimes.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-23",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "23",
+      "sourceOrder": 23,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Câmbio nominal e real",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.23",
+        "statement": "Distinguir cotação nominal e medida real em exemplos com preços relativos.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-24",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "24",
+      "sourceOrder": 24,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Câmbio, exportações e importações",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.24",
+        "statement": "Explicar efeitos condicionais de variação cambial sobre comércio exterior.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-25",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "25",
+      "sourceOrder": 25,
+      "officialSubitem": null,
+      "sourcePages": [
+        33
+      ],
+      "scopeParaphrase": "Diferencial de juros, risco, fluxos de capitais e câmbio",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.25",
+        "statement": "Relacionar incentivos e riscos a fluxos internacionais sem prever uma cotação.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.capital-exchange",
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-26",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "26",
+      "sourceOrder": 26,
+      "officialSubitem": null,
+      "sourcePages": [
+        33,
+        34
+      ],
+      "scopeParaphrase": "Operações interbancárias",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.26",
+        "statement": "Explicar necessidades de liquidez e transações entre instituições.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "INTERBANCARIO",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "O papel do banco dos bancos prepara vocabulário; não há unidade sobre instrumentos/operações do mercado interbancário."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-27",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "27",
+      "sourceOrder": 27,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Tesouraria, varejo e recuperação de crédito",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.27",
+        "statement": "Distinguir funções e fluxos do mercado bancário, incluindo recuperação.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy",
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "VAREJO",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Operações simples de banco comercial ilustram a função; tesouraria, varejo e recuperação não têm cadeia de ensino/prática/avaliação própria."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-28",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "278",
+      "sourceOrder": 28,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Juros de curto prazo, curva de juros, taxas nominal e real",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.28",
+        "statement": "Interpretar prazo e estrutura de taxas, distinguindo efeito da inflação.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.markets-policy"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "JUROS",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Há vocabulário de juros, inflação e Selic; não há curva de juros nem tratamento suficiente de taxas nominais e reais.",
+      "sourceNumberingNote": "A página 34 imprime 278, entre 27 e 29. Conferido visualmente; sourceOrder=28 é posição interna, não correção da numeração oficial."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-29",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "29",
+      "sourceOrder": 29,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Aval, fiança, penhor mercantil, alienação fiduciária, hipoteca e fiança bancária",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.29",
+        "statement": "Comparar garantias pessoais e reais, sujeitos, objeto e limites.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-30",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "30",
+      "sourceOrder": 30,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Autorregulação bancária",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.30",
+        "statement": "Distinguir autorregulação de regulação estatal e aplicar o recorte selecionado.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.rules"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-31",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "31",
+      "sourceOrder": 31,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "PIS: LC 7/1970",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.31",
+        "statement": "Explicar a finalidade e as regras do PIS conforme o recorte normativo adotado.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-32",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "32",
+      "sourceOrder": 32,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "FGTS: Lei 8.036/1990, hipóteses e condições de utilização/saque",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.32",
+        "statement": "Relacionar situações a hipóteses e requisitos legais de utilização.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-33",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "33",
+      "sourceOrder": 33,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Certificado de Regularidade do FGTS",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.33",
+        "statement": "Explicar finalidade, condições e consulta do certificado.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-34",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "34",
+      "sourceOrder": 34,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Guia de Recolhimento do FGTS (GRF)",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.34",
+        "statement": "Distinguir recolhimento, guia, responsáveis e procedimentos do recorte adotado.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-35",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "35",
+      "sourceOrder": 35,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Bolsa Família: Lei 10.836/2004 citada no edital",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.35",
+        "statement": "Distinguir o recorte histórico do edital da legislação a verificar para nova autoria.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado.",
+      "normativeScopeNote": "A referência Lei 10.836/2004 é a que consta da fonte histórica. Não constitui verificação de vigência atual nem autorização para reproduzir regras como atuais."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-36",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "36",
+      "sourceOrder": 36,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Abertura/movimentação de contas e documentos básicos",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.36",
+        "statement": "Identificar requisitos e procedimentos de contas, sem tratar depósito à vista como ensino completo de abertura.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "CONTAS",
+      "coverageStatus": "somente_prerequisito",
+      "missing": "Depósito à vista e banco comercial não ensinam documentação, abertura ou movimentação de contas."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-37",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "37",
+      "sourceOrder": 37,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "PF/PJ: capacidade e incapacidade civil, representação e domicílio",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.37",
+        "statement": "Aplicar conceitos de personalidade, capacidade e representação em situações bancárias.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.products-credit"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-38",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "38",
+      "sourceOrder": 38,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Sistema de Pagamentos Brasileiro",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.38",
+        "statement": "Distinguir participantes, arranjos, infraestrutura e liquidação no SPB.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.digital-payments"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": "SPB",
+      "coverageStatus": "parcial_introdutorio",
+      "missing": "Introdução ao SPB e Pix/SPI; não certifica exaustividade das infraestruturas, participantes, riscos e liquidação do SPB."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-39",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "39",
+      "sourceOrder": 39,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Lei 7.998/1990: programa de desemprego e abono; beneficiários e saque",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.39",
+        "statement": "Identificar beneficiários e critérios do benefício segundo a versão normativa adotada.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado.",
+      "duplicateSourceItemLabels": [
+        "39",
+        "46"
+      ],
+      "deduplicateLearningPlan": true
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-40",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "40",
+      "sourceOrder": 40,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Saúde, bem-estar e ergonomia",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.40",
+        "statement": "Reconhecer condições de trabalho e práticas de bem-estar/ergonomia no escopo do edital.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [],
+      "blockAssignmentStatus": "decisao_de_classificacao_pendente",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-41",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "41",
+      "sourceOrder": 41,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Negociação e escuta empática",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.41",
+        "statement": "Aplicar escuta e negociação em situações de atendimento.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.negotiation"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-42",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "42",
+      "sourceOrder": 42,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Estratégia empresarial, mercado, concorrência, imagem, identidade e posicionamento",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.42",
+        "statement": "Relacionar análise de mercado e posicionamento a decisões de serviço.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.sales"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-43",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "43",
+      "sourceOrder": 43,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Segmentação e CRM",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.43",
+        "statement": "Distinguir segmentos e uso de relacionamento com clientes.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.customer"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-44",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "44",
+      "sourceOrder": 44,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Intangibilidade, inseparabilidade, variabilidade e perecibilidade dos serviços",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.44",
+        "statement": "Aplicar características dos serviços a situações bancárias.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.customer"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-45",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "45",
+      "sourceOrder": 45,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Qualidade em serviços",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.45",
+        "statement": "Identificar dimensões e práticas de melhoria da qualidade de atendimento.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "sales-service.customer"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado."
+    },
+    {
+      "rowId": "caixa.tbn.2024-nm.banking.source-order-46",
+      "examProfileId": "caixa.tbn.2024-nm",
+      "sourceDocumentId": "edital.caixa.2024-nm.snapshot-2026-09-30",
+      "discipline": "Conhecimentos Bancários",
+      "sourceItemLabel": "46",
+      "sourceOrder": 46,
+      "officialSubitem": null,
+      "sourcePages": [
+        34
+      ],
+      "scopeParaphrase": "Lei 7.998/1990: programa de desemprego e abono; beneficiários e saque",
+      "plannedCompetency": {
+        "planningId": "plan.caixa.tbn.2024-nm.banking.46",
+        "statement": "Rastrear a repetição do item 39 sem contar duas competências independentes.",
+        "status": "proposta_documental",
+        "runtimeId": null
+      },
+      "candidateBlockIds": [
+        "banking.institution-specific"
+      ],
+      "blockAssignmentStatus": "proposta_sem_alteracao_do_mapa",
+      "evidenceBundleId": null,
+      "coverageStatus": "lacuna",
+      "missing": "Sem cadeia de ensino, exemplos, prática, avaliação e revisão publicada para este item no catálogo inspecionado.",
+      "duplicateSourceItemLabels": [
+        "39",
+        "46"
+      ],
+      "deduplicateLearningPlan": true
+    }
+  ]
+}

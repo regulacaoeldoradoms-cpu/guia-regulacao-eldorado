@@ -31,7 +31,10 @@ A primeira versão real não usará aula demonstrativa fictícia: começará com
 15. [60-FASE2-PUBLICACAO-INCREMENTAL.md](60-FASE2-PUBLICACAO-INCREMENTAL.md)
 16. [12-FONTES-E-CONTEUDO.md](12-FONTES-E-CONTEUDO.md)
 17. [14-INTEGRACAO-CONQUISTAS.md](14-INTEGRACAO-CONQUISTAS.md)
-18. [63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md](63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md) — inventário, rubrica de conclusão e decisões pendentes sobre revisões atrasadas.
+18. [63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md](63-CONTINUIDADE-E-CRITERIOS-DE-CONCLUSAO.md) - inventário, rubrica de conclusão e decisões pendentes sobre revisões atrasadas.
+19. [65-RASTREABILIDADE-BANCARIOS-REFERENCIAS.md](65-RASTREABILIDADE-BANCARIOS-REFERENCIAS.md) - 70 entradas históricas BB/CAIXA, evidências publicadas e lacunas; planejamento sem publicação.
+20. [66-ESPECIFICACAO-PROXIMOS-BLOCOS-BANCARIOS.md](66-ESPECIFICACAO-PROXIMOS-BLOCOS-BANCARIOS.md) - preparação de mercados/política e produtos/crédito, dentro dos blocos existentes e sem abertura da Fase 3.
+21. [67-MP01-DELIMITACAO-E-FONTES.md](67-MP01-DELIMITACAO-E-FONTES.md) - proposta da etapa A de MP-01, com objetivos, pré-requisitos, vocabulário e fontes oficiais conferidas; sem aula, questões ou publicação.
 
 ## Fases encerradas
 - Fase 0 — plano técnico aprovado: [15-FASE-0-PLANO-TECNICO.md](15-FASE-0-PLANO-TECNICO.md)

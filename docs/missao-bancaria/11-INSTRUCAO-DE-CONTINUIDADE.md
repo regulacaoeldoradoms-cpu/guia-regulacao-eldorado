@@ -19,6 +19,9 @@ Não tratar resumos, siglas expandidas, links para normas, cartões, XP ou pergu
 **Se a tarefa for grande, dividir em mais prompts e etapas, nunca reduzir o ensino para fazê-la caber em uma resposta.** Cada unidade pode passar por planejamento, explicação, exemplos resolvidos, revisão pedagógica, verificação de compreensão e integração em rodadas distintas. As questões verificam o aprendizado posterior à leitura; o gabarito não deve ser o primeiro lugar onde o conceito é ensinado.
 
 ## Regras operacionais
+
+O preparo curricular autorizado em 30/09 está nos documentos [65](65-RASTREABILIDADE-BANCARIOS-REFERENCIAS.md) e [66](66-ESPECIFICACAO-PROXIMOS-BLOCOS-BANCARIOS.md). A matriz separa 24 itens históricos do BB e 46 posições da CAIXA, incluindo particularidades de numeração da fonte. Os blocos `banking.markets-policy` e `banking.products-credit` têm especificação editorial inicial, sem aulas ou questões novas publicadas. Próxima ação segura: completar a delimitação de MP-01, PC-01A e PC-01, fechar fontes e vocabulário e revisar o roteiro antes de redigir questões. A Fase 2 continua ativa; nenhuma preparação documental substitui o aceite humano nem abre a Fase 3.
+
 - não reconstruir decisões já documentadas sem motivo;
 - não avançar para a próxima fase sem registrar aceite;
 - não misturar dados da Regulação com dados de estudo;
