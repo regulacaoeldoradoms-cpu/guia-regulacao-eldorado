@@ -1,7 +1,8 @@
 # MISSÃO BANCÁRIA — CONTINUIDADE E CRITÉRIOS DE CONCLUSÃO
 
-Data: 30/09/2026.  
-Fase ativa: **Fase 2 — motor pedagógico reutilizável, sem aceite de encerramento registrado**.  
+Data: 30/09/2026.
+
+Fase ativa: **Fase 2 — motor pedagógico reutilizável, sem aceite de encerramento registrado**.
 Referência de inventário: auditoria da `main` em `ff6ecbe`, conferida nos arquivos de conteúdo e contratos do motor nesta continuidade.
 
 ## 1. Alcance e decisões preservadas

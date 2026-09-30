@@ -37,9 +37,11 @@ Durante uso natural, observar:
 - leitura encerrada e saída antes de responder → Leitura concluída;
 - questões em andamento → Prática;
 - conteúdo concluído com ciclos posteriores pendentes/em andamento → Revisão;
-- somente após os ciclos previstos observados → Consolidado.
+- após os três ciclos com resultado registrado → Ciclos concluídos, independentemente da nota;
+- o cartão explica que concluir ciclos não comprova domínio nem prontidão;
+- revisão mais recente sem nota não mostra `null%`, zero inventado nem a nota de um ciclo anterior como se fosse a última.
 
-Aprovar se nenhum estado sugere “pronto para prova”.
+Aprovar se nenhum estado sugere “pronto para prova” ou transforma ciclos concluídos em aprendizado comprovado. A execução consecutiva de ciclos atrasados continua sendo uma limitação da política atual, documentada no roteiro de continuidade 63; não manipular datas reais para reproduzi-la na homologação.
 
 ## H4 — Erros recorrentes
 
