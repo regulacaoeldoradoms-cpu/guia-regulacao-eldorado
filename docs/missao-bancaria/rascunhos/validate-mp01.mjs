@@ -5,7 +5,7 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe'].includes(unit), 'Unidade editorial desconhecida');
 const stem = `mp-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -49,21 +49,37 @@ for (const question of draft.questions) {
   rationales += question.optionRationales.length;
   const refs = draft.teaching.questionCoverage[question.id];
   assert(refs.length && question.recoverySectionIds.length);
-  for (const ref of refs) assert(ref.missionId === draft.id && sections.has(ref.sectionId));
+  for (const ref of refs) {
+    if (ref.missionId === draft.id) assert(sections.has(ref.sectionId));
+    else assert(unit === 'mpchefe' && question.originRefs?.some(origin => ref.missionId === `draft.${origin.unit}` && ref.sectionId === origin.sectionId), `${question.id}: cobertura externa não declarada`);
+  }
   for (const id of question.recoverySectionIds) assert(sections.has(id));
   for (const objective of question.objectiveIds) objectives.add(objective);
-  if (unit === 'mpr') assert(question.originRefs?.length, 'Revisão requer aula de origem por questão');
+  if (['mpr', 'mpchefe'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
   for (const ref of question.originRefs || []) {
     assert(/^mp(0[1-9]|r)$/.test(ref.unit));
     const origin = await import(`./mp-${ref.unit.slice(2)}-v1.mjs`);
     const originDraft = origin[`${ref.unit.toUpperCase()}_DRAFT`];
     const originSection = originDraft.sections.find(section => section.id === ref.sectionId);
     assert(originSection, `${question.id}: origem ausente`);
+    if (unit === 'mpchefe') assert(refs.some(coverage => coverage.missionId === originDraft.id && coverage.sectionId === ref.sectionId), `${question.id}: origem ausente da cobertura`);
     originLabels.set(`${ref.unit}:${ref.sectionId}`, `${originDraft.editorialKey}: ${originSection.heading}`);
   }
 }
 assert.deepEqual([...objectives].sort(), ['O1', 'O2', 'O3', 'O4', 'O5', 'O6']);
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
+if (unit === 'mpchefe') {
+  assert.equal(draft.kind, 'boss');
+  assert.equal(draft.questions.length, 12);
+  assert.equal(EDITORIAL.groups.length, 6);
+  unique(EDITORIAL.groups);
+  for (const group of EDITORIAL.groups) {
+    const questions = draft.questions.filter(q => q.groupId === group.id);
+    assert.equal(questions.length, 2, group.id);
+    const taughtUnits = new Set(questions.flatMap(q => q.originRefs.map(ref => ref.unit)));
+    assert.deepEqual([...taughtUnits].sort(), [...group.units].sort(), `${group.id}: dependência de ensino`);
+  }
+}
 for (const calculation of content.ARITHMETIC || []) {
   assert.equal(calculation.values.length, 2);
   assert(calculation.values.every(Number.isFinite));
@@ -95,7 +111,7 @@ markdown += EDITORIAL.limits.map(text => `- ${text}`).join('\n') + '\n';
 const output = path.join(import.meta.dirname, `${stem}.md`);
 if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
-const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md' }[unit] || '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md';
+const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md' }[unit] || '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md';
 const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
@@ -109,7 +125,7 @@ for (const relative of related) {
     if (local) {
       const targetFile = path.resolve(path.dirname(file), decodeURIComponent(local));
       assert(fs.existsSync(targetFile), `${relative}: ${target}`);
-      if (anchor && /mp-(0[1-9]|r)-v1\.md$/.test(targetFile)) {
+      if (anchor && /mp-(0[1-9]|r|chefe)-v1\.md$/.test(targetFile)) {
         assert(fs.readFileSync(targetFile, 'utf8').includes(`id="${anchor}"`), `${relative}: origem ${target}`);
       }
     }

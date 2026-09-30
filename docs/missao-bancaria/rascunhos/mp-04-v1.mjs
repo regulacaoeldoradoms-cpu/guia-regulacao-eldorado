@@ -87,7 +87,7 @@ export const MP04_DRAFT = {
     {
       "id": "exemplo-credito",
       "type": "worked-example",
-      "heading": "6. Exemplo resolvido: canal do crédito",
+      "heading": "6. Exemplo resolvido: custo do financiamento e investimento",
       "body": "Uma loja fictícia planeja comprar equipamento financiado. Após piorarem as condições do financiamento, o custo total esperado deixa de caber no projeto e ela adia a compra. A sequência é: condição financeira → decisão de investimento → menor demanda pelo equipamento naquele momento. Não foi preciso supor proibição de comprar nem queda instantânea de todo preço. Outra empresa, com caixa próprio e projeto diferente, poderia decidir de outro modo.",
       "sourceIds": []
     },

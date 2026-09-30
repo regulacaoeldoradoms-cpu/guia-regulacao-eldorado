@@ -47,11 +47,11 @@ Os objetivos de MP-01–03 permanecem nos documentos 68–70. A revisão cumulat
 - BCB: páginas de Selic, transmissão e compulsórios conferidas em 30/09/2026 por navegador público sem autenticação. Textos carregados por JavaScript, não inferidos do aviso do extrator. Nenhum percentual vigente ou prazo universal foi inventado. A URL tentada de mercado aberto mostrou página interna 404 e **não** foi usada como evidência.
 - LC 179/2021, Lei 4.595/1964 (redação aplicável do art. 10), Lei 14.185 de **14/07/2021**, Lei 4.320/1964 e Decreto **12.814/2026** consultados no Planalto em 30/09/2026, com localizadores em cada aula. O decreto revoga o 11.301/2022 e vigora desde a publicação em 12/01/2026; a página antiga do Tesouro não prevalece sobre a norma atual. Esta checagem não altera a versão histórica dos editais.
 - Tesouro: conceitos fiscais da página atualizada em 08/07/2022; CVM: relações de mercado já verificadas; BoE: explicação atualizada em 05/12/2025, apenas para conceito e caso histórico de QE; BCE: definição/metodologia de curvas, apenas apoio conceitual. Sem importar metas, decisões ou taxas estrangeiras ao Brasil.
-- MP-04–09/MP-R têm autoria e conferência factual dirigida; revisão independente/humana ainda pendente. Hipóteses e contas são explícitas. Esquema válido não atesta precisão pedagógica ou aprendizagem.
+- MP-04–09/MP-R: revisão independente aprovada no recorte introdutório em `82316776706084e8a768534aa80206582a272523`, sem erro substantivo, gabarito ambíguo ou pré-requisito insuficiente. Aplicada a precisão no título da seção 6 de MP-04: “custo do financiamento e investimento”, preservando cenário e q03/gabarito. A revisão não refez cálculos/esquema/auditoria normativa nem incluiu Chefe, Mermaid ou integração. Aceite humano/publicação permanecem separados.
 
-## Desafio final previsto, ainda não integrado
+## Desafio final redigido, ainda não integrado
 
-O chefe será prática cumulativa **separada de MP-R e de avaliação independente**. Proposta editorial dentro do padrão existente: 12 itens novos, dois em cada agrupamento abaixo. Não foram atribuídos IDs produtivos, XP, tempo de bloqueio ou critério de domínio. Esses parâmetros devem seguir os contratos existentes quando a integração for autorizada.
+O [Chefe em rascunho](rascunhos/mp-chefe-v1.md) contém 12 itens próprios, dois em cada agrupamento abaixo, e 48 justificativas. É prática cumulativa **separada de MP-R e de avaliação independente**. Autoria paralela autorizada enquanto a revisão do ensino era concluída; revisão própria dos itens ainda pendente. Não foram atribuídos IDs produtivos, XP, tempo de bloqueio ou critério de domínio. Esses parâmetros devem seguir os contratos existentes quando a integração for autorizada. Critérios, verificação e decisão agrupada no [documento 72](72-MP-CHEFE-RASCUNHO-E-REVISAO.md).
 
 | Agrupamento | Ensino de origem | Evidência solicitada em caso novo |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ O chefe será prática cumulativa **separada de MP-R e de avaliação independen
 | Fiscal e títulos | MP-07 | reconstruir estoque/fluxo e destinatário de emissão/revenda |
 | Prazos e conclusão limitada | MP-09 | ler outro gráfico e evitar previsão ou conversão indevida |
 
-Antes de redigir os itens do chefe: concluir revisão pontual do ensino novo e conferir suficiência para cada cobrança. Cada item deverá ter cenário/valores próprios, resposta única, justificativa dos distratores e vínculos às aulas liberadas. Não reutilizar os casos resolvidos nem os itens já expostos como “inéditos”. Não publicar chefe antes de suas aulas; não chamar sua conclusão de retenção ou prontidão. Formas independentes continuam exigindo decisão própria sobre exposição e quantidade de formas, sem mexer em A/B.
+Cada item tem cenário/valores próprios, uma resposta pretendida, justificativa dos distratores e vínculos de recuperação às aulas de origem. A conferência do autor não substitui a revisão independente desses itens. Não reutilizar exemplos ou itens expostos como “inéditos” em avaliações independentes. Não publicar chefe antes de suas aulas; não chamar sua conclusão de retenção ou prontidão. Formas independentes continuam exigindo decisão própria sobre exposição e quantidade de formas, sem mexer em A/B.
 
 ## Verificação proporcional e próxima ação
 
@@ -70,4 +70,4 @@ Validação executada em Node 24: as sete unidades novas e as três anteriores p
 
 Reprodução: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=mp04`, variando até `mp09` e `mpr`; `--render` regenera a prévia. O comando histórico sem flag continua validando MP-01. Repetir apenas verificação afetada, não todos os testes por alteração documental. O gerador compartilhado verifica agora também a aula/trecho de origem por questão cumulativa.
 
-Próxima ação: revisão independente pontual de MP-04–09/MP-R, concentrada nos limites de transmissão, datas/normas, fluxos e gráficos. Depois preparar os itens próprios do chefe conforme a matriz acima. Publicação depende de escopo/edital adotado, revisão e autorização; o aceite humano da Fase 2 continua separado, com checklist no documento 68.
+Próxima ação: revisão independente pontual dos 12 itens do Chefe, reaproveitando a revisão aprovada do ensino. Preparar decisão agrupada do pacote conforme documento 72. Publicação depende de escopo/edital adotado, revisão e autorização; o aceite humano da Fase 2 continua separado, com checklist no documento 68.
