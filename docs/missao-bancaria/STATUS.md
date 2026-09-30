@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~95%; Fase 2 ~32% com feedback completo do primeiro bloco, estados pedagógicos e erros recorrentes em cadeia de validação; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~35%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~96%; Fase 2 ~38% com feedback completo, estados pedagógicos, erros recorrentes e domínio por recência em cadeia de validação; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~36%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -414,3 +414,54 @@ Validação:
 - nenhuma rota de escrita nova é criada.
 
 Próximo requisito após C2: domínio ponderado por recência, mantendo-o separado de cobertura e prontidão.
+
+
+## Fase 2 — Recorte C3: domínio ponderado por recência
+
+Documento: `59-FASE2-DOMINIO-RECENCIA.md`.  
+Branch: `feat/missao-bancaria-fase2-dominio-recencia`, empilhada sobre o Recorte C2.
+
+Objetivo:
+- separar domínio recente de acerto histórico acumulado;
+- dar mais peso às tentativas recentes;
+- incorporar retenção posterior sem transformar ausência de revisão em domínio cheio;
+- manter domínio completamente separado de cobertura, XP e prontidão de prova.
+
+Fórmula V1:
+- usa no máximo as 20 tentativas mais recentes do tópico;
+- peso da tentativa mais recente = 1;
+- cada tentativa anterior recebe peso multiplicado por 0,85;
+- desempenho imediato ponderado = média de acerto com esses pesos;
+- domínio final = 70% desempenho imediato ponderado + 30% retenção posterior mais recente;
+- quando não existe revisão posterior com nota, os 30% de retenção permanecem sem evidência e contribuem com zero;
+- portanto, sem revisão, o domínio provisório máximo é 70.
+
+Estados descritivos:
+- `not_observed` — sem tentativas;
+- `provisional` — tentativas registradas, sem revisão posterior pontuada;
+- `review_observed` — revisão posterior com nota;
+- `retention_observed` — ciclos previstos de revisão observados.
+
+Contrato:
+- `domainProtocol: 1`;
+- `recentDomain.overallScore`;
+- `recentDomain.observedTopics`;
+- `recentDomain.byTopic[topicId]`;
+- dashboard e cartões exibem domínio somente quando o protocolo estiver presente;
+- Worker antigo permanece compatível.
+
+Semântica:
+- domínio recente não é prontidão de prova;
+- não altera cobertura;
+- não concede XP;
+- não muda tentativas, revisões, conquistas ou avaliação independente;
+- o cálculo é derivado e pode evoluir por nova versão documentada sem reescrever histórico.
+
+Validação:
+- tentativa recente pesa mais que antiga;
+- ausência de revisão mantém o estado provisório;
+- revisão posterior entra com peso de 30%;
+- três ciclos observados alteram o rótulo de evidência, não a fórmula;
+- roteador real e navegador exibem o mesmo resultado.
+
+Próximo requisito após C3: publicação incremental de novas missões com preservação integral do histórico e indicador de conteúdo novo.
