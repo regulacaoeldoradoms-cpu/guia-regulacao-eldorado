@@ -9,9 +9,10 @@ import {
   missionByTopicId,
   questionById
 } from '../studies-content/manifest.js';
+import { PLANNED_MISSIONS as SFN_PLAN } from '../studies-content/banking-sfn.js';
 import { computeCampaignProgress, computeStudyStreak, computeStudyStreakDays, isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
-test('conteudo SFN v1.2 tem ids unicos e respostas validas', () => {
+test('catalogo SFN e MP tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
   const questionIds = new Set();
   for (const mission of PUBLISHED_MISSIONS) {
@@ -29,8 +30,8 @@ test('conteudo SFN v1.2 tem ids unicos e respostas validas', () => {
       assert.equal(questionById(question.id)?.question.id, question.id);
     }
   }
-  assert.equal(PUBLISHED_MISSIONS.length, 9);
-  assert.equal(PLANNED_MISSIONS.length, 9);
+  assert.equal(PUBLISHED_MISSIONS.length, 20);
+  assert.equal(PLANNED_MISSIONS.length, 20);
   assert.equal(PLANNED_MISSIONS.length, PUBLISHED_MISSIONS.length);
 });
 
@@ -38,7 +39,7 @@ test('fontes do recorte sao oficiais e datadas', () => {
   assert.ok(STUDY_SOURCES.length >= 18);
   for (const source of STUDY_SOURCES) {
     assert.match(source.url, /^https:\/\//);
-    assert.ok(['2026-09-25', '2026-09-26'].includes(source.checkedAt), source.id);
+    assert.ok(['2026-09-25', '2026-09-26', '2026-09-30'].includes(source.checkedAt), source.id);
   }
 });
 
@@ -57,10 +58,10 @@ test('gate aceita somente a identidade normalizada de Wellyton', () => {
   assert.equal(studyUsernameAllowed(''), false);
 });
 
-test('planejamento do Mundo 1 permanece fixo durante a expansao', () => {
+test('planejamento ativo mantém SFN e inclui MP na sequência', () => {
   const plannedIds = PLANNED_MISSIONS.map((item) => item.id);
   assert.equal(new Set(plannedIds).size, plannedIds.length);
-  assert.equal(plannedIds.length, 9);
+  assert.equal(plannedIds.length, 20);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.ok(plannedIds.includes(mission.id), mission.id);
   }
@@ -78,8 +79,8 @@ test('publicar novas missões não reduz o progresso conquistado', () => {
   const initialPublished = PUBLISHED_MISSIONS.slice(0, 4);
   const expandedPublished = PUBLISHED_MISSIONS.slice(0, 6);
 
-  const before = computeCampaignProgress(progress, initialPublished, PLANNED_MISSIONS);
-  const after = computeCampaignProgress(progress, expandedPublished, PLANNED_MISSIONS);
+  const before = computeCampaignProgress(progress, initialPublished, SFN_PLAN);
+  const after = computeCampaignProgress(progress, expandedPublished, SFN_PLAN);
 
   assert.equal(before.campaignProgress, after.campaignProgress);
   assert.equal(before.campaignProgress, 22.2);

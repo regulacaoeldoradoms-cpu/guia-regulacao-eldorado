@@ -76,7 +76,7 @@ test('catálogo servido mantém ensino e casos iniciais com fontes existentes', 
 });
 
 test('casos formativos não entram na pontuação nem no total das 38 questões', () => {
-  assert.equal(PUBLISHED_MISSIONS.reduce((total, mission) => total + mission.questions.length, 0), 38);
+  assert.equal(PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.')).reduce((total, mission) => total + mission.questions.length, 0), 38);
   for (const before of BASE) {
     const after = missionById(before.id);
     assert.strictEqual(after.questions, before.questions);

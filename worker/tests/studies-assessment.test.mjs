@@ -43,7 +43,7 @@ function seedPrerequisites(sql, username='wellyton') {
 }
 
 test('pré-requisito usa topicId persistido da introdução, sem renomear aula ou aceitar alias não concluído',async t=>{
-  assert.deepEqual(REQUIRED_PROGRESS_TOPIC_IDS,PUBLISHED_MISSIONS.map(mission=>mission.topicId));
+  assert.deepEqual(REQUIRED_PROGRESS_TOPIC_IDS,PUBLISHED_MISSIONS.filter(mission=>mission.id.startsWith('banking.sfn.')).map(mission=>mission.topicId));
   const {sql,db}=fixture(t);await ensureAssessmentSchema(db);seedPrerequisites(sql);
   assert.equal((await getAssessmentState(db,'wellyton')).availableForm,'A');
   sql.prepare("UPDATE study_topic_progress SET coverage_state=2 WHERE topic_id='banking.sfn'").run();

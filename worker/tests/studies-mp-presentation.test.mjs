@@ -7,10 +7,10 @@ import { MP_MISSIONS, MP_SOURCES } from '../studies-content/banking-markets-poli
 const candidate = compileMpCandidate(await loadMpEditorial());
 const blocks = candidate.missions.flatMap(mission => [...mission.sections, ...mission.questions].flatMap(item => item.presentation || []));
 
-test('artefato integrado corresponde à conversão e permanece explicitamente draft', () => {
+test('artefato integrado corresponde à conversão e tem a publicação explicitamente aprovada', () => {
   assert.deepEqual(MP_MISSIONS, candidate.missions);
   assert.deepEqual(MP_SOURCES, candidate.sources);
-  assert.ok(MP_MISSIONS.every(mission => mission.publication.status === 'draft'));
+  assert.ok(MP_MISSIONS.every(mission => mission.publication.status === 'published'));
 });
 
 test('cinco figuras e três tabelas derivam dos dados aprovados, sem baixar Mermaid', () => {

@@ -1,5 +1,5 @@
 // Gerado por node worker/scripts/studies-mp-candidate.mjs --write. Não editar.
-// Fonte editorial #563; todas as missões permanecem draft. Sem autorização de ativação.
+// Fonte editorial #563; publicação e parâmetros aprovados em 30/09/2026 às 19:42 UTC.
 export const MP_MISSIONS = Object.freeze([
   {
     "id": "banking.mp.mercados",
@@ -14,7 +14,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -389,7 +389,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp01",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.sfn.boss",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -405,7 +405,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -706,7 +706,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp02",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.mercados",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -722,7 +722,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -1095,7 +1095,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp03",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.moeda",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1111,7 +1111,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -1437,7 +1437,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp04",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.inflacao",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1453,7 +1453,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -1831,7 +1831,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp05",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.politica-monetaria",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1847,7 +1847,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -2158,7 +2158,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp06",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.instrumentos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2174,7 +2174,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -2541,7 +2541,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp07",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.qe-depositos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2557,7 +2557,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -2925,7 +2925,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp08",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.divida-publica",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2941,7 +2941,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -3389,7 +3389,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mp09",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.interbancario",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -3405,7 +3405,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -3427,14 +3427,14 @@ export const MP_MISSIONS = Object.freeze([
         "id": "acesso",
         "type": "explanation",
         "heading": "1. Comece pelas aulas de origem",
-        "body": "Esta revisão só poderá ser usada após ensino e acesso efetivo a todas as unidades anteriores. Hoje o conjunto inteiro continua em rascunho, fora do aplicativo. Se um conceito ainda não foi estudado, volte à origem antes de tentar as questões: [MP-01 mercados](mp-01-v1.md), [MP-02 moeda e pagamentos](mp-02-v1.md), [MP-03 preços e juros](mp-03-v1.md), [MP-04 transmissão](mp-04-v1.md), [MP-05 operações](mp-05-v1.md), [MP-06 temas datados](mp-06-v1.md), [MP-07 dívida](mp-07-v1.md), [MP-08 relações bancárias](mp-08-v1.md) e [MP-09 curva](mp-09-v1.md). Os comentários ficam disponíveis: isto é prática formativa exposta, não uma forma independente ou comprovação de retenção.",
+        "body": "Esta revisão só poderá ser usada após ensino e acesso efetivo a todas as unidades anteriores.  Se um conceito ainda não foi estudado, volte à origem antes de tentar as questões: [MP-01 mercados](mp-01-v1.md), [MP-02 moeda e pagamentos](mp-02-v1.md), [MP-03 preços e juros](mp-03-v1.md), [MP-04 transmissão](mp-04-v1.md), [MP-05 operações](mp-05-v1.md), [MP-06 temas datados](mp-06-v1.md), [MP-07 dívida](mp-07-v1.md), [MP-08 relações bancárias](mp-08-v1.md) e [MP-09 curva](mp-09-v1.md). Os comentários ficam disponíveis: isto é prática formativa exposta, não uma forma independente ou comprovação de retenção.",
         "sourceIds": [],
         "presentation": [
           {
             "type": "paragraph",
             "runs": [
               {
-                "text": "Esta revisão só poderá ser usada após ensino e acesso efetivo a todas as unidades anteriores. Hoje o conjunto inteiro continua em rascunho, fora do aplicativo. Se um conceito ainda não foi estudado, volte à origem antes de tentar as questões: "
+                "text": "Esta revisão só poderá ser usada após ensino e acesso efetivo a todas as unidades anteriores.  Se um conceito ainda não foi estudado, volte à origem antes de tentar as questões: "
               },
               {
                 "text": "MP-01 mercados",
@@ -4026,7 +4026,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mpr",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.curva-juros",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -4042,7 +4042,7 @@ export const MP_MISSIONS = Object.freeze([
     "passScore": 75,
     "estimatedMinutes": 30,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "markets-policy-intro-r1",
       "releaseSequence": 2,
       "changeImpact": "new"
@@ -4076,7 +4076,7 @@ export const MP_MISSIONS = Object.freeze([
         "id": "preparacao",
         "type": "explanation",
         "heading": "1. Ensino e acesso antes do Chefe",
-        "body": "Este desafio depende de [MP-01](mp-01-v1.md), [MP-02](mp-02-v1.md), [MP-03](mp-03-v1.md), [MP-04](mp-04-v1.md), [MP-05](mp-05-v1.md), [MP-06](mp-06-v1.md), [MP-07](mp-07-v1.md), [MP-08](mp-08-v1.md) e [MP-09](mp-09-v1.md) ensinadas e acessíveis. A [MP-R](mp-r-v1.md) permite preparar a revisão antes da tentativa. Hoje todos esses materiais são rascunhos fora do aplicativo. Não use o Chefe para substituir as aulas nem para cobrar um conceito antes de ler a origem indicada.",
+        "body": "Este desafio depende de [MP-01](mp-01-v1.md), [MP-02](mp-02-v1.md), [MP-03](mp-03-v1.md), [MP-04](mp-04-v1.md), [MP-05](mp-05-v1.md), [MP-06](mp-06-v1.md), [MP-07](mp-07-v1.md), [MP-08](mp-08-v1.md) e [MP-09](mp-09-v1.md) ensinadas e acessíveis. A [MP-R](mp-r-v1.md) permite preparar a revisão antes da tentativa.  Não use o Chefe para substituir as aulas nem para cobrar um conceito antes de ler a origem indicada.",
         "sourceIds": [],
         "presentation": [
           {
@@ -4173,7 +4173,7 @@ export const MP_MISSIONS = Object.freeze([
                 "wholeLesson": true
               },
               {
-                "text": " permite preparar a revisão antes da tentativa. Hoje todos esses materiais são rascunhos fora do aplicativo. Não use o Chefe para substituir as aulas nem para cobrar um conceito antes de ler a origem indicada."
+                "text": " permite preparar a revisão antes da tentativa.  Não use o Chefe para substituir as aulas nem para cobrar um conceito antes de ler a origem indicada."
               }
             ]
           }
@@ -4771,7 +4771,7 @@ export const MP_MISSIONS = Object.freeze([
       "editorialId": "draft.mpchefe",
       "blockId": "banking.markets-policy",
       "prerequisiteId": "banking.mp.revisao",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   }
 ]);

@@ -4,6 +4,7 @@ import { PUBLISHED_MISSIONS, missionById, sourceMap, validateTeachingCatalog } f
 import { FUNDAMENTALS_REVIEW, reviseFundamentalsSections, validateFundamentalsTargets } from '../studies-content/sfn-fundamentos-revisados.js';
 import { PUBLISHED_MISSIONS as original } from '../studies-content/banking-sfn.js';
 
+const sfn = PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
 const ids = ['banking.sfn.introducao', 'banking.sfn.cmn', 'banking.sfn.bacen', 'banking.sfn.copom'];
 
 test('revisão dos fundamentos está aplicada no catálogo realmente servido', () => {
@@ -60,7 +61,7 @@ test('alvo ausente ou revisão desconectada não passa silenciosamente', () => {
 });
 
 test('nenhuma nova questão, XP ou mudança de regra foi introduzida', () => {
-  assert.equal(PUBLISHED_MISSIONS.length, original.length);
+  assert.equal(sfn.length, original.length);
   for (const before of original) {
     const after = missionById(before.id);
     assert.equal(after.topicId, before.topicId);
@@ -69,5 +70,5 @@ test('nenhuma nova questão, XP ou mudança de regra foi introduzida', () => {
     assert.equal(after.passScore, before.passScore);
     assert.strictEqual(after.questions, before.questions);
   }
-  assert.equal(PUBLISHED_MISSIONS.reduce((sum, mission) => sum + mission.questions.length, 0), 38);
+  assert.equal(sfn.reduce((sum, mission) => sum + mission.questions.length, 0), 38);
 });
