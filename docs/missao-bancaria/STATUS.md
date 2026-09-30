@@ -509,3 +509,7 @@ Próximo passo depois do C4: consolidar a cadeia C1–C4 na `main`, confirmar pu
 ### Hardening do Recorte C4
 
 O registro de publicação foi reforçado para falhar fechado também em runtime: `publishedCatalog()` executa a validação dos metadados antes de compor o catálogo e interrompe a publicação quando houver `status`, `changeImpact`, `releaseId` ou `releaseSequence` explícitos inválidos. O teste do recorte exige essa falha; não há relaxamento de CI nem normalização silenciosa para `published`.
+
+### C3 — correção de ausência de evidência
+
+A interface de domínio recente foi endurecida para não converter `null` em `0` por coerção JavaScript. Quando não existe evidência, o resumo permanece `—` / **Ainda não medido**, e o cartão da missão não exibe `0%` artificial. Há teste Chromium específico para essa condição.
