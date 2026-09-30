@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadMpEditorial, compileMpCandidate, MP_PLAN } from '../scripts/studies-mp-candidate.mjs';
-import { PUBLISHED_MISSIONS, PLANNED_MISSIONS, STUDY_SOURCES } from '../studies-content/manifest.js';
+import { PUBLISHED_MISSIONS as LIVE_MISSIONS, PLANNED_MISSIONS, STUDY_SOURCES } from '../studies-content/manifest.js';
 import { publishedCatalog, publicationSnapshot } from '../studies-content/publication-registry.js';
 import { curriculumSnapshot } from '../studies-content/curriculum-v1.js';
 import { questionFeedbackById } from '../studies-content/question-feedback-v1.js';
 
+const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.order <= 20);
 const editorial = await loadMpEditorial();
 const baseline = PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
 const before = structuredClone(editorial);
@@ -53,7 +54,7 @@ test('release MP aprovada entra no catálogo; a mesma entrada draft continua exc
   assert.equal(publicationSnapshot([...baseline, ...drafts]).newCount, 0);
   assert.deepEqual(publishedCatalog([...baseline, ...candidate.missions]), PUBLISHED_MISSIONS);
   assert.equal(PUBLISHED_MISSIONS.length, 20);
-  assert.equal(PLANNED_MISSIONS.length, 20);
+  assert.equal(PLANNED_MISSIONS.filter(m => !m.id.startsWith('banking.pc.')).length, 20);
   assert.ok(candidate.sources.every(s => STUDY_SOURCES.some(active => active.id === s.id)));
   assert.equal(publicationSnapshot(PUBLISHED_MISSIONS).newCount, 11);
   const map = curriculumSnapshot(PUBLISHED_MISSIONS);

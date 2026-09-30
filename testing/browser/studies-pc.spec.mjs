@@ -2,13 +2,14 @@ import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadMpEditorial, compileMpCandidate } from '../../worker/scripts/studies-mp-candidate.mjs';
+import { loadPcEditorial, compilePcCandidate } from '../../worker/scripts/studies-pc-candidate.mjs';
 import { PUBLISHED_MISSIONS } from '../../worker/studies-content/manifest.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
-const candidate = compileMpCandidate(await loadMpEditorial());
-const all = PUBLISHED_MISSIONS.filter(m => m.order <= 20);
+const candidate = compilePcCandidate(await loadPcEditorial());
+// Catálogo ativo autorizado, exercitado somente com API interceptada.
+const all = PUBLISHED_MISSIONS;
 const boss = candidate.missions.at(-1);
 const publicMissions = all.map(mission => ({ ...mission, sources: [],
   questions: mission.questions.map(({ id, prompt, options, presentation }) => ({ id, prompt, options, ...(presentation ? { presentation } : {}) })) }));
@@ -19,11 +20,11 @@ async function setup(page, { theme = 'light', resume = false, username = 'wellyt
     user: { username, name: 'Estudante sintético' }, missions: publicMissions,
     progress: Object.fromEntries(all.filter(mission => mission.id !== boss.id).map(mission => [mission.topicId, { coverageState: 3, masteryScore: 0 }])),
     attemptedQuestions: {}, reviews: [],
-    resumableSession: resume ? { sessionId: 'mp-resume', missionId: boss.id, mode: 'boss', reviewId: null,
-      durationSeconds: 30, answeredQuestionIds: [boss.questions[10].id] } : null,
+    resumableSession: resume ? { sessionId: 'pc-resume', missionId: boss.id, mode: 'boss', reviewId: null,
+      durationSeconds: 30, answeredQuestionIds: [boss.questions[8].id] } : null,
     metrics: { xp: 100, level: 1, levelTitle: 'Estudante', nextLevelXp: 150, questions: 1, accuracy: 0, hoursSeconds: 30,
-      reviewsDue: 0, publishedMissions: 20, plannedMissions: 20, completedPublished: 19, campaignProgress: 95,
-      availableCompletion: 95, campaignAvailability: 100, streak: { current: 1, best: 1 } }
+      reviewsDue: 0, publishedMissions: 37, plannedMissions: 37, completedPublished: 36, campaignProgress: 97,
+      availableCompletion: 97, campaignAvailability: 100, streak: { current: 1, best: 1 } }
   };
   const errors = [], unexpected = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -32,7 +33,7 @@ async function setup(page, { theme = 'light', resume = false, username = 'wellyt
     window.RegulationAuth={requireRole:async()=>({username:${JSON.stringify(username)}}),logout:async()=>{},api:async(route,options={})=>{
       const body=options.body?JSON.parse(options.body):null;window.__calls.push({route,method:options.method,body});
       if(route.endsWith('/bootstrap'))return structuredClone(window.__payload);
-      if(route.endsWith('/sessions'))return {sessionId:'mp-local-session'};
+      if(route.endsWith('/sessions'))return {sessionId:'pc-local-session'};
       if(route.endsWith('/attempts')){
         const question=questions.find(q=>q.id===body.questionId);
         const recorded=!window.__attemptRecords[body.questionId];window.__attemptRecords[body.questionId]=body.selectedOption+1;
@@ -78,37 +79,33 @@ async function assertNoOverflow(page) {
   }
 }
 
+const tableCases = [
+  ['banking.pc.custos', ['Informação', 'Proposta A', 'Proposta B'],
+    ['Principal recebido', 'R$1.000', 'R$1.000', 'Juros ao final', 'R$100', 'R$150',
+     'Outros encargos ao final', 'R$100', 'R$0', 'Pagamento final', 'R$1.200', 'R$1.150',
+     'CET informado', '20,00% a.a.', '15,00% a.a.']],
+  ['banking.pc.garantias-pessoais', ['Pergunta', 'Fiança', 'Aval']],
+  ['banking.pc.garantias-reais', ['Situação declarada', 'Ideia central', 'Erro a evitar']]
+];
 for (const [width, height, theme] of [[320, 568, 'light'], [390, 844, 'dark'], [1280, 800, 'light']]) {
-  test(`cinco figuras e três tabelas com dados exatos ${width} ${theme}`, async ({ page }) => {
+  test('três tabelas PC e consulta com fonte ampliada ' + width + ' ' + theme, async ({ page }) => {
     await page.setViewportSize({ width, height });
     const { errors, unexpected } = await setup(page, { theme });
-    await consult(page, 'banking.mp.interbancario');
-    const reference = page.locator('#studyReferencePanel');
-    await expect(reference.locator('.study-flow')).toHaveCount(2);
-    await expect(reference.locator('.study-flow-step')).toHaveCount(4);
-    await expect(reference.locator('.study-flow').first()).toContainText('Banco A: fornece recursos');
-    await expect(reference.locator('.study-flow').first()).toContainText('devolução e remuneração no prazo');
-    await expect(reference).not.toContainText('```');
-    await assertNoOverflow(page);
-    await page.locator('#studyCloseReference').click();
-    await consult(page, 'banking.mp.curva-juros');
-    await expect(reference.locator('svg[role="img"]')).toHaveCount(2);
-    await expect(reference.locator('table')).toHaveCount(2);
-    expect(await reference.locator('table').first().locator('tbody td').allTextContents()).toEqual(['1', '6', '2', '7', '3', '8']);
-    expect(await reference.locator('table').nth(1).locator('tbody td').allTextContents()).toEqual(['1', '9', '2', '8', '3', '7']);
-    await expect(reference.locator('svg').first()).toHaveAttribute('aria-label', /1 anos: 6% a.a.; 2 anos: 7% a.a.; 3 anos: 8% a.a./);
-    await assertNoOverflow(page);
-    await reference.locator('.study-chart').first().screenshot({ path: test.info().outputPath(`mp09-${width}-${theme}.png`) });
-    await page.locator('#studyCloseReference').click();
     for (let i = 0; i < 3; i++) await page.locator('#studyFontLarger').click();
-    await page.locator('#studyPracticeButton').click();
-    const question = page.locator('[data-question-id="q.mpchefe.q11"]');
-    await expect(question.locator('table')).toHaveCount(1);
-    await expect(question.locator('svg circle')).toHaveCount(3);
-    expect(await question.locator('tbody td').allTextContents()).toEqual(['1', '8', '2', '6', '3', '7']);
-    await expect(question).not.toContainText('```');
-    await assertNoOverflow(page);
-    await question.locator('.study-chart').screenshot({ path: test.info().outputPath(`chefe-${width}-${theme}.png`) });
+    const reference = page.locator('#studyReferencePanel');
+    for (const [id, headers, cells] of tableCases) {
+      await consult(page, id);
+      await expect(reference.locator('table')).toHaveCount(1);
+      expect(await reference.locator('th').allTextContents()).toEqual(headers);
+      const approved = candidate.missions.find(m => m.id === id).sections.flatMap(s => s.presentation || []).find(p => p.type === 'table');
+      expect(await reference.locator('tbody td').allTextContents()).toEqual(cells || approved.rows.flat());
+      await expect(reference).not.toContainText('| ---');
+      await assertNoOverflow(page);
+      await page.locator('#studyCloseReference').click();
+    }
+    await consult(page, 'banking.pc.contas');
+    await expect(reference.locator('[data-study-reference="banking.pc.pessoas"]')).not.toHaveCount(0);
+    await page.locator('#studyCloseReference').click();
     expect(await page.evaluate(() => window.__calls.filter(call => call.route.endsWith('/sessions')).length)).toBe(1);
     expect(errors).toEqual([]); expect(unexpected).toEqual([]);
   });
@@ -118,10 +115,10 @@ test('consulta, erro de rede e repetição preservam escolha, rodada e resposta 
   await page.setViewportSize({ width: 390, height: 844 });
   const { errors, unexpected } = await setup(page);
   await page.locator('#studyPracticeButton').click();
-  const question = page.locator('[data-question-id="q.mpchefe.q11"]');
+  const question = page.locator('[data-question-id="q.pcchefe.q09"]');
   await question.locator('input').first().check();
   await page.locator('#studyReturnLesson').click();
-  await consult(page, 'banking.mp.curva-juros');
+  await consult(page, 'banking.pc.poupanca');
   await page.locator('#studyCloseReference').click();
   await page.locator('#studyPracticeButton').click();
   await expect(question.locator('input').first()).toBeChecked();
@@ -131,10 +128,10 @@ test('consulta, erro de rede e repetição preservam escolha, rodada e resposta 
   await expect(question.locator('input').first()).toBeDisabled();
   await question.locator('[data-answer-question]').click();
   await expect(question.locator('[data-answer-question]')).toHaveText('Respondida');
-  const link = question.getByRole('button', { name: /Consultar MP-09:/ }).first();
+  const link = question.getByRole('button', { name: /Consultar PC-11A:/ }).first();
   for (let i = 0; i < 3; i++) {
     await link.click();
-    await expect(page.locator('#studyReferenceTitle')).toHaveText('Consulta · MP-09');
+    await expect(page.locator('#studyReferenceTitle')).toHaveText('Consulta · PC-11A');
     await expect(page.locator('#studyPracticePanel')).toBeHidden();
     await page.locator('#studyCloseReference').click();
     await expect(page.locator('#studyPracticePanel')).toBeVisible();
@@ -152,19 +149,19 @@ test('consulta, erro de rede e repetição preservam escolha, rodada e resposta 
 test('resposta pendente termina durante consulta sem perder DOM e saída limpa a consulta', async ({ page }) => {
   const { errors, unexpected } = await setup(page);
   await page.locator('#studyPracticeButton').click();
-  const question = page.locator('[data-question-id="q.mpchefe.q11"]');
+  const question = page.locator('[data-question-id="q.pcchefe.q09"]');
   await question.locator('input').first().check();
   await page.evaluate(() => { window.__delayAnswer = true; });
   await question.locator('[data-answer-question]').click();
   await expect.poll(() => page.evaluate(() => typeof window.__releaseAnswer)).toBe('function');
   await page.locator('#studyReturnLesson').click();
-  await consult(page, 'banking.mp.curva-juros');
+  await consult(page, 'banking.pc.poupanca');
   await page.evaluate(() => window.__releaseAnswer());
   await expect(question.locator('[data-answer-question]')).toHaveText('Respondida');
   await page.locator('#studyCloseReference').click();
   await page.locator('#studyPracticeButton').click();
   await expect(question.locator('input').first()).toBeDisabled();
-  await question.getByRole('button', { name: /Consultar MP-09:/ }).first().click();
+  await question.getByRole('button', { name: /Consultar PC-11A:/ }).first().click();
   await page.locator('#leaveFocus').click();
   await expect(page.locator('#studyDashboard')).toBeVisible();
   await page.locator('#continueStudy').click();
@@ -173,22 +170,16 @@ test('resposta pendente termina durante consulta sem perder DOM e saída limpa a
   expect(errors).toEqual([]); expect(unexpected).toEqual([]);
 });
 
-test('retomada mantém questão gráfica respondida sem criar rodada ou executar HTML', async ({ page }) => {
+test('retomada mantém questão PC respondida sem criar rodada', async ({ page }) => {
   const { errors, unexpected } = await setup(page, { resume: true });
-  await consult(page, 'banking.mp.curva-juros');
+  await consult(page, 'banking.pc.poupanca');
   await page.locator('#studyCloseReference').click();
   await page.locator('#studyPracticeButton').click();
-  const question = page.locator('[data-question-id="q.mpchefe.q11"]');
-  await expect(question.locator('svg')).toBeVisible();
+  const question = page.locator('[data-question-id="q.pcchefe.q09"]');
+  await expect(question).toContainText('Uma conta de poupança aberta em 2011');
   await expect(question.locator('[data-answer-question]')).toBeDisabled();
   await expect(page.locator('#studyPracticeProgress')).toHaveAttribute('aria-valuenow', '1');
   expect(await page.evaluate(() => window.__calls.filter(call => call.route.endsWith('/sessions')).length)).toBe(0);
-  await page.evaluate(() => {
-    const node = document.createElement('div'); node.id = 'safePresentation'; document.body.append(node);
-    window.StudyReader.renderContent(node, [{ type: 'paragraph', runs: [{ text: '<img src=x onerror="window.__unsafe=1">', href: 'javascript:window.__unsafe=1' }] }]);
-  });
-  await expect(page.locator('#safePresentation img, #safePresentation a')).toHaveCount(0);
-  expect(await page.evaluate(() => window.__unsafe)).toBeUndefined();
   expect(errors).toEqual([]); expect(unexpected).toEqual([]);
 });
 

@@ -3,24 +3,24 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
 import { fixture } from './studies-route-fixture.mjs';
-import { loadMpEditorial, compileMpCandidate } from '../../scripts/studies-mp-candidate.mjs';
+import { loadPcEditorial, compilePcCandidate } from '../../scripts/studies-pc-candidate.mjs';
 import { PUBLISHED_MISSIONS as LIVE_MISSIONS, STUDY_SOURCES } from '../../studies-content/manifest.js';
 import { publishedCatalog, publicationSnapshot } from '../../studies-content/publication-registry.js';
 import { curriculumSnapshot } from '../../studies-content/curriculum-v1.js';
 
-const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
-const candidate = compileMpCandidate(await loadMpEditorial());
-// Release real aprovada; baseline SFN separado permite verificar a transição sem dados produtivos.
-const mp = candidate.missions;
+const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.order < 21);
+const candidate = compilePcCandidate(await loadPcEditorial());
+// Release autorizada; baseline SFN/MP separado verifica a transição em memória.
+const pc = candidate.missions;
 
-test('manifesto e mapa reais incluem o pacote com status publicado aprovado', async () => {
+test('manifesto e mapa reais incluem o pacote com status publicado somente na simulação', async () => {
   const context = vm.createContext({});
   const cache = new Map();
-  const replacement = new vm.SyntheticModule(['MP_MISSIONS', 'MP_SOURCES'], function () {
-    this.setExport('MP_MISSIONS', mp); this.setExport('MP_SOURCES', candidate.sources);
+  const replacement = new vm.SyntheticModule(['PC_MISSIONS', 'PC_SOURCES'], function () {
+    this.setExport('PC_MISSIONS', pc); this.setExport('PC_SOURCES', candidate.sources);
   }, { context });
   async function load(url) {
-    if (url.pathname.endsWith('/banking-markets-policy-v1.js')) return replacement;
+    if (url.pathname.endsWith('/banking-products-credit-v1.js')) return replacement;
     if (cache.has(url.href)) return cache.get(url.href);
     assert.ok(url.pathname.includes('/studies-content/'));
     const module = new vm.SourceTextModule(fs.readFileSync(url, 'utf8'), { context });
@@ -40,13 +40,13 @@ test('manifesto e mapa reais incluem o pacote com status publicado aprovado', as
   const progress = Object.fromEntries(PUBLISHED_MISSIONS.map(mission => [mission.topicId, { coverageState: 3 }]));
   const state = curriculum.namespace.curriculumSnapshot(catalog.PUBLISHED_MISSIONS, progress);
   assert.equal(state.publishedBlocks, 3);
-  assert.equal(state.completedBlocks, 1);
+  assert.equal(state.completedBlocks, 2);
   assert.equal(state.readiness.status, 'not_measured');
-  assert.equal(catalog.publicationSnapshot(progress).newCount, 28);
+  assert.equal(catalog.publicationSnapshot(progress).newCount, 17);
 });
 async function setup(t, missions) {
   return fixture(t, {
-    missions, sources: STUDY_SOURCES,
+    missions, sources: [...STUDY_SOURCES, ...candidate.sources],
     publicationSnapshot: progress => publicationSnapshot(missions, progress), curriculumSnapshot
   });
 }
@@ -75,28 +75,30 @@ test('draft inacessível e autorização exclusiva antes de inicializar persist�
   assert.equal((await call('bootstrap', undefined, { identity: { username: 'outro' } })).status, 403);
   assert.equal((await call('bootstrap', undefined, { originAllowed: false })).status, 403);
   assert.equal(sql.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table'").get().n, 0);
-  assert.equal((await call('sessions', { missionId: mp[0].id })).status, 404);
+  assert.equal((await call('sessions', { missionId: pc[0].id })).status, 404);
   const bootstrap = (await call('bootstrap')).body;
-  assert.equal(bootstrap.missions.length, 9);
-  assert.equal(bootstrap.publication.newCount, 0);
+  assert.equal(bootstrap.missions.length, 20);
+  assert.equal(bootstrap.publication.newCount, 11);
 });
 
-test('sequência MP exige SFN concluído, feedback ocorre só após resposta e rodada é retomada', async t => {
-  const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...mp]);
-  assert.equal((await call('sessions', { missionId: mp[0].id })).body.code, 'STUDY_PREREQUISITE_REQUIRED');
-  seedCompletion(sql, PUBLISHED_MISSIONS);
-  assert.equal((await call('sessions', { missionId: mp[1].id })).body.code, 'STUDY_PREREQUISITE_REQUIRED');
-  const sessionId = await start(mp[0]);
-  const question = mp[0].questions[0];
+test('sequência PC exige SFN/MP concluídos, feedback ocorre só após resposta e rodada é retomada', async t => {
+  const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...pc]);
+  assert.equal((await call('sessions', { missionId: pc[0].id })).body.code, 'STUDY_PREREQUISITE_REQUIRED');
+  seedCompletion(sql, PUBLISHED_MISSIONS.slice(0, -1));
+  assert.equal((await call('sessions', { missionId: pc[0].id })).body.code, 'STUDY_PREREQUISITE_REQUIRED');
+  seedCompletion(sql, PUBLISHED_MISSIONS.slice(-1));
+  assert.equal((await call('sessions', { missionId: pc[1].id })).body.code, 'STUDY_PREREQUISITE_REQUIRED');
+  const sessionId = await start(pc[0]);
+  const question = pc[0].questions[0];
   const selectedOption = (question.answer + 1) % 4;
   const answer = await call('attempts', { sessionId, questionId: question.id, selectedOption });
   assert.equal(answer.status, 200);
   assert.equal(answer.body.selectedFeedback, question.optionRationales[selectedOption]);
-  assert.deepEqual(answer.body.reviewRefs, mp[0].teaching.questionCoverage[question.id]);
+  assert.deepEqual(answer.body.reviewRefs, pc[0].teaching.questionCoverage[question.id]);
   assert.equal((await call('attempts', { sessionId, questionId: question.id, selectedOption })).body.recorded, false);
   const bootstrap = (await call('bootstrap')).body;
   assert.equal(bootstrap.resumableSession.sessionId, sessionId);
-  const openedAgain = await call('sessions', { missionId: mp[0].id });
+  const openedAgain = await call('sessions', { missionId: pc[0].id });
   assert.equal(openedAgain.status, 409);
   assert.equal(openedAgain.body.code, 'STUDY_SESSION_RESUME_REQUIRED');
   assert.equal((await call('bootstrap')).body.resumableSession.sessionId, sessionId);
@@ -107,7 +109,7 @@ test('sequência MP exige SFN concluído, feedback ocorre só após resposta e r
   }
 });
 
-test('adição simulada preserva SFN, XP, tentativas, conquista, revisões, avaliação A e sessão interrompida', async t => {
+test('adição simulada preserva SFN/MP, XP, tentativas, conquista, revisões, avaliação A e sessão interrompida', async t => {
   const missions = [...PUBLISHED_MISSIONS];
   const { sql, call, start } = await setup(t, missions);
   const first = await finish(call, start, missions[0]);
@@ -120,29 +122,30 @@ test('adição simulada preserva SFN, XP, tentativas, conquista, revisões, aval
     assert.equal((await call(`assessments/${assessment.body.assessmentId}/answers`, { questionId: question.id, selectedOption: 0 })).status, 200);
   }
   assert.equal((await call(`assessments/${assessment.body.assessmentId}/complete`, {})).status, 200);
-  const sessionId = await start(missions[0]);
-  await call('attempts', { sessionId, questionId: missions[0].questions[0].id, selectedOption: 0 });
+  const interrupted = missions.find(m => m.id === 'banking.mp.mercados');
+  const sessionId = await start(interrupted);
+  await call('attempts', { sessionId, questionId: interrupted.questions[0].id, selectedOption: 0 });
   const prior = records(sql);
   const priorState = (await call('bootstrap')).body;
   const priorAssessment = (await call('assessments/banking.sfn-foundation')).body;
-  missions.push(...mp);
+  missions.push(...pc);
   const after = (await call('bootstrap')).body;
   assert.deepEqual(records(sql), prior);
   assert.deepEqual(after.progress, priorState.progress);
   assert.deepEqual(after.resumableSession, priorState.resumableSession);
   assert.deepEqual(after.reviews, priorState.reviews);
   assert.deepEqual((await call('assessments/banking.sfn-foundation')).body, priorAssessment);
-  assert.deepEqual(after.publication.newMissionIds, mp.map(mission => mission.id));
+  assert.deepEqual(after.publication.newMissionIds, pc.map(mission => mission.id));
   assert.equal(after.publication.revisionRecommendedCount, 0);
   assert.equal(after.curriculum.readiness.status, 'not_measured');
-  assert.equal(after.curriculum.publishedBlocks, 2); // mapa da release ativa declara o recorte MP.
+  assert.equal(after.curriculum.publishedBlocks, 3); // catálogo ativo inclui o núcleo PC autorizado.
 });
 
-test('MP-R preserva recuperação nas aulas anteriores via referências do endpoint', async t => {
-  const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...mp]);
+test('PC-R preserva recuperação nas aulas anteriores via referências do endpoint', async t => {
+  const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...pc]);
   await call('bootstrap');
-  seedCompletion(sql, [...PUBLISHED_MISSIONS, ...mp.slice(0, 9)]);
-  const mission = mp[9];
+  seedCompletion(sql, [...PUBLISHED_MISSIONS, ...pc.slice(0, -2)]);
+  const mission = pc.at(-2);
   const sessionId = await start(mission);
   const question = mission.questions[0];
   const response = await call('attempts', { sessionId, questionId: question.id, selectedOption: (question.answer + 1) % 4 });
@@ -151,11 +154,11 @@ test('MP-R preserva recuperação nas aulas anteriores via referências do endpo
   assert.ok(response.body.reviewRefs.some(ref => ref.missionId !== mission.id));
 });
 
-test('Chefe MP respeita limiar aprovado, XP único e não concede a conquista do SFN', async t => {
-  const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...mp]);
+test('Chefe PC respeita limiar do padrão existente, XP único e não concede a conquista do SFN', async t => {
+  const { sql, call, start } = await setup(t, [...PUBLISHED_MISSIONS, ...pc]);
   await call('bootstrap');
-  seedCompletion(sql, [...PUBLISHED_MISSIONS, ...mp.slice(0, -1)]);
-  const boss = mp.at(-1);
+  seedCompletion(sql, [...PUBLISHED_MISSIONS, ...pc.slice(0, -1)]);
+  const boss = pc.at(-1);
   const choices = hits => boss.questions.map((q, index) => index < hits ? q.answer : (q.answer + 1) % 4);
   const failed = await finish(call, start, boss, choices(8));
   assert.equal(failed.completion.status, 422);

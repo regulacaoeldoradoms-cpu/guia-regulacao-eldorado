@@ -12,7 +12,7 @@ import {
 import { PLANNED_MISSIONS as SFN_PLAN } from '../studies-content/banking-sfn.js';
 import { computeCampaignProgress, computeStudyStreak, computeStudyStreakDays, isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
-test('catalogo SFN e MP tem ids unicos e respostas validas', () => {
+test('catalogo SFN, MP e PC tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
   const questionIds = new Set();
   for (const mission of PUBLISHED_MISSIONS) {
@@ -30,8 +30,8 @@ test('catalogo SFN e MP tem ids unicos e respostas validas', () => {
       assert.equal(questionById(question.id)?.question.id, question.id);
     }
   }
-  assert.equal(PUBLISHED_MISSIONS.length, 20);
-  assert.equal(PLANNED_MISSIONS.length, 20);
+  assert.equal(PUBLISHED_MISSIONS.length, 37);
+  assert.equal(PLANNED_MISSIONS.length, 37);
   assert.equal(PLANNED_MISSIONS.length, PUBLISHED_MISSIONS.length);
 });
 
@@ -58,10 +58,10 @@ test('gate aceita somente a identidade normalizada de Wellyton', () => {
   assert.equal(studyUsernameAllowed(''), false);
 });
 
-test('planejamento ativo mantém SFN e inclui MP na sequência', () => {
+test('planejamento ativo mantém SFN e inclui MP/PC na sequência', () => {
   const plannedIds = PLANNED_MISSIONS.map((item) => item.id);
   assert.equal(new Set(plannedIds).size, plannedIds.length);
-  assert.equal(plannedIds.length, 20);
+  assert.equal(plannedIds.length, 37);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.ok(plannedIds.includes(mission.id), mission.id);
   }

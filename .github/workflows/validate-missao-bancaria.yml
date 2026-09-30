@@ -71,16 +71,7 @@ jobs:
           grep -q 'Mapa do curso-base' estudos/index.html
 
       - name: Validar isolamento assistencial
-        run: |
-          set -euo pipefail
-          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/study-assessments.js worker/studies-content/*.js worker/studies-assessment-content/*.js js/studies.js js/studies-reader.js js/studies-clock.js estudos/index.html; then
-            echo 'A Missao Bancaria contem termo assistencial proibido no dominio de estudos.' >&2
-            exit 1
-          fi
-          if grep -Eqi 'firebase|firestore|google_drive|document_drive|telemedicina' worker/studies.js worker/study-rounds.js worker/study-assessments.js worker/studies-content/*.js worker/studies-assessment-content/*.js; then
-            echo 'A Missao Bancaria nao pode depender de dominios institucionais.' >&2
-            exit 1
-          fi
+        run: node worker/scripts/check-studies-isolation.mjs
 
       - name: Validar documentacao e fontes
         run: |

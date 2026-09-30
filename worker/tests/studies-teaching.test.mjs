@@ -20,8 +20,8 @@ test('introdução explica nomes antes de cobrar siglas', () => {
 
 test('todas as missões atuais têm ensino, exemplos, consulta e resumo', () => {
   assert.deepEqual(validateTeachingCatalog(), []);
-  assert.equal(PUBLISHED_MISSIONS.length, 20);
-  assert.equal(PUBLISHED_MISSIONS.filter((mission) => mission.kind === 'boss').length, 2);
+  assert.equal(PUBLISHED_MISSIONS.length, 37);
+  assert.equal(PUBLISHED_MISSIONS.filter((mission) => mission.kind === 'boss').length, 3);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.equal(mission.contentVersion, mission.id.startsWith('banking.sfn.') ? 2 : 1);
     for (const section of mission.sections) {
@@ -48,9 +48,9 @@ test('correção do curso inteiro preserva IDs, questões, recompensas e regras 
   }
 });
 
-test('as 122 questões apontam para trechos reais de ensino', () => {
+test('as 266 questões apontam para trechos reais de ensino', () => {
   const total = PUBLISHED_MISSIONS.reduce((sum, mission) => sum + mission.questions.length, 0);
-  assert.equal(total, 122);
+  assert.equal(total, 266);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.strictEqual(missionByTopicId(mission.topicId), mission);
     for (const question of mission.questions) {
