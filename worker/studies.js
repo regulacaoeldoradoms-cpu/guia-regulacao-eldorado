@@ -517,6 +517,108 @@ async function metrics(env, username, progress) {
   };
 }
 
+export function computeRecencyDomain(attempts = [], evidence = {}) {
+  const normalized = (Array.isArray(attempts) ? attempts : [])
+    .map((row) => ({
+      correct: Number(row?.correct) === 1 ? 1 : 0,
+      rank: Math.max(1, Number(row?.recencyRank || row?.recency_rank || 0) || 1)
+    }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 20);
+
+  if (!normalized.length) {
+    return Object.freeze({
+      score: null,
+      immediateScore: null,
+      retentionScore: null,
+      attemptCount: 0,
+      status: 'not_observed',
+      label: 'Ainda não medido',
+      explanation: 'O domínio recente exige tentativas registradas e permanece separado da cobertura e da prontidão de prova.'
+    });
+  }
+
+  let weightedHits = 0;
+  let totalWeight = 0;
+  for (let index = 0; index < normalized.length; index++) {
+    const weight = Math.pow(0.85, index);
+    totalWeight += weight;
+    weightedHits += normalized[index].correct * weight;
+  }
+
+  const round = (value) => Math.round(value * 10) / 10;
+  const clamp = (value) => Math.max(0, Math.min(100, Number(value || 0)));
+  const immediateScore = round(totalWeight ? (weightedHits / totalWeight) * 100 : 0);
+  const rawRetention = evidence?.latestScore;
+  const retentionCandidate = rawRetention === null || rawRetention === undefined || rawRetention === ''
+    ? NaN
+    : Number(rawRetention);
+  const retentionScore = Number.isFinite(retentionCandidate) ? round(clamp(retentionCandidate)) : null;
+
+  if (retentionScore === null) {
+    return Object.freeze({
+      score: round(immediateScore * 0.7),
+      immediateScore,
+      retentionScore: null,
+      attemptCount: normalized.length,
+      status: 'provisional',
+      label: 'Provisório sem revisão',
+      explanation: '70% do sinal vem das tentativas recentes; os 30% de retenção permanecem sem evidência até existir revisão posterior com nota.'
+    });
+  }
+
+  const status = evidence?.status === 'schedule_observed' ? 'retention_observed' : 'review_observed';
+  return Object.freeze({
+    score: round(immediateScore * 0.7 + retentionScore * 0.3),
+    immediateScore,
+    retentionScore,
+    attemptCount: normalized.length,
+    status,
+    label: status === 'retention_observed' ? 'Com ciclos de revisão observados' : 'Com revisão posterior',
+    explanation: 'Domínio recente combina 70% de desempenho recente ponderado e 30% da revisão posterior mais recente; não mede prontidão de prova.'
+  });
+}
+
+async function recencyDomainSnapshot(env, username, learningEvidence) {
+  const result = await env.AUTH_DB.prepare(`WITH ranked AS (
+      SELECT topic_id, correct, attempted_at,
+        ROW_NUMBER() OVER (
+          PARTITION BY topic_id
+          ORDER BY attempted_at DESC, rowid DESC
+        ) AS recency_rank
+      FROM study_attempts
+      WHERE username=?
+    )
+    SELECT topic_id, correct, attempted_at, recency_rank
+    FROM ranked
+    WHERE recency_rank<=20
+    ORDER BY topic_id, recency_rank`).bind(username).all();
+
+  const grouped = {};
+  for (const row of result.results || []) {
+    const topicId = String(row.topic_id || '');
+    if (!topicId) continue;
+    if (!grouped[topicId]) grouped[topicId] = [];
+    grouped[topicId].push(row);
+  }
+
+  const byTopic = Object.fromEntries(PUBLISHED_MISSIONS.map((mission) => [
+    mission.topicId,
+    computeRecencyDomain(grouped[mission.topicId] || [], learningEvidence?.[mission.topicId] || {})
+  ]));
+  const measured = Object.values(byTopic).filter((item) => Number.isFinite(item.score));
+  const overallScore = measured.length
+    ? Math.round((measured.reduce((sum, item) => sum + item.score, 0) / measured.length) * 10) / 10
+    : null;
+
+  return Object.freeze({
+    overallScore,
+    observedTopics: measured.length,
+    totalTopics: PUBLISHED_MISSIONS.length,
+    byTopic
+  });
+}
+
 async function recurringErrorMap(env, username) {
   const result = await env.AUTH_DB.prepare(`WITH ranked AS (
       SELECT topic_id, question_id, correct, attempted_at,
@@ -666,6 +768,7 @@ async function handleBootstrap(env, user, origin) {
     resumableStudySession(env, user.username),
     recurringErrorMap(env, user.username)
   ]);
+  const recentDomain = await recencyDomainSnapshot(env, user.username, learningEvidence);
   return json({
     user,
     roundProtocol: 1,
@@ -674,6 +777,7 @@ async function handleBootstrap(env, user, origin) {
     assessmentProtocol: 1,
     pedagogyProtocol: 1,
     errorPatternProtocol: 1,
+    domainProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: { ...metricValues, recurringErrors: recurringErrors.total },
     progress,
@@ -681,6 +785,7 @@ async function handleBootstrap(env, user, origin) {
     learningEvidence,
     pedagogicalStates: pedagogicalStateMap(progress, learningEvidence, resumableSession),
     recurringErrors: recurringErrors.byTopic,
+    recentDomain,
     attemptedQuestions,
     reviews,
     resumableSession,
