@@ -141,6 +141,102 @@ export const QUESTION_FEEDBACK_V1 = Object.freeze([
     'A PREVIC supervisiona previdência complementar fechada, ligada a entidades fechadas e fundos de pensão.',
     'O CMN é órgão normativo superior do SFN, mas não é o supervisor direto dos planos abertos indicado nesta questão.',
     'Banco do Brasil é operador bancário e não autoridade supervisora da previdência complementar aberta.'
+  ]),
+  entry('q.pag.01', [
+    'Instituição de pagamento não é automaticamente banco comercial; são categorias distintas.',
+    'A afirmação está correta: instituição de pagamento não é instituição financeira e não pode exercer atividades privativas destas por conta própria.',
+    'A meta Selic é definida pelo Copom, não por instituições de pagamento.',
+    'Instituições de pagamento não supervisionam o Banco Central; quando enquadradas, elas próprias se submetem à regulação e supervisão aplicáveis.'
+  ]),
+  entry('q.pag.02', [
+    'Fundo de investimento pertence a outro contexto e não corresponde à infraestrutura de liquidação do Pix.',
+    'O SPI é a infraestrutura centralizada de liquidação dos pagamentos instantâneos entre instituições distintas.',
+    'Administradora de consórcio organiza grupos de consórcio; não é a infraestrutura central do Pix.',
+    'Órgão normativo formula regras gerais; SPI é infraestrutura operacional de liquidação.'
+  ]),
+  entry('q.pag.03', [
+    'Consórcio não é empréstimo automático concedido pelo Banco Central.',
+    'A descrição correta é grupo de autofinanciamento voltado à aquisição de bens ou serviços.',
+    'Seguro obrigatório é outro produto e não define a lógica econômica do consórcio.',
+    'Título público federal é instrumento de dívida pública e não mecanismo de autofinanciamento em grupo.'
+  ]),
+  entry('q.pag.04', [
+    'Administradoras de consórcio precisam de autorização do Banco Central para constituir e promover grupos.',
+    'A PREVIC supervisiona entidades fechadas de previdência complementar, não administradoras de consórcio.',
+    'O CNSP é órgão normativo do segmento de seguros privados, não autorizador de administradoras de consórcio.',
+    'O Tesouro Nacional não exerce a autorização prudencial indicada nesta questão.'
+  ]),
+  entry('q.boss.01', [
+    'O Banco Central executa políticas e supervisiona instituições em seu campo, mas não ocupa a função normativa superior do SFN.',
+    'O CMN é o órgão normativo superior do Sistema Financeiro Nacional.',
+    'A CVM regula e fiscaliza o mercado de valores mobiliários; não é o órgão normativo superior do SFN.',
+    'A SUSEP supervisiona seguros, previdência aberta, capitalização e resseguro; sua competência é setorial.'
+  ]),
+  entry('q.boss.02', [
+    'O Banco Central executa políticas monetária, cambial e de crédito e supervisiona instituições dentro de sua competência.',
+    'A PREVIC supervisiona entidades fechadas de previdência complementar, não executa essas políticas macroeconômicas.',
+    'O CNSP formula diretrizes do segmento de seguros privados; não exerce a função descrita no enunciado.',
+    'Banco comercial é operador do sistema e não autoridade de execução da política monetária.'
+  ]),
+  entry('q.boss.03', [
+    'O CMN formula diretrizes gerais, mas a decisão específica sobre a meta Selic cabe ao Copom.',
+    'O Copom é o colegiado responsável pela definição da meta para a Taxa Selic.',
+    'A CVM atua no mercado de valores mobiliários e não define a meta Selic.',
+    'O CNSP atua no segmento de seguros privados e não decide a política monetária.'
+  ]),
+  entry('q.boss.04', [
+    'A CVM é o supervisor diretamente relacionado a companhias abertas e ofertas públicas de valores mobiliários.',
+    'A PREVIC supervisiona entidades fechadas de previdência complementar, não ofertas públicas.',
+    'A SUSEP supervisiona seguros, previdência aberta, capitalização e resseguro.',
+    'O Copom decide política monetária e meta Selic; não supervisiona companhias abertas.'
+  ]),
+  entry('q.boss.05', [
+    'Uma única carteira não atende à regra mínima estudada para banco múltiplo.',
+    'A regra correta exige ao menos duas carteiras, sendo uma delas comercial ou de investimento.',
+    'A norma não exige três carteiras todas de crédito para caracterizar banco múltiplo.',
+    'Possuir apenas carteira comercial não basta para a estrutura de banco múltiplo.'
+  ]),
+  entry('q.boss.06', [
+    'A PREVIC supervisiona previdência complementar fechada; não responde pelo mercado de capitalização nem pela previdência aberta.',
+    'A SUSEP supervisiona capitalização e previdência complementar aberta, além de seguros e resseguro.',
+    'A CVM atua no mercado de valores mobiliários, não na supervisão indicada pelo enunciado.',
+    'O Banco Central possui competências sobre instituições financeiras e de pagamento, mas não é o supervisor central desses mercados de seguros.'
+  ]),
+  entry('q.boss.07', [
+    'A SUSEP supervisiona previdência complementar aberta; fundos de pensão pertencem ao segmento fechado.',
+    'A PREVIC supervisiona as entidades fechadas de previdência complementar, os fundos de pensão.',
+    'A CVM supervisiona o mercado de valores mobiliários, não fundos de pensão por essa condição.',
+    'A Secretaria do Tesouro exerce funções fiscais e financeiras públicas, não a supervisão dessas entidades.'
+  ]),
+  entry('q.boss.08', [
+    'Instituições de pagamento não são sempre bancos; a aula distingue expressamente essas categorias.',
+    'Elas não podem conceder qualquer empréstimo por conta própria como se fossem instituições financeiras.',
+    'A afirmação está correta: instituição de pagamento não é instituição financeira.',
+    'A afirmação é excessiva: instituições de pagamento podem estar sujeitas à regulação e supervisão do Banco Central conforme o enquadramento aplicável.'
+  ]),
+  entry('q.boss.09', [
+    'Definir política fiscal não é função do SPI.',
+    'O SPI liquida pagamentos instantâneos entre instituições participantes do Pix.',
+    'Administrar fundos de pensão pertence ao campo das entidades de previdência, não ao SPI.',
+    'Fiscalizar companhias abertas é função da CVM, não da infraestrutura de liquidação do Pix.'
+  ]),
+  entry('q.boss.10', [
+    'Autofinanciamento em grupo é a característica central do consórcio ensinada no bloco.',
+    'Consórcio não é definido como seguro de crédito obrigatório.',
+    'O CMN não concede empréstimos diretos aos participantes de consórcio.',
+    'Consórcio não é título de renda fixa emitido pelo Tesouro Nacional.'
+  ]),
+  entry('q.boss.11', [
+    'A SUSEP supervisiona a previdência complementar aberta.',
+    'A PREVIC supervisiona previdência complementar fechada, não os planos abertos.',
+    'O Copom atua na política monetária e na meta Selic, não na supervisão previdenciária.',
+    'O CMN exerce função normativa geral do SFN e não é o supervisor direto da previdência aberta.'
+  ]),
+  entry('q.boss.12', [
+    'Órgão normativo formula diretrizes; banco comercial não exerce esse papel principal.',
+    'Supervisor fiscaliza e regula participantes; banco comercial é supervisionado, não supervisor por essa condição.',
+    'Banco comercial executa atividades financeiras e, portanto, é classificado principalmente como operador.',
+    'Conselho de política monetária descreve função colegiada distinta e não a natureza institucional de um banco comercial.'
   ])
 ]);
 

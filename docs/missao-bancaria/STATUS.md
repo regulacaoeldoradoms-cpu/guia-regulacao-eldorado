@@ -340,11 +340,16 @@ Recorte B2 — documento `54-FASE2-FEEDBACK-COPOM-CVM.md`, PR #549 integrada em 
 - cobertura enriquecida passou de 9 para 15 questões;
 - nenhuma nova rota, renderer ou regra específica por aula foi criada.
 
-Recorte B3 em desenvolvimento:
+Recorte B3:
 - Operadores + Seguros/Previdência;
 - sete questões adicionais;
-- objetivo de elevar o catálogo enriquecido para 22 questões mantendo o mesmo contrato;
-- próximo recorte, depois de B3, será Pagamentos/Consórcios + Chefe.
+- catálogo enriquecido chega a 22 questões no mesmo contrato.
+
+Recorte B4 em desenvolvimento:
+- Pagamentos/Consórcios + Chefe do SFN;
+- 16 questões finais do bloco;
+- objetivo de chegar a 38/38 questões com justificativa específica por alternativa;
+- referências cumulativas do Chefe passam a exibir “Revisar depois” para a aula de origem sem trocar de missão durante a rodada.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 

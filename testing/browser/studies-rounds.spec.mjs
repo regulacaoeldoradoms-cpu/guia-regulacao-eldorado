@@ -5,8 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
+const originMission = {
+  id: 'fixture.origin', topicId: 'fixture.origin', order: 1, contentVersion: 2,
+  title: 'Fundamento anterior', shortTitle: 'Fundamento', xp: 80, estimatedMinutes: 10,
+  objective: 'Servir como origem sintética de revisão cumulativa.',
+  sections: [{ id: 'base', heading: 'Conceito de origem', body: 'Fundamento anterior para revisão.' }],
+  recall: [], sources: [], questions: []
+};
 const mission = {
-  id: 'fixture.lesson', topicId: 'fixture.lesson', order: 1, contentVersion: 2,
+  id: 'fixture.lesson', topicId: 'fixture.lesson', order: 2, contentVersion: 2,
   title: 'Leitura sintética', shortTitle: 'Leitura', xp: 100, estimatedMinutes: 20,
   objective: 'Testar a coordenação de requisições sem dados pessoais.',
   sections: [{ id: 'ensino', heading: 'Explicação', body: 'Material sintético para os testes.' }],
@@ -15,9 +22,9 @@ const mission = {
 };
 async function setup(page, mode = '') {
   const payload = {
-    roundProtocol: 1, user: { username: 'wellyton', name: 'Estudante sintético' }, missions: [mission],
-    progress: {}, attemptedQuestions: {}, reviews: mode === 'review' ? [{ id: 'review-fixture', missionId: mission.id, title: 'Revisão sintética', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
-    metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0, publishedMissions: 1, plannedMissions: 9, campaignAvailability: 11.1, completedPublished: 0, campaignProgress: 0, availableCompletion: 0, streak: { current: 0, best: 0 } }
+    roundProtocol: 1, user: { username: 'wellyton', name: 'Estudante sintético' }, missions: [originMission, mission],
+    progress: { [originMission.topicId]: { coverageState: 3 } }, attemptedQuestions: {}, reviews: mode === 'review' ? [{ id: 'review-fixture', missionId: mission.id, title: 'Revisão sintética', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
+    metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0, publishedMissions: 2, plannedMissions: 9, campaignAvailability: 22.2, completedPublished: 1, campaignProgress: 0, availableCompletion: 50, streak: { current: 0, best: 0 } }
   };
   const errors = [], unexpected = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -43,7 +50,10 @@ async function setup(page, mode = '') {
         if(mode==='richFeedback')return {
           correct:false,correctOption:1,explanation:'B representa a resposta correta neste cenário sintético.',
           selectedFeedback:'A representa a confusão simulada que o aluno precisa corrigir.',
-          reviewRefs:[{missionId:'fixture.lesson',sectionId:'ensino'}],recorded:true
+          reviewRefs:[
+            {missionId:'fixture.lesson',sectionId:'ensino'},
+            {missionId:'fixture.origin',sectionId:'base'}
+          ],recorded:true
         };
         return {correct:true,explanation:'Comentário sintético',recorded:true};
       }
@@ -182,7 +192,10 @@ test('feedback rico explica o erro e leva ao trecho que precisa ser relido', asy
   await expect(feedback).toContainText('Resposta correta: B');
   await expect(feedback).toContainText('Por que é correta:');
   const review=feedback.locator('.study-feedback-review');
+  await expect(review).toHaveCount(1);
   await expect(review).toHaveText('Explicação');
+  await expect(feedback).toContainText('Revisar depois:');
+  await expect(feedback).toContainText('Fundamento: Conceito de origem');
   await review.click();
   await expect(page.locator('#studyLessonPanel')).toBeVisible();
   await expect(page.locator('#lessonSections')).toContainText('Material sintético para os testes.');
