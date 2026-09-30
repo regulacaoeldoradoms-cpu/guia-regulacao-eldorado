@@ -5,7 +5,7 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr'].includes(unit), 'Unidade editorial desconhecida');
 const stem = `mp-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -26,7 +26,7 @@ assert.deepEqual(ids(publishedCatalog([...PUBLISHED_MISSIONS, draft])), ids(PUBL
 assert(!PUBLISHED_MISSIONS.some(mission => mission.id === draft.id));
 const sources = new Map(SOURCES.map(source => [source.id, source]));
 for (const source of SOURCES) {
-  assert(['www.gov.br', 'www.bcb.gov.br', 'www.ecb.europa.eu'].includes(new URL(source.url).hostname));
+  assert(['www.gov.br', 'www.bcb.gov.br', 'www.ecb.europa.eu', 'www.planalto.gov.br', 'www.bankofengland.co.uk'].includes(new URL(source.url).hostname));
   assert(source.checkedAt === '2026-09-30' && source.version && source.locator);
 }
 for (const sourceId of draft.sourceIds) assert(sources.has(sourceId));
@@ -37,6 +37,7 @@ for (const section of draft.sections) {
   for (const sourceId of section.sourceIds) assert(sources.has(sourceId));
 }
 const objectives = new Set([EDITORIAL.recovery.objectiveId]);
+const originLabels = new Map();
 let rationales = 0;
 for (const question of draft.questions) {
   assert(question.prompt && question.explanation);
@@ -51,6 +52,15 @@ for (const question of draft.questions) {
   for (const ref of refs) assert(ref.missionId === draft.id && sections.has(ref.sectionId));
   for (const id of question.recoverySectionIds) assert(sections.has(id));
   for (const objective of question.objectiveIds) objectives.add(objective);
+  if (unit === 'mpr') assert(question.originRefs?.length, 'Revisão requer aula de origem por questão');
+  for (const ref of question.originRefs || []) {
+    assert(/^mp(0[1-9]|r)$/.test(ref.unit));
+    const origin = await import(`./mp-${ref.unit.slice(2)}-v1.mjs`);
+    const originDraft = origin[`${ref.unit.toUpperCase()}_DRAFT`];
+    const originSection = originDraft.sections.find(section => section.id === ref.sectionId);
+    assert(originSection, `${question.id}: origem ausente`);
+    originLabels.set(`${ref.unit}:${ref.sectionId}`, `${originDraft.editorialKey}: ${originSection.heading}`);
+  }
 }
 assert.deepEqual([...objectives].sort(), ['O1', 'O2', 'O3', 'O4', 'O5', 'O6']);
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
@@ -78,13 +88,14 @@ for (const [index, question] of draft.questions.entries()) {
   markdown += `<details>\n<summary>Resposta e justificativas</summary>\n\n**Resposta: ${String.fromCharCode(65 + question.answer)}.** ${question.explanation}\n\n`;
   markdown += question.optionRationales.map((text, index) => `- **${String.fromCharCode(65 + index)}:** ${text}`).join('\n') + '\n\n';
   markdown += `Para recuperar: ${question.recoverySectionIds.map(id => `[${sections.get(id).heading}](#${id})`).join('; ')}.\n\n</details>\n\n`;
+  if (question.originRefs?.length) markdown += `Aula de origem: ${question.originRefs.map(ref => `[${originLabels.get(`${ref.unit}:${ref.sectionId}`)}](mp-${ref.unit.slice(2)}-v1.md#${ref.sectionId})`).join('; ')}.\n\n`;
 }
 markdown += '## Fontes e limites editoriais\n\n' + SOURCES.map(source => `- [${source.label}](${source.url}): ${source.version}; ${source.locator}; consulta ${source.checkedAt}.`).join('\n') + '\n\n';
 markdown += EDITORIAL.limits.map(text => `- ${text}`).join('\n') + '\n';
 const output = path.join(import.meta.dirname, `${stem}.md`);
 if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
-const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md' }[unit];
+const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md' }[unit] || '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md';
 const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
@@ -95,7 +106,13 @@ for (const relative of related) {
   for (const [, target] of text.matchAll(/\]\(([^)]+)\)/g)) {
     if (/^[a-z]+:/i.test(target)) continue;
     const [local, anchor] = target.split('#');
-    if (local) assert(fs.existsSync(path.resolve(path.dirname(file), decodeURIComponent(local))), `${relative}: ${target}`);
+    if (local) {
+      const targetFile = path.resolve(path.dirname(file), decodeURIComponent(local));
+      assert(fs.existsSync(targetFile), `${relative}: ${target}`);
+      if (anchor && /mp-(0[1-9]|r)-v1\.md$/.test(targetFile)) {
+        assert(fs.readFileSync(targetFile, 'utf8').includes(`id="${anchor}"`), `${relative}: origem ${target}`);
+      }
+    }
     else if (anchor) assert(text.includes(`id="${anchor}"`), `${relative}: ${anchor}`);
     localLinks++;
   }
