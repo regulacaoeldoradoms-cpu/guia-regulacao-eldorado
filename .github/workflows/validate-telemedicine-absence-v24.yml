@@ -63,7 +63,7 @@ jobs:
           test -f css/telemedicina-absence-v24.css
           test -f js/telemedicina-absence-v24.js
           test -f docs/TELEMEDICINA-FALTA-V24.md
-          grep -q 'telemedicina-absence-v24.css?v=20260930-2' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.css?v=20260930-3' telemedicina/index.html
           grep -q 'telemedicina-absence-v24.js?v=20260930-1' telemedicina/index.html
           grep -q 'data-absence-record="v24"' telemedicina/index.html
           grep -q 'data-absence-request="v43"' telemedicina/index.html
