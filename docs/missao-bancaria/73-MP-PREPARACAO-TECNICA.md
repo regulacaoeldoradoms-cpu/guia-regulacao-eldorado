@@ -1,51 +1,71 @@
-# MP — candidato técnico desativado
+# MP — preparo técnico e proposta de ativação
 
-30/09/2026. Base editorial: [#563](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/563), `36a8f9c688a44faf13bf3de287f74e291402a182`. Revisão independente dos 12 itens/48 justificativas do Chefe aprovada nesse SHA, sem mudanças. Não repetiu cálculo/esquema/fontes/Mermaid/integração; não constitui avaliação independente nem aceite humano. Revisões das aulas permanecem válidas conforme [72](72-MP-CHEFE-RASCUNHO-E-REVISAO.md). Fase 2 ativa; aceite humano não observado.
+30/09/2026. [#564 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/564), sobre [#563](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/563). Código preparado: `b9e9aa482a656f8b6490323a4552ef5181dac888`; fonte editorial aprovada: `36a8f9c688a44faf13bf3de287f74e291402a182`. Fase 2 ativa, aceite humano não observado; Fase 3 não aberta. Nenhuma publicação desta entrega foi autorizada/executada.
 
-## Adaptação feita
+## Entrega preparada
 
-[Conversor offline](../../worker/scripts/studies-mp-candidate.mjs), sem importação no Worker, lê os onze `.mjs` editoriais, mantém seus textos e respostas e produz objetos compatíveis com os contratos de ensino/publicação. Nenhum arquivo editorial foi alterado. Não há flag de ativação ou arquivo gerado importado pelo catálogo.
+Nove aulas, revisão cumulativa e Chefe: **124 trechos, 40 exemplos, 84 questões/336 justificativas**. Ensino introdutório de mercados, moeda/pagamentos, inflação/juros reais, política/instrumentos monetários, QE em contexto estrangeiro e depósitos brasileiros, dívida pública, relações interbancárias e curva de juros. Referências BB/CAIXA continuam históricas; não é cobertura integral do bloco, edital ou prontidão.
 
-- IDs de missão/tópico candidatos usam `banking.mp.*`; questões usam `q.` antes do ID editorial. Nenhum ID SFN é renomeado. Referências locais e `originRefs` da revisão/Chefe são convertidas para as aulas corretas, sem referência futura.
-- Fontes recebem namespace por unidade, preservando URL, localização, versão e data: 61 registros locais, com repetições intencionais das fontes entre aulas. Não sobrescrevem fontes SFN nem ampliam o registro ativo.
-- As 336 justificativas podem ser consumidas pelo feedback pós-resposta existente. O registro SFN continua prioritário; dados ausentes/inválidos são rejeitados. O bootstrap continua expondo somente ID, enunciado e opções das questões.
-- A conquista `study.sfn.boss` passa a exigir o Chefe SFN específico; outro Chefe não recebe essa conquista por ser `kind: boss`. Não se criou medalha MP nem se alteraram conquistas persistidas.
-- O validador de ensino aceita fontes candidatas por argumento opcional; o comportamento padrão permanece o do catálogo publicado.
+[Conversor offline](../../worker/scripts/studies-mp-candidate.mjs) e [conversão de apresentação](../../worker/scripts/studies-mp-presentation.mjs) produzem [dados do Worker](../../worker/studies-content/banking-markets-policy-v1.js), mantendo **todas as missões draft**. O manifesto/plano/mapa já consultam o registro existente de publicação. Enquanto draft, não incluem missões/fontes/denominadores novos na resposta ativa. Comparação com o SFN anterior confirmou igualdade de catálogo, fontes e plano visíveis. O grande arquivo de dados é gerado, não uma segunda fonte de autoria.
 
-`node worker/scripts/studies-mp-candidate.mjs` imprime resumo verificável: **11 unidades, 84 questões, 336 justificativas, status draft, publicationReady false**. A conversão rejeita pacote incompleto, origem já marcada publicada, fonte/ref desconhecida, referência futura e colisões de IDs. Os rascunhos continuam fora de `PUBLISHED_MISSIONS`, `PLANNED_MISSIONS` e do mapeamento ativo de `banking.markets-policy`.
+- IDs candidatos `banking.mp.*`, questões `q.` + ID editorial; fontes isoladas por unidade, conservando URL/versão/localização/data. Não renomeiam IDs SFN.
+- Recuperação aponta a trechos reais anteriores, incluindo origens da MP-R e Chefe. As justificativas só entram no feedback após responder; bootstrap não revela gabaritos.
+- Cinco figuras e três tabelas derivam dos formatos aprovados: dois fluxos de ida/retorno e três curvas. Dados dos gráficos são comparados às tabelas durante a conversão.
+- O leitor existente cria DOM/SVG seguro, com texto, tabelas acessíveis, temas claro/escuro e figuras inteiras no celular. Sem biblioteca externa, execução de HTML ou download de Mermaid.
+- Links de origem abrem consulta dentro da sessão atual. Voltar preserva a parte/questão, seleção, resposta e foco; não abre rodada, concede XP ou conclui leitura. Resposta que termina durante consulta atualiza o DOM original.
+- Tempos de 20–30 minutos são estimativas didáticas: palavras/150 + dois minutos por questão, arredondados para cinco minutos. Não impõem duração nem controlam o cronômetro.
 
-## Proposta agrupada, ainda não aprovada
+Os corpos, formatos editoriais, exemplos, enunciados, alternativas, respostas e justificativas aprovados permanecem intactos. Nenhum arquivo em `rascunhos/` foi modificado nesta preparação. A revisão independente do Chefe aprovou seus 12 itens/48 justificativas em 36a8f9c; não foi repetida nem confundida com validação da apresentação.
 
-| Ordem candidata | Unidade | Sufixo de `banking.mp.*` |
+Comandos de reprodução, sem produção:
+
+```text
+node worker/scripts/studies-mp-candidate.mjs --check-generated
+node worker/scripts/studies-mp-candidate.mjs --write
+```
+
+O segundo apenas regenera dados draft. Não há ativação por URL, variável remota ou comando de deploy.
+
+## Correção SFN incluída no pacote — ainda não publicada
+
+A consulta de pré-requisitos A/B usava `banking.sfn.introducao`, mas o progresso real da introdução é salvo em `banking.sfn`. Isso impedia o desbloqueio apesar da conclusão real das nove missões. Fixtures antigas usavam IDs de missão como tópicos e ocultavam a divergência.
+
+O serviço agora consulta uma lista separada de IDs persistidos; nenhuma migração, renomeação de registro, mudança de versão/questões/scores ou prazo B. Testes usam os `topicId` do catálogo real e recusam alias incorreto como substituto de introdução incompleta. A conquista `study.sfn.boss` também exige o Chefe SFN específico; outro Chefe não recebe essa medalha. A correção será integrada/publicada junto do pacote aprovado, não isoladamente.
+
+## Verificação válida
+
+- **25 testes Node direcionados** passaram: candidato, apresentação, publicação, currículo e leitor. O wrapper de candidato agora executa seis cenários com catálogo/roteador reais, SQLite local e autenticação sintética. Simulação publicada valida manifesto/plano com 20 missões e mapa com dois blocos disponíveis, apenas SFN concluído e prontidão não medida.
+- Preservação confirmada de todas as linhas `study_*`, avaliação A concluída e sessão SFN interrompida; autorização exclusiva/origem, ausência de gabaritos, recuperação, limiar e XP idempotente. Evidências anteriores de A/B/feedback/ensino em `f9468c89` continuam válidas no escopo inalterado.
+- **40 Chromium direcionados** passaram: sete MP, mais regressões afetadas de leitor, retomada e rodadas. Cobrem 320 px claro, 390 px escuro e desktop para o pacote, dados/eixos/tabelas, fontes maiores, consulta repetida, perda de resposta, resposta pendente, saída/reabertura e retomada. Incluem leitura SFN em quatro tamanhos/dois temas, fallback, autorização, teclado e não execução de HTML.
+- Capturas mobile claras/escuras inspecionadas; curvas e rótulos completos, sem recorte lateral. Artefato gerado conferido; sintaxe e diff aprovados.
+
+Chromium usa API simulada; SQLite não é D1. Não houve acesso a produção/D1, teste humano ou homologação produtiva. Não repetir revisão editorial ou suíte integral por mudanças só documentais. Antes de integrar, gates de CI na base/SHA efetivos continuam obrigatórios.
+
+## Proposta única ao usuário
+
+Ativar o **pacote introdutório completo** de #563/#564, incluindo a correção SFN, com as referências históricas BB/CAIXA explicitamente preservadas e fontes verificadas em 30/09/2026. Não adotar silenciosamente edital atual nem abrir formalmente Fase 3.
+
+| Ordem | Unidade | ID (prefixo `banking.mp.`) |
 | --- | --- | --- |
 | 10–12 | MP-01, MP-02, MP-03 | mercados, moeda, inflacao |
 | 13–15 | MP-04, MP-05, MP-06 | politica-monetaria, instrumentos, qe-depositos |
 | 16–18 | MP-07, MP-08, MP-09 | divida-publica, interbancario, curva-juros |
 | 19–20 | MP-R, MP-CHEFE | revisao, boss |
 
-Recomendação: manter as nove aulas + revisão + Chefe, sequência após o Chefe SFN, reaproveitando o gate atual (conclusão da missão anterior). Simulação usa 100 XP por aula/revisão; Chefe com 220 XP e 75% (9/12). Esses parâmetros estão explicitamente `parametersApproved: false`; não são uma decisão de produto já tomada. A liberação deve aprovar o pacote uma única vez, com recorte introdutório, escopo/edital e corte de fontes. Os perfis BB/CAIXA continuam históricos, sem adoção automática de edital ou alegação de cobertura integral. Release candidata: `markets-policy-intro-r1`, sequência 2, impacto `new`, sempre `draft` nesta preparação.
+Recomendação: MP-01 após concluir o Chefe SFN; demais unidades em sequência, pela conclusão da missão anterior, conforme gate existente. 100 XP por aula/revisão; Chefe com 220 XP e 75% (9/12). Sem medalha MP nova. Aulas/revisões mantêm a regra atual de conclusão, sem transformar conclusão em domínio. Questões continuam expostas, fora de A/B; não implementar política adaptativa nesta entrega. Parâmetros seguem não aprovados no candidato.
 
-Não se alteram política +1/+7/+30, A/B, redação, simulados ou diagnóstico por conceito. MP-CHEFE é prática exposta, não nova forma independente. Nenhuma medalha nova é necessária para a proposta mínima.
+Na ativação autorizada, retirar **somente dois avisos editoriais desatualizados**, preservando ensino e arquivos originais:
 
-## Falha real encontrada no teste com o catálogo SFN
+1. MP-R/acesso: “Hoje o conjunto inteiro continua em rascunho, fora do aplicativo.”
+2. MP-CHEFE/preparacao: “Hoje todos esses materiais são rascunhos fora do aplicativo.”
 
-O pré-requisito A/B consultava `banking.sfn.introducao` como tópico persistido; a introdução real grava `banking.sfn`. Assim, concluir as nove missões não satisfazia essa consulta. As fixtures anteriores preenchiam IDs de missão como tópicos e não detectavam a divergência.
+A confirmação deve cobrir o pacote e os parâmetros juntos. Não pedir aprovação por aula/arquivo. Aceite humano pedagógico da Fase 2 permanece evidência separada; a autorização de publicação não o substitui.
 
-Correção restrita: [conteúdo A/B](../../worker/studies-assessment-content/sfn-foundation-v1.js) expõe os IDs reais de progresso separadamente; [serviço](../../worker/study-assessments.js) usa essa lista na consulta. IDs das aulas/itens, versão A/B, scores, sete dias, registros e esquema permanecem iguais. Não há migração. Testes agora preenchem pré-requisitos a partir dos `topicId` do catálogo real e confirmam que alias incorreto não substitui introdução ainda incompleta. Esta correção também permanece sem merge/deploy.
+## Gates restantes e próxima ação
 
-## Evidência local e limites
+1. Decisão explícita sobre a proposta agrupada, incluindo os dois avisos acima; nada aprovado por esta documentação.
+2. Conferir refs/base atuais; aplicar status publicado conjunto e ajuste editorial restrito, regenerar dados e adequar testes de disponibilidade ao catálogo ampliado. Reutilizar evidências válidas; executar somente verificações afetadas e CI/gates obrigatórios no SHA final.
+3. Após gates e autorização, integrar #563 → #564, usando a estratégia de dependência correta; publicação protegida por [WORKER-SAFE-DEPLOY.md](../WORKER-SAFE-DEPLOY.md). Sem renomear Worker, alterar bindings ou usar deploy direto. Confirmar frontend/Worker exatos e smoke proporcional.
+4. Registrar somente resultados reais do [checklist humano da Fase 2](68-MP01-RASCUNHO-E-REVISAO.md#checklist-humano-mínimo-da-fase-2). Não declarar fase aceita ou prontidão medida automaticamente.
 
-Código validado em `f9468c8910a5da9c7f678680889d0a1c8e492d2f`. Node 24.17.0; [teste de candidato](../../worker/tests/studies-mp-candidate.test.mjs) e [cinco cenários de rota](../../worker/tests/helpers/studies-mp-route-runner.mjs): conversão conserva texto/opções/gabaritos; draft inacessível; exclusividade `wellyton`/origem antes de criar tabelas; bootstrap sem gabaritos; pré-requisitos SFN→MP e entre aulas; feedback e recuperação de MP-R; resposta repetida, retomada sem nova sessão, Chefe abaixo/acima do limiar e XP único.
-
-Adição publicada **somente em memória** ao catálogo da fixture conserva todas as linhas `study_*`: progresso, tentativas, XP, conquista, revisões, avaliação A concluída e sessão SFN interrompida. Readiness permanece não medida; o mapa ativo continua 1/43. SQLite local executa o roteador e serviços reais; autenticação é sintética. Não é homologação de Cloudflare ou teste autenticado do aluno.
-
-Passaram 20 testes externos de candidato/avaliação/rotas, incluindo os cinco cenários MP e os 22 fluxos existentes executados pelos dois wrappers. Feedback SFN e contrato de ensino também passaram (12 testes), sem alterações posteriores nesse escopo. Reutilizar esses resultados; não repetir revisão editorial nem suíte integral por documentação. Nenhum acesso D1/produção.
-
-## Trabalho técnico que falta antes de pedir publicação
-
-1. Adaptar apresentação preservando conteúdo: o conversor enumera 17 locais afetados, incluindo cinco diagramas, três tabelas e links de retomada. O leitor atual usa texto; imprimir Markdown/Mermaid como código não atende às aulas. Validar leitura e q11 do Chefe em Chromium, incluindo retorno/retomada e fluxos repetidos, sem consultas de produção. Não apagar gráficos ou resumir ensino para contornar a renderização.
-2. Definir estimativas de duração e substituir avisos editoriais de rascunho pela apresentação do conteúdo aprovado no artefato de integração; manter os limites pedagógicos. Não editar fontes/gabaritos aprovados incidentalmente.
-3. Após aprovação agrupada, produzir dados para o Worker, incluir fontes/missões no manifesto, registrar os IDs no plano/mapa curricular e ativar metadados de publicação de forma conjunta. Enquanto draft, não aumentar denominadores visíveis ao aluno.
-4. Validar a integração final por SHA e gates aplicáveis; só então merge/publicação autorizados, `deploy:safe`, versão exata e smoke proporcional. Aceite humano da Fase 2 continua separado.
-
-Próxima ação independente: apresentação das cinco figuras/três tabelas e navegação de retomada, reaproveitando os dados aprovados e o candidato testado. Não há bloqueio de acesso/ambiente; existe trabalho técnico restante e autorização de publicação ainda não concedida.
+Preparo técnico concluído para revisão da decisão; sem bloqueio de ambiente. Próxima ação concreta depende da autorização agrupada, não de nova auditoria do conteúdo.
