@@ -63,6 +63,42 @@ export const QUESTION_FEEDBACK_V1 = Object.freeze([
     'Esta comparação preserva a distinção central ensinada entre formulação normativa e execução/supervisão.',
     'CMN e Banco Central são instituições distintas e exercem papéis diferentes.',
     'O Banco Central não é subordinado aos bancos comerciais; ele exerce supervisão sobre instituições dentro de sua competência.'
+  ]),
+  entry('q.copom.01', [
+    'O Tesouro Nacional exerce funções de gestão fiscal e financeira pública; o Copom não é constituído em seu âmbito.',
+    'O Copom é constituído no âmbito do Banco Central, onde integra a estrutura decisória da política monetária.',
+    'A CVM supervisiona o mercado de valores mobiliários; não é a instituição em cuja estrutura o Copom está constituído.',
+    'O Banco do Brasil é um operador bancário e não abriga institucionalmente o Copom.'
+  ]),
+  entry('q.copom.02', [
+    'Definir a meta para a Taxa Selic é a decisão central atribuída ao Copom no conteúdo estudado.',
+    'Fixar o salário mínimo é matéria de política pública distinta e não é competência do Copom.',
+    'Aprovar o orçamento da União não é atribuição do Copom; a questão trata de política monetária, não do processo orçamentário.',
+    'O Copom não concede crédito diretamente a consumidores; ele toma decisões de política monetária.'
+  ]),
+  entry('q.copom.03', [
+    'Ministros da Fazenda e do Planejamento participam da composição estudada do CMN, não da composição do Copom.',
+    'Presidente e Diretores do Banco Central compõem o Copom segundo a regulamentação usada nesta versão.',
+    'Presidentes dos bancos públicos não formam a composição do Copom apresentada na aula.',
+    'Diretores da CVM e da SUSEP pertencem a outras entidades e não compõem o Copom na regra estudada.'
+  ]),
+  entry('q.cvm.01', [
+    'Mercado de valores mobiliários, ou mercado de capitais no contexto ensinado, é o campo diretamente regulado e fiscalizado pela CVM.',
+    'Mercado de trabalho não é o objeto institucional de regulação e fiscalização da CVM apresentado nesta unidade.',
+    'Mercado de bens de consumo não corresponde ao campo específico de valores mobiliários supervisionado pela CVM.',
+    'Sistema tributário municipal pertence a outra esfera de atuação pública e não define a competência da CVM.'
+  ]),
+  entry('q.cvm.02', [
+    'Companhia aberta está entre os participantes tipicamente sujeitos à esfera de competência da CVM.',
+    'Cartório de registro civil não é participante típico do mercado de valores mobiliários supervisionado pela CVM.',
+    'Secretaria do Tesouro municipal não é participante do mercado de capitais enquadrado nesta questão.',
+    'Instituto de previdência social não corresponde ao participante de mercado de valores mobiliários indicado pela aula.'
+  ]),
+  entry('q.cvm.03', [
+    'O Banco Central supervisiona instituições em seu campo, mas oferta pública de valores mobiliários e manipulação de mercado apontam diretamente para a CVM.',
+    'A CVM é o supervisor diretamente ligado a ofertas públicas, proteção do investidor e integridade do mercado de valores mobiliários.',
+    'O CMN formula diretrizes gerais do sistema; não exerce a supervisão específica descrita no caso.',
+    'Banco comercial é operador e não autoridade supervisora de ofertas públicas ou manipulação de valores mobiliários.'
   ])
 ]);
 
