@@ -386,6 +386,83 @@ export function summarizeRetentionEvidence(rows = [], totalCycles = 3) {
   };
 }
 
+export function derivePedagogicalState(mission, progressEntry = {}, evidence = {}, resumableSession = null) {
+  const coverage = Math.max(0, Number(progressEntry?.coverageState || 0));
+  const active = resumableSession?.missionId === mission?.id ? resumableSession : null;
+
+  if (coverage >= 3) {
+    if (evidence?.status === 'schedule_observed') {
+      return Object.freeze({
+        id: 'consolidated',
+        label: 'Consolidado',
+        explanation: 'Os três ciclos previstos de revisão com resultado foram observados. Isso não mede prontidão de prova.'
+      });
+    }
+    return Object.freeze({
+      id: 'review',
+      label: 'Revisão',
+      explanation: 'O conteúdo foi coberto e permanece no ciclo de revisões posteriores.'
+    });
+  }
+
+  if (active?.mode === 'review') {
+    return Object.freeze({
+      id: 'review',
+      label: 'Revisão',
+      explanation: 'Há uma rodada de revisão ativa para este conteúdo.'
+    });
+  }
+
+  if (active) {
+    if (coverage >= 1 || (active.answeredQuestionIds?.length || 0) > 0) {
+      return Object.freeze({
+        id: 'practice',
+        label: 'Prática',
+        explanation: 'A leitura já foi encerrada nesta etapa e a sessão está em prática.'
+      });
+    }
+    return Object.freeze({
+      id: 'reading',
+      label: 'Em leitura',
+      explanation: 'Existe uma sessão de leitura ativa, ainda sem transição registrada para a prática.'
+    });
+  }
+
+  if (coverage >= 2) {
+    return Object.freeze({
+      id: 'practice',
+      label: 'Prática',
+      explanation: 'A prática já foi iniciada e o conteúdo ainda não foi coberto.'
+    });
+  }
+
+  if (coverage >= 1) {
+    return Object.freeze({
+      id: 'reading_complete',
+      label: 'Leitura concluída',
+      explanation: 'A leitura foi marcada como concluída; a prática ainda não foi iniciada.'
+    });
+  }
+
+  return Object.freeze({
+    id: 'not_started',
+    label: 'Não iniciado',
+    explanation: 'Nenhuma leitura ou prática foi registrada para este conteúdo.'
+  });
+}
+
+function pedagogicalStateMap(progress, learningEvidence, resumableSession) {
+  return Object.fromEntries(PUBLISHED_MISSIONS.map((mission) => [
+    mission.topicId,
+    derivePedagogicalState(
+      mission,
+      progress?.[mission.topicId] || {},
+      learningEvidence?.[mission.topicId] || {},
+      resumableSession
+    )
+  ]));
+}
+
 async function learningEvidenceMap(env, username) {
   const result = await env.AUTH_DB.prepare(`SELECT v.topic_id, v.cycle, v.completed_at,
       (SELECT r.score FROM study_rounds r
@@ -548,11 +625,13 @@ async function handleBootstrap(env, user, origin) {
     timeProtocol: 1,
     resumeProtocol: 1,
     assessmentProtocol: 1,
+    pedagogyProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: metricValues,
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
     learningEvidence,
+    pedagogicalStates: pedagogicalStateMap(progress, learningEvidence, resumableSession),
     attemptedQuestions,
     reviews,
     resumableSession,
@@ -804,6 +883,53 @@ async function handleFinishSession(request, pathname, env, user, origin) {
   return json(result, 200, origin);
 }
 
+async function handleReadingComplete(pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/sessions\/([a-f0-9-]+)\/reading-complete$/i);
+  if (!match) return json({ error: 'Sessão não encontrada.' }, 404, origin);
+
+  const row = await env.AUTH_DB.prepare(`SELECT s.mission_id, s.status AS session_status, r.mode
+    FROM study_sessions s
+    JOIN study_rounds r ON r.session_id=s.session_id AND r.username=s.username
+    WHERE s.session_id=? AND s.username=? LIMIT 1`)
+    .bind(match[1], user.username).first();
+
+  if (!row) return json({ error: 'Sessão não encontrada.' }, 404, origin);
+  if (row.session_status !== 'active') {
+    throw new StudyRoundError('A sessão já foi encerrada.', 409, 'STUDY_SESSION_CLOSED');
+  }
+
+  const mission = missionById(row.mission_id);
+  if (!mission) return json({ error: 'Conteúdo da sessão não encontrado.' }, 409, origin);
+
+  const current = await env.AUTH_DB.prepare(`SELECT coverage_state FROM study_topic_progress
+    WHERE username=? AND topic_id=? LIMIT 1`).bind(user.username, mission.topicId).first();
+  const previousCoverage = Math.max(0, Number(current?.coverage_state || 0));
+
+  if (row.mode === 'review' || previousCoverage >= 1) {
+    return json({
+      recorded: false,
+      coverageState: previousCoverage,
+      pedagogyProtocol: 1
+    }, 200, origin);
+  }
+
+  await env.AUTH_DB.prepare(`INSERT INTO study_topic_progress(
+      username, topic_id, coverage_state, mastery_score, content_version_seen, started_at
+    ) VALUES (?, ?, 1, 0, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(username, topic_id) DO UPDATE SET
+      coverage_state=MAX(study_topic_progress.coverage_state,1),
+      content_version_seen=MAX(study_topic_progress.content_version_seen,excluded.content_version_seen),
+      started_at=COALESCE(study_topic_progress.started_at,CURRENT_TIMESTAMP),
+      updated_at=CURRENT_TIMESTAMP`)
+    .bind(user.username, mission.topicId, mission.contentVersion).run();
+
+  return json({
+    recorded: true,
+    coverageState: 1,
+    pedagogyProtocol: 1
+  }, 200, origin);
+}
+
 async function handleTimeCheckpoint(request, pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/sessions\/([a-f0-9-]+)\/checkpoint$/i);
   if (!match) return json({ error: 'Sessão não encontrada.' }, 404, origin);
@@ -879,6 +1005,9 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     if (request.method === 'POST' && url.pathname === '/api/studies/sessions') {
       return await handleStartSession(request, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/sessions\/[a-f0-9-]+\/reading-complete$/i.test(url.pathname)) {
+      return await handleReadingComplete(url.pathname, env, user, origin);
     }
     if (request.method === 'POST' && /^\/api\/studies\/sessions\/[a-f0-9-]+\/checkpoint$/i.test(url.pathname)) {
       return await handleTimeCheckpoint(request, url.pathname, env, user, origin);

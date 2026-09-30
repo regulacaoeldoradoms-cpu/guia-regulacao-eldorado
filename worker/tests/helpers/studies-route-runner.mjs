@@ -315,3 +315,35 @@ test('nova rota rejeita payload inválido e não reabre sessão encerrada',async
   assert.equal(receipt.status,200);assert.equal(receipt.body.finished,true);assert.equal(receipt.body.durationSeconds,0);
   assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,0);
 });
+
+
+test('leitura concluída é persistida na transição para prática e permanece após sair',async t=>{
+  const {call,start,lesson}=await fixture(t);
+
+  let bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.status,200);
+  assert.equal(bootstrap.body.pedagogyProtocol,1);
+  assert.equal(bootstrap.body.pedagogicalStates[lesson.topicId].id,'not_started');
+
+  const sessionId=await start(lesson);
+  bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.pedagogicalStates[lesson.topicId].id,'reading');
+
+  const first=await call('sessions/'+sessionId+'/reading-complete',{});
+  assert.equal(first.status,200);
+  assert.equal(first.body.recorded,true);
+  assert.equal(first.body.coverageState,1);
+
+  const repeated=await call('sessions/'+sessionId+'/reading-complete',{});
+  assert.equal(repeated.status,200);
+  assert.equal(repeated.body.recorded,false);
+  assert.equal(repeated.body.coverageState,1);
+
+  bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.progress[lesson.topicId].coverageState,1);
+  assert.equal(bootstrap.body.pedagogicalStates[lesson.topicId].id,'practice');
+
+  assert.equal((await call('sessions/'+sessionId,{durationSeconds:0},{method:'PATCH'})).status,200);
+  bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.pedagogicalStates[lesson.topicId].id,'reading_complete');
+});

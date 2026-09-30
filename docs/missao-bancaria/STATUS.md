@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~93%; Fase 2 ~18% após os Recortes A, B e B2, com B3 em desenvolvimento; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~33%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~94%; Fase 2 ~26% com o contrato de feedback do primeiro bloco concluído em branches B3/B4 e C1 em desenvolvimento; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~34%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -354,3 +354,26 @@ Recorte B4 em desenvolvimento:
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
 Histórico de incidentes: erro inicial “Rota não encontrada” motivou #492/#494; #493 sem merge; #491/#496/#497 substituídas. Não reintroduzir versões abandonadas ou alterar gates para esconder falhas. A Fase 1 está encerrada; a Fase 2 está ativa.
+
+
+## Fase 2 — Recorte C1: estados pedagógicos
+
+Documento: `57-FASE2-ESTADOS-PEDAGOGICOS.md`.  
+Branch: `feat/missao-bancaria-fase2-estados-pedagogicos`, empilhada sobre o Recorte B4.
+
+Objetivo:
+- implementar os seis estados definidos na Fase 2: não iniciado, em leitura, leitura concluída, prática, revisão e consolidado;
+- persistir “leitura concluída” somente na transição real da leitura para a prática;
+- derivar os demais estados de progresso, sessão ativa e evidência de revisão já existentes;
+- manter “Consolidado” como estado local de ciclo de revisão, com aviso explícito de que não mede prontidão de prova.
+
+Contrato:
+- `pedagogyProtocol: 1` no bootstrap;
+- `pedagogicalStates` por tópico;
+- endpoint idempotente `POST /api/studies/sessions/:id/reading-complete`;
+- frontend novo só chama o endpoint quando o Worker anuncia o protocolo;
+- Worker antigo permanece compatível;
+- reabrir conteúdo já coberto não regride o estado;
+- três ciclos previstos de revisão com resultado podem produzir “Consolidado”, sem alterar o campo de prontidão.
+
+Próximo requisito após C1: erros recorrentes e domínio ponderado por recência.

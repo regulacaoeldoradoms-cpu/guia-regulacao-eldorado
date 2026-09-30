@@ -532,6 +532,7 @@
       const unlocked = isUnlocked(index);
       const progress = data.progress[mission.topicId];
       const evidence = data.learningEvidence?.[mission.topicId];
+      const pedagogical = data.pedagogicalStates?.[mission.topicId];
       const boss = mission.kind === 'boss';
       const isActive = resume?.mission.id === mission.id;
       const blockedByActive = Boolean(resume && !isActive);
@@ -548,6 +549,7 @@
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
+        ${pedagogical ? `<p>Etapa pedagógica: ${pedagogical.label}</p>` : ''}
         <p>${progress ? `Acerto nas tentativas: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
         <p>${retentionLabel(evidence)}</p>
       </button>`;
@@ -851,6 +853,37 @@
     }
   }
 
+  async function markReadingComplete() {
+    if (Number(state.data?.pedagogyProtocol || 0) !== 1) return;
+    if (!state.sessionId || !state.activeMission || state.activeReview || state.leaving) return;
+
+    const sessionId = state.sessionId;
+    const generation = state.generation;
+    const mission = state.activeMission;
+    try {
+      const receipt = await auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}/reading-complete`, {
+        method: 'POST', body: '{}'
+      });
+      if (generation !== state.generation || sessionId !== state.sessionId) return;
+      if (!state.data.progress) state.data.progress = {};
+      const previous = state.data.progress[mission.topicId] || {};
+      state.data.progress[mission.topicId] = {
+        ...previous,
+        coverageState: Math.max(Number(previous.coverageState || 0), Number(receipt.coverageState || 1))
+      };
+      if (!state.data.pedagogicalStates) state.data.pedagogicalStates = {};
+      state.data.pedagogicalStates[mission.topicId] = {
+        id: 'practice',
+        label: 'Prática',
+        explanation: 'A leitura foi encerrada nesta etapa e a sessão está em prática.'
+      };
+    } catch (_) {
+      if (generation === state.generation && sessionId === state.sessionId) {
+        status('A prática continua disponível, mas não foi possível registrar agora a conclusão da leitura.', true);
+      }
+    }
+  }
+
   async function answerQuestion(questionId) {
     if (!state.sessionId || state.leaving || state.completing) {
       status('Aguarde o registro da rodada antes de responder.', true);
@@ -980,6 +1013,7 @@
     setTimeout(() => { toast.hidden = true; }, 5000);
   }
 
+  $('studyPracticeButton')?.addEventListener('click', markReadingComplete);
   $('leaveFocus').addEventListener('click', leaveFocus);
   $('completeMission').addEventListener('click', completeMission);
   $('leaveAssessment').addEventListener('click', leaveAssessment);
