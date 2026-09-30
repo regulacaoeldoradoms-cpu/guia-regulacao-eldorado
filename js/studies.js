@@ -492,6 +492,12 @@
     $('metricAccuracy').textContent = `${m.accuracy}% de acertos`;
     $('metricHours').textContent = formatHours(m.hoursSeconds);
     $('metricReviews').textContent = `${m.reviewsDue} revisões pendentes`;
+    const recurringCard = $('metricRecurringErrorsCard');
+    if (recurringCard) {
+      const supported = Number(data.errorPatternProtocol || 0) === 1;
+      recurringCard.hidden = !supported;
+      if (supported) $('metricRecurringErrors').textContent = String(Math.max(0, Number(m.recurringErrors || 0)));
+    }
     const streak = m.streak || { current:0, best:0, lastStudyDay:'' };
     $('metricStreak').textContent = `${streak.current} ${streak.current === 1 ? 'dia' : 'dias'}`;
     $('metricBestStreak').textContent = `Melhor: ${streak.best} ${streak.best === 1 ? 'dia' : 'dias'}`;
@@ -533,6 +539,10 @@
       const progress = data.progress[mission.topicId];
       const evidence = data.learningEvidence?.[mission.topicId];
       const pedagogical = data.pedagogicalStates?.[mission.topicId];
+      const recurring = data.recurringErrors?.[mission.topicId];
+      const recurringLabel = Number(data.errorPatternProtocol || 0) === 1
+        ? `Erros recorrentes ativos: ${Math.max(0, Number(recurring?.count || 0))}`
+        : '';
       const boss = mission.kind === 'boss';
       const isActive = resume?.mission.id === mission.id;
       const blockedByActive = Boolean(resume && !isActive);
@@ -550,6 +560,7 @@
         <h3>${mission.order}. ${mission.title}</h3>
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
         ${pedagogical ? `<p>Etapa pedagógica: ${pedagogical.label}</p>` : ''}
+        ${recurringLabel ? `<p>${recurringLabel}</p>` : ''}
         <p>${progress ? `Acerto nas tentativas: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
         <p>${retentionLabel(evidence)}</p>
       </button>`;
