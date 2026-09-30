@@ -65,6 +65,10 @@ test('Telemedicina: formulário, desfechos, histórico, edição, exclusão canc
     await absenceChoices.nth(i).locator('..').click();
     await expect(absenceChoices.nth(i)).toBeChecked();await r.take(`absence-request-${i}`);
   }
+  await absenceChoices.first().focus();
+  await expect(absenceChoices.first()).toBeFocused();
+  await absenceChoices.first().press('Space');
+  await expect(absenceChoices.first()).toBeChecked();
   const target=form.locator('textarea:visible').first();
   if(await target.count()){await target.focus();await r.take('focus-textarea');}
   await settle(page,'/telemedicina/');

@@ -176,6 +176,15 @@ html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option
   color: #e5eef5;
 }
 
+/* Keep the two native absence radios on the dark input surface. The mobile
+   form applies a white input background with !important; no geometry or native
+   focus/checked styling is changed. Screen scope preserves printing. */
+@media screen {
+  html[data-portal-theme="dark"] body.telemedicine-page .tm-inline-consult-form .tm-absence-request-option input[type="radio"] {
+    background-color: var(--portal-theme-input) !important;
+  }
+}
+
 html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option small {
   color: #aec0cc;
 }
