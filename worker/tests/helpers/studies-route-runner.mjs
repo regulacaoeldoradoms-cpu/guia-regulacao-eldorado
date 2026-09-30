@@ -28,7 +28,11 @@ async function fixture(t) {
     missionById:(id)=>missions.find((m)=>m.id===id)||null,
     missionByTopicId:(id)=>missions.find((m)=>m.topicId===id)||null,
     questionById:(id)=>{for(const mission of missions){const question=mission.questions.find((q)=>q.id===id);if(question)return {mission,question};}return null;},
-    sourceMap:()=>new Map()
+    sourceMap:()=>new Map(),
+    publicationSnapshot:()=>({
+      baselineReleaseSequence:1,currentRelease:'fixture-r1',currentReleaseSequence:1,
+      newCount:0,newMissionIds:[],revisionRecommendedCount:0,revisionRecommendedIds:[]
+    })
   };
   const catalog=new vm.SyntheticModule(Object.keys(exports),function(){for(const [k,v]of Object.entries(exports))this.setExport(k,v);},{context});
   const curriculum=new vm.SyntheticModule(['curriculumSnapshot'],function(){
@@ -82,6 +86,7 @@ test('rota mantém os gates antes de inicializar as tabelas',async t=>{
 test('bootstrap continua sem gabaritos e anuncia protocolo de rodadas',async t=>{
   const {call}=await fixture(t);const r=await call('bootstrap');
   assert.equal(r.status,200);assert.equal(r.body.roundProtocol,1);assert.equal(r.body.assessmentProtocol,1);
+  assert.equal(r.body.publicationProtocol,1);assert.equal(r.body.publication.newCount,0);
   for(const m of r.body.missions)for(const q of m.questions){assert.equal(q.answer,undefined);assert.equal(q.explanation,undefined);}
   assert.equal(r.headers.get('Cache-Control'),'no-store');
 });
