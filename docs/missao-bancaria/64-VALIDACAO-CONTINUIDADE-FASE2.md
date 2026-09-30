@@ -62,4 +62,23 @@ Próximo dado necessário no dashboard: vínculo do build com conta/Worker exist
 
 Produção deve continuar com root `/worker`, branch `main` e `npm run deploy:safe`. O comando `versions upload` isolado não promove tráfego, mas também não executa o gate; não se deve inferir a classificação da branch somente por ele. A [documentação oficial de Builds](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#build-settings) distingue os comandos de deploy e preview e informa que esses campos ficam em Settings → Build. Nenhuma mudança de pipeline, acesso, Worker ou bindings foi executada nesta investigação.
 
+### Conferência posterior das configurações e da nova base
+
+Capturas fornecidas pelo usuário e conferidas no chat principal confirmaram:
+
+- **Production:** repositório correto, Build command `None`, Deploy command `npm run deploy:safe`, root `/worker`, branch `main`.
+- **Previews Base:** builds de branches habilitados, Build command `None`, Preview command `npx wrangler versions upload`, root `/worker`, inclusão `*`, exclusões `node_modules/**` e `.git/`.
+
+Isso identifica o comando do log como preview. O rótulo exibido para o token não comprova suas permissões; nenhum token foi trocado ou ampliado. A mensagem de identidade continua sem distinguir entre serviço não encontrado e tag divergente, e não justifica alterar o nome produtivo.
+
+Consulta autorizada somente leitura ao mesmo endpoint usado por `getPreviewBaseConfig` do Wrangler retornou HTTP 200, sem campo `previews_base_config` nem bindings de preview na resposta. O TOML local também não tem `[previews]`. Nenhum valor de secret foi solicitado ou exposto.
+
+O código instalado de `ensurePreviewsConfig` confirma que trocar somente o comando para `npx wrangler preview` falharia antes de build/upload: em CI é obrigatório um bloco local explícito. Um bloco vazio resolve apenas a exigência estrutural; não fornece banco de autenticação, secrets ou uma API de estudos funcional. A [configuração de Previews](https://developers.cloudflare.com/workers/previews/configuration/) e a [referência de isolamento](https://developers.cloudflare.com/workers/previews/resources/) exigem tratar os recursos usados. Reutilizar o mesmo D1/KV/R2 compartilha dados; não copiar recursos produtivos para remover um check vermelho.
+
+**Proposta limitada para decisão:** manter produção intacta; tratar a modernização do preview como configuração própria, com comando suportado, bloco explícito, recursos de teste e revisão de acesso antes de qualquer criação/publicação. Ainda não há proposta de novos bindings ou recursos aprovada. A correção do fluxo não prova, por si só, a resolução da identidade do build. Não executar migração, reconexão, mudança de token ou remoção da guarda CI por suposição.
+
+A `main` avançou por trabalho concorrente em #558 para `59ba80ab059741832f1434a835c86a26ace20ac9`. A cadeia até #557 foi combinada **somente localmente**, sem conflitos, no commit `f7447a81d5fcdc74cdc8c17d2d16d052936863ca`, árvore `c88a62c55da84b4ab43a92e09f15881207012631`. Nessa árvore passaram sintaxe Worker, **660 testes Worker**, 90 asserções estáticas, 78 testes Chromium da Missão Bancária e 78 da Central com quatro skips existentes, sem falhas/retries. O teste adicional do trabalho concorrente foi preservado. Nenhum arquivo clínico foi editado por esta validação, nenhum dado real foi usado e nenhum merge remoto foi realizado.
+
+Consulta das regras GitHub encontrou `main` com `protected: false`, sem required status checks habilitados e sem rulesets. Isso não substitui as condições humanas de publicação nem o gate `deploy:safe`. Os checks terminais e as versões realmente publicadas precisam continuar registrados separadamente.
+
 O usuário autorizou a integração e publicação de #554–557 em 30/09, condicionadas à conclusão das verificações e ao esclarecimento do build Worker, usando as proteções existentes. Essa autorização não dispensa os gates: integração em `main` e publicação de frontend/Worker permanecem pendentes enquanto as condições não forem atendidas. Homologação e aceite humano da Fase 2 continuam separados e pendentes. O documento 63 separa conteúdo, funcionalidade, validação e diagnóstico do aluno. Reagendamento pela conclusão real, política por nota, ampliação de formas independentes e adoção de edital são propostas que exigem decisão; não foram implementados implicitamente nesta correção.
