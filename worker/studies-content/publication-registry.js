@@ -32,7 +32,12 @@ export function attachPublication(mission) {
 }
 
 export function publishedCatalog(missions = []) {
-  return Object.freeze((Array.isArray(missions) ? missions : [])
+  const source = Array.isArray(missions) ? missions : [];
+  const errors = validatePublicationCatalog(source);
+  if (errors.length) {
+    throw new Error(`Catálogo de publicação inválido: ${errors.join(', ')}`);
+  }
+  return Object.freeze(source
     .map(attachPublication)
     .filter((mission) => mission.publication.status === 'published'));
 }
