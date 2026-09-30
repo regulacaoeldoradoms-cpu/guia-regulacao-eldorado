@@ -781,6 +781,62 @@
     }
   }
 
+  function renderAttemptFeedback(card, questionId, result) {
+    const feedback = card?.querySelector('[data-feedback]');
+    if (!feedback) return;
+    feedback.hidden = false;
+    feedback.className = `study-feedback ${result.correct ? 'correct' : 'wrong'}`;
+    feedback.replaceChildren();
+
+    const line = (label, text) => {
+      if (!text) return;
+      const paragraph = document.createElement('p');
+      if (label) {
+        const strong = document.createElement('strong');
+        strong.textContent = label;
+        paragraph.append(strong);
+      }
+      paragraph.append(document.createTextNode(String(text)));
+      feedback.append(paragraph);
+    };
+
+    const mission = state.activeMission;
+    const question = mission?.questions?.find((item) => item.id === questionId);
+    if (result.correct) {
+      line('', `Correto. ${result.explanation || ''}`);
+    } else {
+      line('', 'Ainda não.');
+      line('Por que sua escolha não funciona: ', result.selectedFeedback || '');
+      const correctIndex = Number(result.correctOption);
+      const correctText = Number.isInteger(correctIndex) ? question?.options?.[correctIndex] : '';
+      line('Resposta correta: ', correctText || '');
+      line('Por que é correta: ', result.explanation || '');
+    }
+
+    const refs = Array.isArray(result.reviewRefs) ? result.reviewRefs : [];
+    const localSections = [...new Set(refs
+      .filter((ref) => ref?.missionId === mission?.id && typeof ref.sectionId === 'string')
+      .map((ref) => ref.sectionId))];
+    if (!localSections.length) return;
+
+    const links = document.createElement('div');
+    links.className = 'study-feedback-review-links';
+    const label = document.createElement('span');
+    label.textContent = 'Rever conceito:';
+    links.append(label);
+    for (const sectionId of localSections) {
+      const section = mission.sections?.find((item) => item.id === sectionId);
+      if (!section) continue;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'study-feedback-review';
+      button.textContent = section.heading;
+      button.addEventListener('click', () => reader?.openSection(sectionId));
+      links.append(button);
+    }
+    if (links.querySelector('button')) feedback.append(links);
+  }
+
   async function answerQuestion(questionId) {
     if (!state.sessionId || state.leaving || state.completing) {
       status('Aguarde o registro da rodada antes de responder.', true);
@@ -813,10 +869,7 @@
       state.answered.set(questionId, result.correct);
       card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
       button.textContent = 'Respondida';
-      const feedback = card.querySelector('[data-feedback]');
-      feedback.hidden = false;
-      feedback.className = `study-feedback ${result.correct ? 'correct' : 'wrong'}`;
-      feedback.textContent = `${result.correct ? 'Correto. ' : 'Ainda não. '}${result.explanation}`;
+      renderAttemptFeedback(card, questionId, result);
       updateFocusProgress();
     } catch (error) {
       if (generation !== state.generation || sessionId !== state.sessionId) return;

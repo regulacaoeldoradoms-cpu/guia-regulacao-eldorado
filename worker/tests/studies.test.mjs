@@ -157,6 +157,7 @@ test('retomada preserva histórico e sessão ativa sem vazar gabarito', () => {
   );
   assert.doesNotMatch(bootstrapMission, /answer:/);
   assert.doesNotMatch(bootstrapMission, /correctOption/);
+  assert.doesNotMatch(bootstrapMission, /selectedFeedback|optionReasons|reviewRefs|explanation/);
 
   const resumable = backend.slice(
     backend.indexOf('async function resumableStudySession'),
