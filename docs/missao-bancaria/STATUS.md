@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~92%; Fase 2 ~12% após a integração do Recorte A e durante o piloto do Recorte B; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~32%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~93%; Fase 2 ~18% após os Recortes A, B e B2, com B3 em desenvolvimento; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~33%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -328,19 +328,23 @@ Resultado:
 - GitHub/Cloudflare Pages do merge foi publicado com sucesso;
 - o Workers Builds associado ao merge #547 encerrou em falha, portanto o código do Recorte A está em `main`, mas esta entrega isolada não é registrada como nova versão de Worker produtiva.
 
-## Fase 2 — Recorte B em desenvolvimento
+## Fase 2 — Feedback pedagógico reutilizável
 
-Documento: `53-FASE2-FEEDBACK-PEDAGOGICO.md`.  
-Branch: `feat/missao-bancaria-fase2-feedback-pedagogico`.
+Recorte B — documento `53-FASE2-FEEDBACK-PEDAGOGICO.md`, PR #548 integrada em `126dbc1bac79d425f43df55d840f95c2f6ef5891`:
+- nove questões de Introdução, CMN e Banco Central receberam justificativa específica por alternativa;
+- o feedback continua somente pós-tentativa, sem gabarito ou catálogo de motivos no bootstrap;
+- o frontend diferencia erro, resposta correta, justificativa e releitura orientada.
 
-Piloto:
-- nove questões das três primeiras missões recebem justificativa específica para cada alternativa;
-- o backend só devolve o motivo da escolha e referências de releitura depois da tentativa;
-- o bootstrap continua sem gabarito, explicação ou catálogo de motivos;
-- o frontend diferencia “por que sua escolha não funciona”, “resposta correta”, “por que é correta” e oferece “Rever conceito”;
-- questões antigas e Worker anterior permanecem compatíveis quando os campos novos não existirem.
+Recorte B2 — documento `54-FASE2-FEEDBACK-COPOM-CVM.md`, PR #549 integrada em `4a3dafd29f372b840d63baeab33fbae2dfa1e2b2`:
+- seis questões de Copom e CVM foram adicionadas ao mesmo contrato;
+- cobertura enriquecida passou de 9 para 15 questões;
+- nenhuma nova rota, renderer ou regra específica por aula foi criada.
 
-Depois da validação deste piloto, ampliar o mesmo contrato às demais questões do bloco sem criar outro renderer.
+Recorte B3 em desenvolvimento:
+- Operadores + Seguros/Previdência;
+- sete questões adicionais;
+- objetivo de elevar o catálogo enriquecido para 22 questões mantendo o mesmo contrato;
+- próximo recorte, depois de B3, será Pagamentos/Consórcios + Chefe.
 
 A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
