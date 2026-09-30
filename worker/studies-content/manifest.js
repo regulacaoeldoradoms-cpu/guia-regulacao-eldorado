@@ -124,10 +124,10 @@ export function sourceMap() {
   return new Map(STUDY_SOURCES.map((source) => [source.id, source]));
 }
 
-export function validateTeachingCatalog(missions = PUBLISHED_MISSIONS) {
+export function validateTeachingCatalog(missions = PUBLISHED_MISSIONS, catalogSources = STUDY_SOURCES) {
   const errors = [...validatePublicationCatalog(missions)];
   const catalog = new Map(missions.map((mission) => [mission.id, mission]));
-  const sources = sourceMap();
+  const sources = new Map(catalogSources.map((source) => [source.id, source]));
   if (catalog.size !== missions.length) errors.push('duplicate-mission-id');
   for (const mission of missions) {
     const sections = Array.isArray(mission.sections) ? mission.sections : [];

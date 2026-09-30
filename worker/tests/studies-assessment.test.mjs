@@ -9,6 +9,7 @@ import {
   BLOCK_CONTENT_VERSION,
   FORM_SIZE,
   REQUIRED_TOPIC_IDS,
+  REQUIRED_PROGRESS_TOPIC_IDS,
   ASSESSMENT_QUESTIONS,
   assessmentQuestionsForForm,
   validateAssessmentCatalog
@@ -38,8 +39,20 @@ function fixture(t) {
 
 function seedPrerequisites(sql, username='wellyton') {
   const stmt=sql.prepare('INSERT INTO study_topic_progress(username, topic_id, coverage_state) VALUES (?, ?, 3)');
-  for(const topicId of REQUIRED_TOPIC_IDS)stmt.run(username,topicId);
+  for(const mission of PUBLISHED_MISSIONS.filter(mission=>REQUIRED_TOPIC_IDS.includes(mission.id)))stmt.run(username,mission.topicId);
 }
+
+test('pré-requisito usa topicId persistido da introdução, sem renomear aula ou aceitar alias não concluído',async t=>{
+  assert.deepEqual(REQUIRED_PROGRESS_TOPIC_IDS,PUBLISHED_MISSIONS.map(mission=>mission.topicId));
+  const {sql,db}=fixture(t);await ensureAssessmentSchema(db);seedPrerequisites(sql);
+  assert.equal((await getAssessmentState(db,'wellyton')).availableForm,'A');
+  sql.prepare("UPDATE study_topic_progress SET coverage_state=2 WHERE topic_id='banking.sfn'").run();
+  sql.prepare("INSERT INTO study_topic_progress VALUES ('wellyton','banking.sfn.introducao',3)").run();
+  assert.equal((await getAssessmentState(db,'wellyton')).prerequisitesComplete,false);
+  sql.prepare("UPDATE study_topic_progress SET coverage_state=3 WHERE topic_id='banking.sfn'").run();
+  assert.equal((await getAssessmentState(db,'wellyton')).availableForm,'A');
+  assert.equal((await getAssessmentState(db,'outro')).availableForm,null);
+});
 
 async function answerAll(db, assessment, chooser=(question)=>question.answer) {
   const byId=new Map(ASSESSMENT_QUESTIONS.map((item)=>[item.id,item]));

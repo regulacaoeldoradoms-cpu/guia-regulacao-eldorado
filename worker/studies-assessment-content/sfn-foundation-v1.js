@@ -17,6 +17,12 @@ export const REQUIRED_TOPIC_IDS = Object.freeze([
   'banking.sfn.boss'
 ]);
 
+// A introdução mantém o topicId histórico "banking.sfn" no progresso persistido.
+// REQUIRED_TOPIC_IDS também identifica aulas nos itens; não renomear esses vínculos.
+export const REQUIRED_PROGRESS_TOPIC_IDS = Object.freeze(REQUIRED_TOPIC_IDS.map(
+  id => id === 'banking.sfn.introducao' ? 'banking.sfn' : id
+));
+
 const QUESTIONS = [
   {
     "id": "eval.sfn.a01",

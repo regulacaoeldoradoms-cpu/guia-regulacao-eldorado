@@ -240,8 +240,14 @@ export const QUESTION_FEEDBACK_V1 = Object.freeze([
   ])
 ]);
 
-export function questionFeedbackById(questionId) {
-  return QUESTION_FEEDBACK_V1.find((item) => item.questionId === String(questionId || '')) || null;
+export function questionFeedbackById(questionId, question = null) {
+  const registered = QUESTION_FEEDBACK_V1.find((item) => item.questionId === String(questionId || ''));
+  if (registered) return registered;
+  const reasons = question?.optionRationales;
+  if (question?.id !== questionId || !Array.isArray(question?.options) || !Array.isArray(reasons)
+    || reasons.length !== question.options.length || !reasons.length
+    || reasons.some((reason) => typeof reason !== 'string' || !reason.trim())) return null;
+  return { questionId, optionReasons: [...reasons] };
 }
 
 export function validateQuestionFeedback(missions, entries = QUESTION_FEEDBACK_V1) {

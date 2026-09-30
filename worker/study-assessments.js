@@ -5,7 +5,7 @@ import {
   BLOCK_ID,
   BLOCK_CONTENT_VERSION,
   FORM_SIZE,
-  REQUIRED_TOPIC_IDS,
+  REQUIRED_PROGRESS_TOPIC_IDS,
   assessmentQuestionById,
   assessmentQuestionsForForm,
   publicAssessmentQuestion
@@ -65,11 +65,11 @@ async function invalidateIncompatibleActive(db, username) {
 }
 
 async function prerequisiteCoverage(db, username) {
-  const placeholders = REQUIRED_TOPIC_IDS.map(() => '?').join(',');
+  const placeholders = REQUIRED_PROGRESS_TOPIC_IDS.map(() => '?').join(',');
   const row = await db.prepare(`SELECT COUNT(*) AS total
     FROM study_topic_progress
     WHERE username=? AND coverage_state>=3 AND topic_id IN (${placeholders})`)
-    .bind(username, ...REQUIRED_TOPIC_IDS).first();
+    .bind(username, ...REQUIRED_PROGRESS_TOPIC_IDS).first();
   return Number(row?.total || 0);
 }
 
@@ -130,7 +130,7 @@ export async function getAssessmentState(db, username, now = new Date()) {
 
   const formA = completed.find((row) => row.form_id === 'A') || null;
   const formB = completed.find((row) => row.form_id === 'B') || null;
-  const prerequisitesComplete = covered === REQUIRED_TOPIC_IDS.length;
+  const prerequisitesComplete = covered === REQUIRED_PROGRESS_TOPIC_IDS.length;
   let availableForm = null;
   let nextEligibleAt = '';
 
