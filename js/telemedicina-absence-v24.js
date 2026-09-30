@@ -152,6 +152,35 @@
     return `<button${id ? ` id="${id}"` : ''} class="tm-condition-ready-toggle" type="button" aria-pressed="false">${ICONS.ready}<span><strong data-tm-ready-label>Já realizado</strong><small data-tm-ready-hint>Marque se a condição já foi concluída</small></span></button>`;
   }
 
+  function absenceRequestMarkup(name, prefix = '') {
+    const yesId = prefix ? `${prefix}Yes` : '';
+    const noId = prefix ? `${prefix}No` : '';
+    return `<fieldset class="tm-absence-request-field">
+      <legend>Nova solicitação</legend>
+      <span class="tm-absence-request-question">Este paciente precisa ser solicitado novamente?</span>
+      <div class="tm-absence-request-options">
+        <label class="tm-absence-request-option yes">
+          <input${yesId ? ` id="${yesId}"` : ''} type="radio" name="${name}" value="yes">
+          <span><strong>Solicitar novamente</strong><small>Cria uma pendência em “Solicitar agora”.</small></span>
+        </label>
+        <label class="tm-absence-request-option no">
+          <input${noId ? ` id="${noId}"` : ''} type="radio" name="${name}" value="no">
+          <span><strong>Não solicitar novamente</strong><small>Registra somente a falta no histórico, sem pendência.</small></span>
+        </label>
+      </div>
+    </fieldset>`;
+  }
+
+  function selectedAbsenceRequest(root, name) {
+    return root?.querySelector(`input[name="${name}"]:checked`)?.value || '';
+  }
+
+  function setAbsenceRequestEnabled(root, name, enabled) {
+    root?.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+      input.disabled = !enabled;
+    });
+  }
+
   function syncDesktopForm(form) {
     if (!form) return;
     const mode = desktopMode(form);
@@ -178,6 +207,7 @@
       absencePanel.setAttribute('aria-hidden', absence ? 'false' : 'true');
     }
     if (reason) reason.required = absence;
+    setAbsenceRequestEnabled(form, 'consultAbsenceRequest', absence);
 
     if (fields) {
       const hideAll = closed && !absence && !withdrawn;
@@ -230,7 +260,7 @@
     if (!document.getElementById('consultOutcomeAbsence')) {
       const choice = document.createElement('label');
       choice.className = 'telemedicine-choice absence';
-      choice.innerHTML = choiceMarkup('consultOutcome', ABSENCE_MODE, 'Falta', 'Paciente não compareceu e precisa ser solicitado novamente.', ICONS.absence, 'consultOutcomeAbsence');
+      choice.innerHTML = choiceMarkup('consultOutcome', ABSENCE_MODE, 'Falta', 'Paciente não compareceu. Defina se precisa de nova solicitação.', ICONS.absence, 'consultOutcomeAbsence');
       grid.appendChild(choice);
     }
 
@@ -255,7 +285,7 @@
       absencePanel.id = 'consultAbsenceFields';
       absencePanel.hidden = true;
       absencePanel.setAttribute('aria-hidden', 'true');
-      absencePanel.innerHTML = '<div class="portal-field"><label for="consultAbsenceReason">Justificativa da falta</label><textarea id="consultAbsenceReason" maxlength="1500" rows="4" placeholder="Informe por que o paciente não compareceu"></textarea><small>Obrigatório. Esta informação ficará registrada no histórico.</small></div>';
+      absencePanel.innerHTML = `<div class="portal-field"><label for="consultAbsenceReason">Justificativa da falta</label><textarea id="consultAbsenceReason" maxlength="1500" rows="4" placeholder="Informe por que o paciente não compareceu"></textarea><small>Obrigatório. Esta informação ficará registrada no histórico.</small></div>${absenceRequestMarkup('consultAbsenceRequest', 'consultAbsenceRequest')}`;
       document.getElementById('consultConditionalFields')?.insertAdjacentElement('afterend', absencePanel);
     }
 
@@ -303,6 +333,14 @@
         showOperationalError(document.getElementById('consultationStatus'), 'Justifique a falta do paciente.', 'account-status full visible error');
         return;
       }
+      const requestChoice = selectedAbsenceRequest(form, 'consultAbsenceRequest');
+      if (!requestChoice) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        form.querySelector('input[name="consultAbsenceRequest"]')?.focus({ preventScroll: true });
+        showOperationalError(document.getElementById('consultationStatus'), 'Informe se a falta deve gerar uma nova solicitação.', 'account-status full visible error');
+        return;
+      }
       const notes = document.getElementById('consultNotes');
       if (notes) notes.value = value;
     }, true);
@@ -311,6 +349,7 @@
       queueMicrotask(() => {
         const reason = document.getElementById('consultAbsenceReason');
         if (reason) reason.value = '';
+        form.querySelectorAll('input[name="consultAbsenceRequest"]').forEach((input) => { input.checked = false; });
         setReadyState(document.getElementById('consultConditionReady'), detailInput, false);
         syncDesktopForm(form);
       });
@@ -345,6 +384,7 @@
       absenceField.setAttribute('aria-hidden', absence ? 'false' : 'true');
     }
     if (absenceReason) absenceReason.required = absence;
+    setAbsenceRequestEnabled(form, 'absenceNeedsRequest', absence);
 
     form.querySelectorAll('[data-tm-scheduled-field]').forEach((field) => {
       field.hidden = mode !== 'scheduled';
@@ -388,7 +428,7 @@
     if (legend) legend.textContent = 'Qual foi o resultado deste atendimento?';
 
     const choices = [
-      ['absence', ABSENCE_MODE, 'Falta', 'Paciente não compareceu e precisa ser solicitado novamente.', ICONS.absence],
+      ['absence', ABSENCE_MODE, 'Falta', 'Paciente não compareceu. Defina se precisa de nova solicitação.', ICONS.absence],
       ['withdrawn', WITHDRAWN_MODE, 'Desistiu', 'Registra o encerramento por desistência, sem alertas.', ICONS.withdrawn],
       ['in-person', IN_PERSON_MODE, 'Encaminhado para presencial', 'Registra que não foi possível concluir por telemedicina.', ICONS.inPerson]
     ];
@@ -402,12 +442,12 @@
 
     let absenceField = form.querySelector('[data-tm-absence-field]');
     if (!absenceField) {
-      absenceField = document.createElement('label');
-      absenceField.className = 'tm-span-2';
+      absenceField = document.createElement('div');
+      absenceField.className = 'tm-span-2 tm-absence-fields';
       absenceField.dataset.tmAbsenceField = '';
       absenceField.hidden = true;
       absenceField.setAttribute('aria-hidden', 'true');
-      absenceField.innerHTML = 'Justificativa da falta<textarea name="absenceReason" maxlength="1500" rows="4" placeholder="Informe por que o paciente não compareceu"></textarea><small>Obrigatório. Esta informação ficará registrada no histórico.</small>';
+      absenceField.innerHTML = `<label class="tm-absence-reason-label">Justificativa da falta<textarea name="absenceReason" maxlength="1500" rows="4" placeholder="Informe por que o paciente não compareceu"></textarea><small>Obrigatório. Esta informação ficará registrada no histórico.</small></label>${absenceRequestMarkup('absenceNeedsRequest')}`;
       const notes = form.querySelector('label[data-tm-active-field]');
       if (notes) notes.insertAdjacentElement('beforebegin', absenceField);
       else grid.parentElement?.appendChild(absenceField);
@@ -463,6 +503,14 @@
         event.stopImmediatePropagation();
         form.elements.absenceReason?.focus({ preventScroll: true });
         showOperationalError(form.querySelector('.tm-inline-status'), 'Justifique a falta do paciente.', 'tm-inline-status error');
+        return;
+      }
+      const requestChoice = selectedAbsenceRequest(form, 'absenceNeedsRequest');
+      if (!requestChoice) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        form.querySelector('input[name="absenceNeedsRequest"]')?.focus({ preventScroll: true });
+        showOperationalError(form.querySelector('.tm-inline-status'), 'Informe se a falta deve gerar uma nova solicitação.', 'tm-inline-status error');
         return;
       }
       if (form.elements.notes) form.elements.notes.value = reason;

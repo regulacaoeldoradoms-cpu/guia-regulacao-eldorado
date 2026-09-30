@@ -316,7 +316,7 @@
             <label class="telemedicine-choice absence">
               <input type="radio" name="outcomeEditChoice" value="absence">
               <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v13H3v-13a2 2 0 0 1 2-2Z"/><path d="M7 2v5M17 2v5M3 9h18"/><path d="m8.5 12.5 7 7m0-7-7 7"/></svg></span>
-              <span><strong>Falta do paciente</strong><small>Registra a falta e deixa nova solicitação pendente.</small></span>
+              <span><strong>Falta do paciente</strong><small>Registra a falta e permite definir se haverá nova solicitação.</small></span>
             </label>
           </div>
         </fieldset>
@@ -333,6 +333,14 @@
 
         <div class="telemedicine-mode-panel absence tm-outcome-edit-panel" id="outcomeEditAbsence" hidden>
           <div class="portal-field"><label for="outcomeEditAbsenceReason">Justificativa da falta</label><textarea id="outcomeEditAbsenceReason" maxlength="1500" rows="3" placeholder="Informe o motivo registrado para a falta"></textarea></div>
+          <fieldset class="tm-absence-request-field">
+            <legend>Nova solicitação</legend>
+            <span class="tm-absence-request-question">Este paciente precisa ser solicitado novamente?</span>
+            <div class="tm-absence-request-options">
+              <label class="tm-absence-request-option yes"><input type="radio" name="outcomeEditAbsenceRequest" value="yes"><span><strong>Solicitar novamente</strong><small>Mantém a pendência em “Solicitar agora”.</small></span></label>
+              <label class="tm-absence-request-option no"><input type="radio" name="outcomeEditAbsenceRequest" value="no"><span><strong>Não solicitar novamente</strong><small>Registra a falta sem deixar nova solicitação pendente.</small></span></label>
+            </div>
+          </fieldset>
         </div>
 
         <div class="portal-field tm-outcome-edit-note"><label for="outcomeEditNote">Observação da correção</label><textarea id="outcomeEditNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea><small>Use este campo para qualquer detalhe adicional, inclusive sobre a condição. A situação anterior continuará no histórico.</small></div>
@@ -359,29 +367,39 @@
       const conditionType = document.getElementById('outcomeEditConditionType');
       const conditionReady = document.getElementById('outcomeEditConditionReady');
       const absenceReason = document.getElementById('outcomeEditAbsenceReason');
+      const absenceRequestInputs = modal.querySelectorAll('input[name="outcomeEditAbsenceRequest"]');
 
       scheduled.hidden = mode !== 'scheduled';
       conditional.hidden = mode !== 'conditional';
       absence.hidden = mode !== 'absence';
       returnDate.required = mode === 'scheduled';
       absenceReason.required = mode === 'absence';
+      absenceRequestInputs.forEach((input) => { input.disabled = mode !== 'absence'; });
 
       const preview = document.getElementById('outcomeEditPreview');
       preview.dataset.mode = mode;
-      preview.textContent = mode === 'discharge'
-        ? 'O acompanhamento será encerrado como alta e os lembretes atuais serão removidos.'
-        : mode === 'scheduled'
-          ? 'O retorno será reprogramado e receberá três novos avisos úteis.'
-          : mode === 'conditional'
-            ? (conditionReady.checked
-              ? 'A condição já foi realizada. O acompanhamento irá para “Solicitar agora”.'
-              : 'O acompanhamento ficará sem data até a condição ser concluída.')
-            : 'A falta será registrada e uma nova solicitação ficará pendente.';
+      if (mode === 'discharge') {
+        preview.textContent = 'O acompanhamento será encerrado como alta e os lembretes atuais serão removidos.';
+      } else if (mode === 'scheduled') {
+        preview.textContent = 'O retorno será reprogramado e receberá três novos avisos úteis.';
+      } else if (mode === 'conditional') {
+        preview.textContent = conditionReady.checked
+          ? 'A condição já foi realizada. O acompanhamento irá para “Solicitar agora”.'
+          : 'O acompanhamento ficará sem data até a condição ser concluída.';
+      } else {
+        const requestChoice = modal.querySelector('input[name="outcomeEditAbsenceRequest"]:checked')?.value || '';
+        preview.textContent = requestChoice === 'yes'
+          ? 'A falta será registrada e uma nova solicitação ficará pendente.'
+          : requestChoice === 'no'
+            ? 'A falta ficará registrada no histórico sem criar nova solicitação pendente.'
+            : 'Escolha se esta falta deve ou não gerar uma nova solicitação.';
+      }
     };
 
     modal.querySelectorAll('input[name="outcomeEditChoice"]').forEach((input) => input.addEventListener('change', () => sync(input.value)));
     document.getElementById('outcomeEditConditionType').addEventListener('change', () => sync());
     document.getElementById('outcomeEditConditionReady').addEventListener('change', () => sync());
+    modal.querySelectorAll('input[name="outcomeEditAbsenceRequest"]').forEach((input) => input.addEventListener('change', () => sync()));
     modal.querySelectorAll('[data-outcome-close]').forEach((button) => button.addEventListener('click', () => closeModal('outcomeEditModal')));
     modal.addEventListener('click', (event) => { if (event.target === modal) closeModal('outcomeEditModal'); });
 
@@ -399,7 +417,16 @@
         body.conditionDetail = body.conditionType === 'other' ? 'OUTRA CONDIÇÃO' : '';
         body.conditionReady = document.getElementById('outcomeEditConditionReady').checked;
       }
-      if (mode === 'absence') body.absenceReason = document.getElementById('outcomeEditAbsenceReason').value.trim();
+      if (mode === 'absence') {
+        const requestChoice = modal.querySelector('input[name="outcomeEditAbsenceRequest"]:checked');
+        if (!requestChoice) {
+          showStatus(status, 'Informe se a falta deve gerar uma nova solicitação.', 'error');
+          modal.querySelector('input[name="outcomeEditAbsenceRequest"]')?.focus({ preventScroll: true });
+          return;
+        }
+        body.absenceReason = document.getElementById('outcomeEditAbsenceReason').value.trim();
+        body.absenceNeedsRequest = requestChoice.value === 'yes';
+      }
 
       button.disabled = true;
       try {
@@ -437,6 +464,10 @@
     document.getElementById('outcomeEditConditionType').value = item.returnConditionType || 'exams';
     document.getElementById('outcomeEditConditionReady').checked = resolution.includes('ja realizado');
     document.getElementById('outcomeEditAbsenceReason').value = item.absenceReason || '';
+    modal.querySelectorAll('input[name="outcomeEditAbsenceRequest"]').forEach((input) => {
+      const needsRequest = item.absenceNeedsRequest === false ? false : true;
+      input.checked = mode === 'absence' && input.value === (needsRequest ? 'yes' : 'no');
+    });
     document.getElementById('outcomeEditNote').value = '';
     modal._syncOutcomeEditor?.(mode);
     document.getElementById('outcomeEditStatus').className = 'account-status';
@@ -653,6 +684,14 @@
       const followupMode = selectedConsultMode();
       const discharged = followupMode === 'discharge';
       const conditional = followupMode === 'conditional';
+      const absence = followupMode === 'absence';
+      const absenceRequestChoice = absence
+        ? document.querySelector('input[name="consultAbsenceRequest"]:checked')?.value || ''
+        : '';
+      if (absence && !absenceRequestChoice) {
+        throw new Error('Informe se a falta deve gerar uma nova solicitação.');
+      }
+      const absenceNeedsRequest = absence && absenceRequestChoice === 'yes';
       const returnDueDate = followupMode === 'scheduled' ? document.getElementById('consultReturnDate').value : '';
       const returnDays = followupMode === 'scheduled' && !returnDueDate
         ? Number(document.getElementById('consultReturnDays').value || 0)
@@ -681,7 +720,8 @@
           resolution,
           followupMode,
           discharged,
-          needsReturn: !discharged,
+          absenceNeedsRequest,
+          needsReturn: absence ? absenceNeedsRequest : !discharged,
           returnDays,
           returnDueDate,
           conditionType,

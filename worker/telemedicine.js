@@ -215,12 +215,19 @@ async function recordConsultation(env, user, input) {
   const discharged = followupMode === 'discharge';
   const conditional = followupMode === 'conditional';
   const absence = followupMode === 'absence';
+  // V43: a falta pode ou não gerar uma nova solicitação. Clientes antigos que
+  // ainda não enviam a escolha preservam o comportamento histórico (solicitar).
+  const absenceNeedsRequest = absence
+    ? (typeof input.absenceNeedsRequest === 'boolean' ? input.absenceNeedsRequest : true)
+    : false;
   const inputResolution = clean(input.resolution, 2500);
   const inputNotes = clean(input.notes, 1500);
   const absenceReason = absence ? inputNotes : '';
   const withdrawn = normalizeText(inputResolution) === 'PACIENTE DESISTIU DO TRATAMENTO';
   const notes = discharged && !withdrawn ? '' : inputNotes;
-  const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
+  const needsReturn = hasExplicitMode
+    ? (absence ? absenceNeedsRequest : !discharged)
+    : (discharged ? false : input.needsReturn !== false);
   const explicitDueInput = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
   const explicitDue = dateValid(explicitDueInput) ? normalizeReturnDueDate(explicitDueInput) : '';
   const returnDays = followupMode === 'scheduled' && !explicitDue ? Number(input.returnDays || 0) : 0;
@@ -276,7 +283,7 @@ async function recordConsultation(env, user, input) {
 
   const event = {
     patientId, patientName, followupId, eventType: absence ? 'falta' : 'consulta', eventDate: consultationDate,
-    specialty, resolution, notes, followupMode, discharged, absence, absenceReason, needsReturn, returnDueDate,
+    specialty, resolution, notes, followupMode, discharged, absence, absenceReason, absenceNeedsRequest, needsReturn, returnDueDate,
     returnDays: Number.isInteger(returnDays) ? returnDays : 0,
     returnConditionType, returnConditionDetail,
     reminderDates, source: 'manual', createdAt: now, createdBy: user.username
@@ -295,7 +302,8 @@ async function recordConsultation(env, user, input) {
     discharged,
     absence,
     absenceReason,
-    absencePendingRequest: absence,
+    absenceNeedsRequest,
+    absencePendingRequest: absence && absenceNeedsRequest,
     returnConditionType,
     returnConditionDetail,
     returnDueDate,
@@ -357,6 +365,7 @@ async function updateSchedule(env, user, followupId, input = {}) {
     followupMode: 'scheduled',
     absence: false,
     absenceReason: '',
+    absenceNeedsRequest: false,
     absencePendingRequest: false,
     returnDueDate,
     reminderDates,
@@ -381,7 +390,7 @@ async function updateSchedule(env, user, followupId, input = {}) {
     createdAt: now,
     createdBy: user.username
   });
-  return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
+  return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absenceNeedsRequest: false, absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
 }
 
 // V35 (14/09/2026): correções de situação preservam o histórico anterior,
@@ -404,6 +413,7 @@ async function updateFollowupOutcome(env, user, followupId, input = {}) {
     discharged: false,
     absence: false,
     absenceReason: '',
+    absenceNeedsRequest: false,
     absencePendingRequest: false,
     returnConditionType: '',
     returnConditionDetail: '',
@@ -460,13 +470,18 @@ async function updateFollowupOutcome(env, user, followupId, input = {}) {
     if (absenceReason.length < 3) {
       throw Object.assign(new Error('Justifique a falta do paciente.'), { status: 400 });
     }
+    const absenceNeedsRequest = typeof input.absenceNeedsRequest === 'boolean'
+      ? input.absenceNeedsRequest
+      : true;
     resolution = 'FALTA DO PACIENTE';
     Object.assign(patch, {
       resolution,
       notes: absenceReason,
       absence: true,
       absenceReason,
-      absencePendingRequest: true
+      absenceNeedsRequest,
+      absencePendingRequest: absenceNeedsRequest,
+      active: absenceNeedsRequest
     });
   }
 
@@ -485,6 +500,7 @@ async function updateFollowupOutcome(env, user, followupId, input = {}) {
     returnDueDate: patch.returnDueDate,
     reminderDates: patch.reminderDates,
     followupMode,
+    absenceNeedsRequest: followupMode === 'absence' ? patch.absenceNeedsRequest : false,
     previousStatus,
     previousResolution: clean(current.resolution, 2500),
     source: 'manual',

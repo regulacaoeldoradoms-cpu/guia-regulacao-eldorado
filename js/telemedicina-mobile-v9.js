@@ -515,6 +515,16 @@
       const followupMode = form.elements.followupMode.value || 'scheduled';
       const discharged = followupMode === 'discharge';
       const conditional = followupMode === 'conditional';
+      const absence = followupMode === 'absence';
+      const absenceRequestChoice = absence
+        ? form.querySelector('input[name="absenceNeedsRequest"]:checked')?.value || ''
+        : '';
+      if (absence && !absenceRequestChoice) {
+        form.querySelector('input[name="absenceNeedsRequest"]')?.focus({ preventScroll: true });
+        setInlineStatus(status, 'Informe se a falta deve gerar uma nova solicitação.', 'error');
+        return;
+      }
+      const absenceNeedsRequest = absence && absenceRequestChoice === 'yes';
       let due = followupMode === 'scheduled' ? form.elements.returnDueDate.value : '';
       const days = followupMode === 'scheduled' && !due ? Number(form.elements.returnDays.value || 0) : 0;
       if (due) due = nextBusinessDay(due);
@@ -547,7 +557,8 @@
             resolution,
             followupMode,
             discharged,
-            needsReturn: !discharged,
+            absenceNeedsRequest,
+            needsReturn: absence ? absenceNeedsRequest : !discharged,
             returnDays: days,
             returnDueDate: due,
             conditionType,
@@ -566,6 +577,7 @@
         form.elements.notes.value = '';
         form.elements.conditionType.value = 'exams';
         form.elements.conditionDetail.value = '';
+        form.querySelectorAll('input[name="absenceNeedsRequest"]').forEach((input) => { input.checked = false; });
         form.elements.followupMode.value = 'scheduled';
         syncOutcome();
         form.elements.patientName.focus({ preventScroll: true });

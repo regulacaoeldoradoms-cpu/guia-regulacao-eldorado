@@ -22,7 +22,7 @@ A implementação reutiliza o campo já existente `notes` do evento/acompanhamen
 
 ## Interface e cache
 
-A camada de desfechos continua em `js/telemedicina-absence-v24.js`, com cache-buster `v=20260924-1`. A página expõe `data-withdrawal-reason="v42"` para diagnóstico de versão.
+A camada de desfechos continua em `js/telemedicina-absence-v24.js`, com cache-buster `v=20260930-1`. A página expõe `data-withdrawal-reason="v42"` para diagnóstico de versão.
 
 ## Privacidade e observabilidade
 

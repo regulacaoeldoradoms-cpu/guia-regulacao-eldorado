@@ -15,14 +15,14 @@ Para acompanhamentos cuja conduta seja `FALTA DO PACIENTE`, `followupMode` seja 
 - o card apresenta **Justificativa:** seguida exatamente da justificativa registrada;
 - a informação é exibida tanto em Lista quanto em Grade e também na interface mobile;
 - o texto não substitui nem altera o histórico longitudinal;
-- o estado continua `SOLICITAR`/`SOLICITAR NOVAMENTE` até a confirmação da nova solicitação;
+- quando a falta foi marcada como **Solicitar novamente**, o estado continua `SOLICITAR`/`SOLICITAR NOVAMENTE` até a confirmação; quando foi marcada como **Não solicitar novamente**, não há card pendente nem nova solicitação operacional;
 - não são criadas data-alvo ou datas de lembrete;
 - a justificativa vem de `absenceReason`, com compatibilidade de leitura de `notes` para registros já existentes;
 - nenhum dado novo é persistido apenas para esta apresentação.
 
 ## Regra do Copiar motivo
 
-Para uma falta, o texto copiado segue este formato:
+Para uma falta **que ainda precisa ser solicitada novamente**, o texto copiado segue este formato:
 
 > Data da última consulta: 21/08/2026. Nova solicitação de retorno devido ao não comparecimento do paciente no atendimento anterior. Justificativa: NÃO PÔDE COMPARECER, TINHA ORTOPEDIA EM DOURADOS.
 

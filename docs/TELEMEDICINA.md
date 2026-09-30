@@ -423,3 +423,15 @@ O carregamento de **Usuários e acessos** foi ajustado para não depender de uma
 
 A medida evita que o crescimento da quantidade de contas transforme o painel administrativo em uma rota progressivamente mais lenta ou sujeita a falha de transporte.
 
+## Falta com nova solicitação opcional V43 — 30/09/2026
+
+Registrar **Falta** não implica mais, por si só, uma nova solicitação.
+
+- a justificativa da falta permanece obrigatória;
+- o operador escolhe explicitamente **Solicitar novamente** ou **Não solicitar novamente**;
+- quando houver nova solicitação, `absenceNeedsRequest=true` mantém `absencePendingRequest=true` e o acompanhamento entra em `SOLICITAR`;
+- quando não houver nova solicitação, a falta permanece no histórico, sem data, lembrete ou pendência operacional;
+- **Alterar situação** usa a mesma escolha e permite corrigir faltas já registradas;
+- clientes antigos que não enviam a nova propriedade mantêm, por compatibilidade, o comportamento histórico de solicitar novamente.
+
+A especificação completa e os critérios de regressão estão em `docs/TELEMEDICINA-FALTA-SOLICITACAO-V43.md`.
