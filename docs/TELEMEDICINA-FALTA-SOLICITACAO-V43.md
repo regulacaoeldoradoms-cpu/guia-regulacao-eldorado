@@ -65,6 +65,18 @@ A mesma regra vale para:
 
 A interface não usa apenas cor para comunicar a escolha: as opções possuem texto completo e controles de rádio acessíveis.
 
+### Correção visual V43.1 — Alterar situação no tema escuro
+
+Correção registrada em 30/09/2026 após validação visual em produção.
+
+No modal **Alterar situação**:
+
+- o bloco **Falta do paciente** deve herdar integralmente as superfícies, bordas, texto e campos do tema escuro;
+- as opções **Solicitar novamente** e **Não solicitar novamente** permanecem em dois cartões equivalentes no desktop e uma coluna em telas estreitas;
+- o controle de rádio deve manter tamanho compacto fixo e não pode herdar a regra genérica de inputs do desktop, que usa largura total e altura mínima de 48 px;
+- título, descrição e ajuda de cada cartão devem permanecer dentro dos limites do próprio cartão, com quebra de linha quando necessário;
+- a correção é restrita a este fluxo e não altera a composição geral do desktop.
+
 ## Segurança e dados
 
 - nenhuma permissão ou papel foi ampliado;

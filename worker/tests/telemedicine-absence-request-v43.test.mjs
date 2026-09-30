@@ -34,6 +34,7 @@ const atomicWorker = read('worker/telemedicine-router-v2.js');
 const absenceUi = read('js/telemedicina-absence-v24.js');
 const desktop = read('js/telemedicina.js');
 const mobile = read('js/telemedicina-mobile-v9.js');
+const absenceCss = read('css/telemedicina-absence-v24.css');
 const html = read('telemedicina/index.html');
 const documentation = read('docs/TELEMEDICINA-FALTA-SOLICITACAO-V43.md');
 
@@ -57,6 +58,12 @@ assert.match(desktop, /body\.absenceNeedsRequest = requestChoice\.value === 'yes
 assert.match(desktop, /absenceNeedsRequest,/);
 assert.match(mobile, /absenceNeedsRequest,/);
 assert.match(mobile, /input\[name="absenceNeedsRequest"\]:checked/);
+
+assert.match(absenceCss, /#outcomeEditModal \.tm-absence-request-option/);
+assert.match(absenceCss, /input\[type="radio"\][\s\S]*width: 18px !important/);
+assert.match(absenceCss, /#outcomeEditModal #outcomeEditAbsence[\s\S]*background: #351f2a !important/);
+assert.match(absenceCss, /#outcomeEditModal \.tm-absence-request-option\.yes:has\(input:checked\)/);
+assert.match(absenceCss, /#outcomeEditModal \.tm-absence-request-option\.no:has\(input:checked\)/);
 
 assert.match(html, /data-absence-request="v43"/);
 assert.match(documentation, /Solicitar novamente/);
