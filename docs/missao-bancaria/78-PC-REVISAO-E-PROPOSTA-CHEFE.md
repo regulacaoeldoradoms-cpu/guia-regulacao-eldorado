@@ -1,4 +1,4 @@
-# Produtos e Crédito — revisão cumulativa e proposta de Chefe
+# Produtos e Crédito — revisão cumulativa e Chefe em rascunho
 
 Rascunho editorial em 30/09/2026, fora do catálogo. A [PC-R](rascunhos/pc-r-v1.md) contém 18 trechos, quatro exemplos integrados, 12 casos novos e 48 justificativas, com recuperação local e referências de origem por questão. Apoia-se nas 15 aulas PC-01A/01–06/08–10/11A–E, sem PC-07 condicionado. Não é forma independente nem simulado representativo de BB/CAIXA.
 
@@ -6,11 +6,11 @@ Rascunho editorial em 30/09/2026, fora do catálogo. A [PC-R](rascunhos/pc-r-v1.
 
 Na preparação editorial, ler a aula antes de suas questões; na revisão, retornar diretamente à origem do conceito. O encadeamento recomendado para preparar o pacote é PC-01A → 01 → 02 → 03/04 → 05 → 06 → 08 → 09 → 10 → 11A–E → PC-R → Chefe, respeitando as dependências detalhadas do [documento 77](77-PC-CONJUNTO-COMUM-RASCUNHOS.md). É ordem de estudo proposta, **sem IDs/gates/XP produtivos definidos nesta entrega**.
 
-## Chefe proposto: 12 itens próprios em seis grupos
+## Chefe redigido: 12 itens próprios em seis grupos
 
-Não há perguntas de Chefe concluídas neste documento. A tabela define o trabalho posterior sem repetir os 132 itens formativos já expostos. Usar novos casos, quatro alternativas com justificativas e referências de recuperação verificáveis, como o padrão MP. Não introduzir conceitos apenas no gabarito. Antes de publicar, fixar IDs estáveis, revisar os itens e decidir a integração do conjunto; esta proposta não concede autorização de publicação nem cria protocolo de avaliação independente.
+O [Chefe em dois formatos](rascunhos/pc-chefe-v1.md) segue a tabela abaixo: 12 casos próprios, 48 justificativas, cinco trechos preparatórios e referências de ensino/recuperação, no padrão editorial do MP. O conjunto PC agora soma 144 questões expostas. O Chefe não introduz regras normativas novas; reaproveita as aulas e suas fontes. Antes de publicar, fixar IDs produtivos, revisar os itens e decidir a integração do conjunto. Este rascunho não concede autorização de publicação nem cria protocolo de avaliação independente.
 
-| Grupo / itens previstos | Caso a redigir e habilidade | Ensino/recuperação de referência |
+| Grupo / itens redigidos | Caso e habilidade | Ensino/recuperação de referência |
 | --- | --- | --- |
 | G1 — 1 | Documento de representação + extrato: separar poderes, pessoa e saldo/limite | [PC-01A representação](rascunhos/pc-01a-v1.md#representacao); [PC-01 saldo](rascunhos/pc-01-v1.md#saldo-limite) |
 | G1 — 2 | Proposta de aquisição: entrada, valor financiado, finalidade contratual e custo comparável | [PC-02 fluxo](rascunhos/pc-02-v1.md#fluxo); [PC-04 base](rascunhos/pc-04-v1.md#base-comparavel) |
@@ -29,4 +29,12 @@ Os grupos organizam autoria e recuperação; **não criam diagnóstico automáti
 
 ## Verificação e próximos passos
 
-PC-R aprovada na validação estrutural: 25 referências de origem existentes, 12 gabaritos indexados, 48 justificativas e dez cálculos novos; links desta proposta conferidos. Resultados e limites no documento 77/checkpoint. Revisão independente de conteúdo e autoria dos 12 itens do Chefe são pendências distintas. Aceite humano pedagógico da Fase 2 continua não observado.
+Chefe aprovado no validador editorial com Node 24.17.0: 12 questões/48 justificativas, seis grupos com dois itens cada, 33 referências de ensino existentes e incluídas na cobertura, 17 cálculos e 110 verificações de links locais. Gabaritos distribuídos em três A/B/C/D; 12 enunciados sem duplicação textual frente aos 132 anteriores. MD gerado do MJS, catálogo publicado idêntico/draft excluído; PC-07 ausente. Sintaxe/diff conferidos. Comando: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=pcchefe`; evidência local `../pc-chefe-validation.json`. Não houve nova auditoria normativa ou suíte de aplicativo.
+
+PC-R aprovada na validação estrutural: 25 referências de origem existentes, 12 gabaritos indexados, 48 justificativas e dez cálculos novos; links desta proposta conferidos. Resultados e limites no documento 77/checkpoint. Parecer independente do ensino PC-04/05/06/08–10/11A–E/PC-R foi encaminhado pelo pai em 30/09/2026: aprovado com uma correção em PC-11B q03, aplicada nos dois formatos. Não identificou outros bloqueios; conferiu referências pontuais de CET, modalidades SUSEP e Lei 15.040, sem auditoria normativa integral. Esse parecer não inclui os 12 itens novos do Chefe, cuja revisão permanece pendente. Aceite humano pedagógico da Fase 2 continua não observado.
+
+## Condicionamento exato de PC-07
+
+**Título/assunto:** Crédito habitacional, candidato condicionado — introdução ao financiamento de moradia (finalidade, valor, prazo e condições). O plano 66/documento 77 não confirmou correspondência nominal desse recorte nos perfis históricos BB 2022/001 e CAIXA 2024/NM. Falta uma fonte de escopo que identifique o item/subitem e a profundidade no edital efetivamente adotado; não basta associar genericamente moradia ao mundo bancário.
+
+A futura decisão é incluí-lo como requisito comprovado desse escopo ou como complemento explicitamente identificado (comum ou institucional, conforme o vínculo), ou mantê-lo fora. Se incluído, sistemas, fundos e programas só entram após conferir fontes oficiais próprias e sua versão. PC-02/04 antecedem a unidade; questões dependentes de garantias devem vir após PC-08/09. Nenhum desses conteúdos foi inventado, cobrado em PC-R/Chefe ou ativado. Essa pendência não impede revisar o núcleo comum já preparado.

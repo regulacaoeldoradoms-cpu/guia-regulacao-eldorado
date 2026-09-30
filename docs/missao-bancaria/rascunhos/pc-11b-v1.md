@@ -162,17 +162,17 @@ B. O resgate integral imediato é garantido.
 
 C. Os prazos são necessariamente ilegais por serem diferentes.
 
-D. Fim dos pagamentos e fim da vigência não são a mesma data; resgate depende das condições.
+D. O fim dos pagamentos não determina, por si só, o fim da vigência; o resgate depende das condições.
 
 <details>
 <summary>Resposta e justificativas</summary>
 
-**Resposta: D.** A informação disponível não estabelece resgate imediato.
+**Resposta: D.** A quantidade de pagamentos e a duração da vigência, sem o calendário dos pagamentos, não provam datas finais distintas nem coincidentes. A informação disponível tampouco estabelece resgate imediato.
 
-- **A:** Confunde calendários.
+- **A:** Conclui automaticamente o fim da vigência sem conhecer o calendário dos pagamentos.
 - **B:** Cria direito não informado.
 - **C:** A fonte admite prazos distintos.
-- **D:** Mantém o limite dos dados.
+- **D:** Não presume coincidência ou diferença de datas e mantém o resgate sujeito às condições.
 
 Para recuperar: [5. Pagar, manter e resgatar são momentos distintos](#prazos); [6. Exemplo resolvido: o fim dos pagamentos não basta](#exemplo-prazo).
 

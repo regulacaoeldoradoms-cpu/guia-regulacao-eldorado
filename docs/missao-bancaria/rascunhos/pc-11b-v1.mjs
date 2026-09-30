@@ -199,15 +199,15 @@ export const PC11B_DRAFT = {
         "Toda a vigência terminou automaticamente.",
         "O resgate integral imediato é garantido.",
         "Os prazos são necessariamente ilegais por serem diferentes.",
-        "Fim dos pagamentos e fim da vigência não são a mesma data; resgate depende das condições."
+        "O fim dos pagamentos não determina, por si só, o fim da vigência; o resgate depende das condições."
       ],
       "answer": 3,
-      "explanation": "A informação disponível não estabelece resgate imediato.",
+      "explanation": "A quantidade de pagamentos e a duração da vigência, sem o calendário dos pagamentos, não provam datas finais distintas nem coincidentes. A informação disponível tampouco estabelece resgate imediato.",
       "optionRationales": [
-        "Confunde calendários.",
+        "Conclui automaticamente o fim da vigência sem conhecer o calendário dos pagamentos.",
         "Cria direito não informado.",
         "A fonte admite prazos distintos.",
-        "Mantém o limite dos dados."
+        "Não presume coincidência ou diferença de datas e mantém o resgate sujeito às condições."
       ],
       "recoverySectionIds": [
         "prazos",

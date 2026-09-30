@@ -5,7 +5,8 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe'].includes(unit), 'Unidade editorial desconhecida');
+const isBoss = ['mpchefe', 'pcchefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -51,24 +52,24 @@ for (const question of draft.questions) {
   assert(refs.length && question.recoverySectionIds.length);
   for (const ref of refs) {
     if (ref.missionId === draft.id) assert(sections.has(ref.sectionId));
-    else assert(unit === 'mpchefe' && question.originRefs?.some(origin => ref.missionId === `draft.${origin.unit}` && ref.sectionId === origin.sectionId), `${question.id}: cobertura externa não declarada`);
+    else assert(isBoss && question.originRefs?.some(origin => ref.missionId === `draft.${origin.unit}` && ref.sectionId === origin.sectionId), `${question.id}: cobertura externa não declarada`);
   }
   for (const id of question.recoverySectionIds) assert(sections.has(id));
   for (const objective of question.objectiveIds) objectives.add(objective);
-  if (['mpr', 'mpchefe', 'pcr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
+  if (isBoss || ['mpr', 'pcr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
   for (const ref of question.originRefs || []) {
-    assert(unit === 'pcr' ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
+    assert(unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
     const origin = await import(`./${ref.unit.slice(0, 2)}-${ref.unit.slice(2)}-v1.mjs`);
     const originDraft = origin[`${ref.unit.toUpperCase()}_DRAFT`];
     const originSection = originDraft.sections.find(section => section.id === ref.sectionId);
     assert(originSection, `${question.id}: origem ausente`);
-    if (unit === 'mpchefe') assert(refs.some(coverage => coverage.missionId === originDraft.id && coverage.sectionId === ref.sectionId), `${question.id}: origem ausente da cobertura`);
+    if (isBoss) assert(refs.some(coverage => coverage.missionId === originDraft.id && coverage.sectionId === ref.sectionId), `${question.id}: origem ausente da cobertura`);
     originLabels.set(`${ref.unit}:${ref.sectionId}`, `${originDraft.editorialKey}: ${originSection.heading}`);
   }
 }
 assert.deepEqual([...objectives].sort(), ['O1', 'O2', 'O3', 'O4', 'O5', 'O6']);
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
-if (unit === 'mpchefe') {
+if (isBoss) {
   assert.equal(draft.kind, 'boss');
   assert.equal(draft.questions.length, 12);
   assert.equal(EDITORIAL.groups.length, 6);
@@ -111,7 +112,7 @@ markdown += EDITORIAL.limits.map(text => `- ${text}`).join('\n') + '\n';
 const output = path.join(import.meta.dirname, `${stem}.md`);
 if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
-const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
+const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md', pcchefe: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
 const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
@@ -125,7 +126,7 @@ for (const relative of related) {
     if (local) {
       const targetFile = path.resolve(path.dirname(file), decodeURIComponent(local));
       assert(fs.existsSync(targetFile), `${relative}: ${target}`);
-      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r))-v1\.md$/.test(targetFile)) {
+      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe))-v1\.md$/.test(targetFile)) {
         assert(fs.readFileSync(targetFile, 'utf8').includes(`id="${anchor}"`), `${relative}: origem ${target}`);
       }
     }
