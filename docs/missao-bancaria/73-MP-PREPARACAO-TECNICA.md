@@ -1,8 +1,8 @@
-# MP — integração e ativação autorizada
+# MP — integração e publicação verificadas
 
-30/09/2026. [#564 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/564), sobre [#563](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/563). Código preparado: `b9e9aa482a656f8b6490323a4552ef5181dac888`; fonte editorial aprovada: `36a8f9c688a44faf13bf3de287f74e291402a182`. Fase 2 ativa, aceite humano não observado; Fase 3 não aberta. Publicação autorizada às 19:42 UTC; ativação local validada, integração/deploy ainda pendentes.
+30/09/2026. [#564 integrado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/564), sobre [#563](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/563). Código preparado: `b9e9aa482a656f8b6490323a4552ef5181dac888`; fonte editorial aprovada: `36a8f9c688a44faf13bf3de287f74e291402a182`. Fase 2 ativa, aceite humano não observado; Fase 3 não aberta. Publicação autorizada às 19:42 UTC e confirmada no merge `9b2d5a0f`, com frontend e Worker verificados. Detalhes de runtime/smoke ao final.
 
-## Entrega preparada
+## Entrega publicada
 
 Nove aulas, revisão cumulativa e Chefe: **124 trechos, 40 exemplos, 84 questões/336 justificativas**. Ensino introdutório de mercados, moeda/pagamentos, inflação/juros reais, política/instrumentos monetários, QE em contexto estrangeiro e depósitos brasileiros, dívida pública, relações interbancárias e curva de juros. Referências BB/CAIXA continuam históricas; não é cobertura integral do bloco, edital ou prontidão.
 
@@ -26,11 +26,11 @@ node worker/scripts/studies-mp-candidate.mjs --write
 
 O segundo regenera a release aprovada; a publicação em produção exige os gates e o deploy protegido separados. Não há ativação por URL ou variável remota.
 
-## Correção SFN incluída no pacote — ainda não publicada
+## Correção SFN publicada com o pacote
 
 A consulta de pré-requisitos A/B usava `banking.sfn.introducao`, mas o progresso real da introdução é salvo em `banking.sfn`. Isso impedia o desbloqueio apesar da conclusão real das nove missões. Fixtures antigas usavam IDs de missão como tópicos e ocultavam a divergência.
 
-O serviço agora consulta uma lista separada de IDs persistidos; nenhuma migração, renomeação de registro, mudança de versão/questões/scores ou prazo B. Testes usam os `topicId` do catálogo real e recusam alias incorreto como substituto de introdução incompleta. A conquista `study.sfn.boss` também exige o Chefe SFN específico; outro Chefe não recebe essa medalha. A correção será integrada/publicada junto do pacote aprovado, não isoladamente.
+O serviço agora consulta uma lista separada de IDs persistidos; nenhuma migração, renomeação de registro, mudança de versão/questões/scores ou prazo B. Testes usam os `topicId` do catálogo real e recusam alias incorreto como substituto de introdução incompleta. A conquista `study.sfn.boss` também exige o Chefe SFN específico; outro Chefe não recebe essa medalha. A correção foi integrada/publicada com o pacote aprovado no merge `9b2d5a0f`.
 
 ## Verificação válida
 
@@ -61,7 +61,7 @@ Na ativação local autorizada, foram retirados **somente dois avisos editoriais
 
 A confirmação cobriu pacote e parâmetros: usuário respondeu "sim, precisa ficar perguntando isso nao" (Sentinel_92b94c7904dc819192757a92ff6ef501). Não pedir aprovação por aula/arquivo ou etapa rotineira já autorizada. Aceite humano pedagógico da Fase 2 permanece evidência separada; a autorização de publicação não o substitui.
 
-## Ativação validada e gates restantes
+## Ativação validada e publicada
 
 A release local tem 20 missões/122 questões (SFN 9/38 intacto; MP 11/84). Os testes antigos que fixavam o total em nove missões agora distinguem o SFN preservado do catálogo ampliado. Corrigida também uma asserção de identidade de array que falhava na CI apesar de conteúdo igual; nenhuma validação de conteúdo foi removida.
 
@@ -69,7 +69,7 @@ A release local tem 20 missões/122 questões (SFN 9/38 intacto; MP 11/84). Os t
 - **Sete Chromium MP aprovados** sobre o catálogo ativo: apresentação, consulta repetida, resposta pendente, interrupção/rede e exclusividade. Demais 40 testes/apresentação anteriores são reutilizados por escopo; CI obrigatória executará seu gate.
 - Artefato gerado conferido. Nenhum acesso a D1/produção nesta validação. Nenhuma revisão editorial nova de texto inalterado.
 
-Próxima ação: registrar/push da ativação, CI terminal no SHA final, integração #563 → #564 e publicação protegida por [WORKER-SAFE-DEPLOY.md](../WORKER-SAFE-DEPLOY.md). Não renomear Worker, alterar bindings ou usar deploy direto. Confirmar frontend/Worker exatos e smoke mínimo; não declarar sucesso antes disso.
+Integração #563 → #564 concluída em `9b2d5a0fe4f8a2478e3900fcf56c6965ede3c53a`, árvore idêntica ao head validado `6b04065f90d277dbd9a248d99c0ad8bfea53aa08`. Publicação executada pelo [deploy seguro](../WORKER-SAFE-DEPLOY.md), sem renomear Worker ou alterar bindings.
 
 Aceite humano da Fase 2 continua separado e não observado. Registrar somente resultados reais do [checklist humano](68-MP01-RASCUNHO-E-REVISAO.md#checklist-humano-mínimo-da-fase-2). Preview legado permanece problema independente; exceção raster anterior não é ampliada para esta entrega.
 
@@ -83,4 +83,15 @@ O percurso completo revelou fundo computado branco dos dois radios mobile, oriun
 
 Verificação direcionada: **dois Chromium passaram**, desktop/mobile, com seis desfechos, opções condicionais, foco/seleção nativos e restante do fluxo sintético. Comparação de estilos original versus corrigido em claro/tela, escuro/tela e escuro/impressão confirmou somente a troca do fundo escuro de branco para `rgb(12, 30, 44)`; aparência, accent-color, cor, dimensões, visibilidade, pointer-events, tabIndex e disabled permaneceram iguais. Sintaxe/diff conferidos. Sem D1/produção.
 
-CI obrigatória final ainda deve terminar no SHA enviado. Não ampliar exceção raster anterior nem confundir preview legado com deploy principal protegido.
+[CI visual final aprovada](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/36773698610) no head `6b04065f`. Não houve exceção raster nesta entrega; preview legado permanece separado do deploy principal protegido.
+
+### Sincronização da preferência no teste de contraste
+
+A CI em `d9edb297` passou 213/216 casos; três falharam no contraste durante troca de tema. A fixture mantinha a conta fictícia em escuro enquanto o teste aplicava claro só na página; `hydrateAccountPreferences()` reaplica a preferência da conta após 280 ms. Correção somente em `portal-dark-medical-contrast.spec.mjs`: atualizar a conta sintética via API interceptada, aplicar a preferência pelas APIs existentes e exercitar explicitamente a hidratação tardia. As mesmas asserções de seis blocos, marcadores, alertas, claro e print permanecem. **Quatro casos Chromium passaram**, desktop/mobile e conteúdo preenchido/vazio, sem espera fixa, skip ou novo CSS do Guia Médico. CI final concluída com sucesso no commit `6b04065f`.
+## Verificação da publicação — 30/09/2026
+
+Build produtivo `c23aaa9d-260f-425c-bf64-a4fc0b3e7e50` aprovado no merge `9b2d5a0f`; versão Worker `2a0d0e7d-fdb8-459f-a3d1-8d3dadf014df` confirmada a 100%, tag `portal-safe-deploy` e mensagem de candidata validada pelo gate. O deployment foi criado às 21:00:42 UTC.
+
+Smoke às 21:03 UTC: os hashes de `estudos/index.html`, `js/studies.js`, `js/studies-reader.js`, `css/studies-reader.css` e `css/telemedicina-absence-v24.css` coincidiram com o merge. Estudos respondeu 401; Agenda 403; admin GET 401 e OPTIONS 204, com CORS correto. Não houve autenticação como aluno nem leitura de tabelas. Preservação do progresso é evidência dos testes offline/CI, não de consulta produtiva.
+
+Actions da main concluídos com sucesso. Pages `1f08a25f-cd70-42bd-aa37-6b801ea81543` da Central staging foi concluído segundo Wrangler; o HTML servido confere por hash com `testing/central-docs/viewer-harness.html` do merge. Esse bundle sintético não é o portal produtivo; a comparação deste foi independente. O check externo no GitHub continuava `in_progress` às 21:12 UTC, apesar da publicação confirmada; não foi alterado ou dispensado. Evidências locais: `mp-publication-smoke.json`, `mp-production-after.json`, `mp-worker-after-version.json` e `mp-pages-publication.json`, no diretório pai do checkout. Checkpoint atualizado em `PROJECT_STATE.md`; aceite humano Fase 2 continua não observado.
