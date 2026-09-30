@@ -1,16 +1,16 @@
-# PC — preparação técnica desativada
+# PC — ativação autorizada e validação
 
-30/09/2026. Código/testes: `0e3e320484457b20180e3cd387b1e48068d1772b`. Fonte editorial: [#565 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/565), `4deec466c22669e6d187282c9f0cfff615e223f9`. Base main conferida: `0c615195d604baf8ac60f0dcf366597d5486280a`. Fase 2 ativa; aceite humano pedagógico não observado e Fase 3 não aberta. Não houve ativação, merge ou deploy de PC.
+30/09/2026. Ativação e correção contextual do detector aprovadas pelo usuário às 23:16 UTC. Código validado: `30e2787a2bb2d51ee57ae76b781b89a092bc9926`. Fonte editorial `4deec466c22669e6d187282c9f0cfff615e223f9`, [#565 integrado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/565) em `1b3e74892e425f6dd514cd93b0b81d4da71c7483`. [#568](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/568) contém ativação validada localmente, ainda pendente de CI/integração/publicação. Fase 2 ativa, sem aceite humano pedagógico observado; Fase 3 não aberta.
 
 ## Pacote preparado
 
 Quinze aulas PC-01A/01–06/08–10/11A–E, revisão e Chefe: **17 missões, 208 trechos, 144 questões e 576 justificativas**. [Mapa editorial](77-PC-CONJUNTO-COMUM-RASCUNHOS.md) e [revisão/Chefe](78-PC-REVISAO-E-PROPOSTA-CHEFE.md) definem o recorte. Não representa cobertura integral de produtos, edital ou prontidão.
 
-O [conversor offline](../../worker/scripts/studies-pc-candidate.mjs) gera [dados do Worker](../../worker/studies-content/banking-products-credit-v1.js), sem duplicar a autoria. Todas as entradas têm `publication.status: draft`; manifesto, fontes, planejamento e mapa continuam excluindo PC. Comparação serializada antes/depois confirmou o catálogo ativo idêntico: **20 missões/122 questões, dois dos 43 blocos disponíveis**.
+O [conversor offline](../../worker/scripts/studies-pc-candidate.mjs) gera [dados do Worker](../../worker/studies-content/banking-products-credit-v1.js), sem duplicar a autoria. O núcleo autorizado tem `publication.status: published` no candidato: **37 missões/266 questões, três dos 43 blocos disponíveis**. A comparação serializada confirmou as 20 missões/122 questões, fontes e planejamento SFN/MP integralmente preservados. Drafts equivalentes continuam excluídos pelo registro de publicação. Esse estado candidato ainda precisa de integração e deploy para chegar ao usuário.
 
 - IDs `banking.pc.*`, tópicos iguais aos IDs candidatos, questões `q.` + ID editorial e fontes com prefixo por unidade. Nenhum ID SFN/MP renomeado.
-- Ordem preparada 21–37: PC-01A após Chefe MP, demais unidades após conclusão anterior. Defaults existentes: 100 XP/aula/revisão; Chefe 220 XP/75% (9/12), sem medalha nova. `parametersApproved: false`; são parâmetros preparados, não ativação autorizada por este documento.
-- Textos, exemplos, alternativas, gabaritos, justificativas, fontes e avisos de rascunho preservados integralmente. A precisão da questão 9 do Chefe explicita **conta de poupança aberta em 2011**, sem alterar resposta C ou cálculos.
+- Ordem preparada 21–37: PC-01A após Chefe MP, demais unidades após conclusão anterior. Defaults existentes: 100 XP/aula/revisão; Chefe 220 XP/75% (9/12), sem medalha nova. `parametersApproved: true`, conforme aprovação específica de publicação.
+- Ensino, exemplos, alternativas, gabaritos, justificativas e fontes preservados. Somente quatro avisos editoriais de status foram ajustados na cópia publicada, discriminados abaixo; os rascunhos originais permanecem intactos. A precisão da questão 9 do Chefe explicita **conta de poupança aberta em 2011**, sem alterar resposta C ou cálculos.
 - O mesmo conversor de apresentação MP prepara **três tabelas e 68 links de aula**. Não existem diagramas no material aprovado; não foram inventados. São 320 referências de recuperação nas questões, todas resolvíveis e sem cobrança futura.
 - Leitor, autenticação, roteador, armazenamento, revisões e avaliação A/B não foram alterados. Nenhuma migração, novo binding, consulta D1 ou acesso à produção.
 
@@ -22,39 +22,42 @@ O [conversor offline](../../worker/scripts/studies-pc-candidate.mjs) gera [dados
 | 31–35 | PC-11A–E | poupanca, capitalizacao, previdencia, seguros, consorcio |
 | 36–37 | PC-R, Chefe | revisao, boss |
 
-## Verificação proporcional
+## Verificação da ativação
 
-Node 24.17.0; testes válidos para o código acima, reaproveitáveis após alterações somente documentais:
+Node 24.17.0: sintaxe Worker aprovada e **691 testes Worker passaram**, zero falhas/skip. Incluem os 13 testes do detector, sete verificações PC e cenários do roteador real com SQLite. **14 Chromium PC/MP passaram**: tabelas/figuras em celular e desktop, temas claro/escuro, consulta repetida, perda/reenvio de resposta, resposta pendente durante consulta, saída/reabertura, retomada e exclusividade.
 
-- **Sete verificações Node PC**, uma das quais executa **seis cenários de roteador/catálogo reais em SQLite local**. Conversão determinística sem mutação, preservação editorial, IDs/fontes/links, exclusão de drafts, rejeição de pacote incompleto, publicação inválida, fonte desconhecida, questão duplicada e conteúdo futuro.
-- Simulação isolada de publicação carrega manifesto/mapa reais: 37 missões, três blocos disponíveis e apenas SFN/MP concluídos; prontidão não medida. A simulação não muda o artefato draft nem declara cobertura integral do bloco PC.
-- Autorização anônima/outro usuário/origem recusada antes de criar tabelas; sequência recusa PC sem Chefe MP concluído. Bootstrap não revela gabaritos. Tentativa duplicada/retomada, recuperação PC-R e Chefe com 8/12 recusado, 9/12 aprovado e XP concedido uma única vez.
-- Adição simulada preserva todas as linhas `study_*`, progresso/XP/tentativas/conquistas/revisões, avaliação A concluída e sessão MP interrompida.
-- **19 regressões existentes** de currículo, publicação e ensino passaram, pois esses pontos importam o catálogo alterado.
-- **Sete Chromium PC** passaram: três tabelas com fonte ampliada em 320 px claro, 390 px escuro e desktop; links de consulta, repetição, resposta perdida/reenvio, resposta pendente durante consulta, saída/reabertura, retomada e exclusividade de wellyton. Nenhum acesso de rede fora da fixture local.
-- Artefato gerado, sintaxe e diff conferidos. Suites integrais e revisão editorial de conteúdo inalterado não foram repetidas; evidências MP/SFN e revisão independente PC continuam válidas no escopo preservado.
+A adição preserva todas as linhas study_*, XP/tentativas/conquistas/revisões, avaliação A concluída e sessão MP interrompida. Sequência exige Chefe MP; Chefe PC recusa 8/12 e aprova 9/12, concede 220 XP uma vez e não concede medalha SFN. Bootstrap não revela respostas; acesso anônimo/outro usuário/origem inválida continuam recusados. Readiness permanece não medido. Compiladores consideram somente missões anteriores ao respectivo bloco, permitindo regenerar MP sem tratar PC posterior como pré-requisito. Ambos os artefatos gerados foram conferidos.
 
-```text
-node worker/scripts/studies-pc-candidate.mjs --check-generated
-node --test worker/tests/studies-pc-candidate.test.mjs
-node --test worker/tests/studies-curriculum.test.mjs worker/tests/studies-publication.test.mjs worker/tests/studies-teaching.test.mjs
-node testing/browser/node_modules/@playwright/test/cli.js test --config=testing/browser/studies-reader.config.mjs studies-pc.spec.mjs
-```
+SQLite e API Chromium são sintéticos: não houve consulta D1/produção nem homologação autenticada. Suítes anteriores inalteradas e revisão independente do conteúdo são reutilizadas; CI obrigatória na base/SHA efetivos continua gate de integração. Checkpoints/documentação posteriores ao código validado não exigem repetição manual.
 
-SQLite e API Chromium são sintéticos. Esses resultados não são homologação autenticada de produção, revisão normativa integral ou aceite humano. O [PR técnico #568](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/568) é draft sobre #565; CI obrigatória na base/SHA efetivos permanece gate de integração.
+Avisos de status ajustados somente na cópia gerada:
 
-## Bloqueio específico da CI
+1. PC-R/inicio: retirada “Elas e esta revisão ainda são rascunhos, disponíveis aqui para revisão editorial, fora do aplicativo.”
+2. Chefe/preparacao: retirada “Os materiais PC permanecem rascunhos, acessíveis nestes documentos e fora do catálogo.”
+3. Chefe/recuperacao: “mas ficam expostos nesta prévia;” passa a “mas ficam expostos nesta prática;”.
+4. Chefe/recuperacao: retirada “Nenhuma regra de XP, limiar, publicação, desbloqueio ou revisão adaptativa foi criada neste rascunho.”
 
-No head `a540ffe945a21e9338b69d5d9c13be41dba900e1`, [678 testes Worker passaram](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/36788708193/job/110136209201), além de sintaxe/frontend. O passo seguinte usa uma expressão textual ampla em `.github/workflows/validate-missao-bancaria.yml` e rejeita seis ocorrências legítimas:
+## Correção restrita do detector de isolamento
 
-- PC-01A: aviso de exemplos sem CPF; não presumir incapacidade a partir de diagnóstico; não emitir diagnóstico jurídico de pessoa real.
-- PC-10: distinguir recuperação de crédito de diagnóstico de aprendizagem.
-- Chefe: título de recuperação e ressalva de que os grupos não são diagnóstico automático por conceito.
+A CI anterior passou 678 testes Worker, mas seu grep confundia seis usos didáticos legítimos de CPF/diagnóstico com conteúdo assistencial. A correção específica foi aprovada às 23:16 UTC, junto da publicação PC, preservando os padrões e o escopo do gate. O workflow usa agora um comando Node obrigatório; permissões e dependência do Chromium são mantidas.
 
-O erro é o detector de termos, sem falha nos testes Worker. Chromium da CI foi suspenso por dependência; sete Chromium locais passaram. Conteúdo revisado não foi reescrito para ocultar palavras, nem o gate desativado/relaxado. Recomenda-se decidir uma correção contextual restrita do detector com testes negativos de isolamento, antes de seguir para ativação. Preview Worker legado continua separado; não foi investigado novamente.
+As seis ocorrências abaixo são identificadas pelo arquivo gerado PC, missão, seção/campo, hash SHA-256 do valor completo e ocorrência única desse valor. O arquivo precisa conservar o formato de módulo JSON gerado; não é importado ou executado pelo detector. Somente o termo dentro de cada valor exato é aceito. Texto alterado, movido ou duplicado perde esse reconhecimento. O padrão de dependências nunca recebe contexto permitido. Limites de palavras ASCII são conservadores quando vizinhos de Unicode.
+
+| Local exato | Trecho literal que contém o termo |
+| --- | --- |
+| PC-01A / perguntas / body | Os exemplos são fictícios, sem CPF, número de conta ou documento pessoal. |
+| PC-01A / excecoes / body | Isso não permite deduzir incapacidade a partir de aparência, diagnóstico ou deficiência. |
+| PC-01A / resumo / body | As perguntas seguintes são prática exposta da aula, não avaliação independente, diagnóstico jurídico de alguém real ou comprovação de retenção duradoura. |
+| PC-10 / glossario / body | Recuperação: busca de regularização/recebimento, sem confusão com o diagnóstico de aprendizagem do aluno. |
+| Chefe / recuperacao / heading | 5. Corrigir o raciocínio sem transformar prática em diagnóstico |
+| Chefe / recall[2] | Não trate os grupos do Chefe como diagnóstico automático por conceito nem como forma independente de avaliação. |
+
+**13 testes locais passaram** em Node 24.17.0, com resultados reaproveitados na suíte de ativação. Cobrem os dez termos/variantes em backend, frontend e HTML (30 casos), cinco dependências em código e fontes (dez casos), rotas/SQL/identificadores sintéticos, conteúdo proibido acrescentado a cada campo permitido, alteração de um caractere nos seis campos, cópia para outro campo/missão/arquivo, duplicação de missão, JSON inválido/propriedades duplicadas/código executável, arquivos novos nos diretórios e arquivo ausente. O comando CLI retorna falha para termos/dependências e imprime somente tipo/termo/local, sem valores pessoais. Workflow conserva permissões de leitura e dependência obrigatória do Chromium.
+
+Comandos executados: node --test worker/tests/studies-isolation.test.mjs; node worker/scripts/check-studies-isolation.mjs; verificação de sintaxe/diff. O restante da validação está registrado acima. A verificação continua lexical, com limites anteriores; não substitui autorização ou testes de isolamento do aplicativo. O ajuste não dispensa nenhum outro gate.
 
 ## Próxima ação e limites
 
-Revisar a entrega agrupada de autoria + preparação e encaminhar a ativação do núcleo comum com os defaults acima pelo fluxo autorizado. Antes de publicar: retirar somente avisos de status que se tornarem desatualizados na cópia gerada, ativar metadados explicitamente, verificar regressões afetadas e CI, integrar em ordem e usar [deploy seguro](../WORKER-SAFE-DEPLOY.md), com confirmação das versões e smoke mínimo. Nenhuma dessas operações foi executada neste preparo.
+Concluir os checks de #568 no SHA efetivo, integrar após #565 e acompanhar publicação por [deploy seguro](../WORKER-SAFE-DEPLOY.md), preservando bindings/rollback. Confirmar versão Worker ativa, frontend e smoke mínimo, sem varrer dados. Publicação só será relatada após essa confirmação. Preview Worker legado permanece separado da produção.
 
 **PC-07 é crédito habitacional.** Falta correspondência nominal/profundidade no edital efetivamente adotado para decidir requisito ou complemento identificado. Sistemas, fundos e programas exigiriam fontes próprias. Continua fora do catálogo, revisão e Chefe, sem bloquear o núcleo comum. Não presumir essa inclusão ou o aceite humano da Fase 2.
