@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { derivePedagogicalState, summarizeRetentionEvidence } from '../../worker/studies.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
@@ -54,10 +55,48 @@ async function setup(page, mode = '') {
     attemptedQuestions: {}, reviews: mode === 'review' ? [{ id: 'review-fixture', missionId: mission.id, title: 'Revisão sintética', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
     metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0, recurringErrors: mode === 'recurringErrors' ? 1 : 0, publishedMissions: 2, plannedMissions: 9, campaignAvailability: 22.2, completedPublished: 1, campaignProgress: 0, availableCompletion: 50, streak: { current: 0, best: 0 } }
   };
+  const zeroReviewSnapshots = [];
+  if (mode === 'overdueZero') {
+    payload.pedagogyProtocol = 1;
+    payload.domainProtocol = 1;
+    payload.progress[mission.topicId] = { coverageState: 3, masteryScore: 0, contentVersionSeen: 2 };
+    payload.curriculum = {
+      basis: 'Mapa sintético', publishedBlocks: 1, totalBlocks: 43, startedAreas: 1, totalAreas: 12,
+      completedBlocks: 1, completedAreas: 0, availabilityPercent: 2.3, progressPercent: 2.3, areas: [],
+      readiness: { status: 'not_measured', label: 'Ainda não medida', explanation: 'Ciclos não medem prontidão.' }
+    };
+    const reviews = [1,2,3].map(cycle => ({
+      id: `overdue-${cycle}`, missionId: mission.id, topicId: mission.topicId,
+      title: 'Revisão sintética', cycle, dueAt: `2000-01-${String([1,7,30][cycle-1]).padStart(2,'0')} 12:00:00`
+    }));
+    for (let completed = 0; completed <= 3; completed++) {
+      const evidence = summarizeRetentionEvidence(reviews.slice(0, completed).map(review => ({
+        cycle: review.cycle, score: 0, completed_at: `2026-09-30 12:0${review.cycle}:00`
+      })));
+      zeroReviewSnapshots.push({
+        reviews: reviews.slice(completed),
+        metrics: { ...payload.metrics, xp: 100 + 20 * completed, reviewsDue: 3 - completed, questions: 2 + 2 * completed, completedPublished: 2, availableCompletion: 100 },
+        learningEvidence: { [mission.topicId]: evidence },
+        pedagogicalStates: { [mission.topicId]: derivePedagogicalState(mission, payload.progress[mission.topicId], evidence) },
+        recentDomain: { overallScore: 0, observedTopics: 1, totalTopics: 2, byTopic: {
+          [mission.topicId]: { score: 0, immediateScore: 0, retentionScore: completed ? 0 : null, attemptCount: 2 + 2 * completed,
+            status: completed === 3 ? 'retention_observed' : completed ? 'review_observed' : 'provisional',
+            label: completed === 3 ? 'Com ciclos de revisão observados' : completed ? 'Com revisão posterior' : 'Provisório sem revisão' }
+        } }
+      });
+    }
+    Object.assign(payload, zeroReviewSnapshots[0]);
+  }
+  if (mode === 'retentionUnscored') {
+    payload.learningEvidence = { [mission.topicId]: summarizeRetentionEvidence([
+      { cycle: 1, score: 75, completed_at: '2026-09-01 12:00:00' },
+      { cycle: 2, score: null, completed_at: '2026-09-08 12:00:00' }
+    ]) };
+  }
   const errors = [], unexpected = [];
   page.on('pageerror', e => errors.push(e.message));
   const auth = `window.__calls=[];let starts=0,attempts=0,finishes=0;
-    const payload=${JSON.stringify(payload)}, mode=${JSON.stringify(mode)};
+    const payload=${JSON.stringify(payload)}, mode=${JSON.stringify(mode)}, zeroReviewSnapshots=${JSON.stringify(zeroReviewSnapshots)};
     window.RegulationAuth={requireRole:async()=>({username:'wellyton',name:'Estudante sintético'}),logout:async()=>{},api:async(route,options={})=>{
       window.__calls.push({route,method:options.method,body:options.body?JSON.parse(options.body):null});
       if(route.endsWith('/bootstrap')) return structuredClone(payload);
@@ -77,6 +116,7 @@ async function setup(page, mode = '') {
       }
       if(route.endsWith('/attempts')){
         attempts++;
+        if(mode==='overdueZero')return {correct:false,correctOption:1,explanation:'Resposta incorreta na fixture.',recorded:true};
         if(mode==='holdAttempt' && attempts===1)return new Promise(resolve=>window.__releaseAttempt=()=>resolve({correct:true,explanation:'Resposta antiga'}));
         if(mode==='failAttemptOnce' && attempts===1)throw new Error('Resposta perdida');
         if(mode==='richFeedback')return {
@@ -90,6 +130,11 @@ async function setup(page, mode = '') {
         return {correct:true,explanation:'Comentário sintético',recorded:true};
       }
       if(route.endsWith('/complete')){
+        if(mode==='overdueZero'){
+          if(route!=='/api/studies/reviews/'+payload.reviews[0]?.id+'/complete')throw new Error('Ciclo inesperado');
+          Object.assign(payload,zeroReviewSnapshots[4-payload.reviews.length]);
+          return {completed:true,xpGranted:20,newAchievements:[]};
+        }
         if(mode==='holdComplete')return new Promise(resolve=>window.__releaseComplete=()=>resolve({completed:true,xpGranted:100}));
         return {completed:true,xpGranted:0,newAchievements:[]};
       }
@@ -108,9 +153,9 @@ async function setup(page, mode = '') {
     unexpected.push(name); return route.abort();
   });
   await page.goto(origin + '/estudos/');
-  await expect(page.locator('#continueStudy')).toBeEnabled();
+  await expect(page.locator(mode === 'overdueZero' ? '#startReview' : '#continueStudy')).toBeEnabled();
   const open = async () => {
-    await page.locator(mode === 'review' ? '#startReview' : '#continueStudy').click();
+    await page.locator(['review','overdueZero'].includes(mode) ? '#startReview' : '#continueStudy').click();
     await expect(page.locator('#studyFocus')).toBeVisible();
     await page.locator('#studyPracticeButton').click();
   };
@@ -285,5 +330,43 @@ test('domínio sem evidência permanece não medido e nunca vira zero artificial
   const card=page.locator('[data-mission-id="fixture.lesson"]');
   await expect(card).toContainText('Domínio recente: ainda não medido');
   await expect(card).not.toContainText('Domínio recente: 0%');
+  clean();
+});
+
+test('três revisões atrasadas com zero mostram ciclos concluídos sem afirmar domínio ou prontidão', async ({ page }) => {
+  const {open,answer,clean}=await setup(page,'overdueZero');
+  const card=page.locator('[data-mission-id="fixture.lesson"]');
+  await expect(page.locator('#metricReviews')).toHaveText('3 revisões pendentes');
+  for (let cycle=1;cycle<=3;cycle++) {
+    await expect(page.locator('#startReview')).toBeEnabled();
+    await expect(card).toContainText('Etapa pedagógica: Revisão');
+    await open();
+    await answer(0);await answer(1);
+    await expect(page.locator('#completeMission')).toBeEnabled();
+    await page.locator('#completeMission').click();
+    await expect(page.locator('#studyDashboard')).toBeVisible();
+    await expect(page.locator('#metricReviews')).toHaveText(`${3-cycle} revisões pendentes`);
+    await expect(page.locator('#readinessLabel')).toHaveText('Ainda não medida');
+  }
+  await expect(card).toContainText('Etapa pedagógica: Ciclos concluídos');
+  await expect(card).toContainText('independentemente da nota');
+  await expect(card).toContainText('Concluir ciclos não comprova domínio nem prontidão de prova.');
+  await expect(card).toContainText('Retenção: 3/3 revisões com resultado · última: 0%');
+  await expect(card).toContainText('Domínio recente: 0%');
+  await expect(card).not.toContainText('Consolidado');
+  await expect(page.locator('#startReview')).toBeDisabled();
+  const calls=await page.evaluate(()=>window.__calls);
+  expect(calls.filter(call=>call.route.endsWith('/sessions')).map(call=>call.body.reviewId)).toEqual(['overdue-1','overdue-2','overdue-3']);
+  expect(calls.filter(call=>call.route.endsWith('/complete'))).toHaveLength(3);
+  expect(calls.filter(call=>call.route.endsWith('/attempts'))).toHaveLength(6);
+  clean();
+});
+
+test('última revisão sem nota não exibe null nem zero inventado ou nota anterior', async ({ page }) => {
+  const {clean}=await setup(page,'retentionUnscored');
+  const card=page.locator('[data-mission-id="fixture.lesson"]');
+  await expect(card).toContainText('Retenção: 1/3 revisões com resultado');
+  await expect(card).not.toContainText('última:');
+  await expect(card).not.toContainText('null%');
   clean();
 });
