@@ -14,6 +14,6 @@ As aulas registram URL, versão, localização e consulta em 30/09/2026. Foram r
 
 ## Verificação proporcional
 
-Validar separadamente com `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=pc01 --render` e `--unit=pc02 --render` / `--unit=pc03 --render`. O validador confere esquema, IDs, gabarito/justificativas, referências/recuperação, exclusão de drafts, aritmética explícita e equivalência Markdown. Resultado executado: três unidades passaram; 24 questões/96 justificativas, 31 cálculos, 88 links locais conferidos e catálogo inalterado. Revisão independente pedagógica permanece pendente; essas verificações não a substituem.
+Validar separadamente com `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=pc01 --render` e `--unit=pc02 --render` / `--unit=pc03 --render`. O validador confere esquema, IDs, gabarito/justificativas, referências/recuperação, exclusão de drafts, aritmética explícita e equivalência Markdown. Resultado executado: três unidades passaram; 24 questões/96 justificativas, 31 cálculos, 88 links locais conferidos e catálogo inalterado. Revisão independente de conteúdo recebida sobre 87776733: sem bloqueio pedagógico em PC-01/02/03; PC-01A recebeu somente as duas precisões registradas no documento 74. O parecer não repetiu os cálculos/esquema e não é aceite humano nem publicação.
 
-Próxima ação: revisão pedagógica agrupada PC-01/02/03 após concluir a publicação MP autorizada. Não publicar este conjunto.
+Próxima ação: preparar PC-04/05 conforme plano, sem rever aulas inalteradas. Não publicar este conjunto.
