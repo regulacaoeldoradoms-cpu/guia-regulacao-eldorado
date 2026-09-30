@@ -347,3 +347,36 @@ test('leitura concluída é persistida na transição para prática e permanece 
   bootstrap=await call('bootstrap');
   assert.equal(bootstrap.body.pedagogicalStates[lesson.topicId].id,'reading_complete');
 });
+
+
+test('erro recorrente só permanece ativo quando a tentativa mais recente continua errada',async t=>{
+  const {call,start,lesson}=await fixture(t);
+  const question=lesson.questions[0];
+
+  for(let attempt=0;attempt<2;attempt++){
+    const sessionId=await start(lesson);
+    const wrong=await call('attempts',{sessionId,questionId:question.id,selectedOption:1});
+    assert.equal(wrong.status,200);
+    assert.equal(wrong.body.correct,false);
+    assert.equal((await call('sessions/'+sessionId,{durationSeconds:0},{method:'PATCH'})).status,200);
+  }
+
+  let bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.errorPatternProtocol,1);
+  assert.equal(bootstrap.body.metrics.recurringErrors,1);
+  assert.equal(bootstrap.body.recurringErrors[lesson.topicId].count,1);
+  assert.equal(bootstrap.body.recurringErrors[lesson.topicId].items[0].questionId,question.id);
+  assert.equal(bootstrap.body.recurringErrors[lesson.topicId].items[0].wrongAttempts,2);
+  assert.equal(bootstrap.body.recurringErrors[lesson.topicId].items[0].totalAttempts,2);
+
+  const recoverySession=await start(lesson);
+  const correct=await call('attempts',{sessionId:recoverySession,questionId:question.id,selectedOption:0});
+  assert.equal(correct.status,200);
+  assert.equal(correct.body.correct,true);
+  assert.equal((await call('sessions/'+recoverySession,{durationSeconds:0},{method:'PATCH'})).status,200);
+
+  bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.metrics.recurringErrors,0);
+  assert.equal(bootstrap.body.recurringErrors[lesson.topicId].count,0);
+  assert.deepEqual(bootstrap.body.recurringErrors[lesson.topicId].items,[]);
+});
