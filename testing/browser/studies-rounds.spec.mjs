@@ -25,6 +25,10 @@ async function setup(page, mode = '') {
     roundProtocol: 1, pedagogyProtocol: mode === 'pedagogy' ? 1 : 0,
     errorPatternProtocol: mode === 'recurringErrors' ? 1 : 0,
     domainProtocol: mode === 'domain' ? 1 : 0,
+    publicationProtocol: mode === 'publication' ? 1 : 0,
+    publication: mode === 'publication'
+      ? {baselineReleaseSequence:1,currentRelease:'release-2',currentReleaseSequence:2,newCount:1,newMissionIds:[mission.id],revisionRecommendedCount:1,revisionRecommendedIds:[originMission.id]}
+      : {},
     user: { username: 'wellyton', name: 'Estudante sintético' }, missions: [originMission, mission],
     progress: { [originMission.topicId]: { coverageState: 3 } },
     recurringErrors: mode === 'recurringErrors'
@@ -252,5 +256,15 @@ test('dashboard separa domínio recente de acerto acumulado quando o protocolo e
   await expect(page.locator('#metricRecentDomainMeta')).toContainText('1/2 tópicos com evidência');
   const card=page.locator('[data-mission-id="fixture.lesson"]');
   await expect(card).toContainText('Domínio recente: 74.3% · Com revisão posterior');
+  clean();
+});
+
+
+test('indicador de publicação diferencia conteúdo novo e revisão conceitual', async ({ page }) => {
+  const {clean}=await setup(page,'publication');
+  const notice=page.locator('#contentReleaseNotice');
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText('1 nova missão disponível');
+  await expect(notice).toContainText('1 revisão conceitual recomendada');
   clean();
 });
