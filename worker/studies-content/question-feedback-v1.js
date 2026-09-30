@@ -99,6 +99,48 @@ export const QUESTION_FEEDBACK_V1 = Object.freeze([
     'A CVM é o supervisor diretamente ligado a ofertas públicas, proteção do investidor e integridade do mercado de valores mobiliários.',
     'O CMN formula diretrizes gerais do sistema; não exerce a supervisão específica descrita no caso.',
     'Banco comercial é operador e não autoridade supervisora de ofertas públicas ou manipulação de valores mobiliários.'
+  ]),
+  entry('q.oper.01', [
+    'O CMN formula diretrizes gerais; ele não é um participante operacional que oferece serviços bancários.',
+    'Banco comercial é uma instituição operadora: executa atividades financeiras e atende o mercado.',
+    'O Copom decide a política monetária e a meta para a Taxa Selic; não é operador bancário.',
+    'Um conselho normativo descreve função de formulação de regras, não a execução cotidiana das operações financeiras.'
+  ]),
+  entry('q.oper.02', [
+    'A captação de depósitos à vista é uma atividade típica do banco comercial e ajuda a reconhecê-lo em prova.',
+    'A meta para a Taxa Selic é definida pelo Copom, não por banco comercial.',
+    'A formulação da política da moeda e do crédito é função normativa do CMN, não atividade típica do banco comercial.',
+    'A fiscalização de companhias abertas pertence ao campo da CVM, não à atividade operacional de um banco comercial.'
+  ]),
+  entry('q.oper.03', [
+    'Uma única carteira não atende à exigência estudada para caracterizar banco múltiplo.',
+    'A regra ensinada exige ao menos duas carteiras, sendo uma delas comercial ou de investimento.',
+    'Carteiras de seguros e previdência não substituem a composição mínima exigida para banco múltiplo.',
+    'Ter apenas carteira de desenvolvimento não satisfaz a regra geral indicada para banco múltiplo privado.'
+  ]),
+  entry('q.segprev.01', [
+    'A PREVIC supervisiona entidades fechadas de previdência complementar; não responde pelo conjunto de seguros, capitalização e previdência aberta.',
+    'A SUSEP fiscaliza seguros, previdência complementar aberta, capitalização e resseguro.',
+    'O Banco Central supervisiona outros segmentos do sistema financeiro; não é o supervisor central dos mercados listados nesta questão.',
+    'O Tesouro Nacional não exerce a supervisão específica dos mercados de seguros, capitalização e previdência complementar aberta.'
+  ]),
+  entry('q.segprev.02', [
+    'A SUSEP atua sobre previdência complementar aberta; fundos de pensão e outras entidades fechadas ficam fora desse campo.',
+    'A CVM supervisiona o mercado de valores mobiliários; não é a autarquia responsável pelas entidades fechadas de previdência complementar.',
+    'A PREVIC supervisiona e fiscaliza as entidades fechadas de previdência complementar.',
+    'O Copom atua na política monetária e na definição da meta Selic; não supervisiona fundos de pensão.'
+  ]),
+  entry('q.segprev.03', [
+    'A associação está correta: o CNSP exerce função normativa, fixando diretrizes e normas para o segmento de seguros privados.',
+    'A SUSEP não define a meta Selic; essa decisão pertence ao Copom.',
+    'A PREVIC supervisiona entidades fechadas de previdência complementar, não companhias abertas.',
+    'A CVM atua no mercado de valores mobiliários; títulos de capitalização estão no campo fiscalizado pela SUSEP.'
+  ]),
+  entry('q.segprev.04', [
+    'Plano de previdência complementar aberto está no campo de supervisão da SUSEP.',
+    'A PREVIC supervisiona previdência complementar fechada, ligada a entidades fechadas e fundos de pensão.',
+    'O CMN é órgão normativo superior do SFN, mas não é o supervisor direto dos planos abertos indicado nesta questão.',
+    'Banco do Brasil é operador bancário e não autoridade supervisora da previdência complementar aberta.'
   ])
 ]);
 
