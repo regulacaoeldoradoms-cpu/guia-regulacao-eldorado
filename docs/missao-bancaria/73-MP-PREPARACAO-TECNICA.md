@@ -72,3 +72,13 @@ A release local tem 20 missões/122 questões (SFN 9/38 intacto; MP 11/84). Os t
 Próxima ação: registrar/push da ativação, CI terminal no SHA final, integração #563 → #564 e publicação protegida por [WORKER-SAFE-DEPLOY.md](../WORKER-SAFE-DEPLOY.md). Não renomear Worker, alterar bindings ou usar deploy direto. Confirmar frontend/Worker exatos e smoke mínimo; não declarar sucesso antes disso.
 
 Aceite humano da Fase 2 continua separado e não observado. Registrar somente resultados reais do [checklist humano](68-MP01-RASCUNHO-E-REVISAO.md#checklist-humano-mínimo-da-fase-2). Preview legado permanece problema independente; exceção raster anterior não é ampliada para esta entrega.
+
+## Bloqueio pontual do gate global
+
+#563 integrado em `ee2fe509cf362fd0771ee26e26dbd9ed5d435f8d`; #564 retargetado para main, ativação remota `1fe5273e6bb7356dcf0b67de18034b67875e5ef5`. Nesta ativação, 25 checks aprovados, auditoria global ainda em execução e preview legado separado. Worker/Chromium dos estudos passaram.
+
+O [log global anterior](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/36763703230/job/110052418291) falha ao clicar no sétimo radio: o teste selecionava todos os radios do formulário, incluindo opções de Falta ocultas após o último desfecho. Correção somente no teste: seis desfechos explícitos, estado oculto esperado, selecionar Falta e testar as duas opções visíveis. Sem skip, alteração de timeout ou remoção de asserção.
+
+Verificação local direcionada: desktop passou; mobile completou o fluxo, mas `recorder.finish()` rejeitou os dois radios de `.tm-absence-request-option`. O relatório registra `background-color: rgb(255, 255, 255)` vindo de `.tm-inline-form input` em `css/telemedicina-mobile-v9.css`, `!important`; a regra escura de `portal-interactions.css` não tem prioridade. A captura foi inspecionada: são controles nativos, portanto a cor computada não prova uma superfície branca equivalente na pintura final. Não afirmar regressão do produto.
+
+`git diff e06ee0fa HEAD -- css js telemedicina` só lista `css/studies-reader.css`, `js/studies-reader.js` e `js/studies.js`: os recursos de Telemedicina não foram alterados. Proposta mínima ao responsável: autorizar ajuste de fundo escuro restrito aos radios de `.tm-inline-consult-form .tm-absence-request-option`, mantendo estados nativos e temas claro/print. Isso está fora do escopo clínico autorizado; nenhum CSS funcional foi alterado e nenhuma exceção foi aplicada. A correção do teste está local enquanto essa decisão permanece pendente, evitando CI completa repetida com falha conhecida.
