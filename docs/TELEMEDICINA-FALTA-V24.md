@@ -2,11 +2,13 @@
 
 Decisão permanente registrada em 08/09/2026.
 
+> **Complemento V43 — 30/09/2026:** a premissa original de que toda falta exige nova solicitação foi substituída. A falta continua obrigatória no histórico, mas o operador agora escolhe explicitamente **Solicitar novamente** ou **Não solicitar novamente**. A regra vigente completa está em `docs/TELEMEDICINA-FALTA-SOLICITACAO-V43.md`.
+
 ## Objetivo
 
 O formulário **Registrar consulta** passa a admitir **Falta** como quarto resultado operacional, ao lado de alta, retorno com prazo/data e retorno após uma condição.
 
-A falta representa uma teleconsulta que não ocorreu porque o paciente não compareceu. Como esse caso exige nova solicitação, ele não deve receber data de retorno artificial nem os três lembretes calculados para retornos clínicos.
+A falta representa uma teleconsulta que não ocorreu porque o paciente não compareceu. Ela não recebe data de retorno artificial nem os três lembretes calculados para retornos clínicos. Desde a V43, a necessidade de nova solicitação é uma decisão operacional explícita, e não uma consequência automática da falta.
 
 ## Regras operacionais
 
@@ -15,8 +17,9 @@ A falta representa uma teleconsulta que não ocorreu porque o paciente não comp
 - o Worker valida `followupMode: absence`; a regra não depende apenas da interface;
 - o registro recebe conduta canônica `FALTA DO PACIENTE`;
 - o evento longitudinal é gravado como `eventType: falta`;
-- o acompanhamento recebe `absencePendingRequest: true`, fica ativo e entra imediatamente em `SOLICITAR`;
-- a falta aparece e é contada junto de **Solicitar agora**;
+- quando **Solicitar novamente** é escolhido, o acompanhamento recebe `absenceNeedsRequest: true` e `absencePendingRequest: true`, fica ativo e entra em `SOLICITAR`;
+- quando **Não solicitar novamente** é escolhido, `absenceNeedsRequest: false` e `absencePendingRequest: false` são persistidos e não há pendência operacional;
+- somente faltas que precisam de nova solicitação aparecem e são contadas junto de **Solicitar agora**;
 - faltas não recebem `returnDueDate` nem `reminderDates` artificiais;
 - depois de confirmar **Solicitado**, a precedência de `requestedAt` faz o acompanhamento passar para `SOLICITADO` normalmente;
 - uma nova consulta posterior para o mesmo paciente e especialidade substitui o estado operacional atual sem apagar os eventos históricos anteriores.
@@ -28,8 +31,8 @@ No desktop e no formulário inline mobile:
 - a opção **Falta** usa ícone SVG profissional, sem emoji;
 - o rótulo de data muda para **Data da falta** enquanto esse resultado estiver selecionado;
 - os campos de prazo, data-alvo, condição e observação operacional comum ficam ocultos;
-- aparece apenas **Justificativa da falta**;
-- o card pendente é identificado como **SOLICITAR NOVAMENTE**;
+- aparecem **Justificativa da falta** e a escolha obrigatória entre **Solicitar novamente** e **Não solicitar novamente**;
+- quando houver pendência, o card é identificado como **SOLICITAR NOVAMENTE**;
 - a zona de retorno passa a informar **Nova solicitação necessária** e **Falta registrada - sem lembretes programados**;
 - no histórico, o evento é apresentado como **Falta registrada** e a observação é identificada como justificativa.
 
