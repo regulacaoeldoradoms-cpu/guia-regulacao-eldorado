@@ -1,0 +1,185 @@
+name: Diagnosticar raster Linux — mesmo commit
+
+# Proposal for .github/workflows/diagnose-studies-raster-linux.yml.
+# This separate diagnostic does not replace or change portal-dark-audit.yml.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/diagnose-studies-raster-linux.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnose-studies-raster-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  same-commit-raster:
+    name: Diagnóstico /medico/ light — 07a contra 07a, três repetições
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DIAGNOSTIC_SOURCE_SHA: 07a191e60901b7f6171f088eb9999c49392f68f7
+      DARK_AUDIT_COMPARE_BASE: '1'
+      DARK_AUDIT_BASE: 07a191e60901b7f6171f088eb9999c49392f68f7
+      DARK_AUDIT_REPORT_ONLY: '0'
+      DARK_AUDIT_REUSE_LOCAL: '0'
+      DARK_AUDIT_OUTPUT_DIR: test-results-dark-audit
+
+    steps:
+      - name: Checkout fixo do código e helper sob diagnóstico
+        uses: actions/checkout@v4
+        with:
+          ref: 07a191e60901b7f6171f088eb9999c49392f68f7
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Confirmar comparação do mesmo commit
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "$DIAGNOSTIC_SOURCE_SHA"
+          test "$(git rev-parse --verify "$DARK_AUDIT_BASE^{commit}")" = "$DIAGNOSTIC_SOURCE_SHA"
+          git diff --exit-code
+          git diff --cached --exit-code
+
+      - name: Node.js — mesma versão principal do workflow original
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências e Chromium — mesmos comandos do workflow original
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          node --version
+          npx playwright --version
+
+      - name: Repetir somente o cenário original, sem retries
+        working-directory: testing/browser
+        run: >-
+          npx playwright test portal-dark-preservation.spec.mjs
+          --config playwright-dark-audit.config.mjs
+          --project dark-desktop
+          --grep 'preserve light screen /medico/$'
+          --repeat-each 3
+
+      - name: Resumir resultados com o script original
+        if: always()
+        working-directory: testing/browser
+        shell: bash
+        run: |
+          if [ -f test-results-dark-audit/results.json ]; then
+            node summarize-dark-audit.mjs test-results-dark-audit/results.json
+          fi
+
+      - name: Registrar resultado estrito e seus limites
+        if: always()
+        working-directory: testing/browser
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
+          const dir = process.env.DARK_AUDIT_OUTPUT_DIR;
+          await mkdir(dir, { recursive: true });
+          let summary = null;
+          let summaryError = null;
+          try { summary = JSON.parse(await readFile(`${dir}/results.summary.json`, 'utf8')); }
+          catch (error) { summaryError = error.message; }
+          const rows = (summary?.rows || []).map((row, index) => {
+            const comparison = row.comparisons?.[0];
+            const pixel = comparison?.pixelComparison;
+            return {
+              repetition: index + 1,
+              title: row.title,
+              project: row.project,
+              status: row.status,
+              comparisonCount: row.comparisons?.length || 0,
+              baseCommit: comparison?.baseCommit ?? null,
+              accepted: pixel?.accepted ?? null,
+              gateApplicable: pixel?.gateApplicable ?? null,
+              diagnosticOnly: pixel?.diagnosticOnly ?? null,
+              gateAccepted: pixel?.gateAccepted ?? null,
+              differentPixels: pixel?.differentPixels ?? null,
+              maxChannelDelta: pixel?.maxChannelDelta ?? null,
+              computedDifferences: comparison?.differences ?? null,
+              newErrors: comparison?.newErrors ?? null,
+              networkRecorded: row.networkRecorded,
+              unexpectedEndpoints: row.unexpected,
+              productChanges: comparison?.productChanges ?? null,
+              captureStability: comparison?.captureStability ?? null
+            };
+          });
+          const strictSameCommitEvidence = rows.length === 3 &&
+            summary?.stats?.expected === 3 && summary.stats.unexpected === 0 &&
+            summary.stats.flaky === 0 && summary.stats.skipped === 0 &&
+            rows.every(row =>
+              row.title === 'preserve light screen /medico/' && row.project === 'dark-desktop' &&
+              row.status === 'passed' && row.comparisonCount === 1 &&
+              row.baseCommit === process.env.DIAGNOSTIC_SOURCE_SHA &&
+              row.accepted === true && row.gateApplicable === true && row.diagnosticOnly === false &&
+              row.computedDifferences === 0 && Array.isArray(row.newErrors) && row.newErrors.length === 0 &&
+              row.networkRecorded === true && Array.isArray(row.unexpectedEndpoints) && row.unexpectedEndpoints.length === 0 &&
+              Array.isArray(row.productChanges) && row.productChanges.length === 0);
+          const report = {
+            purpose: 'Diagnostic only: fixed 07a source compared with the same 07a source; not PR acceptance or a release gate.',
+            sourceCommit: process.env.DIAGNOSTIC_SOURCE_SHA,
+            baseCommit: process.env.DARK_AUDIT_BASE,
+            nodeVersion: process.version,
+            runner: { os: process.env.RUNNER_OS, imageOS: process.env.ImageOS, imageVersion: process.env.ImageVersion },
+            metadata: summary?.metadata ?? null,
+            stats: summary?.stats ?? null,
+            expectedRepetitions: 3,
+            strictSameCommitEvidence,
+            summaryError,
+            rows,
+            limits: [
+              'Only /medico/ light desktop, three independent test repetitions; original config and helper unchanged.',
+              'ubuntu-latest and Node 22 match the original workflow selectors; runner image and Node patch may differ from the historical run.',
+              'gateAccepted alone is insufficient. Missing, failed, skipped, unstable, or diagnosticOnly comparisons are not strict evidence.',
+              'Even strict success does not validate the current PR, a newer main, the full visual audit, production, or a threshold change.'
+            ]
+          };
+          await writeFile(`${dir}/diagnostic-verdict.json`, JSON.stringify(report, null, 2) + '\n');
+          const lines = [
+            '## Fixed-source Linux raster diagnostic',
+            '',
+            `Source and base: ${report.sourceCommit}`,
+            `Strict same-commit evidence: **${strictSameCommitEvidence}**`,
+            '',
+            '| Repetition | Test status | accepted | gateApplicable | diagnosticOnly | gateAccepted | Different pixels | Max channel delta |',
+            '| --- | --- | --- | --- | --- | --- | --- | --- |',
+            ...rows.map(row => `| ${row.repetition} | ${row.status} | ${row.accepted} | ${row.gateApplicable} | ${row.diagnosticOnly} | ${row.gateAccepted} | ${row.differentPixels} | ${row.maxChannelDelta} |`),
+            '',
+            ...(summaryError ? [`Summary unavailable: ${summaryError}`, ''] : []),
+            ...report.limits.map(limit => `- ${limit}`),
+            ''
+          ];
+          await writeFile(`${dir}/diagnostic-verdict.md`, lines.join('\n'));
+          if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, lines.join('\n'));
+          console.log(JSON.stringify({ strictSameCommitEvidence, comparisons: rows.length, summaryError }));
+          if (!strictSameCommitEvidence) process.exitCode = 1;
+          NODE
+
+      - name: Publicar JSON e resumo do diagnóstico
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studies-raster-linux-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            testing/browser/test-results-dark-audit/results.json
+            testing/browser/test-results-dark-audit/results.summary.json
+            testing/browser/test-results-dark-audit/diagnostic-verdict.json
+            testing/browser/test-results-dark-audit/diagnostic-verdict.md
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Publicar evidências sintéticas da comparação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studies-raster-linux-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: testing/browser/test-results-dark-audit/
+          if-no-files-found: warn
+          retention-days: 7
