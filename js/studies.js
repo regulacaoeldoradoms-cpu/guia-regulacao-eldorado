@@ -503,7 +503,8 @@
       const supported = Number(data.domainProtocol || 0) === 1;
       domainCard.hidden = !supported;
       if (supported) {
-        const score = Number(data.recentDomain?.overallScore);
+        const rawScore = data.recentDomain?.overallScore;
+        const score = rawScore === null || rawScore === undefined || rawScore === '' ? NaN : Number(rawScore);
         const measured = Number.isFinite(score);
         $('metricRecentDomain').textContent = measured ? `${score}%` : '—';
         $('metricRecentDomainMeta').textContent = measured
@@ -557,9 +558,13 @@
         ? `Erros recorrentes ativos: ${Math.max(0, Number(recurring?.count || 0))}`
         : '';
       const recentDomain = data.recentDomain?.byTopic?.[mission.topicId];
+      const rawDomainScore = recentDomain?.score;
+      const domainScore = rawDomainScore === null || rawDomainScore === undefined || rawDomainScore === ''
+        ? NaN
+        : Number(rawDomainScore);
       const domainLabel = Number(data.domainProtocol || 0) === 1
-        ? Number.isFinite(Number(recentDomain?.score))
-          ? `Domínio recente: ${recentDomain.score}% · ${recentDomain.label}`
+        ? Number.isFinite(domainScore)
+          ? `Domínio recente: ${domainScore}% · ${recentDomain.label}`
           : 'Domínio recente: ainda não medido'
         : '';
       const boss = mission.kind === 'boss';
