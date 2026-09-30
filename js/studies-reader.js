@@ -16,6 +16,87 @@
     return { count, total: size, percent: size ? Math.round(count / size * 100) : 0 };
   }
 
+  // Blocos produzidos do conteúdo revisado durante o preparo. Texto sempre via DOM;
+  // sem HTML, Markdown executável, recursos externos ou mudanças no estado da rodada.
+  function renderContent(parent, blocks, onReference) {
+    if (!Array.isArray(blocks) || !blocks.length) return false;
+    const doc = parent.ownerDocument;
+    const make = (tag, text, className) => {
+      const node = doc.createElement(tag);
+      if (text !== undefined) node.textContent = String(text);
+      if (className) node.className = className;
+      return node;
+    };
+    for (const block of blocks) {
+      if (block.type === 'paragraph') {
+        const paragraph = make('p');
+        for (const run of block.runs) {
+          if (run.missionId && onReference) {
+            const button = make('button', run.text, 'study-inline-reference');
+            button.type = 'button';
+            button.dataset.studyReference = run.missionId;
+            button.addEventListener('click', () => onReference(run));
+            paragraph.append(button);
+          } else if (typeof run.href === 'string' && run.href.startsWith('https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/blob/')) {
+            const link = make('a', run.text); link.href = run.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; paragraph.append(link);
+          } else paragraph.append(doc.createTextNode(run.text));
+        }
+        parent.append(paragraph);
+      } else if (block.type === 'table') {
+        const wrapper = make('div', undefined, 'study-table-scroll');
+        wrapper.tabIndex = 0;
+        wrapper.setAttribute('role', 'region');
+        wrapper.setAttribute('aria-label', `Tabela: ${block.headers.join(' e ')}`);
+        const table = make('table', undefined, 'study-content-table');
+        const head = make('thead'), row = make('tr'), body = make('tbody');
+        for (const label of block.headers) { const th = make('th', label); th.scope = 'col'; row.append(th); }
+        head.append(row);
+        for (const values of block.rows) { const tr = make('tr'); for (const value of values) tr.append(make('td', value)); body.append(tr); }
+        table.append(head, body); wrapper.append(table); parent.append(wrapper);
+      } else if (block.type === 'flow') {
+        const figure = make('figure', undefined, 'study-flow');
+        figure.setAttribute('aria-label', 'Fluxos de recursos entre os participantes');
+        for (const edge of block.edges) {
+          const step = make('div', undefined, 'study-flow-step');
+          step.append(make('div', edge.from, 'study-flow-node'), make('div', `↓ ${edge.label} ↓`, 'study-flow-arrow'), make('div', edge.to, 'study-flow-node'));
+          figure.append(step);
+        }
+        parent.append(figure);
+      } else if (block.type === 'line-chart') {
+        const figure = make('figure', undefined, 'study-chart');
+        figure.append(make('figcaption', block.title), make('p', `Horizontal: ${block.xLabel}. Vertical: ${block.yLabel}.`, 'study-reader-caption'));
+        const scroll = make('div', undefined, 'study-chart-scroll');
+        scroll.tabIndex = 0;
+        scroll.setAttribute('role', 'region');
+        scroll.setAttribute('aria-label', 'Gráfico; dados também disponíveis na tabela anterior');
+        const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 360 260'); svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', `${block.title}. ${block.x.map((value, i) => `${value} anos: ${block.y[i]}% a.a.`).join('; ')}`);
+        const element = (tag, attrs, text) => {
+          const node = doc.createElementNS('http://www.w3.org/2000/svg', tag);
+          for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+          if (text !== undefined) node.textContent = String(text);
+          svg.append(node); return node;
+        };
+        const x = value => 55 + (value - block.x[0]) / (block.x.at(-1) - block.x[0]) * 260;
+        const y = value => 210 - (value - block.yMin) / (block.yMax - block.yMin) * 180;
+        for (let index = 0; index <= 4; index++) {
+          const value = block.yMin + (block.yMax - block.yMin) * index / 4;
+          element('line', { x1: 55, x2: 315, y1: y(value), y2: y(value), class: 'study-chart-grid' });
+          element('text', { x: 43, y: y(value) + 6, 'text-anchor': 'end' }, `${value.toLocaleString('pt-BR')}%`);
+        }
+        element('path', { d: 'M55 30V210H315', class: 'study-chart-axis' });
+        element('polyline', { points: block.x.map((value, i) => `${x(value)},${y(block.y[i])}`).join(' '), class: 'study-chart-line' });
+        for (const [index, value] of block.x.entries()) {
+          element('text', { x: x(value), y: 240, 'text-anchor': 'middle' }, `${value} ano${value === 1 ? '' : 's'}`);
+          element('circle', { cx: x(value), cy: y(block.y[index]), r: 5, class: 'study-chart-point' });
+        }
+        scroll.append(svg); figure.append(scroll); parent.append(figure);
+      }
+    }
+    return true;
+  }
+
   function renderApplications(root, mission, openSection) {
     const practice = root?.querySelector('#studyPracticePanel');
     const quiz = practice?.querySelector('.study-quiz');
@@ -85,7 +166,7 @@
     return items.length;
   }
 
-  function create(root) {
+  function create(root, onReference) {
     if (!root) return null;
     const find = (id) => root.querySelector(`#${id}`);
     const names = [
@@ -103,6 +184,51 @@
     let active = false;
     let font = 0;
     const fontSizes = [1.125, 1.25, 1.375, 1.5];
+    let referencePanel = null;
+    let referenceReturn = null;
+
+    function closeReference() {
+      if (!referenceReturn) return;
+      for (const [node, hidden] of referenceReturn.panels) node.hidden = hidden;
+      referencePanel.hidden = true;
+      const target = referenceReturn.focus;
+      referenceReturn = null;
+      focusAt(target);
+    }
+
+    function showReference(mission, sectionId, wholeLesson = false) {
+      const selected = wholeLesson ? mission.sections : mission.sections?.filter(section => section.id === sectionId);
+      if (!active || !selected?.length) return false;
+      const doc = root.ownerDocument;
+      if (!referencePanel) {
+        referencePanel = doc.createElement('section');
+        referencePanel.id = 'studyReferencePanel';
+        referencePanel.className = 'study-reference-panel';
+        referencePanel.setAttribute('aria-labelledby', 'studyReferenceTitle');
+        el.studyLessonPanel.before(referencePanel);
+      }
+      if (!referenceReturn) referenceReturn = {
+        focus: doc.activeElement,
+        panels: ['studyReaderNav', 'studyReaderControls', 'studyReaderFooter', 'studyLessonPanel', 'studyPracticePanel'].map(id => [el[id], el[id].hidden])
+      };
+      for (const [node] of referenceReturn.panels) node.hidden = true;
+      referencePanel.replaceChildren(); referencePanel.hidden = false;
+      const title = doc.createElement('h2'); title.id = 'studyReferenceTitle'; title.tabIndex = -1;
+      title.textContent = `Consulta · ${mission.shortTitle || mission.title}`;
+      const back = doc.createElement('button'); back.type = 'button'; back.className = 'study-reader-back';
+      back.id = 'studyCloseReference'; back.textContent = 'Voltar à atividade'; back.addEventListener('click', closeReference);
+      referencePanel.append(title, back);
+      for (const section of selected) {
+        const node = doc.createElement('section'); node.className = 'study-section';
+        const heading = doc.createElement('h3'); heading.textContent = section.heading; node.append(heading);
+        if (!renderContent(node, section.presentation, onReference)) {
+          for (const text of String(section.body || '').split(/\n\s*\n/)) { const p = doc.createElement('p'); p.textContent = text; node.append(p); }
+        }
+        referencePanel.append(node);
+      }
+      focusAt(title);
+      return true;
+    }
 
     function focusAt(target) {
       el.studyFocusBody.scrollTop = 0;
@@ -165,6 +291,7 @@
     }
 
     function mount(mission) {
+      closeReference();
       sections = Array.isArray(mission?.sections) ? mission.sections : [];
       active = sections.length > 0;
       for (const id of ['studyReaderNav', 'studyReaderControls', 'studyReaderFooter', 'studyReturnLesson']) {
@@ -187,7 +314,7 @@
         heading.textContent = String(section.heading || `Parte ${position + 1}`);
         heading.tabIndex = -1;
         node.append(heading);
-        for (const paragraph of String(section.body || '').split(/\n\s*\n/)) {
+        if (!renderContent(node, section.presentation, onReference)) for (const paragraph of String(section.body || '').split(/\n\s*\n/)) {
           const p = doc.createElement('p');
           p.textContent = paragraph;
           node.append(p);
@@ -230,8 +357,8 @@
     });
     el.studyFontSmaller.addEventListener('click', () => fontSize(-1));
     el.studyFontLarger.addEventListener('click', () => fontSize(1));
-    return Object.freeze({ mount, openSection });
+    return Object.freeze({ mount, openSection, showReference });
   }
 
-  window.StudyReader = Object.freeze({ create, partIndex, practiceProgress });
+  window.StudyReader = Object.freeze({ create, partIndex, practiceProgress, renderContent });
 })();

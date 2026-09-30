@@ -58,7 +58,7 @@ test('candidato fica excluído: publicação, fontes, plano e mapa ativos contin
   assert.equal(map.readiness.status, 'not_measured');
 });
 
-test('conversão enumera apresentação pendente sem apagar gráficos, tabelas ou referências', () => {
+test('conversão enumera apresentação sem apagar gráficos, tabelas ou referências', () => {
   const requirements = candidate.readingRequirements;
   assert.equal(requirements.filter(item => item.formats.includes('diagram')).length, 5);
   assert.equal(requirements.filter(item => item.formats.includes('table')).length, 3);
@@ -91,7 +91,7 @@ test('feedback mantém prioridade SFN e rejeita dados incompletos ou de outra qu
   assert.equal(questionFeedbackById(question.id), null);
 });
 
-test('roteador real com candidato MP: cinco cenários locais de autorização/preservação/rodadas', () => {
+test('candidato MP: seis cenários de catálogo e roteador reais, autorização e preservação', () => {
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   const result = spawnSync(process.execPath, ['--experimental-vm-modules', '--test', '--test-reporter=tap',
@@ -99,6 +99,6 @@ test('roteador real com candidato MP: cinco cenários locais de autorização/pr
     env, encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024
   });
   assert.equal(result.status, 0, result.stdout + '\n' + result.stderr);
-  assert.match(result.stdout, /# pass 5\b/);
+  assert.match(result.stdout, /# pass 6\b/);
   assert.match(result.stdout, /# fail 0\b/);
 });

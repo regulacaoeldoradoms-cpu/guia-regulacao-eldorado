@@ -201,7 +201,8 @@ function publicMission(mission) {
     questions: mission.questions.map((question) => ({
       id: question.id,
       prompt: question.prompt,
-      options: question.options
+      options: question.options,
+      ...(Array.isArray(question.presentation) ? { presentation: question.presentation } : {})
     }))
   };
 }

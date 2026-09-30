@@ -268,11 +268,14 @@ test('feedback rico explica o erro e leva ao trecho que precisa ser relido', asy
   await expect(feedback).toContainText('A representa a confusão simulada');
   await expect(feedback).toContainText('Resposta correta: B');
   await expect(feedback).toContainText('Por que é correta:');
-  const review=feedback.locator('.study-feedback-review');
-  await expect(review).toHaveCount(1);
+  const review=feedback.getByRole('button',{name:'Explicação',exact:true});
   await expect(review).toHaveText('Explicação');
-  await expect(feedback).toContainText('Revisar depois:');
-  await expect(feedback).toContainText('Fundamento: Conceito de origem');
+  const origin=feedback.getByRole('button',{name:'Consultar Fundamento: Conceito de origem',exact:true});
+  await expect(origin).toBeVisible();
+  await origin.click();
+  await expect(page.locator('#studyReferencePanel')).toContainText('Conceito de origem');
+  await page.locator('#studyCloseReference').click();
+  await expect(page.locator('#studyPracticePanel')).toBeVisible();
   await review.click();
   await expect(page.locator('#studyLessonPanel')).toBeVisible();
   await expect(page.locator('#lessonSections')).toContainText('Material sintético para os testes.');

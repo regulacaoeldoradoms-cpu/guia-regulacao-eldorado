@@ -1,4 +1,22 @@
 /* Escopo exclusivo da Missão Bancária. Nenhuma regra de outros módulos é alterada. */
+.study-page .study-inline-reference { padding: 0 3px; border: 0; border-radius: 3px; background: transparent; color: var(--reader-accent); font: inherit; text-decoration: underline; cursor: pointer; }
+.study-page .study-reference-panel { border: 1px solid var(--reader-border); border-radius: 12px; padding: 12px; }
+.study-page .study-table-scroll, .study-page .study-chart-scroll { overflow-x: auto; max-width: 100%; margin: 14px 0; }
+.study-page .study-content-table { width: 100%; border-collapse: collapse; font-size: var(--study-reading-size); }
+.study-page .study-content-table th, .study-page .study-content-table td { border: 1px solid var(--reader-border); padding: 8px; text-align: left; line-height: 1.5; }
+.study-page .study-chart, .study-page .study-flow { margin: 18px 0; }
+.study-page .study-chart figcaption { font-weight: 700; font-size: var(--study-reading-size); }
+.study-page .study-chart svg { display: block; width: 100%; min-width: 0; color: var(--reader-ink); }
+.study-page .study-chart text { fill: currentColor; font: 20px sans-serif; }
+.study-page .study-chart-grid { stroke: var(--reader-border); stroke-width: 1; }
+.study-page .study-chart-axis { fill: none; stroke: currentColor; stroke-width: 2; }
+.study-page .study-chart-line { fill: none; stroke: var(--reader-accent); stroke-width: 3; }
+.study-page .study-chart-point { fill: var(--reader-accent); }
+.study-page .study-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; }
+.study-page .study-flow-step { text-align: center; font-size: var(--study-reading-size); line-height: 1.5; }
+.study-page .study-flow-node { padding: 12px; border: 2px solid var(--reader-border); border-radius: 10px; }
+.study-page .study-flow-arrow { padding: 10px; color: var(--reader-accent); font-weight: 700; }
+.study-page [data-question-prompt] p { margin-top: 12px; }
 .study-page #studyDashboard[hidden],
 .study-page #studyFocus[hidden],
 .study-page #studyFocus [hidden] { display: none !important; }

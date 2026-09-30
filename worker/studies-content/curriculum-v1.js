@@ -1,5 +1,8 @@
 'use strict';
 
+import { MP_MISSIONS } from './banking-markets-policy-v1.js';
+import { publishedCatalog } from './publication-registry.js';
+
 const freezeList = (items) => Object.freeze(items.map((item) => Object.freeze(item)));
 const block = (id, title, examIds, missionIds = []) => Object.freeze({
   id, title,
@@ -75,7 +78,7 @@ const SFN_MISSIONS = Object.freeze([
 export const COURSE_AREAS = Object.freeze([
   area('banking', 'Conhecimentos Bancários', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], [
     block('banking.sfn-foundation', 'SFN, supervisores, operadores e infraestrutura básica', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], SFN_MISSIONS),
-    block('banking.markets-policy', 'Mercados, moeda, política monetária, juros e dívida pública', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
+    block('banking.markets-policy', 'Mercados, moeda, política monetária, juros e dívida pública', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(MP_MISSIONS).map(mission => mission.id)),
     block('banking.products-credit', 'Produtos bancários, crédito, contas e garantias', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
     block('banking.capital-exchange', 'Mercado de capitais, investimentos e câmbio', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
     block('banking.digital-payments', 'Pagamentos, bancos digitais, fintechs e transformação financeira', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),

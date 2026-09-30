@@ -1,9 +1,11 @@
 // Preparação offline. Não importar este módulo Node no Worker ou no catálogo ativo.
 import { pathToFileURL } from 'node:url';
+import { readFile, writeFile } from 'node:fs/promises';
 import {
   PUBLISHED_MISSIONS, STUDY_SOURCES, validateTeachingCatalog
 } from '../studies-content/manifest.js';
 import { validateQuestionFeedback } from '../studies-content/question-feedback-v1.js';
+import { compilePresentation } from './studies-mp-presentation.mjs';
 
 // Proposta de IDs estáveis e sequência; a aprovação de publicação ainda está pendente.
 export const MP_PLAN = Object.freeze([
@@ -24,6 +26,8 @@ export async function loadMpEditorial() {
 }
 
 export function compileMpCandidate(editorial) {
+  const baselineMissions = PUBLISHED_MISSIONS.filter(mission => !mission.id.startsWith('banking.mp.'));
+  const baselineSources = STUDY_SOURCES.filter(source => !source.id.startsWith('mp.'));
   const byUnit = new Map(editorial.map(entry => [entry.unit, entry]));
   if (byUnit.size !== MP_PLAN.length || editorial.length !== MP_PLAN.length) {
     throw new Error('O pacote MP requer as onze unidades, sem duplicatas.');
@@ -42,6 +46,19 @@ export function compileMpCandidate(editorial) {
       throw new Error(`${plan.unit}: origem deve permanecer draft.`);
     }
     const draft = structuredClone(entry.draft);
+    const presentation = text => compilePresentation(text, href => {
+      if (href === '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md') return {
+        href: 'https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/blob/36a8f9c688a44faf13bf3de287f74e291402a182/docs/missao-bancaria/71-MP-BLOCO-RASCUNHO-E-REVISAO.md'
+      };
+      const match = href.match(/^mp-(0[1-9]|r|chefe)-v1\.md(?:#([\w-]+))?$/);
+      if (!match) return null;
+      const unit = `mp${match[1]}`;
+      const target = MP_PLAN.find(item => item.unit === unit);
+      const sectionId = match[2] || byUnit.get(unit)?.draft.sections[0]?.id;
+      if (!target || target.order > plan.order || !byUnit.get(unit)?.draft.sections.some(section => section.id === sectionId)) return null;
+      return { missionId: target.id, sectionId, wholeLesson: !match[2] };
+    });
+    const rich = text => /```|^\||\[[^\]]+\]\([^)]+\)/m.test(text) ? { presentation: presentation(text) } : {};
     const sourceIds = new Map(entry.sources.map(source => [source.id, `mp.${plan.unit}.${source.id}`]));
     if (sourceIds.size !== entry.sources.length) throw new Error(`${plan.unit}: fonte duplicada.`);
     const remapSource = id => {
@@ -66,11 +83,11 @@ export function compileMpCandidate(editorial) {
       return {
         id, topicId: plan.id, prompt: question.prompt, options: question.options,
         answer: question.answer, explanation: question.explanation,
-        optionRationales: question.optionRationales
+        optionRationales: question.optionRationales, ...rich(question.prompt)
       };
     });
-    // Não remover Markdown/Mermaid silenciosamente: conserva a fonte aprovada e enumera
-    // os pontos que ainda precisam de adaptação de apresentação antes de publicar.
+    // Conserva o texto aprovado e o inventário dos locais convertidos em apresentação.
+    // A publicação continua separada da renderização e depende de decisão explícita.
     for (const [location, text] of [
       ...draft.sections.map(section => [`section:${section.id}`, section.body]),
       ...draft.questions.map(question => [`question:q.${question.id}`, question.prompt])
@@ -89,9 +106,12 @@ export function compileMpCandidate(editorial) {
       // Valores de simulação, sujeitos à decisão agrupada; nada é publicado por este script.
       xp: draft.kind === 'boss' ? 220 : 100,
       passScore: draft.kind === 'boss' ? 75 : 0,
+      // Estimativa didática, não limite: leitura a 150 palavras/min + 2 min por questão,
+      // arredondada para o próximo múltiplo de 5. Não controla cronômetro ou conclusão.
+      estimatedMinutes: Math.ceil((draft.sections.reduce((sum, section) => sum + section.body.split(/\s+/).length, 0) / 150 + questions.length * 2) / 5) * 5,
       publication: { status: 'draft', releaseId: 'markets-policy-intro-r1', releaseSequence: 2, changeImpact: 'new' },
       sourceIds: draft.sourceIds.map(remapSource),
-      sections: draft.sections.map(section => ({ ...section, sourceIds: section.sourceIds.map(remapSource) })),
+      sections: draft.sections.map(section => ({ ...section, sourceIds: section.sourceIds.map(remapSource), ...rich(section.body) })),
       recall: draft.recall, questions,
       teaching: { ...draft.teaching, questionCoverage },
       candidate: {
@@ -101,9 +121,9 @@ export function compileMpCandidate(editorial) {
       }
     };
   });
-  const catalog = [...PUBLISHED_MISSIONS, ...missions];
-  const allSources = [...STUDY_SOURCES, ...sources];
-  const errors = [
+  const catalog = [...baselineMissions, ...missions];
+  const allSources = [...baselineSources, ...sources];
+const errors = [
     ...validateTeachingCatalog(catalog, allSources),
     ...validateQuestionFeedback(missions, feedback)
   ];
@@ -112,7 +132,7 @@ export function compileMpCandidate(editorial) {
   if (new Set(questionIds).size !== questionIds.length) errors.push('duplicate-question-id');
   if (new Set(topics).size !== topics.length) errors.push('duplicate-topic-id');
   if (new Set(allSources.map(source => source.id)).size !== allSources.length) errors.push('duplicate-source-id');
-  if (PUBLISHED_MISSIONS.at(-1)?.id !== MP_PLAN[0].prerequisiteId || PUBLISHED_MISSIONS.at(-1)?.order !== 9) {
+  if (baselineMissions.at(-1)?.id !== MP_PLAN[0].prerequisiteId || baselineMissions.at(-1)?.order !== 9) {
     errors.push('published-prerequisite-changed');
   }
   if (errors.length) throw new Error(`Candidato MP inválido: ${errors.join(', ')}`);
@@ -121,6 +141,16 @@ export function compileMpCandidate(editorial) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const candidate = compileMpCandidate(await loadMpEditorial());
+  if (process.argv.includes('--write') || process.argv.includes('--check-generated')) {
+    const target = new URL('../studies-content/banking-markets-policy-v1.js', import.meta.url);
+    const output = '// Gerado por node worker/scripts/studies-mp-candidate.mjs --write. Não editar.\n'
+      + '// Fonte editorial #563; todas as missões permanecem draft. Sem autorização de ativação.\n'
+      + `export const MP_MISSIONS = Object.freeze(${JSON.stringify(candidate.missions, null, 2)});\n`
+      + `export const MP_SOURCES = Object.freeze(${JSON.stringify(candidate.sources, null, 2)});\n`;
+    if (process.argv.includes('--write')) await writeFile(target, output);
+    else if ((await readFile(target, 'utf8')).replace(/\r\n/g, '\n') !== output) throw new Error('Artefato MP desatualizado; regenere sem editar o conteúdo aprovado.');
+    console.log('Artefato MP draft: ' + (process.argv.includes('--write') ? 'gerado' : 'conferido'));
+  }
   // Resumo, sem emitir um arquivo importável acidentalmente como conteúdo publicado.
   console.log(JSON.stringify({
     status: candidate.status, missions: candidate.missions.length,
