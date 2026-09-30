@@ -8,10 +8,10 @@ import { PUBLISHED_MISSIONS as LIVE_MISSIONS, STUDY_SOURCES } from '../../studie
 import { publishedCatalog, publicationSnapshot } from '../../studies-content/publication-registry.js';
 import { curriculumSnapshot } from '../../studies-content/curriculum-v1.js';
 
-const PUBLISHED_MISSIONS = LIVE_MISSIONS;
+const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.order < 21);
 const candidate = compilePcCandidate(await loadPcEditorial());
-// Publicação exclusivamente simulada nesta fixture em memória. Não ativa o artefato.
-const pc = candidate.missions.map(m => ({ ...m, publication: { ...m.publication, status: 'published' } }));
+// Release autorizada; baseline SFN/MP separado verifica a transição em memória.
+const pc = candidate.missions;
 
 test('manifesto e mapa reais incluem o pacote com status publicado somente na simulação', async () => {
   const context = vm.createContext({});
@@ -138,7 +138,7 @@ test('adição simulada preserva SFN/MP, XP, tentativas, conquista, revisões, a
   assert.deepEqual(after.publication.newMissionIds, pc.map(mission => mission.id));
   assert.equal(after.publication.revisionRecommendedCount, 0);
   assert.equal(after.curriculum.readiness.status, 'not_measured');
-  assert.equal(after.curriculum.publishedBlocks, 2); // mapa real desativado; a fixture VM acima valida três blocos na simulação.
+  assert.equal(after.curriculum.publishedBlocks, 3); // catálogo ativo inclui o núcleo PC autorizado.
 });
 
 test('PC-R preserva recuperação nas aulas anteriores via referências do endpoint', async t => {

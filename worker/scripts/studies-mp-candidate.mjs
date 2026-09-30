@@ -26,7 +26,7 @@ export async function loadMpEditorial() {
 }
 
 export function compileMpCandidate(editorial) {
-  const baselineMissions = PUBLISHED_MISSIONS.filter(mission => !mission.id.startsWith('banking.mp.'));
+  const baselineMissions = PUBLISHED_MISSIONS.filter(mission => mission.order < MP_PLAN[0].order);
   const baselineSources = STUDY_SOURCES.filter(source => !source.id.startsWith('mp.'));
   const byUnit = new Map(editorial.map(entry => [entry.unit, entry]));
   if (byUnit.size !== MP_PLAN.length || editorial.length !== MP_PLAN.length) {

@@ -33,16 +33,16 @@ test('manifesto e mapa reais incluem o pacote com status publicado aprovado', as
   const curriculum = await load(new URL('../../studies-content/curriculum-v1.js', import.meta.url));
   await curriculum.evaluate();
   const catalog = manifest.namespace;
-  assert.equal(catalog.PUBLISHED_MISSIONS.length, 20);
-  assert.equal(catalog.PLANNED_MISSIONS.length, 20);
+  assert.equal(catalog.PUBLISHED_MISSIONS.length, 37);
+  assert.equal(catalog.PLANNED_MISSIONS.length, 37);
   assert.equal(catalog.validateTeachingCatalog().length, 0);
   assert.equal(curriculum.namespace.validateCurriculum(catalog.PUBLISHED_MISSIONS).length, 0);
   const progress = Object.fromEntries(PUBLISHED_MISSIONS.map(mission => [mission.topicId, { coverageState: 3 }]));
   const state = curriculum.namespace.curriculumSnapshot(catalog.PUBLISHED_MISSIONS, progress);
-  assert.equal(state.publishedBlocks, 2);
+  assert.equal(state.publishedBlocks, 3);
   assert.equal(state.completedBlocks, 1);
   assert.equal(state.readiness.status, 'not_measured');
-  assert.equal(catalog.publicationSnapshot(progress).newCount, 11);
+  assert.equal(catalog.publicationSnapshot(progress).newCount, 28);
 });
 async function setup(t, missions) {
   return fixture(t, {

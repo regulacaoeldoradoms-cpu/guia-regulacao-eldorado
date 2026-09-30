@@ -1,5 +1,5 @@
 // Gerado por node worker/scripts/studies-pc-candidate.mjs --write. Não editar.
-// Fonte editorial #565; preparação desativada; sem autorização de publicação por este artefato.
+// Fonte editorial #565; publicação do núcleo comum autorizada em 30/09/2026, 23:16 UTC.
 export const PC_MISSIONS = Object.freeze([
   {
     "id": "banking.pc.pessoas",
@@ -14,7 +14,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 30,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -418,7 +418,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc01a",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.mp.boss",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -434,7 +434,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -839,7 +839,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc01",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.pessoas",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -855,7 +855,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -1224,7 +1224,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc02",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.contas",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1240,7 +1240,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -1647,7 +1647,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc03",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.credito",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1663,7 +1663,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -2100,7 +2100,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc04",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.cartoes",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2116,7 +2116,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -2525,7 +2525,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc05",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.custos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2541,7 +2541,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -2940,7 +2940,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc06",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.empresas-consumo",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2956,7 +2956,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -3376,7 +3376,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc08",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.rural",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -3392,7 +3392,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -3804,7 +3804,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc09",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.garantias-pessoais",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -3820,7 +3820,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -4220,7 +4220,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc10",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.garantias-reais",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -4236,7 +4236,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -4601,7 +4601,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc11a",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.acompanhamento",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -4617,7 +4617,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -4987,7 +4987,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc11b",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.poupanca",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -5003,7 +5003,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -5363,7 +5363,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc11c",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.capitalizacao",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -5379,7 +5379,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -5769,7 +5769,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc11d",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.previdencia",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -5785,7 +5785,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -6133,7 +6133,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pc11e",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.seguros",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -6149,7 +6149,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 30,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -6198,7 +6198,7 @@ export const PC_MISSIONS = Object.freeze([
         "id": "inicio",
         "type": "explanation",
         "heading": "1. Como usar esta revisão",
-        "body": "Leia primeiro as aulas PC-01A/01–06/08–10/11A–E. Elas e esta revisão ainda são rascunhos, disponíveis aqui para revisão editorial, fora do aplicativo. PC-07 habitacional permanece condicionado e não é cobrado. Tente explicar a regra antes de olhar as alternativas. Depois do erro, retome o trecho exato da aula de origem, diga qual dado havia confundido e reconstrua o caso. Acertar perguntas já expostas não é avaliação independente, garantia de retenção ou prontidão para concurso.",
+        "body": "Leia primeiro as aulas PC-01A/01–06/08–10/11A–E. PC-07 habitacional permanece condicionado e não é cobrado. Tente explicar a regra antes de olhar as alternativas. Depois do erro, retome o trecho exato da aula de origem, diga qual dado havia confundido e reconstrua o caso. Acertar perguntas já expostas não é avaliação independente, garantia de retenção ou prontidão para concurso.",
         "sourceIds": []
       },
       {
@@ -7135,7 +7135,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pcr",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.consorcio",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -7151,7 +7151,7 @@ export const PC_MISSIONS = Object.freeze([
     "passScore": 75,
     "estimatedMinutes": 30,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "products-credit-intro-r1",
       "releaseSequence": 3,
       "changeImpact": "new"
@@ -7200,7 +7200,7 @@ export const PC_MISSIONS = Object.freeze([
         "id": "preparacao",
         "type": "explanation",
         "heading": "1. Ensino antes do desafio",
-        "body": "Este Chefe depende de [PC-01A](pc-01a-v1.md), [PC-01](pc-01-v1.md), [PC-02](pc-02-v1.md), [PC-03](pc-03-v1.md), [PC-04](pc-04-v1.md), [PC-05](pc-05-v1.md), [PC-06](pc-06-v1.md), [PC-08](pc-08-v1.md), [PC-09](pc-09-v1.md), [PC-10](pc-10-v1.md) e dos cinco produtos [PC-11A](pc-11a-v1.md), [PC-11B](pc-11b-v1.md), [PC-11C](pc-11c-v1.md), [PC-11D](pc-11d-v1.md) e [PC-11E](pc-11e-v1.md). A [PC-R](pc-r-v1.md) prepara a revisão. Os materiais PC permanecem rascunhos, acessíveis nestes documentos e fora do catálogo. PC-07 habitacional não é cobrado: sua inclusão no escopo ainda é condicionada. Não tente usar os gabaritos como primeira explicação de um conceito.",
+        "body": "Este Chefe depende de [PC-01A](pc-01a-v1.md), [PC-01](pc-01-v1.md), [PC-02](pc-02-v1.md), [PC-03](pc-03-v1.md), [PC-04](pc-04-v1.md), [PC-05](pc-05-v1.md), [PC-06](pc-06-v1.md), [PC-08](pc-08-v1.md), [PC-09](pc-09-v1.md), [PC-10](pc-10-v1.md) e dos cinco produtos [PC-11A](pc-11a-v1.md), [PC-11B](pc-11b-v1.md), [PC-11C](pc-11c-v1.md), [PC-11D](pc-11d-v1.md) e [PC-11E](pc-11e-v1.md). A [PC-R](pc-r-v1.md) prepara a revisão. PC-07 habitacional não é cobrado: sua inclusão no escopo ainda é condicionada. Não tente usar os gabaritos como primeira explicação de um conceito.",
         "sourceIds": [],
         "presentation": [
           {
@@ -7351,7 +7351,7 @@ export const PC_MISSIONS = Object.freeze([
                 "wholeLesson": true
               },
               {
-                "text": " prepara a revisão. Os materiais PC permanecem rascunhos, acessíveis nestes documentos e fora do catálogo. PC-07 habitacional não é cobrado: sua inclusão no escopo ainda é condicionada. Não tente usar os gabaritos como primeira explicação de um conceito."
+                "text": " prepara a revisão. PC-07 habitacional não é cobrado: sua inclusão no escopo ainda é condicionada. Não tente usar os gabaritos como primeira explicação de um conceito."
               }
             ]
           }
@@ -7382,7 +7382,7 @@ export const PC_MISSIONS = Object.freeze([
         "id": "recuperacao",
         "type": "summary",
         "heading": "5. Corrigir o raciocínio sem transformar prática em diagnóstico",
-        "body": "Responda e justifique antes de abrir o comentário. Ao errar, localize a aula e o trecho indicados, nomeie a informação confundida e refaça o caso. Compare também os distratores: cada um muda dado, regra ou alcance da conclusão. Estes doze itens são próprios do Chefe, mas ficam expostos nesta prévia; não compõem avaliação independente. Acerto, repetição ou conclusão não comprova retenção ou prontidão. Nenhuma regra de XP, limiar, publicação, desbloqueio ou revisão adaptativa foi criada neste rascunho.",
+        "body": "Responda e justifique antes de abrir o comentário. Ao errar, localize a aula e o trecho indicados, nomeie a informação confundida e refaça o caso. Compare também os distratores: cada um muda dado, regra ou alcance da conclusão. Estes doze itens são próprios do Chefe, mas ficam expostos nesta prática; não compõem avaliação independente. Acerto, repetição ou conclusão não comprova retenção ou prontidão.",
         "sourceIds": []
       }
     ],
@@ -7884,7 +7884,7 @@ export const PC_MISSIONS = Object.freeze([
       "editorialId": "draft.pcchefe",
       "blockId": "banking.products-credit",
       "prerequisiteId": "banking.pc.revisao",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   }
 ]);

@@ -8,8 +8,8 @@ import { PUBLISHED_MISSIONS } from '../../worker/studies-content/manifest.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
 const candidate = compilePcCandidate(await loadPcEditorial());
-// Ativação somente na resposta interceptada; o catálogo real mantém PC draft.
-const all = [...PUBLISHED_MISSIONS, ...candidate.missions.map(m => ({ ...m, publication: { ...m.publication, status: 'published' } }))];
+// Catálogo ativo autorizado, exercitado somente com API interceptada.
+const all = PUBLISHED_MISSIONS;
 const boss = candidate.missions.at(-1);
 const publicMissions = all.map(mission => ({ ...mission, sources: [],
   questions: mission.questions.map(({ id, prompt, options, presentation }) => ({ id, prompt, options, ...(presentation ? { presentation } : {}) })) }));

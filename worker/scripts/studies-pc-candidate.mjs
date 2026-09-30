@@ -7,7 +7,7 @@ import {
 import { validateQuestionFeedback } from '../studies-content/question-feedback-v1.js';
 import { compilePresentation } from './studies-mp-presentation.mjs';
 
-// Parâmetros preparados pelo padrão existente; nenhuma ativação autorizada por este arquivo.
+// Publicação do núcleo comum e parâmetros aprovados em 30/09/2026, 23:16 UTC.
 export const PC_PLAN = Object.freeze([
   ['pc01a', 'pessoas'], ['pc01', 'contas'], ['pc02', 'credito'], ['pc03', 'cartoes'],
   ['pc04', 'custos'], ['pc05', 'empresas-consumo'], ['pc06', 'rural'],
@@ -27,7 +27,7 @@ export async function loadPcEditorial() {
 }
 
 export function compilePcCandidate(editorial) {
-  const baselineMissions = PUBLISHED_MISSIONS.filter(mission => !mission.id.startsWith('banking.pc.'));
+  const baselineMissions = PUBLISHED_MISSIONS.filter(mission => mission.order < PC_PLAN[0].order);
   const baselineSources = STUDY_SOURCES.filter(source => !source.id.startsWith('pc.'));
   const byUnit = new Map(editorial.map(entry => [entry.unit, entry]));
   if (byUnit.size !== PC_PLAN.length || editorial.length !== PC_PLAN.length) {
@@ -47,7 +47,12 @@ export function compilePcCandidate(editorial) {
       throw new Error(`${plan.unit}: origem deve permanecer draft.`);
     }
     const draft = structuredClone(entry.draft);
-    // Preservar também os avisos editoriais enquanto a preparação está desativada.
+    // Retirar somente avisos de status desatualizados da cópia publicada; fonte editorial intacta.
+    for (const section of draft.sections) section.body = section.body
+      .replace('Elas e esta revisão ainda são rascunhos, disponíveis aqui para revisão editorial, fora do aplicativo. ', '')
+      .replace('Os materiais PC permanecem rascunhos, acessíveis nestes documentos e fora do catálogo. ', '')
+      .replace('mas ficam expostos nesta prévia;', 'mas ficam expostos nesta prática;')
+      .replace(' Nenhuma regra de XP, limiar, publicação, desbloqueio ou revisão adaptativa foi criada neste rascunho.', '');
     const presentation = text => compilePresentation(text, href => {
       const match = href.match(/^pc-(01a|0[1-6]|0[89]|10|11[a-e]|r|chefe)-v1\.md(?:#([\w-]+))?$/);
       if (!match) return null;
@@ -86,7 +91,7 @@ export function compilePcCandidate(editorial) {
       };
     });
     // Conserva o texto aprovado e o inventário dos locais convertidos em apresentação.
-    // Renderização não altera os textos ou transforma o draft em publicação.
+    // A apresentação não altera o ensino aprovado.
     for (const [location, text] of [
       ...draft.sections.map(section => [`section:${section.id}`, section.body]),
       ...draft.questions.map(question => [`question:q.${question.id}`, question.prompt])
@@ -102,13 +107,13 @@ export function compilePcCandidate(editorial) {
       id: plan.id, topicId: plan.id, contentVersion: draft.contentVersion,
       order: plan.order, title: draft.title, shortTitle: draft.editorialKey,
       kind: draft.kind, objective: draft.objective,
-      // Defaults da estrutura publicada; ativação permanece uma etapa separada.
+      // Parâmetros da estrutura existente, aprovados para a publicação deste núcleo.
       xp: draft.kind === 'boss' ? 220 : 100,
       passScore: draft.kind === 'boss' ? 75 : 0,
       // Estimativa didática, não limite: leitura a 150 palavras/min + 2 min por questão,
       // arredondada para o próximo múltiplo de 5. Não controla cronômetro ou conclusão.
       estimatedMinutes: Math.ceil((draft.sections.reduce((sum, section) => sum + section.body.split(/\s+/).length, 0) / 150 + questions.length * 2) / 5) * 5,
-      publication: { status: 'draft', releaseId: 'products-credit-intro-r1', releaseSequence: 3, changeImpact: 'new' },
+      publication: { status: 'published', releaseId: 'products-credit-intro-r1', releaseSequence: 3, changeImpact: 'new' },
       sourceIds: draft.sourceIds.map(remapSource),
       sections: draft.sections.map(section => ({ ...section, sourceIds: section.sourceIds.map(remapSource), ...rich(section.body) })),
       recall: draft.recall, questions,
@@ -116,7 +121,7 @@ export function compilePcCandidate(editorial) {
       candidate: {
         editorialId: draft.id, blockId: draft.candidateBlockId,
         prerequisiteId: index === 0 ? plan.prerequisiteId : PC_PLAN[index - 1].id,
-        parametersApproved: false
+        parametersApproved: true
       }
     };
   });
@@ -135,7 +140,7 @@ export function compilePcCandidate(editorial) {
     errors.push('published-prerequisite-changed');
   }
   if (errors.length) throw new Error(`Candidato PC inválido: ${errors.join(', ')}`);
-  return { status: 'draft', missions, sources, feedback, readingRequirements };
+  return { status: 'published', missions, sources, feedback, readingRequirements };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -143,18 +148,18 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (process.argv.includes('--write') || process.argv.includes('--check-generated')) {
     const target = new URL('../studies-content/banking-products-credit-v1.js', import.meta.url);
     const output = '// Gerado por node worker/scripts/studies-pc-candidate.mjs --write. Não editar.\n'
-      + '// Fonte editorial #565; preparação desativada; sem autorização de publicação por este artefato.\n'
+      + '// Fonte editorial #565; publicação do núcleo comum autorizada em 30/09/2026, 23:16 UTC.\n'
       + `export const PC_MISSIONS = Object.freeze(${JSON.stringify(candidate.missions, null, 2)});\n`
       + `export const PC_SOURCES = Object.freeze(${JSON.stringify(candidate.sources, null, 2)});\n`;
     if (process.argv.includes('--write')) await writeFile(target, output);
     else if ((await readFile(target, 'utf8')).replace(/\r\n/g, '\n') !== output) throw new Error('Artefato PC desatualizado; regenere sem editar o conteúdo aprovado.');
-    console.log('Artefato PC desativado: ' + (process.argv.includes('--write') ? 'gerado' : 'conferido'));
+    console.log('Artefato PC: ' + (process.argv.includes('--write') ? 'gerado' : 'conferido'));
   }
   // Resumo da preparação; não há opção de ativação via CLI ou ambiente.
   console.log(JSON.stringify({
     status: candidate.status, missions: candidate.missions.length,
     questions: candidate.feedback.length, optionReasons: candidate.feedback.reduce((sum, item) => sum + item.optionReasons.length, 0),
     sources: candidate.sources.length, readingRequirements: candidate.readingRequirements,
-    publicationReady: false
+    publicationReady: true
   }, null, 2));
 }

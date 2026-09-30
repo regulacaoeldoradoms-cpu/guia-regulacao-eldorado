@@ -26,8 +26,8 @@ test('conversão PC preserva conteúdo aprovado e mapeia IDs, fontes e recupera�
     assert.equal(mission.xp, mission.kind === 'boss' ? 220 : 100);
     assert.equal(mission.passScore, mission.kind === 'boss' ? 75 : 0);
     assert.equal(mission.candidate.prerequisiteId, index ? candidate.missions[index - 1].id : 'banking.mp.boss');
-    assert.equal(mission.candidate.parametersApproved, false);
-    assert.deepEqual(mission.sections.map(s => [s.id, s.type, s.heading, s.body]), draft.sections.map(s => [s.id, s.type, s.heading, s.body]));
+    assert.equal(mission.candidate.parametersApproved, true);
+    assert.deepEqual(mission.sections.map(s => [s.id, s.type, s.heading, s.body]), draft.sections.map(s => [s.id, s.type, s.heading, s.body.replace('Elas e esta revisão ainda são rascunhos, disponíveis aqui para revisão editorial, fora do aplicativo. ', '').replace('Os materiais PC permanecem rascunhos, acessíveis nestes documentos e fora do catálogo. ', '').replace('mas ficam expostos nesta prévia;', 'mas ficam expostos nesta prática;').replace(' Nenhuma regra de XP, limiar, publicação, desbloqueio ou revisão adaptativa foi criada neste rascunho.', '')]));
     assert.deepEqual(mission.recall, draft.recall);
     for (const [qi, question] of mission.questions.entries()) {
       const original = draft.questions[qi];
@@ -48,16 +48,18 @@ test('conversão PC preserva conteúdo aprovado e mapeia IDs, fontes e recupera�
   }
 });
 
-test('PC draft mantém catálogo, fontes e mapa ativos; publicação inválida é rejeitada', () => {
-  assert.ok(candidate.missions.every(m => m.publication.status === 'draft' && m.publication.releaseSequence === 3 && m.publication.changeImpact === 'new'));
-  assert.deepEqual(publishedCatalog([...baseline, ...candidate.missions]), baseline);
-  assert.equal(publicationSnapshot([...baseline, ...candidate.missions]).newCount, publicationSnapshot(baseline).newCount);
-  assert.equal(PUBLISHED_MISSIONS.length, 20);
-  assert.equal(PUBLISHED_MISSIONS.flatMap(m => m.questions).length, 122);
-  assert.equal(PLANNED_MISSIONS.length, 20);
-  assert.ok(candidate.sources.every(s => !STUDY_SOURCES.some(active => active.id === s.id)));
+test('PC aprovado entra no catálogo; draft equivalente e publicação inválida continuam recusados', () => {
+  assert.ok(candidate.missions.every(m => m.publication.status === 'published' && m.publication.releaseSequence === 3 && m.publication.changeImpact === 'new'));
+  const drafts = candidate.missions.map(m => ({...m, publication:{...m.publication,status:'draft'}}));
+  assert.deepEqual(publishedCatalog([...baseline, ...drafts]), baseline);
+  assert.deepEqual(publishedCatalog([...baseline, ...candidate.missions]), PUBLISHED_MISSIONS);
+  assert.equal(publicationSnapshot([...baseline, ...drafts]).newCount, publicationSnapshot(baseline).newCount);
+  assert.equal(PUBLISHED_MISSIONS.length, 37);
+  assert.equal(PUBLISHED_MISSIONS.flatMap(m => m.questions).length, 266);
+  assert.equal(PLANNED_MISSIONS.length, 37);
+  assert.ok(candidate.sources.every(s => STUDY_SOURCES.some(active => active.id === s.id)));
   const map = curriculumSnapshot(PUBLISHED_MISSIONS);
-  assert.equal(map.publishedBlocks, 2);
+  assert.equal(map.publishedBlocks, 3);
   assert.equal(map.totalBlocks, 43);
   assert.equal(map.readiness.status, 'not_measured');
   assert.ok(EXAM_PROFILES.every(profile => profile.referenceOnly));
