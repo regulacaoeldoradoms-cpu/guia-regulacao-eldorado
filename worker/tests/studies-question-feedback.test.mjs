@@ -12,23 +12,25 @@ const pilotMissionIds = new Set([
   'banking.sfn.cmn',
   'banking.sfn.bacen',
   'banking.sfn.copom',
-  'banking.sfn.cvm'
+  'banking.sfn.cvm',
+  'banking.sfn.operadores',
+  'banking.sfn.seguros-previdencia'
 ]);
 
-test('feedback pedagógico V1 cobre as quinze questões das cinco primeiras missões', () => {
+test('feedback pedagógico V1 cobre vinte e duas questões das sete primeiras missões', () => {
   assert.deepEqual(validateQuestionFeedback(PUBLISHED_MISSIONS), []);
-  assert.equal(QUESTION_FEEDBACK_V1.length, 15);
+  assert.equal(QUESTION_FEEDBACK_V1.length, 22);
   const pilotQuestions = PUBLISHED_MISSIONS
     .filter((mission) => pilotMissionIds.has(mission.id))
     .flatMap((mission) => mission.questions);
-  assert.equal(pilotQuestions.length, 15);
+  assert.equal(pilotQuestions.length, 22);
   assert.deepEqual(
     new Set(QUESTION_FEEDBACK_V1.map((item) => item.questionId)),
     new Set(pilotQuestions.map((item) => item.id))
   );
 });
 
-test('cada alternativa das cinco missões possui justificativa específica pós-resposta', () => {
+test('cada alternativa das sete missões possui justificativa específica pós-resposta', () => {
   for (const mission of PUBLISHED_MISSIONS.filter((item) => pilotMissionIds.has(item.id))) {
     for (const question of mission.questions) {
       const feedback = questionFeedbackById(question.id);
