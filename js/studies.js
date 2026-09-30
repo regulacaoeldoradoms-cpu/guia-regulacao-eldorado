@@ -519,6 +519,22 @@
     $('personalProgressLabel').textContent = `${m.completedPublished}/${m.publishedMissions} missões concluídas · ${m.availableCompletion}% do bloco publicado`;
     setBar('availabilityBar', m.campaignAvailability);
     setBar('personalProgressBar', m.availableCompletion);
+    const releaseNotice = $('contentReleaseNotice');
+    if (releaseNotice) {
+      const supported = Number(data.publicationProtocol || 0) === 1;
+      releaseNotice.hidden = !supported;
+      if (supported) {
+        const publication = data.publication || {};
+        const messages = [];
+        const newCount = Math.max(0, Number(publication.newCount || 0));
+        const revisionCount = Math.max(0, Number(publication.revisionRecommendedCount || 0));
+        if (newCount) messages.push(`${newCount} ${newCount === 1 ? 'nova missão disponível' : 'novas missões disponíveis'}`);
+        if (revisionCount) messages.push(`${revisionCount} ${revisionCount === 1 ? 'revisão conceitual recomendada' : 'revisões conceituais recomendadas'}`);
+        releaseNotice.textContent = messages.length
+          ? messages.join(' · ')
+          : 'Nenhum conteúdo novo ou revisão conceitual pendente.';
+      }
+    }
     renderCurriculum(data.curriculum);
 
     const activeAssessment = state.assessmentState?.active || null;

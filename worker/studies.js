@@ -12,7 +12,8 @@ import {
   missionById,
   missionByTopicId,
   questionById,
-  sourceMap
+  sourceMap,
+  publicationSnapshot
 } from './studies-content/manifest.js';
 import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
 import { questionFeedbackById } from './studies-content/question-feedback-v1.js';
@@ -769,6 +770,7 @@ async function handleBootstrap(env, user, origin) {
     recurringErrorMap(env, user.username)
   ]);
   const recentDomain = await recencyDomainSnapshot(env, user.username, learningEvidence);
+  const publication = publicationSnapshot(progress);
   return json({
     user,
     roundProtocol: 1,
@@ -778,6 +780,7 @@ async function handleBootstrap(env, user, origin) {
     pedagogyProtocol: 1,
     errorPatternProtocol: 1,
     domainProtocol: 1,
+    publicationProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: { ...metricValues, recurringErrors: recurringErrors.total },
     progress,
@@ -786,6 +789,7 @@ async function handleBootstrap(env, user, origin) {
     pedagogicalStates: pedagogicalStateMap(progress, learningEvidence, resumableSession),
     recurringErrors: recurringErrors.byTopic,
     recentDomain,
+    publication,
     attemptedQuestions,
     reviews,
     resumableSession,

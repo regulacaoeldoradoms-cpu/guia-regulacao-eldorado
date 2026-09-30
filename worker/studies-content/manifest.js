@@ -11,6 +11,11 @@ import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections }
 import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn-segmentos-revisados.js';
 import { OPERATORS_INSURANCE_SOURCES } from './sfn-aplicacao-operadores-seguros-v1.js';
 import { attachApplications } from './application-registry.js';
+import {
+  publishedCatalog,
+  publicationSnapshot as buildPublicationSnapshot,
+  validatePublicationCatalog
+} from './publication-registry.js';
 
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
@@ -95,9 +100,12 @@ function teachMission(mission) {
   });
 }
 
-export const PUBLISHED_MISSIONS = Object.freeze(
+export const PUBLISHED_MISSIONS = publishedCatalog(
   BASE_MISSIONS.map(teachMission).map(attachApplications)
 );
+
+export const publicationSnapshot = (progress = {}) =>
+  buildPublicationSnapshot(PUBLISHED_MISSIONS, progress);
 
 export function missionById(id) {
   return PUBLISHED_MISSIONS.find((mission) => mission.id === String(id || '')) || null;
@@ -117,7 +125,7 @@ export function sourceMap() {
 }
 
 export function validateTeachingCatalog(missions = PUBLISHED_MISSIONS) {
-  const errors = [];
+  const errors = [...validatePublicationCatalog(missions)];
   const catalog = new Map(missions.map((mission) => [mission.id, mission]));
   const sources = sourceMap();
   if (catalog.size !== missions.length) errors.push('duplicate-mission-id');

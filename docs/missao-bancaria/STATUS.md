@@ -153,7 +153,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 - **#512 — evidência de retenção:** permanece em validação final. Head atual `49fcdb3caffd9160d0678781f336d143ffb00bca`; validações específicas já passaram e a auditoria global ainda precisa concluir antes do merge.
 - **#519 — avaliação independente:** continua somente especificação, bloqueada para implementação de produção até a #512 estar integrada/estável.
 
-Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~96%; Fase 2 ~38% com feedback completo, estados pedagógicos, erros recorrentes e domínio por recência em cadeia de validação; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~36%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
+Placar de referência da Fase 2: Fase 1 = 100% encerrada; motor técnico ~97%; Fase 2 ~55% com os requisitos centrais do motor implementados em cadeia de validação, incluindo publicação incremental; cobertura curricular publicada 1/43 blocos (~2,3%); projeto completo ~37%. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova. Os percentuais são estimativas de engenharia/escopo, não medida de aprendizado nem prontidão para prova.
 
 ## Nova entrega empilhada — retomada controlada de sessão
 
@@ -466,6 +466,49 @@ Validação:
 
 Próximo requisito após C3: publicação incremental de novas missões com preservação integral do histórico e indicador de conteúdo novo.
 
+
+## Fase 2 — Recorte C4: publicação incremental
+
+Documento: `60-FASE2-PUBLICACAO-INCREMENTAL.md`.  
+Branch: `feat/missao-bancaria-fase2-publicacao-incremental`, empilhada sobre o Recorte C3.
+
+Objetivo:
+- publicar nova missão por dados, sem função específica por aula;
+- permitir missão em `draft` sem expô-la ao aluno;
+- preservar conteúdo existente ao acrescentar uma nova release;
+- sinalizar conteúdo novo ainda não iniciado;
+- distinguir revisão editorial de mudança conceitual relevante.
+
+Registro declarativo:
+- `status`: `draft` ou `published`;
+- `releaseId`;
+- `releaseSequence`;
+- `changeImpact`: `baseline`, `new`, `editorial` ou `conceptual`.
+
+Compatibilidade:
+- as nove missões atuais recebem automaticamente a release-base `sfn-foundation-r1`, sequência 1;
+- `contentRelease: sfn-v1.2` é preservado para consumidores legados;
+- o novo contrato usa `publicationProtocol: 1` e o objeto `publication`;
+- nenhuma tabela ou migração é criada.
+
+Indicadores:
+- `newCount/newMissionIds` para missões publicadas depois da baseline e ainda não iniciadas;
+- `revisionRecommendedCount/revisionRecommendedIds` somente para mudança conceitual em conteúdo já visto;
+- mudança editorial simples não exige refazer missão.
+
+Teste de aceite estrutural:
+- três missões sintéticas de estruturas diferentes passam pelo mesmo registro;
+- uma quarta missão de release posterior é adicionada sem alterar o motor;
+- a quarta aparece como nova;
+- o objeto de progresso das três anteriores permanece integralmente igual;
+- missão em `draft` não entra no catálogo publicado.
+
+Próximo passo depois do C4: consolidar a cadeia C1–C4 na `main`, confirmar publicação e executar a avaliação técnica/humana do critério de aceite da Fase 2 antes de encerrá-la.
+
+
+### Hardening do Recorte C4
+
+O registro de publicação foi reforçado para falhar fechado também em runtime: `publishedCatalog()` executa a validação dos metadados antes de compor o catálogo e interrompe a publicação quando houver `status`, `changeImpact`, `releaseId` ou `releaseSequence` explícitos inválidos. O teste do recorte exige essa falha; não há relaxamento de CI nem normalização silenciosa para `published`.
 
 ### C3 — correção de ausência de evidência
 

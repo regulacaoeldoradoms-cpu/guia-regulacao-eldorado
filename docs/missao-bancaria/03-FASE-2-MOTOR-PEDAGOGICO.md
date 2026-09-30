@@ -13,7 +13,7 @@ Recorte A: **catálogo pedagógico declarativo**, documentado em `52-FASE2-CATAL
 
 A primeira correção estrutural remove do manifesto a necessidade de conhecer funções de anexação específicas por grupo de aulas. O conteúdo existente deve permanecer idêntico para o usuário e para o histórico; a mudança é arquitetural e prepara a publicação incremental exigida por esta fase.
 
-O Recorte A foi integrado pela PR #547. O contrato reutilizável de feedback pós-resposta percorre os Recortes B–B4 e fecha o primeiro bloco. O Recorte C1 implementa os seis estados pedagógicos; o C2 mede erros recorrentes. O recorte C3 ativo implementa domínio ponderado por recência, separado de cobertura, XP e prontidão.
+O Recorte A foi integrado pela PR #547. O contrato reutilizável de feedback pós-resposta percorre os Recortes B–B4 e fecha o primeiro bloco. Os Recortes C1–C3 implementam estados pedagógicos, erros recorrentes e domínio por recência. O recorte C4 ativo fecha o contrato de publicação incremental e preservação de histórico.
 
 ### Unidade pedagógica padrão
 Cada missão deve suportar:
