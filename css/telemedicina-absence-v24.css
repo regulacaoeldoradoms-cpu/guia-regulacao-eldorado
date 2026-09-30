@@ -95,28 +95,46 @@
 
 .telemedicine-page .tm-absence-request-option {
   min-width: 0;
-  min-height: 64px;
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 10px 11px;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
   border: 1px solid #c9d5dc;
   border-radius: 11px;
   background: #f8fbfd;
   color: #17394f;
   cursor: pointer;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.telemedicine-page .tm-absence-request-option input {
-  flex: 0 0 auto;
-  margin-top: 3px;
+/* O desktop V16 aplica width:100% e min-height:48px a todo input do
+   formulário. Radios desta decisão precisam neutralizar explicitamente essa
+   herança para não empurrar o texto para fora do cartão. */
+.telemedicine-page .tm-absence-request-option input[type="radio"] {
+  position: static !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px !important;
+  margin: 2px 0 0 !important;
+  padding: 0 !important;
+  flex: 0 0 18px !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
   accent-color: #b12d3b;
 }
 
 .telemedicine-page .tm-absence-request-option span {
   min-width: 0;
+  width: 100%;
   display: grid;
   gap: 3px;
+  overflow-wrap: anywhere;
 }
 
 .telemedicine-page .tm-absence-request-option strong {
@@ -170,6 +188,66 @@ html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option
 html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option.no:has(input:checked) {
   border-color: #8195a2;
   background: #24343e;
+}
+
+/* V43.1 — correção estritamente scoped ao editor Alterar situação.
+   O CSS V36 usa dois IDs para o painel de falta e, por especificidade, podia
+   preservar o fundo claro mesmo quando o Portal estava no tema escuro. */
+#outcomeEditModal .tm-absence-request-field {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#outcomeEditModal .tm-absence-request-options {
+  width: 100%;
+  align-items: stretch;
+}
+
+#outcomeEditModal .tm-absence-request-option {
+  width: 100%;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal #outcomeEditAbsence {
+  background: #351f2a !important;
+  color: #ffced3 !important;
+  border-color: #6e3542 !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal #outcomeEditAbsence .portal-field > label,
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-field legend,
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-question {
+  color: #f4dfe3 !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal #outcomeEditAbsence textarea {
+  background: var(--portal-theme-input) !important;
+  color: var(--portal-theme-text) !important;
+  border-color: var(--portal-theme-border) !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-field {
+  background: #281920 !important;
+  border-color: #74424b !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-option {
+  background: #142b3b !important;
+  color: #e5eef5 !important;
+  border-color: #516876 !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-option small {
+  color: #aec0cc !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-option.yes:has(input:checked) {
+  background: #45232b !important;
+  border-color: #d65d6b !important;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page #outcomeEditModal .tm-absence-request-option.no:has(input:checked) {
+  background: #24343e !important;
+  border-color: #8195a2 !important;
 }
 
 .telemedicine-page .tm-condition-ready-field {
