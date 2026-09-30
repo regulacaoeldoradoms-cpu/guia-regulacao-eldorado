@@ -39,6 +39,6 @@ assert.match(mobile, /const discharged = followupMode === 'discharge';/);
 assert.match(mobile, /notes: discharged \? '' : form\.elements\.notes\.value\.trim\(\)/);
 
 assert.match(html, /data-withdrawal-reason="v42"/);
-assert.match(html, /telemedicina-absence-v24\.js\?v=20260924-1/);
+assert.match(html, /telemedicina-absence-v24\.js\?v=20260930-1/);
 
 console.log('Telemedicina Motivo da Desistência V42: OK');
