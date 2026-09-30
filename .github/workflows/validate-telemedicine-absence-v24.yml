@@ -1,4 +1,4 @@
-name: Validar Telemedicina Falta V24
+name: Validar Telemedicina Falta V24/V43
 
 on:
   pull_request:
@@ -10,9 +10,12 @@ on:
       - 'js/telemedicina.js'
       - 'js/telemedicina-mobile-v9.js'
       - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
       - 'worker/telemedicine-rules.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'worker/tests/telemedicine-absence-request-v43.test.mjs'
       - 'docs/TELEMEDICINA-FALTA-V24.md'
+      - 'docs/TELEMEDICINA-FALTA-SOLICITACAO-V43.md'
       - '.github/workflows/validate-telemedicine-absence-v24.yml'
   push:
     branches: [main]
@@ -24,9 +27,12 @@ on:
       - 'js/telemedicina.js'
       - 'js/telemedicina-mobile-v9.js'
       - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
       - 'worker/telemedicine-rules.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'worker/tests/telemedicine-absence-request-v43.test.mjs'
       - 'docs/TELEMEDICINA-FALTA-V24.md'
+      - 'docs/TELEMEDICINA-FALTA-SOLICITACAO-V43.md'
       - '.github/workflows/validate-telemedicine-absence-v24.yml'
 
 jobs:
@@ -45,9 +51,11 @@ jobs:
           node --check js/telemedicina.js
           node --check js/telemedicina-mobile-v9.js
           node --input-type=module --check < worker/telemedicine.js
+          node --input-type=module --check < worker/telemedicine-router-v2.js
           node --input-type=module --check < worker/telemedicine-rules.js
           cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
           node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
+          node worker/tests/telemedicine-absence-request-v43.test.mjs
       - name: Conferir contrato da falta V24
         shell: bash
         run: |
@@ -55,19 +63,24 @@ jobs:
           test -f css/telemedicina-absence-v24.css
           test -f js/telemedicina-absence-v24.js
           test -f docs/TELEMEDICINA-FALTA-V24.md
-          grep -q 'telemedicina-absence-v24.css?v=20260908-2' telemedicina/index.html
-          grep -q 'telemedicina-absence-v24.js?v=20260924-1' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.css?v=20260930-1' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.js?v=20260930-1' telemedicina/index.html
           grep -q 'data-absence-record="v24"' telemedicina/index.html
+          grep -q 'data-absence-request="v43"' telemedicina/index.html
           grep -q "ABSENCE_MODE = 'absence'" js/telemedicina-absence-v24.js
           grep -q "ABSENCE_MODE, 'Falta'" js/telemedicina-absence-v24.js
           grep -q 'Justificativa da falta' js/telemedicina-absence-v24.js
           grep -q 'SOLICITAR NOVAMENTE' js/telemedicina-absence-v24.js
           grep -q "\['discharge', 'scheduled', 'conditional', 'absence'\]" worker/telemedicine.js
-          grep -q "absencePendingRequest: absence" worker/telemedicine.js
+          grep -q "absencePendingRequest: absence && absenceNeedsRequest" worker/telemedicine.js
+          grep -q "absencePendingRequest: absence && absenceNeedsRequest" worker/telemedicine-router-v2.js
+          grep -q "absenceNeedsRequest" js/telemedicina.js
+          grep -q "absenceNeedsRequest" js/telemedicina-mobile-v9.js
           grep -q "eventType: absence ? 'falta' : 'consulta'" worker/telemedicine.js
           grep -q "if (followup?.absencePendingRequest === true) return 'SOLICITAR';" worker/telemedicine-rules.js
           grep -q "deriveFollowupStatus(absence.*'SOLICITAR'" worker/tests/telemedicine-rules.test.mjs
           grep -q 'Falta pendente deriva `SOLICITAR`' docs/TELEMEDICINA-FALTA-V24.md
+          grep -q 'Não solicitar novamente' docs/TELEMEDICINA-FALTA-SOLICITACAO-V43.md
       - name: Garantir rota sem movimento
         shell: bash
         run: |
