@@ -47,10 +47,10 @@ assert.match(legacyWorker, /absencePendingRequest: absenceNeedsRequest/);
 assert.match(legacyWorker, /active: absenceNeedsRequest/);
 assert.match(legacyWorker, /typeof input\.absenceNeedsRequest === 'boolean'/);
 
-assert.match(absenceUi, /name="consultAbsenceRequest" value="yes"/);
-assert.match(absenceUi, /name="consultAbsenceRequest" value="no"/);
-assert.match(absenceUi, /name="absenceNeedsRequest" value="yes"/);
-assert.match(absenceUi, /name="absenceNeedsRequest" value="no"/);
+assert.match(absenceUi, /absenceRequestMarkup\('consultAbsenceRequest'/);
+assert.match(absenceUi, /absenceRequestMarkup\('absenceNeedsRequest'/);
+assert.match(absenceUi, /name="\$\{name\}" value="yes"/);
+assert.match(absenceUi, /name="\$\{name\}" value="no"/);
 assert.match(absenceUi, /Informe se a falta deve gerar uma nova solicitação/);
 
 assert.match(desktop, /body\.absenceNeedsRequest = requestChoice\.value === 'yes'/);
