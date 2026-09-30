@@ -817,24 +817,38 @@
     const localSections = [...new Set(refs
       .filter((ref) => ref?.missionId === mission?.id && typeof ref.sectionId === 'string')
       .map((ref) => ref.sectionId))];
-    if (!localSections.length) return;
 
-    const links = document.createElement('div');
-    links.className = 'study-feedback-review-links';
-    const label = document.createElement('span');
-    label.textContent = 'Rever conceito:';
-    links.append(label);
-    for (const sectionId of localSections) {
-      const section = mission.sections?.find((item) => item.id === sectionId);
-      if (!section) continue;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'study-feedback-review';
-      button.textContent = section.heading;
-      button.addEventListener('click', () => reader?.openSection(sectionId));
-      links.append(button);
+    if (localSections.length) {
+      const links = document.createElement('div');
+      links.className = 'study-feedback-review-links';
+      const label = document.createElement('span');
+      label.textContent = 'Rever conceito:';
+      links.append(label);
+      for (const sectionId of localSections) {
+        const section = mission.sections?.find((item) => item.id === sectionId);
+        if (!section) continue;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'study-feedback-review';
+        button.textContent = section.heading;
+        button.addEventListener('click', () => reader?.openSection(sectionId));
+        links.append(button);
+      }
+      if (links.querySelector('button')) feedback.append(links);
     }
-    if (links.querySelector('button')) feedback.append(links);
+
+    const externalLabels = [...new Set(refs
+      .filter((ref) => ref?.missionId && ref.missionId !== mission?.id && typeof ref.sectionId === 'string')
+      .map((ref) => {
+        const targetMission = state.data?.missions?.find((item) => item.id === ref.missionId);
+        const targetSection = targetMission?.sections?.find((item) => item.id === ref.sectionId);
+        if (!targetMission || !targetSection) return '';
+        return `${targetMission.shortTitle || targetMission.title}: ${targetSection.heading}`;
+      })
+      .filter(Boolean))];
+    if (externalLabels.length) {
+      line('Revisar depois: ', externalLabels.join(' · '));
+    }
   }
 
   async function answerQuestion(questionId) {
