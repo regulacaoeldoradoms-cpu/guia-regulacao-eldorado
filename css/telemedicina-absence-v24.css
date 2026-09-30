@@ -53,6 +53,125 @@
   display: none !important;
 }
 
+.telemedicine-page .tm-absence-fields,
+.telemedicine-page .tm-absence-reason-label {
+  min-width: 0;
+}
+
+.telemedicine-page .tm-absence-reason-label {
+  display: grid;
+  gap: 7px;
+}
+
+.telemedicine-page .tm-absence-request-field {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #d8aeb4;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.telemedicine-page .tm-absence-request-field legend {
+  padding: 0 5px;
+  color: #77353e;
+  font-weight: 800;
+  font-size: .9rem;
+}
+
+.telemedicine-page .tm-absence-request-question {
+  display: block;
+  margin-bottom: 9px;
+  color: #4b3b3f;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.telemedicine-page .tm-absence-request-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.telemedicine-page .tm-absence-request-option {
+  min-width: 0;
+  min-height: 64px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 11px;
+  border: 1px solid #c9d5dc;
+  border-radius: 11px;
+  background: #f8fbfd;
+  color: #17394f;
+  cursor: pointer;
+}
+
+.telemedicine-page .tm-absence-request-option input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: #b12d3b;
+}
+
+.telemedicine-page .tm-absence-request-option span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.telemedicine-page .tm-absence-request-option strong {
+  font-size: .9rem;
+  line-height: 1.2;
+}
+
+.telemedicine-page .tm-absence-request-option small {
+  color: #647887;
+  font-size: .76rem;
+  line-height: 1.25;
+}
+
+.telemedicine-page .tm-absence-request-option:has(input:checked) {
+  border-color: #b12d3b;
+  background: #fff1f3;
+  box-shadow: inset 0 0 0 1px rgba(177, 45, 59, .12);
+}
+
+.telemedicine-page .tm-absence-request-option.no:has(input:checked) {
+  border-color: #657784;
+  background: #f2f5f7;
+  box-shadow: inset 0 0 0 1px rgba(101, 119, 132, .12);
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-field {
+  border-color: #74424b;
+  background: #251a1f;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-field legend,
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-question {
+  color: #f1d8dd;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option {
+  border-color: #516876;
+  background: #132a38;
+  color: #e5eef5;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option small {
+  color: #aec0cc;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option:has(input:checked) {
+  border-color: #d65d6b;
+  background: #45232b;
+}
+
+html[data-portal-theme="dark"] body.telemedicine-page .tm-absence-request-option.no:has(input:checked) {
+  border-color: #8195a2;
+  background: #24343e;
+}
+
 .telemedicine-page .tm-condition-ready-field {
   display: grid;
   align-content: start;
@@ -146,6 +265,10 @@
 
   .telemedicine-page .tm-inline-consult-form .tm-condition-ready-field {
     min-width: 0;
+  }
+
+  .telemedicine-page .tm-absence-request-options {
+    grid-template-columns: 1fr;
   }
 }
 
