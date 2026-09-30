@@ -517,6 +517,52 @@ async function metrics(env, username, progress) {
   };
 }
 
+async function recurringErrorMap(env, username) {
+  const result = await env.AUTH_DB.prepare(`WITH ranked AS (
+      SELECT topic_id, question_id, correct, attempted_at,
+        ROW_NUMBER() OVER (
+          PARTITION BY topic_id, question_id
+          ORDER BY attempted_at DESC, rowid DESC
+        ) AS recency_rank,
+        COUNT(*) OVER (
+          PARTITION BY topic_id, question_id
+        ) AS total_attempts,
+        SUM(CASE WHEN correct=0 THEN 1 ELSE 0 END) OVER (
+          PARTITION BY topic_id, question_id
+        ) AS wrong_attempts
+      FROM study_attempts
+      WHERE username=?
+    )
+    SELECT topic_id, question_id, total_attempts, wrong_attempts, attempted_at AS last_attempt_at
+    FROM ranked
+    WHERE recency_rank=1 AND wrong_attempts>=2 AND correct=0
+    ORDER BY topic_id, wrong_attempts DESC, last_attempt_at DESC`).bind(username).all();
+
+  const byTopic = Object.fromEntries(PUBLISHED_MISSIONS.map((mission) => [
+    mission.topicId,
+    { count: 0, items: [] }
+  ]));
+  let total = 0;
+
+  for (const row of result.results || []) {
+    const topicId = String(row.topic_id || '');
+    const questionId = String(row.question_id || '');
+    const mission = missionByTopicId(topicId);
+    if (!mission?.questions?.some((question) => question.id === questionId)) continue;
+    if (!byTopic[topicId]) byTopic[topicId] = { count: 0, items: [] };
+    byTopic[topicId].items.push({
+      questionId,
+      wrongAttempts: Math.max(0, Number(row.wrong_attempts || 0)),
+      totalAttempts: Math.max(0, Number(row.total_attempts || 0)),
+      lastAttemptAt: row.last_attempt_at || ''
+    });
+    byTopic[topicId].count++;
+    total++;
+  }
+
+  return { total, byTopic };
+}
+
 async function attemptedQuestionsMap(env, username) {
   const result = await env.AUTH_DB.prepare(`SELECT topic_id, question_id
     FROM study_attempts
@@ -612,12 +658,13 @@ async function resumableStudySession(env, username) {
 
 async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
-  const [metricValues, learningEvidence, attemptedQuestions, reviews, resumableSession] = await Promise.all([
+  const [metricValues, learningEvidence, attemptedQuestions, reviews, resumableSession, recurringErrors] = await Promise.all([
     metrics(env, user.username, progress),
     learningEvidenceMap(env, user.username),
     attemptedQuestionsMap(env, user.username),
     dueReviewRows(env, user.username),
-    resumableStudySession(env, user.username)
+    resumableStudySession(env, user.username),
+    recurringErrorMap(env, user.username)
   ]);
   return json({
     user,
@@ -626,12 +673,14 @@ async function handleBootstrap(env, user, origin) {
     resumeProtocol: 1,
     assessmentProtocol: 1,
     pedagogyProtocol: 1,
+    errorPatternProtocol: 1,
     contentRelease: 'sfn-v1.2',
-    metrics: metricValues,
+    metrics: { ...metricValues, recurringErrors: recurringErrors.total },
     progress,
     curriculum: curriculumSnapshot(PUBLISHED_MISSIONS, progress),
     learningEvidence,
     pedagogicalStates: pedagogicalStateMap(progress, learningEvidence, resumableSession),
+    recurringErrors: recurringErrors.byTopic,
     attemptedQuestions,
     reviews,
     resumableSession,
