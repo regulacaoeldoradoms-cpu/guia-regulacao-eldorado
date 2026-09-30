@@ -175,12 +175,19 @@ async function recordConsultationAtomic(env, user, input = {}) {
   const discharged = followupMode === 'discharge';
   const conditional = followupMode === 'conditional';
   const absence = followupMode === 'absence';
+  // V43: exigir a decisão no cliente novo, mas manter compatibilidade com
+  // versões em cache que ainda tratavam toda falta como nova solicitação.
+  const absenceNeedsRequest = absence
+    ? (typeof input.absenceNeedsRequest === 'boolean' ? input.absenceNeedsRequest : true)
+    : false;
   const inputResolution = clean(input.resolution, 2500);
   const inputNotes = clean(input.notes, 1500);
   const absenceReason = absence ? inputNotes : '';
   const withdrawn = normalizeText(inputResolution) === 'PACIENTE DESISTIU DO TRATAMENTO';
   const notes = discharged && !withdrawn ? '' : inputNotes;
-  const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
+  const needsReturn = hasExplicitMode
+    ? (absence ? absenceNeedsRequest : !discharged)
+    : (discharged ? false : input.needsReturn !== false);
   const explicitDueInput = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
   const explicitDue = dateValid(explicitDueInput) ? normalizeReturnDueDate(explicitDueInput) : '';
   const returnDays = followupMode === 'scheduled' && !explicitDue ? Number(input.returnDays || 0) : 0;
@@ -254,6 +261,7 @@ async function recordConsultationAtomic(env, user, input = {}) {
     discharged,
     absence,
     absenceReason,
+    absenceNeedsRequest,
     needsReturn,
     returnDueDate,
     returnDays: Number.isInteger(returnDays) ? returnDays : 0,
@@ -277,7 +285,8 @@ async function recordConsultationAtomic(env, user, input = {}) {
     discharged,
     absence,
     absenceReason,
-    absencePendingRequest: absence,
+    absenceNeedsRequest,
+    absencePendingRequest: absence && absenceNeedsRequest,
     returnConditionType,
     returnConditionDetail,
     returnDueDate,
