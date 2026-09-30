@@ -380,3 +380,25 @@ test('erro recorrente só permanece ativo quando a tentativa mais recente contin
   assert.equal(bootstrap.body.recurringErrors[lesson.topicId].count,0);
   assert.deepEqual(bootstrap.body.recurringErrors[lesson.topicId].items,[]);
 });
+
+
+test('domínio recente usa tentativas reais e permanece provisório sem revisão',async t=>{
+  const {call,start,lesson}=await fixture(t);
+  const question=lesson.questions[0];
+
+  const sessionId=await start(lesson);
+  const correct=await call('attempts',{sessionId,questionId:question.id,selectedOption:0});
+  assert.equal(correct.status,200);
+  assert.equal(correct.body.correct,true);
+  assert.equal((await call('sessions/'+sessionId,{durationSeconds:0},{method:'PATCH'})).status,200);
+
+  const bootstrap=await call('bootstrap');
+  assert.equal(bootstrap.body.domainProtocol,1);
+  const domain=bootstrap.body.recentDomain.byTopic[lesson.topicId];
+  assert.equal(domain.immediateScore,100);
+  assert.equal(domain.score,70);
+  assert.equal(domain.retentionScore,null);
+  assert.equal(domain.status,'provisional');
+  assert.equal(bootstrap.body.recentDomain.observedTopics,1);
+  assert.equal(bootstrap.body.recentDomain.overallScore,70);
+});
