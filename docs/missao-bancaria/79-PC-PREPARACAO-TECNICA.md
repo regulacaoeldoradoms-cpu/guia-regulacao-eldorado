@@ -41,7 +41,17 @@ node --test worker/tests/studies-curriculum.test.mjs worker/tests/studies-public
 node testing/browser/node_modules/@playwright/test/cli.js test --config=testing/browser/studies-reader.config.mjs studies-pc.spec.mjs
 ```
 
-SQLite e API Chromium são sintéticos. Esses resultados não são homologação autenticada de produção, revisão normativa integral ou aceite humano. O PR técnico é draft sobre #565; CI obrigatória na base/SHA efetivos permanece gate de integração.
+SQLite e API Chromium são sintéticos. Esses resultados não são homologação autenticada de produção, revisão normativa integral ou aceite humano. O [PR técnico #568](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/568) é draft sobre #565; CI obrigatória na base/SHA efetivos permanece gate de integração.
+
+## Bloqueio específico da CI
+
+No head `a540ffe945a21e9338b69d5d9c13be41dba900e1`, [678 testes Worker passaram](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/36788708193/job/110136209201), além de sintaxe/frontend. O passo seguinte usa uma expressão textual ampla em `.github/workflows/validate-missao-bancaria.yml` e rejeita seis ocorrências legítimas:
+
+- PC-01A: aviso de exemplos sem CPF; não presumir incapacidade a partir de diagnóstico; não emitir diagnóstico jurídico de pessoa real.
+- PC-10: distinguir recuperação de crédito de diagnóstico de aprendizagem.
+- Chefe: título de recuperação e ressalva de que os grupos não são diagnóstico automático por conceito.
+
+O erro é o detector de termos, sem falha nos testes Worker. Chromium da CI foi suspenso por dependência; sete Chromium locais passaram. Conteúdo revisado não foi reescrito para ocultar palavras, nem o gate desativado/relaxado. Recomenda-se decidir uma correção contextual restrita do detector com testes negativos de isolamento, antes de seguir para ativação. Preview Worker legado continua separado; não foi investigado novamente.
 
 ## Próxima ação e limites
 
