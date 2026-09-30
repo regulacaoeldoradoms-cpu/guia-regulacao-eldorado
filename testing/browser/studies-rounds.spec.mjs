@@ -24,7 +24,7 @@ async function setup(page, mode = '') {
   const payload = {
     roundProtocol: 1, pedagogyProtocol: mode === 'pedagogy' ? 1 : 0,
     errorPatternProtocol: mode === 'recurringErrors' ? 1 : 0,
-    domainProtocol: mode === 'domain' ? 1 : 0,
+    domainProtocol: ['domain','domainEmpty'].includes(mode) ? 1 : 0,
     user: { username: 'wellyton', name: 'Estudante sintético' }, missions: [originMission, mission],
     progress: { [originMission.topicId]: { coverageState: 3 } },
     recurringErrors: mode === 'recurringErrors'
@@ -38,7 +38,15 @@ async function setup(page, mode = '') {
             [mission.topicId]:{score:74.3,immediateScore:71.9,retentionScore:80,attemptCount:3,status:'review_observed',label:'Com revisão posterior'}
           }
         }
-      : {overallScore:null,observedTopics:0,totalTopics:2,byTopic:{}},
+      : mode === 'domainEmpty'
+        ? {
+            overallScore:null,observedTopics:0,totalTopics:2,
+            byTopic:{
+              [originMission.topicId]:{score:null,immediateScore:null,retentionScore:null,attemptCount:0,status:'not_observed',label:'Ainda não medido'},
+              [mission.topicId]:{score:null,immediateScore:null,retentionScore:null,attemptCount:0,status:'not_observed',label:'Ainda não medido'}
+            }
+          }
+        : {overallScore:null,observedTopics:0,totalTopics:2,byTopic:{}},
     attemptedQuestions: {}, reviews: mode === 'review' ? [{ id: 'review-fixture', missionId: mission.id, title: 'Revisão sintética', cycle: 1, dueAt: '2026-09-25 12:00:00' }] : [],
     metrics: { xp: 0, level: 1, levelTitle: 'Iniciante', nextLevelXp: 150, questions: 0, accuracy: 0, hoursSeconds: 0, reviewsDue: 0, recurringErrors: mode === 'recurringErrors' ? 1 : 0, publishedMissions: 2, plannedMissions: 9, campaignAvailability: 22.2, completedPublished: 1, campaignProgress: 0, availableCompletion: 50, streak: { current: 0, best: 0 } }
   };
@@ -252,5 +260,16 @@ test('dashboard separa domínio recente de acerto acumulado quando o protocolo e
   await expect(page.locator('#metricRecentDomainMeta')).toContainText('1/2 tópicos com evidência');
   const card=page.locator('[data-mission-id="fixture.lesson"]');
   await expect(card).toContainText('Domínio recente: 74.3% · Com revisão posterior');
+  clean();
+});
+
+test('domínio sem evidência permanece não medido e nunca vira zero artificial', async ({ page }) => {
+  const {clean}=await setup(page,'domainEmpty');
+  await expect(page.locator('#metricRecentDomainCard')).toBeVisible();
+  await expect(page.locator('#metricRecentDomain')).toHaveText('—');
+  await expect(page.locator('#metricRecentDomainMeta')).toHaveText('Ainda não medido');
+  const card=page.locator('[data-mission-id="fixture.lesson"]');
+  await expect(card).toContainText('Domínio recente: ainda não medido');
+  await expect(card).not.toContainText('Domínio recente: 0%');
   clean();
 });
