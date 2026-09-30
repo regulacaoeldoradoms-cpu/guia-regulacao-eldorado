@@ -6,7 +6,7 @@ Decisão permanente registrada em 08/09/2026.
 
 Ampliar o formulário **Registrar teleconsulta** para representar corretamente situações que encerram o acompanhamento por Telemedicina e situações em que uma condição para retorno já foi cumprida.
 
-A V25 complementa a V24 de falta sem alterar as regras já consolidadas de alta, retorno por prazo/data e falta.
+A V25 complementa a V24 de falta sem alterar as regras então consolidadas de alta e retorno. A regra de falta foi posteriormente refinada pela V43: somente faltas marcadas explicitamente como **Solicitar novamente** entram em `SOLICITAR`.
 
 ## Novos desfechos sem alerta
 
@@ -101,7 +101,7 @@ A V25 preserva a decisão anterior de manter `/telemedicina/` sem animações, t
 
 ## Critérios de regressão
 
-1. Falta continua exigindo justificativa e entrando em `SOLICITAR`.
+1. Falta continua exigindo justificativa; desde a V43, ela entra em `SOLICITAR` somente quando **Solicitar novamente** for escolhido.
 2. Alta continua encerrando sem retorno.
 3. Desistiu e Encaminhado para presencial ficam somente no histórico e sem alertas.
 4. Retorno condicional não realizado continua em `SEM PROGRAMAÇÃO`.
