@@ -41,28 +41,28 @@ test('pesos e quantidade de questões reproduzem os editais-base adotados', () =
   assert.equal(caixa.disciplines.find((item) => item.areaId === 'sales-service').questions, 10);
 });
 
-test('nove missões publicadas significam um bloco disponível, não curso concluído', () => {
+test('vinte missões publicadas significam dois blocos disponíveis, não curso concluído', () => {
   const snapshot = curriculumSnapshot(PUBLISHED_MISSIONS, {});
-  assert.equal(PUBLISHED_MISSIONS.length, 9);
+  assert.equal(PUBLISHED_MISSIONS.length, 20);
   assert.equal(snapshot.totalAreas, 12);
   assert.equal(snapshot.totalBlocks, 43);
   assert.equal(snapshot.startedAreas, 1);
   assert.equal(snapshot.completedAreas, 0);
-  assert.equal(snapshot.publishedBlocks, 1);
+  assert.equal(snapshot.publishedBlocks, 2);
   assert.equal(snapshot.completedBlocks, 0);
-  assert.equal(snapshot.availabilityPercent, 2.3);
+  assert.equal(snapshot.availabilityPercent, 4.7);
   assert.equal(snapshot.progressPercent, 0);
   assert.equal(snapshot.readiness.status, 'not_measured');
   assert.match(snapshot.readiness.explanation, /simulados representativos/);
   const banking = snapshot.areas.find((item) => item.id === 'banking');
   assert.equal(banking.started, true);
-  assert.equal(banking.publishedBlocks, 1);
+  assert.equal(banking.publishedBlocks, 2);
   assert.equal(banking.totalBlocks, 6);
   assert.equal(banking.completed, false);
 });
 
 test('concluir todo o primeiro bloco não marca Conhecimentos Bancários nem o curso como completos', () => {
-  const progress = Object.fromEntries(PUBLISHED_MISSIONS.map((mission) => [
+  const progress = Object.fromEntries(PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.')).map((mission) => [
     mission.topicId, { coverageState: 3 }
   ]));
   const snapshot = curriculumSnapshot(PUBLISHED_MISSIONS, progress);

@@ -6,6 +6,19 @@ const fields = ['quandoSolicitar', 'informacoesObrigatorias', 'examesObrigatorio
   'examesCondicionais', 'complementares', 'ajudaPriorizacao'];
 const blocks = '#detailPanel .content-grid > .content-block';
 
+async function selectAccountTheme(page, theme) {
+  // Startup hydration reapplies the synthetic account preference after 280 ms.
+  // Update that preference before changing the rendered theme, so late hydration
+  // agrees with the state being measured. Both APIs remain locally intercepted.
+  await page.evaluate(async value => {
+    await window.RegulationAuth.updateSecurity({ interfaceTheme: value });
+    await window.PortalInteractions.setPreferences({ theme: value });
+    // Exercise late account hydration explicitly, rather than relying on timing.
+    window.PortalTheme.hydrateCachedAccount();
+  }, theme);
+  await expect(page.locator('html')).toHaveAttribute('data-portal-theme', theme);
+}
+
 // Real product renderer and styles, with synthetic content and intercepted APIs.
 for (const empty of [false, true]) {
   test(`medical content contrast: ${empty ? 'empty states' : 'six populated blocks'}`, async ({ page, context }) => {
@@ -40,12 +53,10 @@ for (const empty of [false, true]) {
     await expect(page.locator('#detailPanel .clinical-alert li')).not.toHaveCSS('color', white);
 
     const colors = () => texts.evaluateAll(nodes => nodes.map(node => getComputedStyle(node).color));
-    await page.evaluate(() => window.PortalTheme.apply('light'));
-    await expect(page.locator('html')).toHaveAttribute('data-portal-theme', 'light');
+    await selectAccountTheme(page, 'light');
     for (const item of await texts.all()) await expect(item).not.toHaveCSS('color', white);
     const lightColors = await colors();
-    await page.evaluate(() => window.PortalTheme.apply('dark'));
-    await expect(page.locator('html')).toHaveAttribute('data-portal-theme', 'dark');
+    await selectAccountTheme(page, 'dark');
     await page.emulateMedia({ media: 'print' });
     // Screen-only override: printing retains the original light text colors.
     expect(await colors()).toEqual(lightColors);

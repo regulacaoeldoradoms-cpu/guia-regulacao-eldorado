@@ -20,7 +20,7 @@ const pilotMissionIds = new Set([
 ]);
 
 test('feedback pedagógico V1 cobre todas as trinta e oito questões do primeiro bloco', () => {
-  assert.deepEqual(validateQuestionFeedback(PUBLISHED_MISSIONS), []);
+  assert.deepEqual(validateQuestionFeedback(PUBLISHED_MISSIONS.filter(m => pilotMissionIds.has(m.id))), []);
   assert.equal(QUESTION_FEEDBACK_V1.length, 38);
   const pilotQuestions = PUBLISHED_MISSIONS
     .filter((mission) => pilotMissionIds.has(mission.id))

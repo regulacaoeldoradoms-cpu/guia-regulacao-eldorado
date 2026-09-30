@@ -3,7 +3,7 @@
 import {
   STUDY_SOURCES as BASE_SOURCES,
   PUBLISHED_MISSIONS as BASE_MISSIONS,
-  PLANNED_MISSIONS
+  PLANNED_MISSIONS as BASE_PLANNED_MISSIONS
 } from './banking-sfn.js';
 import { INTRODUCTION_SOURCES, INTRODUCTION_V2 } from './sfn-introducao-v2.js';
 import { SFN_LESSONS_V2 } from './sfn-aulas-v2.js';
@@ -11,17 +11,21 @@ import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections }
 import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn-segmentos-revisados.js';
 import { OPERATORS_INSURANCE_SOURCES } from './sfn-aplicacao-operadores-seguros-v1.js';
 import { attachApplications } from './application-registry.js';
+import { MP_MISSIONS, MP_SOURCES } from './banking-markets-policy-v1.js';
 import {
   publishedCatalog,
   publicationSnapshot as buildPublicationSnapshot,
   validatePublicationCatalog
 } from './publication-registry.js';
 
+const activeMpMissions = publishedCatalog(MP_MISSIONS);
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
-  ...OPERATORS_INSURANCE_SOURCES
+  ...OPERATORS_INSURANCE_SOURCES, ...(activeMpMissions.length ? MP_SOURCES : [])
 ]);
-export { PLANNED_MISSIONS };
+export const PLANNED_MISSIONS = Object.freeze([
+  ...BASE_PLANNED_MISSIONS, ...activeMpMissions.map(mission => Object.freeze({ id: mission.id, status: 'published' }))
+]);
 
 const INTRO_IDS = Object.freeze([
   'nome', 'cotidiano', 'vocabulario', 'intermediacao', 'juros',
@@ -101,7 +105,7 @@ function teachMission(mission) {
 }
 
 export const PUBLISHED_MISSIONS = publishedCatalog(
-  BASE_MISSIONS.map(teachMission).map(attachApplications)
+  [...BASE_MISSIONS.map(teachMission).map(attachApplications), ...MP_MISSIONS]
 );
 
 export const publicationSnapshot = (progress = {}) =>
@@ -124,10 +128,10 @@ export function sourceMap() {
   return new Map(STUDY_SOURCES.map((source) => [source.id, source]));
 }
 
-export function validateTeachingCatalog(missions = PUBLISHED_MISSIONS) {
+export function validateTeachingCatalog(missions = PUBLISHED_MISSIONS, catalogSources = STUDY_SOURCES) {
   const errors = [...validatePublicationCatalog(missions)];
   const catalog = new Map(missions.map((mission) => [mission.id, mission]));
-  const sources = sourceMap();
+  const sources = new Map(catalogSources.map((source) => [source.id, source]));
   if (catalog.size !== missions.length) errors.push('duplicate-mission-id');
   for (const mission of missions) {
     const sections = Array.isArray(mission.sections) ? mission.sections : [];

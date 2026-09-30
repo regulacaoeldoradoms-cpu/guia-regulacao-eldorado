@@ -5,6 +5,7 @@ import { PUBLISHED_MISSIONS as original } from '../studies-content/banking-sfn.j
 import { SEGMENTS_REVIEW, SEGMENTS_SOURCES, reviseSegmentsSections, validateSegmentsTargets } from '../studies-content/sfn-segmentos-revisados.js';
 import { validateFundamentalsTargets } from '../studies-content/sfn-fundamentos-revisados.js';
 
+const sfn = PUBLISHED_MISSIONS.filter(m => m.id.startsWith('banking.sfn.'));
 const ids = ['banking.sfn.cvm', 'banking.sfn.operadores', 'banking.sfn.seguros-previdencia', 'banking.sfn.pagamentos-consorcios', 'banking.sfn.boss'];
 
 test('revisão dos cinco segmentos restantes chega ao mesmo catálogo da aplicação', () => {
@@ -23,13 +24,13 @@ test('revisão dos cinco segmentos restantes chega ao mesmo catálogo da aplica�
 });
 
 test('revisão não apaga nem transforma os objetos de progresso e avaliação', () => {
-  assert.equal(PUBLISHED_MISSIONS.length, original.length);
+  assert.equal(sfn.length, original.length);
   for (const before of original) {
     const after = missionById(before.id);
     for (const field of ['id', 'topicId', 'order', 'xp', 'kind', 'passScore']) assert.equal(after[field], before[field]);
     assert.strictEqual(after.questions, before.questions);
   }
-  assert.equal(PUBLISHED_MISSIONS.reduce((sum, mission) => sum + mission.questions.length, 0), 38);
+  assert.equal(sfn.reduce((sum, mission) => sum + mission.questions.length, 0), 38);
 });
 
 test('fontes resolvem e a página histórica não finge ser norma consolidada', () => {

@@ -48,11 +48,27 @@ test('Telemedicina: formulário, desfechos, histórico, edição, exclusão canc
   await page.locator('#openConsultation').click();
   const form=page.locator(isMobile?'.tm-inline-consult-form':'#consultationForm');
   await expect(form).toBeVisible();await r.take('consultation');
-  const outcomes=form.locator('input[type=radio]');
+  // Outcome radios and absence follow-up radios are separate conditional groups.
+  // Clicking every radio after the last outcome tried to click the hidden group.
+  const outcomes=form.locator('.telemedicine-choice-grid input[type=radio]');
+  await expect(outcomes).toHaveCount(6);
   for(let i=0;i<await outcomes.count();i++){
     await outcomes.nth(i).locator('..').click();
     await expect(outcomes.nth(i)).toBeChecked();await r.take(`outcome-${i}`);
   }
+  const absenceChoices=form.locator('.tm-absence-request-options input[type=radio]');
+  await expect(absenceChoices).toHaveCount(2);
+  await expect(absenceChoices.first()).toBeHidden();
+  await form.locator('.telemedicine-choice-grid input[value="absence"]').locator('..').click();
+  for(let i=0;i<2;i++){
+    await expect(absenceChoices.nth(i).locator('..')).toBeVisible();
+    await absenceChoices.nth(i).locator('..').click();
+    await expect(absenceChoices.nth(i)).toBeChecked();await r.take(`absence-request-${i}`);
+  }
+  await absenceChoices.first().focus();
+  await expect(absenceChoices.first()).toBeFocused();
+  await absenceChoices.first().press('Space');
+  await expect(absenceChoices.first()).toBeChecked();
   const target=form.locator('textarea:visible').first();
   if(await target.count()){await target.focus();await r.take('focus-textarea');}
   await settle(page,'/telemedicina/');

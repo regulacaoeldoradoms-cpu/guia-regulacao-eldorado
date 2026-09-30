@@ -201,7 +201,8 @@ function publicMission(mission) {
     questions: mission.questions.map((question) => ({
       id: question.id,
       prompt: question.prompt,
-      options: question.options
+      options: question.options,
+      ...(Array.isArray(question.presentation) ? { presentation: question.presentation } : {})
     }))
   };
 }
@@ -840,7 +841,7 @@ async function handleAttempt(request, env, user, origin) {
   const mastery = total ? Math.round((hits / total) * 1000) / 10 : 0;
   await upsertPracticeProgress(env, user.username, found.mission, mastery);
 
-  const pedagogicalFeedback = questionFeedbackById(found.question.id);
+  const pedagogicalFeedback = questionFeedbackById(found.question.id, found.question);
   const reviewRefs = Array.isArray(found.mission.teaching?.questionCoverage?.[found.question.id])
     ? found.mission.teaching.questionCoverage[found.question.id]
     : [];
@@ -935,7 +936,7 @@ async function handleComplete(request, pathname, env, user, origin) {
     });
   }
 
-  if (mission.kind === 'boss') {
+  if (mission.id === 'banking.sfn.boss' && mission.kind === 'boss') {
     const bossAchievementGranted = await grantAchievement(env, user.username, 'study.sfn.boss', mission.id);
     if (bossAchievementGranted) {
       newAchievements.push({

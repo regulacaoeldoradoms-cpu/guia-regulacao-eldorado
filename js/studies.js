@@ -29,7 +29,7 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const reader = window.StudyReader?.create($('studyFocus')) || null;
+  const reader = window.StudyReader?.create($('studyFocus'), openReadingReference) || null;
   const clock = window.StudyClock?.create({
     root: $('studyFocus'),
     send: (sessionId, durationSeconds) => auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}/checkpoint`, {
@@ -708,7 +708,7 @@
     ).join('');
     $('questionList').innerHTML = mission.questions.map((question, index) =>
       `<article class="study-question" data-question-id="${question.id}">
-        <strong>${index + 1}. ${question.prompt}</strong>
+        <div data-question-prompt></div>
         <fieldset>${question.options.map((option, optionIndex) =>
           `<label class="study-option"><input type="radio" name="${question.id}" value="${optionIndex}"><span>${option}</span></label>`
         ).join('')}</fieldset>
@@ -716,6 +716,15 @@
         <div class="study-feedback" data-feedback hidden></div>
       </article>`
     ).join('');
+    for (const [index, question] of mission.questions.entries()) {
+      const target = $('questionList').children[index].querySelector('[data-question-prompt]');
+      const heading = document.createElement('strong');
+      heading.textContent = `${index + 1}. ${question.presentation ? 'Leia o caso e os dados:' : question.prompt}`;
+      target.append(heading);
+      if (question.presentation && !window.StudyReader?.renderContent(target, question.presentation, openReadingReference)) {
+        const fallback = document.createElement('p'); fallback.textContent = question.prompt; target.append(fallback);
+      }
+    }
     $('sourceList').innerHTML = mission.sources.map((source) =>
       `<a class="study-source" href="${source.url}" target="_blank" rel="noopener noreferrer">Abrir fonte: ${source.label}</a>`
     ).join('');
@@ -900,18 +909,29 @@
       if (links.querySelector('button')) feedback.append(links);
     }
 
-    const externalLabels = [...new Set(refs
+    const externalRefs = [...new Map(refs
       .filter((ref) => ref?.missionId && ref.missionId !== mission?.id && typeof ref.sectionId === 'string')
-      .map((ref) => {
+      .map((ref) => [`${ref.missionId}:${ref.sectionId}`, ref])).values()];
+    if (externalRefs.length) {
+      const links = document.createElement('div'); links.className = 'study-feedback-review-links';
+      for (const ref of externalRefs) {
         const targetMission = state.data?.missions?.find((item) => item.id === ref.missionId);
         const targetSection = targetMission?.sections?.find((item) => item.id === ref.sectionId);
-        if (!targetMission || !targetSection) return '';
-        return `${targetMission.shortTitle || targetMission.title}: ${targetSection.heading}`;
-      })
-      .filter(Boolean))];
-    if (externalLabels.length) {
-      line('Revisar depois: ', externalLabels.join(' · '));
+        if (!targetMission || !targetSection) continue;
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'study-feedback-review';
+        button.textContent = `Consultar ${targetMission.shortTitle || targetMission.title}: ${targetSection.heading}`;
+        button.addEventListener('click', () => openReadingReference(ref)); links.append(button);
+      }
+      if (links.children.length) feedback.append(links);
     }
+  }
+
+  function openReadingReference(ref) {
+    const current = state.activeMission;
+    const target = state.data?.missions?.find(item => item.id === ref.missionId);
+    if (!current || !target || state.leaving || Number(target.order) > Number(current.order)) return;
+    if (target.id === current.id) reader?.openSection(ref.sectionId);
+    else reader?.showReference(target, ref.sectionId, ref.wholeLesson === true);
   }
 
   async function markReadingComplete() {
