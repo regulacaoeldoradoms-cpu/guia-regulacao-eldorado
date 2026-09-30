@@ -510,6 +510,21 @@ Próximo passo depois do C4: consolidar a cadeia C1–C4 na `main`, confirmar pu
 
 O registro de publicação foi reforçado para falhar fechado também em runtime: `publishedCatalog()` executa a validação dos metadados antes de compor o catálogo e interrompe a publicação quando houver `status`, `changeImpact`, `releaseId` ou `releaseSequence` explícitos inválidos. O teste do recorte exige essa falha; não há relaxamento de CI nem normalização silenciosa para `published`.
 
+
+## Fechamento técnico candidato da Fase 2
+
+Documentos:
+- `61-FECHAMENTO-TECNICO-FASE2.md`;
+- `62-ROTEIRO-HOMOLOGACAO-FASE2.md`.
+
+A matriz de fechamento foi preparada sobre a cadeia até C4, mas **não encerra a Fase 2**. Antes do aceite ainda são obrigatórios:
+- C3 e C4 integrados com gates verdes;
+- frontend e Worker produtivos confirmados após merge contendo a cadeia completa;
+- homologação humana do roteiro 62;
+- aceite explícito de Wellyton.
+
+A Fase 3 permanece fechada até esse aceite.
+
 ### C3 — correção de ausência de evidência
 
 A interface de domínio recente foi endurecida para não converter `null` em `0` por coerção JavaScript. Quando não existe evidência, o resumo permanece `—` / **Ainda não medido**, e o cartão da missão não exibe `0%` artificial. Há teste Chromium específico para essa condição.
