@@ -91,4 +91,8 @@ test('metadados inválidos são rejeitados em vez de normalizados silenciosament
   assert.ok(errors.includes('fixture.invalid:invalid-change-impact'));
   assert.ok(errors.includes('fixture.invalid:missing-release-id'));
   assert.ok(errors.includes('fixture.invalid:invalid-release-sequence'));
+  assert.throws(
+    () => publishedCatalog(invalid),
+    /Catálogo de publicação inválido/
+  );
 });
