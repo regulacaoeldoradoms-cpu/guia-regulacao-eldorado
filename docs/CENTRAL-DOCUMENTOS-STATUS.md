@@ -254,3 +254,24 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Métricas / observabilidade | `documents_read_retry` registra apenas operação/tentativa/classe de falha; sem identificadores ou conteúdo sensível. |
 | Próxima ação exata | Usar a Central normalmente em produção e validar listagem/pesquisa/abertura do Titon. Se reaparecer falha, correlacionar horário + ação + endpoint técnico/status, sem dados do documento, antes de nova alteração. |
 | Arquivos e fontes principais | `js/documents.js`; `portal-sw.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; PRs #536/#539; merges `9c18b147`/`fa68c202`; Pages run `36601320788`; este status; Guia Mestre 1.1. |
+
+## Titon — confirmação do Drive sem travamento permanente — 01/10/2026
+
+Incidente real em produção: após uma edição do PDF, o upload resumable foi aceito pelo Google Drive, mas o Titon permaneceu com o aviso de que a versão mais recente ainda não havia sido confirmada e bloqueou o fechamento do editor.
+
+Diagnóstico:
+- o recibo final do upload e a leitura subsequente de metadados do `files.get` não são necessariamente visíveis no mesmo instante;
+- o backend tratava qualquer divergência nessa primeira releitura como conflito/falha, mesmo quando a versão retornada pelo `files.get` ainda era anterior à versão já declarada no recibo do próprio upload;
+- isso produzia falso negativo de confirmação: o arquivo podia já estar gravado no Drive, mas o navegador mantinha o editor aberto por segurança.
+
+Correção permanente:
+1. após recibo válido, o backend repete a leitura de metadados em uma janela curta e limitada (0/120/320/700 ms) somente quando a versão de `files.get` ainda está atrás da versão do recibo;
+2. se `files.get` já alcançou ou superou a versão do recibo e head/checksum/tamanho divergem, o conflito real continua falhando imediatamente;
+3. se a propagação continuar atrasada após as tentativas, a operação continua como `DRIVE_SYNC_INTERRUPTED` e não é marcada como salva;
+4. o Titon passa a oferecer uma saída segura pelo X/Sair do editor: se a sincronização falhar, o usuário pode gerar uma cópia local do PDF e só então fechar;
+5. logout e desconexão do Drive continuam sem descartar automaticamente edição pendente;
+6. alterações mais novas criadas durante um upload continuam abertas e aguardam a próxima sincronização, sem serem fechadas pelo fallback;
+7. a geração do Service Worker e o cache-buster de `documents.js` foram renovados para entrega imediata.
+
+Validação local da alteração: checks de sintaxe aprovados; regressões focais de confirmação/fechamento aprovadas; suíte completa do Worker com **701/701 testes aprovados**. Nenhum identificador de arquivo, conteúdo clínico ou dado de paciente foi adicionado à documentação ou telemetria.
+
