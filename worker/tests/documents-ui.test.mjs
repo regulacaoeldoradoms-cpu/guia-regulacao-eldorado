@@ -1202,7 +1202,10 @@ test('Fase 4C mantém telemetria de sincronização estritamente técnica e suce
   assert.match(captureBodies.find(([, event]) => event === 'drive_sync_failed')[2], /status_code/);
   assert.ok(syncSection.indexOf("if (!completed?.completed)") < syncSection.indexOf("applyConfirmedDriveSync(operation, completed, blob, copyName)"));
   assert.ok(syncSection.indexOf("applyConfirmedDriveSync(operation, completed, blob, copyName)") < syncSection.indexOf("const superseded = completed.superseded === true"));
-  assert.match(syncSection, /sourceChangedSinceOpen/);
+  const driveSyncBackend = read('worker/document-drive.js');
+  assert.match(driveSyncBackend, /sourceChangedSinceOpen/);
+  assert.match(driveSyncBackend, /blocking:\s*false/);
+  assert.match(syncSection, /last-write-wins/);
   assert.match(syncSection, /superseded/);
   assert.ok(syncSection.indexOf("applyConfirmedDriveSync(operation, completed, blob, copyName)") < syncSection.lastIndexOf("showDriveSyncSuccess(targetRevision)"));
 });
