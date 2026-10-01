@@ -50,6 +50,18 @@ class D1Database {
   prepare(sql) {
     return new D1Statement(this.database, sql);
   }
+
+  batch(statements) {
+    this.database.exec('BEGIN');
+    try {
+      const results = statements.map((statement) => statement.run());
+      this.database.exec('COMMIT');
+      return results;
+    } catch (error) {
+      this.database.exec('ROLLBACK');
+      throw error;
+    }
+  }
 }
 
 function environment() {
