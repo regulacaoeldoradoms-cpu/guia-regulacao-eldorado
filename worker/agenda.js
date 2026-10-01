@@ -292,6 +292,7 @@ async function syncRecords(env, input, user) {
 
     const didChange = comparable(existing) !== comparable(record);
     const stateChanged = didChange || existing.active === false;
+    if (didChange || contactNeedsRefresh(existing, nowMs)) contactsNeeded.add(record.sourceId);
     const { id: _existingId, ...existingData } = existing;
     writes.push({
       documentPath: `${COLLECTION}/${existing.id || documentId}`,
