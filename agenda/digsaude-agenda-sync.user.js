@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.1.1
-// @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
+// @version      1.2.0
+// @description  Sincroniza Agendados e os telefones dos pacientes com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-contact-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-contact-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -23,6 +23,16 @@
   const AUTO_INTERVAL_MS = 15 * 60 * 1000;
   const RESULT_TIMEOUT_MS = 60 * 1000;
   const BRIDGE_WATCH_MS = 15 * 1000;
+  const CONTACT_PROBE_PARAM = 'portalAgendaContactProbe';
+  const CONTACT_TIMEOUT_MS = 14 * 1000;
+  const CONTACT_POLL_MS = 140;
+  const CONTACT_CONCURRENCY = 2;
+  const currentUrl = new URL(window.location.href);
+
+  // Frames de leitura individual usam a própria sessão same-origin do DigSaúde,
+  // mas não devem montar uma segunda instância do sincronizador.
+  if (currentUrl.searchParams.get(CONTACT_PROBE_PARAM) === '1') return;
+  if (!/\/consultas\/?$/.test(currentUrl.pathname)) return;
 
   let portalWindow = null;
   let autoEnabled = false;
@@ -33,6 +43,8 @@
   let pendingSnapshot = null;
   let pendingFingerprint = '';
   let pendingSyncId = '';
+  let pendingMode = '';
+  let pendingContactFailures = 0;
   let lastFingerprint = '';
   let lastCheckAt = 0;
   let syncInFlight = false;
@@ -169,6 +181,153 @@
     const html = await response.text();
     const root = new DOMParser().parseFromString(html, 'text/html');
     return snapshotFrom(root);
+  }
+
+  function wait(milliseconds) {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
+  function phoneDigits(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.length >= 10 && digits.length <= 13 ? digits : '';
+  }
+
+  function phoneFromDocument(root) {
+    if (!root) return '';
+    const selectors = [
+      'input[name*="telefonecel" i]',
+      'input[id*="telefonecel" i]',
+      'input[name*="telefone" i]',
+      'input[id*="telefone" i]',
+      '[wire\\:model*="telefonecel" i]',
+      '[wire\\:model*="telefone" i]'
+    ];
+    for (const selector of selectors) {
+      const field = root.querySelector(selector);
+      const phone = phoneDigits(field?.value || field?.getAttribute?.('value') || '');
+      if (phone) return phone;
+    }
+    return '';
+  }
+
+  function patientDataTrigger(root) {
+    if (!root) return null;
+    return [...root.querySelectorAll('button, a')].find((node) =>
+      compact(node.textContent).toLocaleLowerCase('pt-BR').includes('ver dados do paciente')
+    ) || null;
+  }
+
+  function consultationViewUrl(sourceId) {
+    const url = new URL(window.location.href);
+    const basePath = url.pathname.replace(/\/consultas(?:\/.*)?$/, '/consultas');
+    url.pathname = `${basePath}/${encodeURIComponent(sourceId)}/view`;
+    url.search = '';
+    url.searchParams.set(CONTACT_PROBE_PARAM, '1');
+    url.hash = '';
+    return url.toString();
+  }
+
+  function waitForFrameLoad(frame) {
+    return new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('Tempo esgotado ao abrir a consulta para localizar o contato.')), CONTACT_TIMEOUT_MS);
+      frame.addEventListener('load', () => {
+        window.clearTimeout(timer);
+        resolve();
+      }, { once: true });
+      frame.addEventListener('error', () => {
+        window.clearTimeout(timer);
+        reject(new Error('Não foi possível abrir a consulta para localizar o contato.'));
+      }, { once: true });
+    });
+  }
+
+  async function contactForSourceId(sourceId) {
+    const frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.tabIndex = -1;
+    frame.style.cssText = [
+      'position:fixed',
+      'left:-20000px',
+      'top:0',
+      'width:1280px',
+      'height:900px',
+      'opacity:.01',
+      'pointer-events:none',
+      'border:0'
+    ].join(';');
+
+    try {
+      frame.src = consultationViewUrl(sourceId);
+      document.body.appendChild(frame);
+      await waitForFrameLoad(frame);
+
+      const frameWindow = frame.contentWindow;
+      const root = frame.contentDocument;
+      if (!frameWindow || !root) throw new Error('A consulta não pôde ser lida no DigSaúde.');
+      if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
+        throw new Error('A sessão do DigSaúde expirou. Entre novamente no sistema.');
+      }
+
+      const direct = phoneFromDocument(root);
+      if (direct) return direct;
+
+      const trigger = patientDataTrigger(root);
+      if (!trigger) throw new Error('A ação Ver Dados do Paciente não foi localizada.');
+      trigger.click();
+
+      const deadline = Date.now() + CONTACT_TIMEOUT_MS;
+      while (Date.now() < deadline) {
+        await wait(CONTACT_POLL_MS);
+        const phone = phoneFromDocument(frame.contentDocument);
+        if (phone) return phone;
+      }
+      throw new Error('O telefone não apareceu após abrir os dados do paciente.');
+    } finally {
+      frame.remove();
+    }
+  }
+
+  async function contactSnapshot(baseSnapshot, sourceIds) {
+    const wanted = new Set((sourceIds || []).map((value) => compact(value)).filter(Boolean));
+    const candidates = (baseSnapshot?.records || []).filter((record) => wanted.has(record.sourceId));
+    const enriched = new Array(candidates.length);
+    let cursor = 0;
+    let completed = 0;
+    let failed = 0;
+
+    async function worker() {
+      while (cursor < candidates.length) {
+        const index = cursor;
+        cursor += 1;
+        const record = candidates[index];
+        try {
+          const patientPhone = await contactForSourceId(record.sourceId);
+          enriched[index] = patientPhone ? { ...record, patientPhone } : null;
+          if (!patientPhone) failed += 1;
+        } catch (_) {
+          enriched[index] = null;
+          failed += 1;
+        } finally {
+          completed += 1;
+          setButton(`Automático ativo · localizando contatos ${completed}/${candidates.length}…`, 'working');
+        }
+      }
+    }
+
+    const workers = Array.from({ length: Math.min(CONTACT_CONCURRENCY, candidates.length) }, () => worker());
+    await Promise.all(workers);
+    const records = enriched.filter(Boolean);
+    return {
+      failed,
+      snapshot: {
+        source: 'digsaude-agendados-contact-v1',
+        capturedAt: new Date().toISOString(),
+        totalCount: records.length,
+        complete: false,
+        contactPass: true,
+        records
+      }
+    };
   }
 
   function fingerprint(snapshot) {
@@ -316,6 +475,8 @@
       pendingSnapshot = null;
       pendingFingerprint = '';
       pendingSyncId = '';
+      pendingMode = '';
+      pendingContactFailures = 0;
       setButton('Automático ativo · Portal não respondeu', 'error');
     }, RESULT_TIMEOUT_MS);
   }
@@ -335,6 +496,8 @@
     pendingSnapshot = null;
     pendingFingerprint = '';
     pendingSyncId = '';
+    pendingMode = '';
+    pendingContactFailures = 0;
     setButton(reason, 'error');
   }
 
@@ -363,6 +526,8 @@
       pendingSnapshot = nextSnapshot;
       pendingFingerprint = nextFingerprint;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      pendingMode = 'agenda';
+      pendingContactFailures = 0;
       setButton(`Automático ativo · enviando ${nextSnapshot.records.length}…`, 'working');
       scheduleDeliveryRetry();
     } catch (error) {
@@ -428,7 +593,7 @@
     runAutomaticSync({ force: true });
   }
 
-  window.addEventListener('message', (event) => {
+  window.addEventListener('message', async (event) => {
     if (event.origin !== PORTAL_ORIGIN) return;
     if (portalWindow && event.source !== portalWindow) return;
 
@@ -443,21 +608,85 @@
     if (!pendingSyncId || event.data?.syncId !== pendingSyncId) return;
 
     stopDeliveryRetry();
-    syncInFlight = false;
 
-    if (event.data.ok) {
+    if (!event.data.ok) {
+      syncInFlight = false;
+      pendingSnapshot = null;
+      pendingFingerprint = '';
+      pendingSyncId = '';
+      pendingMode = '';
+      pendingContactFailures = 0;
+      setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
+      return;
+    }
+
+    if (pendingMode === 'agenda') {
       lastFingerprint = pendingFingerprint;
+      const baseSnapshot = pendingSnapshot;
       const created = Number(event.data.created || 0);
       const changed = Number(event.data.changed || 0);
       const suffix = created || changed ? `+${created} / ~${changed}` : 'sem mudanças';
+      const refreshIds = Array.isArray(event.data.contactRefreshSourceIds)
+        ? event.data.contactRefreshSourceIds.map((value) => compact(value)).filter(Boolean)
+        : [];
+
+      pendingSnapshot = null;
+      pendingFingerprint = '';
+      pendingSyncId = '';
+      pendingMode = '';
+
+      if (refreshIds.length) {
+        setButton(`Automático ativo · localizando ${refreshIds.length} contato(s)…`, 'working');
+        try {
+          const contacts = await contactSnapshot(baseSnapshot, refreshIds);
+          pendingContactFailures = contacts.failed;
+          if (contacts.snapshot.records.length) {
+            pendingSnapshot = contacts.snapshot;
+            pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            pendingMode = 'contacts';
+            setButton(`Automático ativo · salvando ${contacts.snapshot.records.length} contato(s)…`, 'working');
+            scheduleDeliveryRetry();
+            return;
+          }
+          syncInFlight = false;
+          setButton(`Automático ativo · agenda atualizada; falha ao localizar ${contacts.failed} contato(s)`, 'error');
+          return;
+        } catch (_) {
+          syncInFlight = false;
+          pendingContactFailures = 0;
+          setButton('Automático ativo · agenda atualizada; falha ao localizar contatos', 'error');
+          return;
+        }
+      }
+
+      syncInFlight = false;
       setButton(`Automático ativo · ${suffix} · ${clock()}`, 'success');
-    } else {
-      setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
+      return;
     }
 
+    if (pendingMode === 'contacts') {
+      const updated = Number(event.data.contactsUpdated || 0);
+      const failed = pendingContactFailures;
+      syncInFlight = false;
+      pendingSnapshot = null;
+      pendingFingerprint = '';
+      pendingSyncId = '';
+      pendingMode = '';
+      pendingContactFailures = 0;
+      if (failed) {
+        setButton(`Automático ativo · ${updated} contato(s) sincronizado(s); ${failed} falha(s) · ${clock()}`, 'error');
+      } else {
+        setButton(`Automático ativo · ${updated} contato(s) sincronizado(s) · ${clock()}`, 'success');
+      }
+      return;
+    }
+
+    syncInFlight = false;
     pendingSnapshot = null;
     pendingFingerprint = '';
     pendingSyncId = '';
+    pendingMode = '';
+    pendingContactFailures = 0;
   });
 
   window.addEventListener('focus', () => {
