@@ -14,6 +14,7 @@ const READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state';
 const MAX_RECORDS_PER_SYNC = 250;
 const MAX_LIST_PAGES = 20;
 const FIRESTORE_COMMIT_CHUNK = 450;
+const CONTACT_REFRESH_MS = 24 * 60 * 60 * 1000;
 
 function responseHeaders(origin, allowed = true) {
   const headers = {
@@ -42,6 +43,22 @@ function cleanSourceId(value) {
   return /^[A-Za-z0-9_-]{1,80}$/.test(sourceId) ? sourceId : '';
 }
 
+function normalizePatientPhone(value) {
+  let digits = String(value ?? '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0') && digits.length > 11) digits = digits.replace(/^0+/, '');
+  if (digits.startsWith('55')) return digits.length >= 12 && digits.length <= 13 ? digits : '';
+  if (digits.length === 10 || digits.length === 11) return '55' + digits;
+  return '';
+}
+
+function contactNeedsRefresh(record, nowMs = Date.now()) {
+  const phone = normalizePatientPhone(record?.patientPhone);
+  const syncedAt = Date.parse(clean(record?.patientPhoneSyncedAt, 40));
+  if (!phone || !Number.isFinite(syncedAt)) return true;
+  return nowMs - syncedAt >= CONTACT_REFRESH_MS;
+}
+
 function normalizeRecord(input = {}) {
   const sourceId = cleanSourceId(input.sourceId);
   if (!sourceId) throw Object.assign(new Error('Identificador do agendamento inválido.'), { status: 400 });
@@ -56,6 +73,7 @@ function normalizeRecord(input = {}) {
     appointmentTime: clean(input.appointmentTime, 12),
     specialist: clean(input.specialist, 180),
     patient: clean(input.patient, 180),
+    patientPhone: normalizePatientPhone(input.patientPhone),
     municipality: clean(input.municipality, 120),
     appointmentType: clean(input.appointmentType, 120),
     facility: clean(input.facility, 180),
@@ -185,6 +203,7 @@ function publicRecord(record, username, readMemory) {
     appointmentTime: clean(record.appointmentTime, 12),
     specialist: clean(record.specialist, 180),
     patient: clean(record.patient, 180),
+    contactAvailable: Boolean(normalizePatientPhone(record.patientPhone)),
     municipality: clean(record.municipality, 120),
     appointmentType: clean(record.appointmentType, 120),
     facility: clean(record.facility, 180),
@@ -216,6 +235,7 @@ async function commitWrites(env, writes) {
 async function syncRecords(env, input, user) {
   const rows = Array.isArray(input?.records) ? input.records : [];
   const declaredComplete = input?.complete === true;
+  const contactPass = input?.contactPass === true;
   const expectedTotal = Math.max(0, Number.parseInt(String(input?.totalCount ?? ''), 10) || 0);
   const verifiedEmptySnapshot = declaredComplete && expectedTotal === 0 && rows.length === 0;
 
@@ -242,6 +262,8 @@ async function syncRecords(env, input, user) {
   }
 
   const writes = [];
+  const contactRefreshSourceIds = [];
+  let contactsUpdated = 0;
   let created = 0;
   let changed = 0;
   let unchanged = 0;
@@ -324,7 +346,9 @@ async function syncRecords(env, input, user) {
     created,
     changed,
     unchanged,
-    deactivated
+    deactivated,
+    contactsUpdated,
+    contactRefreshSourceIds: contactPass ? [] : contactRefreshSourceIds.slice(0, MAX_RECORDS_PER_SYNC)
   };
 }
 
