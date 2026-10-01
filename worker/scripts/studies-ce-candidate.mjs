@@ -7,7 +7,7 @@ import {
 import { validateQuestionFeedback } from '../studies-content/question-feedback-v1.js';
 import { compilePresentation } from './studies-mp-presentation.mjs';
 
-// Preparação desativada: parâmetros copiados do padrão existente, ainda não aprovados para ativação CE.
+// Publicação e parâmetros aprovados em 01/10/2026, 01:20 UTC; revisão independente concluída.
 export const CE_PLAN = Object.freeze([
   ['ce01','instrumentos'], ['ce02','acoes'], ['ce03','divida'], ['ce04','fundos'],
   ['ce05','riscos'], ['ce06','cotacao'], ['ce07','operacoes'], ['ce08','regimes'],
@@ -106,13 +106,13 @@ export function compileCeCandidate(editorial) {
       id: plan.id, topicId: plan.id, contentVersion: draft.contentVersion,
       order: plan.order, title: draft.title, shortTitle: draft.editorialKey,
       kind: draft.kind, objective: draft.objective,
-      // Proposta pelo padrão existente; publication draft impede ativação.
+      // Parâmetros aprovados, seguindo a sequência e o XP existentes.
       xp: draft.kind === 'boss' ? 220 : 100,
       passScore: draft.kind === 'boss' ? 75 : 0,
       // Estimativa didática, não limite: leitura a 150 palavras/min + 2 min por questão,
       // arredondada para o próximo múltiplo de 5. Não controla cronômetro ou conclusão.
       estimatedMinutes: Math.ceil((draft.sections.reduce((sum, section) => sum + section.body.split(/\s+/).length, 0) / 150 + questions.length * 2) / 5) * 5,
-      publication: { status: 'draft', releaseId: 'capital-exchange-intro-r1', releaseSequence: 4, changeImpact: 'new' },
+      publication: { status: 'published', releaseId: 'capital-exchange-intro-r1', releaseSequence: 4, changeImpact: 'new' },
       sourceIds: draft.sourceIds.map(remapSource),
       sections: draft.sections.map(section => ({ ...section, sourceIds: section.sourceIds.map(remapSource), ...rich(section.body) })),
       recall: draft.recall, questions,
@@ -120,7 +120,7 @@ export function compileCeCandidate(editorial) {
       candidate: {
         editorialId: draft.id, blockId: draft.candidateBlockId,
         prerequisiteId: index === 0 ? plan.prerequisiteId : CE_PLAN[index - 1].id,
-        parametersApproved: false
+        parametersApproved: true
       }
     };
   });
@@ -139,7 +139,7 @@ export function compileCeCandidate(editorial) {
     errors.push('published-prerequisite-changed');
   }
   if (errors.length) throw new Error(`Candidato CE inválido: ${errors.join(', ')}`);
-  return { status: 'draft', missions, sources, feedback, readingRequirements };
+  return { status: 'published', missions, sources, feedback, readingRequirements };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -147,7 +147,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (process.argv.includes('--write') || process.argv.includes('--check-generated')) {
     const target = new URL('../studies-content/banking-capital-exchange-v1.js', import.meta.url);
     const output = '// Gerado por node worker/scripts/studies-ce-candidate.mjs --write. Não editar.\n'
-      + '// Fonte editorial #570; candidato desativado, sem autorização de publicação.\n'
+      + '// Fonte editorial #570; publicação autorizada em 01/10/2026, 01:20 UTC.\n'
       + `export const CE_MISSIONS = Object.freeze(${JSON.stringify(candidate.missions, null, 2)});\n`
       + `export const CE_SOURCES = Object.freeze(${JSON.stringify(candidate.sources, null, 2)});\n`;
     if (process.argv.includes('--write')) await writeFile(target, output);
@@ -159,6 +159,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     status: candidate.status, missions: candidate.missions.length,
     questions: candidate.feedback.length, optionReasons: candidate.feedback.reduce((sum, item) => sum + item.optionReasons.length, 0),
     sources: candidate.sources.length, readingRequirements: candidate.readingRequirements,
-    publicationReady: false
+    publicationReady: true
   }, null, 2));
 }

@@ -30,8 +30,8 @@ test('catalogo SFN, MP e PC tem ids unicos e respostas validas', () => {
       assert.equal(questionById(question.id)?.question.id, question.id);
     }
   }
-  assert.equal(PUBLISHED_MISSIONS.length, 37);
-  assert.equal(PLANNED_MISSIONS.length, 37);
+  assert.equal(PUBLISHED_MISSIONS.length, 50);
+  assert.equal(PLANNED_MISSIONS.length, 50);
   assert.equal(PLANNED_MISSIONS.length, PUBLISHED_MISSIONS.length);
 });
 
@@ -39,7 +39,7 @@ test('fontes do recorte sao oficiais e datadas', () => {
   assert.ok(STUDY_SOURCES.length >= 18);
   for (const source of STUDY_SOURCES) {
     assert.match(source.url, /^https:\/\//);
-    assert.ok(['2026-09-25', '2026-09-26', '2026-09-30'].includes(source.checkedAt), source.id);
+    assert.ok(['2026-09-25', '2026-09-26', '2026-09-30', '2026-10-01'].includes(source.checkedAt), source.id);
   }
 });
 
@@ -61,7 +61,7 @@ test('gate aceita somente a identidade normalizada de Wellyton', () => {
 test('planejamento ativo mantém SFN e inclui MP/PC na sequência', () => {
   const plannedIds = PLANNED_MISSIONS.map((item) => item.id);
   assert.equal(new Set(plannedIds).size, plannedIds.length);
-  assert.equal(plannedIds.length, 37);
+  assert.equal(plannedIds.length, 50);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.ok(plannedIds.includes(mission.id), mission.id);
   }

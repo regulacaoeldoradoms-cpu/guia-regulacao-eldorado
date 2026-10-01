@@ -13,23 +13,26 @@ const editorial = await loadCeEditorial();
 const before = structuredClone(editorial);
 const candidate = compileCeCandidate(editorial);
 
-test('CE desativado preserva exatamente catálogo, fontes e planejamento SFN/MP/PC', () => {
-  const digest = crypto.createHash('sha256').update(JSON.stringify({
-    missions: PUBLISHED_MISSIONS, sources: STUDY_SOURCES, planned: PLANNED_MISSIONS
-  })).digest('hex');
-  // Baseline capturada em 2bbbb0a4, antes da importação do candidato.
+test('CE aprovado preserva SFN/MP/PC e drafts continuam fora do catálogo', () => {
+  const baseline = PUBLISHED_MISSIONS.filter(m => m.order < 38);
+  const sources = STUDY_SOURCES.filter(s => !s.id.startsWith('ce.'));
+  const planned = PLANNED_MISSIONS.filter(m => baseline.some(old => old.id === m.id));
+  const digest = crypto.createHash('sha256').update(JSON.stringify({ missions: baseline, sources, planned })).digest('hex');
   assert.equal(digest, 'bbec004e3e3bc149006b5fb7ee4f7981831f323f07db3f40002b34951ff010f7');
-  assert.equal(PUBLISHED_MISSIONS.length,37);
-  assert.equal(PUBLISHED_MISSIONS.flatMap(m=>m.questions).length,266);
-  assert.deepEqual(publishedCatalog([...PUBLISHED_MISSIONS,...candidate.missions]),PUBLISHED_MISSIONS);
-  assert.deepEqual(publicationSnapshot([...PUBLISHED_MISSIONS,...candidate.missions]),publicationSnapshot(PUBLISHED_MISSIONS));
-  assert.ok(candidate.sources.every(s=>!STUDY_SOURCES.some(active=>active.id===s.id)));
+  assert.equal(baseline.length,37);
+  assert.equal(PUBLISHED_MISSIONS.length,50);
+  assert.equal(PUBLISHED_MISSIONS.flatMap(m=>m.questions).length,374);
+  const drafts = candidate.missions.map(m=>({...m,publication:{...m.publication,status:'draft'}}));
+  assert.deepEqual(publishedCatalog([...baseline,...drafts]),baseline);
+  assert.deepEqual(publicationSnapshot([...baseline,...drafts]),publicationSnapshot(baseline));
+  assert.deepEqual(publishedCatalog([...baseline,...candidate.missions]),PUBLISHED_MISSIONS);
+  assert.ok(candidate.sources.every(s=>STUDY_SOURCES.some(active=>active.id===s.id)));
   const map=curriculumSnapshot(PUBLISHED_MISSIONS);
-  assert.equal(map.publishedBlocks,3); assert.equal(map.totalBlocks,43);
+  assert.equal(map.publishedBlocks,4); assert.equal(map.totalBlocks,43);
   assert.equal(map.readiness.status,'not_measured');
   assert.ok(EXAM_PROFILES.every(p=>p.referenceOnly));
-  assert.equal(candidate.status,'draft');
-  assert.ok(candidate.missions.every(m=>m.publication.status==='draft' && m.publication.releaseSequence===4 && !m.candidate.parametersApproved));
+  assert.equal(candidate.status,'published');
+  assert.ok(candidate.missions.every(m=>m.publication.status==='published' && m.publication.releaseSequence===4 && m.candidate.parametersApproved));
 });
 
 test('conversão CE preserva textos e respostas, remapeia IDs e não modifica a fonte editorial', () => {

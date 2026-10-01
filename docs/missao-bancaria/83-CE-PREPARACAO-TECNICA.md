@@ -1,16 +1,16 @@
-# Capitais e Câmbio — preparação técnica desativada
+# Capitais e Câmbio — ativação aprovada e preparação técnica
 
-01/10/2026. Preparo no [#571 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/571), código validado `f8075c0089c81959f43e14caf7affd0c348b7a54`. Fonte editorial: [#570 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/570), head `2bbbb0a4da4041c90dd764b65760773ea627baee`. CE-01–11/CE-R tiveram parecer pedagógico independente favorável em `96cdd5b2`; parecer do Chefe pendente. Fase 2 sem aceite humano observado, Fase 3 não aberta. #569 permanece draft, sem autorização de transição/merge.
+01/10/2026. Preparo no [#571 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/571), código validado `f8075c0089c81959f43e14caf7affd0c348b7a54`. Fonte editorial: [#570 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/570), head `2bbbb0a4da4041c90dd764b65760773ea627baee`. CE-01–11/CE-R tiveram parecer pedagógico independente favorável em `96cdd5b2`; Chefe aprovado independentemente em `2bbbb0a4`, sem correções; contas/esquema/fontes anteriores reaproveitados. Fase 2 sem aceite humano observado, Fase 3 não aberta. Integração #569/#570/#571 e deploy protegido autorizados pelo usuário em 01/10/2026, 01:20 UTC, com os parâmetros abaixo. Autorização não substitui CI nem aceite humano pedagógico.
 
 ## Pacote e estado efetivo
 
 O [conversor offline CE](../../worker/scripts/studies-ce-candidate.mjs) reutiliza a estrutura PC e o [conversor de apresentação MP](../../worker/scripts/studies-mp-presentation.mjs). Gera [dados CE](../../worker/studies-content/banking-capital-exchange-v1.js): **13 missões, 135 trechos, 49 exemplos, 108 questões/432 justificativas e 43 registros de fonte identificados por unidade**. Preserva integralmente textos, alternativas, gabaritos, justificativas e fontes; nenhum aviso foi removido da cópia gerada.
 
-Todas as missões mantêm `publication.status: 'draft'`, `parametersApproved: false` e sequência candidata 4. Não existe ativação por CLI/ambiente. Manifesto/mapa usam o filtro existente; fontes CE não são expostas com o pacote desativado. **Catálogo efetivo: 37 missões/266 questões, três blocos disponíveis.** Snapshot serializado de missões, fontes e planejamento SFN/MP/PC idêntico ao anterior: SHA-256 `bbec004e3e3bc149006b5fb7ee4f7981831f323f07db3f40002b34951ff010f7`, capturado em `2bbbb0a4`.
+A ativação aprovada usa `publication.status: 'published'`, `parametersApproved: true` e sequência 4; as fontes editoriais permanecem draft. Não existe ativação por CLI/ambiente. Manifesto/mapa usam o filtro existente. **Catálogo da candidata ativada: 50 missões/374 questões, quatro blocos disponíveis.** Até confirmar a publicação, produção segue no marco PC registrado no checkpoint. Snapshot serializado de missões, fontes e planejamento SFN/MP/PC idêntico ao anterior: SHA-256 `bbec004e3e3bc149006b5fb7ee4f7981831f323f07db3f40002b34951ff010f7`, capturado em `2bbbb0a4`.
 
 Roteador, leitor, permissões, armazenamento, A/B, revisão, bindings, detector e compiladores MP/PC não foram alterados. Nenhuma migração, recurso novo, consulta D1 ou acesso produtivo.
 
-## IDs, leitura e parâmetros propostos
+## IDs, leitura e parâmetros aprovados
 
 | Ordem candidata | Unidades | Sufixos de `banking.ce.` |
 | --- | --- | --- |
@@ -19,7 +19,7 @@ Roteador, leitor, permissões, armazenamento, A/B, revisão, bindings, detector 
 | 46–48 | CE-09–11 | cambio-real, comercio, fluxos |
 | 49–50 | CE-R / Chefe | revisao, boss |
 
-Tópico igual ao ID da missão; questões `q.` + ID editorial; fontes prefixadas por unidade. Proposta pelo padrão existente: liberar após Chefe PC, exigir conclusão da unidade anterior, **100 XP por aula/revisão; Chefe 220 XP e 75% (9/12), sem nova conquista**. Estimativa de leitura não controla cronômetro ou conclusão. Parâmetros ainda não aprovados para ativação CE.
+Tópico igual ao ID da missão; questões `q.` + ID editorial; fontes prefixadas por unidade. Parâmetros aprovados pelo padrão existente: liberar após Chefe PC, exigir conclusão da unidade anterior, **100 XP por aula/revisão; Chefe 220 XP e 75% (9/12), sem nova conquista**. Estimativa de leitura não controla cronômetro ou conclusão. Sem mudança de limiar, XP ou desbloqueio além do aprovado.
 
 O texto aprovado contém **28 links de aula** em nove seções, sem tabelas ou diagramas; nenhum formato inventado. Todos foram convertidos à apresentação existente. A única retomada externa é CE-01 → MP-01/capitais, resolvida para `banking.mp.mercados`/`capitais`. Destinos desconhecidos/futuros são recusados. As **249 referências de recuperação** resolvem para seções existentes, sem cobrança futura.
 
@@ -36,8 +36,12 @@ Node 24.17.0; somente recorte afetado:
 
 Comandos: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=cechefe`; `node worker/scripts/studies-ce-candidate.mjs --check-generated`; `node --test worker/tests/studies-ce-candidate.test.mjs`; testes `studies-{curriculum,publication,teaching,question-feedback,isolation}.test.mjs`; `node worker/scripts/check-studies-isolation.mjs`; Playwright com `testing/browser/studies-reader.config.mjs`, filtro `studies-ce.spec.mjs` (reexecução restrita a `retomadas CE e MP`).
 
-Ativação simulada ocorre somente em memória. SQLite e API Chromium são fixtures, não homologação autenticada nem leitura do histórico do aluno. CI obrigatória e comparação com a base efetiva continuam gates para integração futura; não foram substituídas por estes testes.
+Os cenários de migração de catálogo ocorrem somente em memória. SQLite e API Chromium são fixtures, não homologação autenticada nem leitura do histórico do aluno. CI obrigatória e comparação com a base efetiva continuam gates para integração futura; não foram substituídas por estes testes.
 
-## Próxima decisão agrupada
+## Ativação e integração autorizadas
 
-Receber revisão independente do Chefe; corrigir só pontos afetados se houver. Agrupar **checkpoint #569, editorial #570 e preparo técnico #571**, nessa dependência, para autorização específica de integração e ativação/publicação CE nos parâmetros acima. Nenhum merge, transição de #569 ou deploy realizado. Eventual publicação deve seguir [deploy protegido](../WORKER-SAFE-DEPLOY.md), CI da árvore final e smoke mínimo, preservando SFN/MP/PC. PC-07 excluído; não declarar cobertura integral de edital ou produto.
+Revisões editoriais concluídas. O usuário aprovou checkpoint #569, editorial #570 e técnico #571, nessa ordem, e publicação nos parâmetros acima. A ativação altera somente status/parâmetros do pacote e expectativas afetadas dos testes; nenhum texto didático mudou. O relógio SQLite das fixtures MP/PC/CE fica fixo por caso: o código já atualiza `study_profiles.updated_at` a cada acesso autenticado, e a comparação integral não deve depender da virada do segundo. Domínios oficiais CVM/FMI e data de consulta de 01/10 foram adicionados às expectativas de fontes.
+
+Ativação: **49 testes direcionados e seis Chromium CE passaram**; incluem os 18 cenários de roteador dos recortes MP/PC/CE. Sintaxe, artefato gerado, isolamento e diff aprovados. Nenhuma questão foi reescrita; validações editoriais anteriores reaproveitadas.
+
+Integração exige CI da candidata ativada, comparação de base e [deploy protegido](../WORKER-SAFE-DEPLOY.md), com confirmação da versão ativa e smoke mínimo. Preservar SFN/MP/PC; PC-07 excluído. Fase 2 continua sem aceite humano observado. Próximo bloco previsto: `banking.digital-payments`; primeira unidade de canais internet/mobile, sem declarar edital atual nem cobertura integral.

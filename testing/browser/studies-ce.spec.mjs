@@ -8,8 +8,8 @@ import { PUBLISHED_MISSIONS } from '../../worker/studies-content/manifest.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
 const candidate = compileCeCandidate(await loadCeEditorial());
-// Ativação somente no payload sintético; catálogo real mantém CE draft.
-const all = [...PUBLISHED_MISSIONS, ...candidate.missions];
+// Payload offline reproduz o catálogo aprovado, sem duplicar CE.
+const all = [...PUBLISHED_MISSIONS.filter(m => m.order < 38), ...candidate.missions];
 const boss = candidate.missions.at(-1);
 const publicMissions = all.map(mission => ({ ...mission, sources: [],
   questions: mission.questions.map(({ id, prompt, options, presentation }) => ({ id, prompt, options, ...(presentation ? { presentation } : {}) })) }));

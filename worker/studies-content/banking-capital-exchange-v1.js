@@ -1,5 +1,5 @@
 // Gerado por node worker/scripts/studies-ce-candidate.mjs --write. Não editar.
-// Fonte editorial #570; candidato desativado, sem autorização de publicação.
+// Fonte editorial #570; publicação autorizada em 01/10/2026, 01:20 UTC.
 export const CE_MISSIONS = Object.freeze([
   {
     "id": "banking.ce.instrumentos",
@@ -14,7 +14,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 25,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -399,7 +399,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce01",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.pc.boss",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -415,7 +415,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -755,7 +755,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce02",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.instrumentos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -771,7 +771,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -1113,7 +1113,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce03",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.acoes",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1129,7 +1129,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -1468,7 +1468,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce04",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.divida",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1484,7 +1484,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -1826,7 +1826,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce05",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.fundos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -1842,7 +1842,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -2174,7 +2174,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce06",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.riscos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2190,7 +2190,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -2537,7 +2537,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce07",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.cotacao",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2553,7 +2553,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -2908,7 +2908,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce08",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.operacoes",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -2924,7 +2924,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -3272,7 +3272,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce09",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.regimes",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -3288,7 +3288,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -3631,7 +3631,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce10",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.cambio-real",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -3647,7 +3647,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -3990,7 +3990,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.ce11",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.comercio",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -4006,7 +4006,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 0,
     "estimatedMinutes": 20,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -4579,7 +4579,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.cer",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.fluxos",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   },
   {
@@ -4595,7 +4595,7 @@ export const CE_MISSIONS = Object.freeze([
     "passScore": 75,
     "estimatedMinutes": 30,
     "publication": {
-      "status": "draft",
+      "status": "published",
       "releaseId": "capital-exchange-intro-r1",
       "releaseSequence": 4,
       "changeImpact": "new"
@@ -5290,7 +5290,7 @@ export const CE_MISSIONS = Object.freeze([
       "editorialId": "draft.cechefe",
       "blockId": "banking.capital-exchange",
       "prerequisiteId": "banking.ce.revisao",
-      "parametersApproved": false
+      "parametersApproved": true
     }
   }
 ]);

@@ -10,10 +10,10 @@ import { curriculumSnapshot } from '../../studies-content/curriculum-v1.js';
 
 const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.order < 38);
 const candidate = compileCeCandidate(await loadCeEditorial());
-// Ativação exclusivamente sintética; arquivo gerado e runtime continuam draft.
-const ce = candidate.missions.map(m => ({...m, publication:{...m.publication,status:'published'}}));
+// Release autorizada; transição em memória preserva o baseline SFN/MP/PC.
+const ce = candidate.missions;
 
-test('manifesto e mapa reais incluem o pacote com status publicado somente na simulação', async () => {
+test('manifesto e mapa reais incluem o pacote com status publicado aprovado', async () => {
   const context = vm.createContext({});
   const cache = new Map();
   const replacement = new vm.SyntheticModule(['CE_MISSIONS', 'CE_SOURCES'], function () {
@@ -45,10 +45,15 @@ test('manifesto e mapa reais incluem o pacote com status publicado somente na si
   assert.equal(catalog.publicationSnapshot(progress).newCount, 13);
 });
 async function setup(t, missions) {
-  return fixture(t, {
+  const result = await fixture(t, {
     missions, sources: [...STUDY_SOURCES, ...candidate.sources],
     publicationSnapshot: progress => publicationSnapshot(missions, progress), curriculumSnapshot
   });
+  // O perfil atualiza updated_at em toda chamada autenticada; fixe só o relógio
+  // SQLite da fixture para comparar todas as colunas sem corrida entre segundos.
+  const timestamp = new Date().toISOString().slice(0,19).replace('T',' ');
+  result.sql.function('current_timestamp', () => timestamp);
+  return result;
 }
 function seedCompletion(sql, missions) {
   const insert = sql.prepare(`INSERT OR IGNORE INTO study_topic_progress
@@ -138,7 +143,7 @@ test('adição simulada preserva SFN/MP/PC, XP, tentativas, conquista, revisões
   assert.deepEqual(after.publication.newMissionIds, ce.map(mission => mission.id));
   assert.equal(after.publication.revisionRecommendedCount, 0);
   assert.equal(after.curriculum.readiness.status, 'not_measured');
-  assert.equal(after.curriculum.publishedBlocks, 3); // Fixture usa mapa desativado; mapa completo simulado está no primeiro teste.
+  assert.equal(after.curriculum.publishedBlocks, 4); // Catálogo ativo inclui CE autorizado.
 });
 
 test('CE-R preserva recuperação nas aulas anteriores via referências do endpoint', async t => {
