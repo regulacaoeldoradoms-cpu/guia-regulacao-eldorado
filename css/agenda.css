@@ -225,7 +225,17 @@
   cursor: pointer;
 }
 .agenda-card-actions a { display: grid; place-items: center; text-decoration: none; border: 1px solid #b9d1e6; background: #f5faff; color: #0f5da5; }
+.agenda-card-actions a.agenda-whatsapp-patient-button {
+  border-color: #15803d;
+  background: #16a34a;
+  color: #fff;
+}
+.agenda-card-actions a.agenda-whatsapp-patient-button:hover { background: #15803d; }
 .agenda-card-actions button { border: 1px solid #d2dee9; background: #fff; color: #385773; }
+.agenda-card-actions button.agenda-whatsapp-patient-button:disabled {
+  cursor: not-allowed;
+  opacity: .68;
+}
 .agenda-empty { padding: 34px 18px; text-align: center; color: #667d93; }
 
 .agenda-help-body { padding: 18px 22px 22px; color: #536f86; line-height: 1.65; }
