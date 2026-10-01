@@ -3340,7 +3340,7 @@
     }
   }
 
-  async function exitEditor({ restoreOriginal = true } = {}) {
+  async function exitEditor({ restoreOriginal = true, allowLocalRecovery = false } = {}) {
     const session = state.editorSession;
     if (!session || state.editorBusy || state.driveSyncInFlight) return false;
 
@@ -3379,7 +3379,27 @@
           'warning'
         );
         syncEditorControls();
-        return false;
+        const newerRevisionPending = synced === true
+          && session === state.editorSession
+          && currentEditorRevision() !== state.driveSyncLastConfirmedRevision;
+        if (!allowLocalRecovery || newerRevisionPending || session !== state.editorSession) return false;
+
+        const exportBeforeClose = confirm(
+          'O Google Drive não confirmou esta versão. Deseja salvar uma cópia local do PDF e fechar o editor com segurança?'
+        );
+        if (!exportBeforeClose) return false;
+
+        const exported = await exportEditedPdfLocal();
+        if (!exported || session !== state.editorSession) {
+          setEditorStatus(
+            'Não foi possível gerar a cópia local. O editor continuará aberto para proteger as alterações.',
+            'warning'
+          );
+          return false;
+        }
+
+        resetEditorState({ restoreOriginal });
+        return true;
       }
     }
 
@@ -6562,13 +6582,13 @@
     scheduleLikelyPdfWarmup();
   }
 
-  async function requestClosePdf() {
+  async function requestClosePdf({ allowLocalRecovery = false } = {}) {
     const openId = state.pdfOpenId;
     if (state.renameBusy) {
       showStatus('Aguarde a renomeação ser confirmada pelo Google Drive antes de fechar o Titon.', 'warning');
       return false;
     }
-    if (state.editorSession && !(await exitEditor({ restoreOriginal: false }))) return false;
+    if (state.editorSession && !(await exitEditor({ restoreOriginal: false, allowLocalRecovery }))) return false;
     if (openId !== state.pdfOpenId || state.editorSession) return false;
     closePdf();
     return true;
@@ -6967,7 +6987,7 @@
     else loadFolder({ append: true, pageToken: state.nextPageToken });
   });
 
-  els.closeViewer.addEventListener('click', () => requestClosePdf()
+  els.closeViewer.addEventListener('click', () => requestClosePdf({ allowLocalRecovery: true })
     .then((closed) => {
       if (closed) focusSelectedListItem();
       return closed;
@@ -7323,7 +7343,7 @@
   els.editorPrint?.addEventListener('click', () => printEditedPdfLocal().catch(() => {}));
   els.pdfSave?.addEventListener('click', () => saveViewedPdfLocal().catch(() => {}));
   els.pdfPrint?.addEventListener('click', () => printViewedPdfLocal().catch(() => {}));
-  els.editorExit.addEventListener('click', () => exitEditor().catch(() => {}));
+  els.editorExit.addEventListener('click', () => exitEditor({ allowLocalRecovery: true }).catch(() => {}));
   els.editorMergePosition?.addEventListener('change', () => {
     if (els.editorMergePageField) {
       els.editorMergePageField.hidden = els.editorMergePosition.value !== 'after-page';

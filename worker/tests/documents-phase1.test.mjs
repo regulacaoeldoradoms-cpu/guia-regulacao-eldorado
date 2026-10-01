@@ -1096,7 +1096,8 @@ for (const scenario of [
       await assert.rejects(uploadDriveSyncChunk(env, username, syncId,
         syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length)),
       (error) => error.code === (scenario.code || 'DRIVE_VERSION_CONFLICT') && error.status === (scenario.status || 409));
-      assert.equal(metadataReads, scenario.receipt ? 1 : 2, 'invalid receipts must fail before adopting files.get');
+      const expectedMetadataReads = scenario.receipt ? 1 : (scenario.recover ? 5 : 2);
+      assert.equal(metadataReads, expectedMetadataReads, 'confirmação deve repetir somente metadado ainda atrasado');
       assert.ok(await env.AUTH_DB.prepare('SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?').bind(syncId).first());
       if (scenario.recover) {
         current = { ...receipt, version: '9' };

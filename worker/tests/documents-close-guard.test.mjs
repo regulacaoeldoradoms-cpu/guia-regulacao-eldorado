@@ -222,15 +222,27 @@ for (const busyFlag of ['editorBusy', 'driveSyncInFlight']) {
 }
 
 for (const failure of ['DRIVE_VERSION_CONFLICT', 'DRIVE_SYNC_UNAVAILABLE']) {
-  test(`real X listener keeps edits after ${failure}`, async () => {
-    const client = await createClient({ failure });
+  test(`real X listener keeps edits after ${failure} when local recovery is declined`, async () => {
+    const client = await createClient({ failure, confirmResponse: false });
     await client.click('closeViewerButton');
     assertStillOpen(client);
     assert.equal(client.calls.requests.length, 1);
     assert.match(client.calls.requests[0].url, /\/sync\/start$/);
     assert.equal(client.state.driveSyncLastConfirmedRevision, 1);
     assert.equal(client.state.driveSyncVisualState, 'failed');
-    assert.match(client.element('documentsEditorStatus').textContent, /permanecerá aberto/i);
+    assert.equal(client.calls.confirms.length, 1);
+    assert.match(client.calls.confirms[0], /salvar uma cópia local/i);
+  });
+
+  test(`real X listener exports locally and closes after ${failure} when recovery is accepted`, async () => {
+    const client = await createClient({ failure, confirmResponse: true });
+    await client.click('closeViewerButton');
+    assert.equal(client.calls.requests.length, 1);
+    assert.equal(client.calls.downloads.length, 1);
+    assert.equal(client.state.editorSession, null);
+    assert.equal(client.state.pdfItem, null);
+    assert.equal(client.element('documentsViewer').hidden, true);
+    assert.equal(client.calls.close, 1);
   });
 }
 
@@ -257,8 +269,8 @@ test('real X listener waits for confirmed upload before destroying the viewer', 
   assert.equal(client.calls.close, 1);
 });
 
-test('completed upload without version confirmation cannot close the real viewer', async () => {
-  const client = await createClient({ incomplete: true });
+test('completed upload without version confirmation cannot close the real viewer when recovery is declined', async () => {
+  const client = await createClient({ incomplete: true, confirmResponse: false });
   await client.click('closeViewerButton');
   assertStillOpen(client);
   assert.equal(client.state.driveSyncVisualState, 'failed');
