@@ -226,6 +226,24 @@
 }
 .agenda-card-actions a { display: grid; place-items: center; text-decoration: none; border: 1px solid #b9d1e6; background: #f5faff; color: #0f5da5; }
 .agenda-card-actions button { border: 1px solid #d2dee9; background: #fff; color: #385773; }
+.agenda-card-actions .agenda-whatsapp-button {
+  border-color: #128c7e;
+  background: #128c7e;
+  color: #fff;
+}
+.agenda-card-actions .agenda-whatsapp-button:hover:not(:disabled),
+.agenda-card-actions .agenda-whatsapp-button:focus-visible:not(:disabled) {
+  border-color: #0f766b;
+  background: #0f766b;
+  color: #fff;
+}
+.agenda-card-actions .agenda-whatsapp-button:disabled {
+  border-color: #c8d5df;
+  background: #edf2f5;
+  color: #718599;
+  cursor: default;
+  opacity: 1;
+}
 .agenda-empty { padding: 34px 18px; text-align: center; color: #667d93; }
 
 .agenda-help-body { padding: 18px 22px 22px; color: #536f86; line-height: 1.65; }
