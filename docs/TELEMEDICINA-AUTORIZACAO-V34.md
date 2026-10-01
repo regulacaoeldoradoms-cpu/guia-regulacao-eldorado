@@ -189,3 +189,43 @@ Além disso, o `OPTIONS` CORS necessário ao navegador passava pela reconciliaç
 
 A lista administrativa passa, portanto, a ter custo de leitura praticamente constante em relação ao número de usuários, preservando a mesma regra de autorização.
 
+## Complemento V34.8 — sessão operacional não pode cair por edição administrativa comum
+
+Decisão permanente registrada em 01/10/2026 após nova ocorrência em que uma conta operacional de Telemedicina recebia `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor` apesar de a capacidade server-side continuar ativa.
+
+### Diagnóstico da recorrência
+
+A inspeção do D1 confirmou que, no momento do incidente:
+
+- a conta permanecia ativa;
+- `auth_telemedicine_access.enabled = 1`;
+- a última intenção de auditoria continuava sendo de acesso habilitado;
+- o papel-base permanecia `recepcao`, conforme o desenho V34;
+- a `session_version` da conta havia sido incrementada recentemente.
+
+O painel administrativo envia `name`, `jobTitle` e `active` quando salva uma edição. O backend-base iniciava toda edição de uma conta de terceiro com `invalidatesSessions = true`. Assim, alterar apenas nome/cargo textual — ou simplesmente salvar os mesmos metadados — podia incrementar `session_version` e invalidar imediatamente o Bearer token do profissional.
+
+A Telemedicina ainda convertia dois estados diferentes no mesmo `403`: sessão inválida e ausência real da capacidade. Por isso o incidente parecia uma nova perda da autorização V34, embora a capacidade estivesse íntegra no D1.
+
+### Regra V34.8
+
+1. Alterações administrativas de nome e cargo textual não invalidam sessões.
+2. Campos enviados sem mudança real não geram escrita nem incremento de `session_version`.
+3. Alterações de segurança/autorização — ativação/desativação, mudança de perfil-base ou função do Conselho — continuam invalidando sessões.
+4. Redefinição de senha continua invalidando sessões anteriores.
+5. As APIs de Telemedicina e Agenda retornam `401` com orientação para entrar novamente quando a sessão estiver inválida ou expirada.
+6. O `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor` fica reservado para sessão válida sem capacidade de Telemedicina.
+7. O cliente remove localmente um token obsoleto quando uma API protegida confirma `401`, evitando manter interface autenticada com credencial já inválida.
+8. A capacidade `auth_telemedicine_access` permanece a fonte de verdade e não é alterada por esta correção.
+
+Uma sessão que já tenha sido invalidada antes da publicação da V34.8 precisa autenticar novamente uma única vez. Não é necessário reconceder a capacidade de Telemedicina quando ela já está ativa no D1.
+
+### Arquivos e regressão
+
+- `worker/auth-management-v2.js`: invalidação de sessão passa a ocorrer somente em mudanças sensíveis;
+- `worker/telemedicine-router-v2.js`, `worker/telemedicine.js` e `worker/agenda.js`: separação entre 401 de sessão e 403 de capacidade;
+- `js/auth-client.js`: limpeza de token obsoleto em 401 protegido;
+- `worker/tests/developer-self-edit-session.test.mjs`: reproduz o salvamento administrativo de uma conta de Telemedicina e exige que a sessão continue válida;
+- `worker/tests/telemedicine-access-v34.test.mjs`: valida a distinção 401/403;
+- `.github/workflows/validate-telemedicine-edit.yml`: atualizado para a nova forma explícita de negação.
+
