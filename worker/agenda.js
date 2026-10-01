@@ -205,6 +205,7 @@ function publicRecord(record, username, readMemory) {
     appointmentType: clean(record.appointmentType, 120),
     facility: clean(record.facility, 180),
     status: clean(record.status, 120),
+    phone: normalizeBrazilPhone(record.phone),
     firstSeenAt: clean(record.firstSeenAt, 40),
     lastSeenAt: clean(record.lastSeenAt, 40),
     lastChangedAt: clean(record.lastChangedAt, 40),
