@@ -270,10 +270,13 @@ async function syncRecords(env, input, user) {
     const existing = existingBySourceId.get(record.sourceId) || null;
 
     if (!existing) {
+      contactsNeeded.add(record.sourceId);
       writes.push({
         documentPath: `${COLLECTION}/${documentId}`,
         data: {
           ...record,
+          phone: '',
+          phoneCheckedAt: '',
           firstSeenAt: now,
           lastSeenAt: now,
           lastChangedAt: now,
