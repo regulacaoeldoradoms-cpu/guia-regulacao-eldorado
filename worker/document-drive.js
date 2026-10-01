@@ -1029,6 +1029,13 @@ async function currentDrivePdfMetadata(env, ref, openedFile = null) {
   if (!metadata?.id || metadata.mimeType !== PDF_MIME) {
     throw new DriveIntegrationError('DRIVE_PDF_REQUIRED', 'O arquivo atual não é mais um PDF válido para sincronização.', 409);
   }
+  if (String(metadata.id) !== String(file.id)) {
+    throw new DriveIntegrationError(
+      'DRIVE_FILE_ID_MISMATCH',
+      'O Google Drive respondeu com identidade de arquivo incompatível.',
+      502
+    );
+  }
 
   return {
     id: String(metadata.id),
