@@ -55,18 +55,25 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20260916-3/);
+  assert.match(html, /js\/agenda\.js\?v=20261001-whatsapp-1/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
 
-test('sincronizador lê somente a tabela Agendados e não extrai credenciais', () => {
+test('sincronizador lê Agendados e consulta somente o contato necessário na sessão autenticada do DigSaúde', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
   assert.match(source, /fi-ta-row/);
   assert.match(source, /\.table\.records\./);
   assert.match(source, /Agendados/);
+  assert.match(source, /consultationUrl/);
+  assert.match(source, /ver dados do paciente/);
+  assert.match(source, /telefonecel/);
+  assert.match(source, /\/livewire\/update/);
+  assert.match(source, /meta\[name="csrf-token"\]/);
+  assert.match(source, /CONTACT_CONCURRENCY = 1/);
+  assert.match(source, /contactCache = new Map\(\)/);
   assert.match(source, /postMessage/);
-  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
+  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|Authorization|Bearer/);
 });
 
 test('ponte aceita mensagens somente da origem oficial do DigSaúde', () => {
@@ -100,7 +107,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.1\.1/);
+  assert.match(source, /@version\s+1\.2\.0/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -109,6 +116,25 @@ test('sincronizador automático consulta Agendados em segundo plano a cada 15 mi
   assert.match(source, /Ativar sincronização automática/);
   assert.match(source, /@updateURL\s+https:\/\/regulacaoeldoradoms\.com\.br\/agenda\/digsaude-agenda-sync\.user\.js/);
   assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
+});
+
+test('Agenda usa contato protegido para abrir lembrete diretamente no WhatsApp do paciente', () => {
+  const frontend = read('js/agenda.js');
+  const backend = read('worker/agenda.js');
+  const css = read('css/agenda.css');
+
+  assert.match(backend, /normalizeBrazilPhone/);
+  assert.match(backend, /phone:\s*normalizeBrazilPhone\(record\.phone\)/);
+  assert.match(backend, /phone:\s*record\.phone \|\| normalizeBrazilPhone\(existing\.phone\)/);
+  assert.match(frontend, /Avisar por WhatsApp/);
+  assert.match(frontend, /Este é um lembrete da sua consulta agendada:/);
+  assert.match(frontend, /Data:/);
+  assert.match(frontend, /Horário:/);
+  assert.match(frontend, /Especialidade:/);
+  assert.match(frontend, /Médico Psiquiatra/);
+  assert.match(frontend, /https:\/\/wa\.me\//);
+  assert.doesNotMatch(frontend, /Abrir no DigSaúde|DIGSAUDE_BASE/);
+  assert.match(css, /agenda-whatsapp-patient-button/);
 });
 
 test('ponte da Agenda permanece aberta e aceita sincronizações repetidas com deduplicação', () => {
