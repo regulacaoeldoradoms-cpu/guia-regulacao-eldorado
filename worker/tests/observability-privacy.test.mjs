@@ -304,11 +304,13 @@ test('Fase 7E aceita decomposição técnica do Drive sem consulta, nome ou iden
       build_ms: 480,
       drive_start_ms: 3500,
       drive_upload_ms: 7200,
+      superseded: true,
       viewport_class: 'desktop'
     }
   });
   assert.ok(sync);
   assert.equal(sync.properties.drive_upload_ms, 7200);
+  assert.equal(sync.properties.superseded, true);
 
   assert.equal(sanitizeObservabilityEvent({
     event: 'drive_search_completed',
