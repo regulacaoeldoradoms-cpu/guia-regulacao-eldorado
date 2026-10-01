@@ -177,7 +177,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260929-documents-1'/);
+  assert.match(source, /CACHE_VERSION = '20261001-documents-drive-confirm-1'/);
 });
 
 test('Fase 7E mantém somente a raiz aquecida e pastas comuns seguem refresh autoritativo', () => {
@@ -1108,6 +1108,8 @@ test('editor PDF sincroniza automaticamente apenas após alteração e mantém f
   assert.match(client, /scheduleAutomaticDriveSync/);
   assert.match(client, /driveSyncLastObservedRevision/);
   assert.match(client, /driveSyncLastConfirmedRevision/);
+  assert.match(client, /allowLocalRecovery/);
+  assert.match(client, /salvar uma cópia local do PDF e fechar o editor com segurança/);
   assert.match(client, /forceDriveSync/);
   assert.match(client, /async function exitEditor/);
   assert.match(client, /Sincronizando alterações antes de fechar o editor/);
