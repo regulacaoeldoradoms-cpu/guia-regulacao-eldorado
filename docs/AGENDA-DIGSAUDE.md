@@ -21,7 +21,7 @@ A interface aplica a mesma regra do módulo de Telemedicina e o Worker revalida 
 
 A aba **Agendados** do DigSaúde é renderizada como uma tabela Filament/Livewire. Cada consulta possui um identificador estável no registro da tabela e uma rota individual no formato `/consultas/{id}/view`.
 
-O Portal não trata endpoints internos do Livewire como API pública e não armazena credenciais do DigSaúde. Para o contato do paciente, o sincronizador usa a própria página individual da consulta dentro da sessão same-origin já autenticada no navegador, aciona **Ver Dados do Paciente** em um frame técnico invisível e lê somente o campo de telefone exibido pelo DigSaúde.
+O Portal não trata endpoints internos do Livewire como API pública e não armazena credenciais do DigSaúde. Para o contato do paciente, o sincronizador faz um GET same-origin da página individual da consulta, lê do HTML atual o componente e a ação **Ver Dados do Paciente** e reproduz localmente a chamada Livewire correspondente. O método, parâmetros, snapshot e token CSRF são obtidos da própria página carregada naquela sessão; nenhum deles é enviado ao Portal. Da resposta, somente o telefone é extraído.
 
 ## Fluxo de sincronização V2 — automático enquanto o DigSaúde estiver aberto
 
@@ -35,7 +35,7 @@ O Portal não trata endpoints internos do Livewire como API pública e não arma
 8. Quando há mudança — ou quando o usuário força uma verificação pelo botão — o snapshot é enviado à ponte por `postMessage`.
 9. A ponte aceita mensagens somente da origem oficial do DigSaúde, deduplica cada envio por `syncId`, valida a sessão do Portal e chama a API same-origin.
 10. O Worker compara e persiste os registros em lote no Firestore e responde somente com os identificadores dos agendamentos cujo telefone está ausente ou precisa de atualização.
-11. O userscript consulta no máximo **2 fichas simultaneamente**, dentro do próprio domínio autenticado do DigSaúde, localiza o campo de telefone em **Dados do Paciente** e envia um segundo snapshot parcial somente com os contatos necessários.
+11. O userscript consulta no máximo **2 fichas simultaneamente**, dentro do próprio domínio autenticado do DigSaúde. Para cada ficha, ele faz GET da consulta e uma chamada `/livewire/update` derivada do HTML/snapshot atual para executar **Ver Dados do Paciente**, localiza o telefone na resposta e envia um segundo snapshot parcial somente com os contatos necessários.
 12. O telefone fica persistido de forma privada junto ao registro da Agenda e é atualizado novamente após 24 horas de uso/sincronização, sem exigir que o DigSaúde permaneça aberto para a Ediane depois da coleta.
 
 A sessão, cookie, senha, token CSRF ou token de autenticação do DigSaúde não é coletado nem enviado ao Portal. O `credentials: include` é usado exclusivamente pelo navegador no GET same-origin do próprio DigSaúde; o userscript não lê nem exporta cookies.
@@ -138,8 +138,8 @@ O **local não é inserido automaticamente**. Ediane informa o local em uma mens
 
 - número armazenado somente no Firestore protegido da Agenda;
 - número não aparece na listagem geral, no HTML estático, GitHub, PostHog, logs ou telemetria;
-- nenhuma senha, cookie, CSRF ou token do DigSaúde é exportado;
-- a extração ocorre por sessão same-origin no navegador autorizado;
+- nenhuma senha, cookie, token de sessão ou CSRF do DigSaúde é exportado; o CSRF é lido e usado somente na requisição same-origin local;
+- a extração ocorre por GET + Livewire same-origin no navegador autorizado, sem iframe e sem contornar `X-Frame-Options`;
 - a consulta individual é usada somente para obter o campo de telefone;
 - o sincronizador limita a concorrência a 2 fichas para não sobrecarregar o DigSaúde;
 - contatos faltantes são tentados novamente e contatos existentes são revalidados periodicamente.
