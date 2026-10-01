@@ -511,18 +511,29 @@
     try {
       const nextSnapshot = await fetchSnapshot();
       lastCheckAt = Date.now();
+      const contactResult = await enrichSnapshotContacts(nextSnapshot);
       const nextFingerprint = fingerprint(nextSnapshot);
 
       if (!force && nextFingerprint === lastFingerprint) {
         syncInFlight = false;
-        setButton(`Automático ativo · sem mudanças · ${clock()}`, 'success');
+        setButton(
+          contactResult.failed
+            ? `Automático ativo · sem mudanças · ${contactResult.failed} contato(s) pendente(s) · ${clock()}`
+            : `Automático ativo · sem mudanças · ${clock()}`,
+          contactResult.failed ? 'error' : 'success'
+        );
         return;
       }
 
       pendingSnapshot = nextSnapshot;
       pendingFingerprint = nextFingerprint;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      setButton(`Automático ativo · enviando ${nextSnapshot.records.length}…`, 'working');
+      setButton(
+        contactResult.failed
+          ? `Automático ativo · enviando agenda · ${contactResult.failed} contato(s) pendente(s)…`
+          : `Automático ativo · enviando ${nextSnapshot.records.length}…`,
+        'working'
+      );
       scheduleDeliveryRetry();
     } catch (error) {
       syncInFlight = false;
