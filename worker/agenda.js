@@ -259,6 +259,8 @@ async function syncRecords(env, input, user) {
   }
 
   const writes = [];
+  const contactsNeeded = new Set();
+  const nowMs = Date.parse(now) || Date.now();
   let created = 0;
   let changed = 0;
   let unchanged = 0;
