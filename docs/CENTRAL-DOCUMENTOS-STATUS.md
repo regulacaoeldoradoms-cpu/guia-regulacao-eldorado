@@ -279,14 +279,15 @@ Validação local da alteração: checks de sintaxe aprovados; regressões focai
 
 Nova decisão permanente após recorrência de bloqueios por “arquivo alterado no Google Drive”: **não bloquear o salvamento de conteúdo por divergência de versão**. A presença multiusuário já fornece o alerta visual; o fluxo operacional deve permanecer utilizável.
 
-Implementação prevista nesta unidade:
+Implementação concluída na **PR #575**:
 - preflight de `replace_pdf` relê a versão atual, informa `sourceChangedSinceOpen` e segue sem `DRIVE_VERSION_CONFLICT`;
 - a revisão remota atual é preservada antes do novo upload;
 - a última gravação confirmada no Google Drive prevalece;
 - se uma gravação posterior superar a que acabou de ser enviada, o resultado é técnico `superseded=true`, não um bloqueio;
 - Blob local não é gravado no cache como versão atual quando já foi superado;
 - identidade do arquivo, referência opaca, MIME, permissão, sessão, write gate e recibo válido permanecem obrigatórios;
-- renomeação não é abrangida por esta mudança.
+- renomeação não é abrangida por esta mudança;
+- `npm run check` aprovado e suíte completa local do Worker com **685/685 testes aprovados** antes da publicação.
 
 A Fase 7G em `docs/CENTRAL-DOCUMENTOS-FASE-7.md` passa a prevalecer sobre trechos históricos das Fases 4/4D/7F que descrevem bloqueio por conflito de conteúdo.
 
