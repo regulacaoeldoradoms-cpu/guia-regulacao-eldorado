@@ -430,9 +430,14 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
   const nextRequest = (path, input = nextBody) => request('/api/documents/drive/sync/' + path, {
     method: 'POST', token, body: input
   });
-  const listRefConflict = await worker.fetch(nextRequest('start', { ...nextBody, ref: item.ref }), f.env, {});
-  assert.equal(listRefConflict.status, 409);
-  assert.equal((await listRefConflict.json()).code, 'DRIVE_VERSION_CONFLICT');
+  const listRefStart = await worker.fetch(nextRequest('start', { ...nextBody, ref: item.ref }), f.env, {});
+  assert.equal(listRefStart.status, 201, 'a stale listing ref may still save under last-write-wins');
+  const listRefSession = await listRefStart.json();
+  assert.equal(listRefSession.conflictDetected, false);
+  assert.equal(listRefSession.sourceChangedSinceOpen, true);
+  assert.equal((await worker.fetch(request(`/api/documents/drive/sync/${listRefSession.syncId}`, {
+    method: 'DELETE', token
+  }), f.env, {})).status, 200);
 
   const originalControl = f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID;
   const otherControl = 'synthetic-different-control-4d';
@@ -440,10 +445,14 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
     SELECT ?, enabled, expires_at, allowed_username, allowed_file_ids_json
     FROM document_drive_homologation_controls WHERE control_id = ?`).run(otherControl, originalControl);
   f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID = otherControl;
-  const beforeScopeConflict = f.calls.google.length;
-  const scopeConflict = await worker.fetch(nextRequest('start'), f.env, {});
-  assert.equal(scopeConflict.status, 409, 'another control window cannot reuse the certified baseline');
-  assert.ok(f.calls.google.slice(beforeScopeConflict).every((call) => call.method === 'GET'));
+  const scopedStart = await worker.fetch(nextRequest('start'), f.env, {});
+  assert.equal(scopedStart.status, 201, 'a separately authorized control may save the same file under last-write-wins');
+  const scopedSession = await scopedStart.json();
+  assert.equal(scopedSession.conflictDetected, false);
+  assert.equal(scopedSession.sourceChangedSinceOpen, true);
+  assert.equal((await worker.fetch(request(`/api/documents/drive/sync/${scopedSession.syncId}`, {
+    method: 'DELETE', token
+  }), f.env, {})).status, 200);
   f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID = originalControl;
 
   f.db.prepare('UPDATE document_drive_homologation_controls SET enabled = 0 WHERE control_id = ?').run(originalControl);
@@ -471,13 +480,23 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
   assert.equal(nextCompleted.currentVersion, '12');
   assert.equal(nextCompleted.cacheKey, item.cacheKey);
   metadata = { ...metadata, version: '13', headRevisionId: 'synthetic-external-head' };
-  const beforeExternalConflict = f.calls.google.length;
-  const externalConflict = await worker.fetch(request('/api/documents/drive/sync/start', {
+  const beforeExternalSave = f.calls.google.length;
+  const externalSave = await worker.fetch(request('/api/documents/drive/sync/start', {
     method: 'POST', token, body: { ...body, ref: nextCompleted.ref, baseVersion: nextCompleted.currentVersion }
   }), f.env, {});
-  assert.equal(externalConflict.status, 409);
-  assert.equal((await externalConflict.json()).code, 'DRIVE_VERSION_CONFLICT');
-  assert.ok(f.calls.google.slice(beforeExternalConflict).every((call) => call.method === 'GET'));
+  assert.equal(externalSave.status, 201);
+  const externalSession = await externalSave.json();
+  assert.equal(externalSession.conflictDetected, false);
+  assert.equal(externalSession.sourceChangedSinceOpen, true);
+  assert.ok(
+    f.calls.google.slice(beforeExternalSave).some((call) =>
+      call.method === 'PATCH' && call.url.includes('/revisions/synthetic-external-head')
+    ),
+    'the externally newer revision must be preserved before our last write'
+  );
+  assert.equal((await worker.fetch(request(`/api/documents/drive/sync/${externalSession.syncId}`, {
+    method: 'DELETE', token
+  }), f.env, {})).status, 200);
   assert.equal(f.db.prepare('SELECT count(*) AS n FROM document_drive_homologation_sessions').get().n, 0);
   assert.equal(f.db.prepare('SELECT count(*) AS n FROM document_drive_sync_sessions').get().n, 0);
   assert.equal(f.db.prepare("SELECT role FROM auth_users WHERE username = 'unrelated.legacy'").get().role, 'telemedicina');
