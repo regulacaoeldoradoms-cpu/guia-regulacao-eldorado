@@ -414,6 +414,27 @@ async function markRead(env, sourceId, username) {
   return { sourceId: validSourceId, readAt: now };
 }
 
+async function patientContact(env, sourceId) {
+  const validSourceId = cleanSourceId(sourceId);
+  if (!validSourceId) throw Object.assign(new Error('Agendamento inválido.'), { status: 400 });
+
+  const documentId = await digestId(validSourceId);
+  const existing = await firestoreGet(env, `${COLLECTION}/${documentId}`);
+  if (!existing || existing.active === false) {
+    throw Object.assign(new Error('Agendamento ativo não encontrado.'), { status: 404 });
+  }
+
+  const phone = normalizePatientPhone(existing.patientPhone);
+  if (!phone) {
+    throw Object.assign(new Error('O contato deste paciente ainda não foi sincronizado.'), {
+      status: 409,
+      code: 'AGENDA_CONTACT_NOT_SYNCED'
+    });
+  }
+
+  return { sourceId: validSourceId, phone };
+}
+
 export function isAgendaApi(pathname) {
   return pathname === '/api/agenda' || pathname.startsWith('/api/agenda/');
 }
@@ -466,6 +487,19 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
       return json({ ok: true, ...result }, 200, origin, originAllowed);
     } catch (error) {
       return json({ error: error?.message || 'Falha ao sincronizar a Agenda.' }, Number(error?.status || 500), origin, originAllowed);
+    }
+  }
+
+  if (url.pathname === '/api/agenda/contact' && request.method === 'POST') {
+    try {
+      const payload = await parseBody(request);
+      const result = await patientContact(env, payload?.sourceId);
+      return json({ ok: true, ...result }, 200, origin, originAllowed);
+    } catch (error) {
+      return json({
+        error: error?.message || 'Falha ao consultar o contato do paciente.',
+        ...(error?.code ? { code: error.code } : {})
+      }, Number(error?.status || 500), origin, originAllowed);
     }
   }
 
