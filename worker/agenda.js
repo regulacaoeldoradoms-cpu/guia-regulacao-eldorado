@@ -288,6 +288,7 @@ async function syncRecords(env, input, user) {
       data: {
         ...existingData,
         ...record,
+        phone: record.phone || normalizeBrazilPhone(existing.phone),
         firstSeenAt: clean(existing.firstSeenAt, 40) || now,
         lastSeenAt: now,
         lastChangedAt: stateChanged ? now : (clean(existing.lastChangedAt, 40) || now),
