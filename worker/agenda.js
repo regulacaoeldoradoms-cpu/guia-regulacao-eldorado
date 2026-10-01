@@ -273,10 +273,13 @@ async function syncRecords(env, input, user) {
     const existing = existingBySourceId.get(record.sourceId) || null;
 
     if (!existing) {
+      const patientPhone = normalizePatientPhone(record.patientPhone);
       writes.push({
         documentPath: `${COLLECTION}/${documentId}`,
         data: {
           ...record,
+          patientPhone,
+          patientPhoneSyncedAt: patientPhone ? now : '',
           firstSeenAt: now,
           lastSeenAt: now,
           lastChangedAt: now,
@@ -286,18 +289,28 @@ async function syncRecords(env, input, user) {
           lastSyncedBy: clean(user.username, 80)
         }
       });
+      if (patientPhone) contactsUpdated += 1;
+      else if (!contactPass) contactRefreshSourceIds.push(record.sourceId);
       created += 1;
       continue;
     }
 
     const didChange = comparable(existing) !== comparable(record);
     const stateChanged = didChange || existing.active === false;
+    const incomingPhone = normalizePatientPhone(record.patientPhone);
+    const existingPhone = normalizePatientPhone(existing.patientPhone);
+    const patientPhone = incomingPhone || existingPhone;
+    const patientPhoneSyncedAt = incomingPhone
+      ? now
+      : clean(existing.patientPhoneSyncedAt, 40);
     const { id: _existingId, ...existingData } = existing;
     writes.push({
       documentPath: `${COLLECTION}/${existing.id || documentId}`,
       data: {
         ...existingData,
         ...record,
+        patientPhone,
+        patientPhoneSyncedAt,
         firstSeenAt: clean(existing.firstSeenAt, 40) || now,
         lastSeenAt: now,
         lastChangedAt: stateChanged ? now : (clean(existing.lastChangedAt, 40) || now),
@@ -307,6 +320,11 @@ async function syncRecords(env, input, user) {
         lastSyncedBy: clean(user.username, 80)
       }
     });
+
+    if (incomingPhone && incomingPhone !== existingPhone) contactsUpdated += 1;
+    if (!contactPass && !incomingPhone && contactNeedsRefresh({ ...existing, patientPhone, patientPhoneSyncedAt })) {
+      contactRefreshSourceIds.push(record.sourceId);
+    }
 
     if (stateChanged) changed += 1;
     else unchanged += 1;
