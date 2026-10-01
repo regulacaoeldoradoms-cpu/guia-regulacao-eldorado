@@ -34,7 +34,8 @@ const previewScope = {
 
 async function confirmedFixture(t, {
   scope = {}, fileId = 'synthetic-baseline-file', head = 'confirmed-head-8',
-  username = 'baseline.editor', versions = { initial: '7', receipt: '8', confirmed: '9', drift: '11' }
+  username = 'baseline.editor', versions = { initial: '7', receipt: '8', confirmed: '9', drift: '11' },
+  confirmationLagReads = 0
 } = {}) {
   const database = new DatabaseSync(':memory:');
   const env = {
@@ -59,7 +60,9 @@ async function confirmedFixture(t, {
     receipt,
     afterUpload: { ...receipt, version: versions.confirmed },
     requests: [],
-    starts: 0
+    starts: 0,
+    uploaded: false,
+    confirmationLagReadsRemaining: Math.max(0, Number(confirmationLagReads || 0))
   };
   const originalFetch = globalThis.fetch;
   t.after(() => { globalThis.fetch = originalFetch; database.close(); });
@@ -85,11 +88,16 @@ async function confirmedFixture(t, {
     if (target.searchParams.has('upload_id')) {
       assert.equal(options.method, 'PUT');
       drive.metadata = drive.afterUpload;
+      drive.uploaded = true;
       return Response.json(drive.receipt);
     }
     assert.equal(options.method, 'GET');
     if (target.pathname === '/drive/v3/files') return Response.json({ files: [drive.metadata] });
     assert.equal(target.pathname, `/drive/v3/files/${fileId}`);
+    if (drive.uploaded && drive.confirmationLagReadsRemaining > 0) {
+      drive.confirmationLagReadsRemaining -= 1;
+      return Response.json(base);
+    }
     return Response.json(drive.metadata);
   };
 
@@ -115,6 +123,16 @@ async function confirmedFixture(t, {
 }
 
 const versionConflict = (error) => error?.code === 'DRIVE_VERSION_CONFLICT' && error.status === 409;
+
+sqliteTest('completion tolerates stale Drive metadata immediately after a successful upload', async (t) => {
+  const fixture = await confirmedFixture(t, { confirmationLagReads: 1 });
+  assert.equal(fixture.completed.completed, true);
+  assert.equal(fixture.completed.currentVersion, '9');
+  assert.equal(fixture.drive.confirmationLagReadsRemaining, 0);
+  assert.ok(
+    fixture.drive.requests.filter(({ method, url }) => method === 'GET' && /\/drive\/v3\/files\/synthetic-baseline-file/.test(url)).length >= 2
+  );
+});
 
 sqliteTest('confirmed baseline allows metadata drift on the next preflight and start', async (t) => {
   const fixture = await confirmedFixture(t);
