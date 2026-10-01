@@ -1071,30 +1071,21 @@ async function driveSyncPreflightState(env, input = {}, username = '') {
   const baseVersion = normalizeDriveVersion(input.baseVersion, { required: operation === 'replace_pdf' });
   const file = await openDriveFileRefPayload(env, ref);
   const current = await currentDrivePdfMetadata(env, ref, file);
-  let conflict = Boolean(baseVersion && current.version !== baseVersion);
+  const sourceChangedSinceOpen = Boolean(baseVersion && current.version !== baseVersion);
 
-  if (operation === 'replace_pdf') {
-    if (!current.canEdit) {
-      throw new DriveIntegrationError(
-        'DRIVE_FILE_NOT_EDITABLE',
-        'A conta institucional não possui permissão para substituir este arquivo.',
-        403
-      );
-    }
-    // Only a receipt minted after our own confirmed upload can reconcile a
-    // later metadata version. Another head remains a conflict even with equal bytes.
-    if (conflict && await confirmedBaselineMatches(env, file, current, baseVersion, username)) {
-      conflict = false;
-    }
-    if (conflict) {
-      throw new DriveIntegrationError(
-        'DRIVE_VERSION_CONFLICT',
-        'O arquivo foi alterado no Google Drive depois que esta edição começou. Reabra o documento antes de substituir o original.',
-        409
-      );
-    }
+  if (operation === 'replace_pdf' && !current.canEdit) {
+    throw new DriveIntegrationError(
+      'DRIVE_FILE_NOT_EDITABLE',
+      'A conta institucional não possui permissão para substituir este arquivo.',
+      403
+    );
   }
 
+  // Fase 7G: concorrência de conteúdo usa last-write-wins. A referência opaca
+  // continua identificando exatamente o mesmo arquivo e a permissão de edição
+  // continua obrigatória, mas uma versão mais nova no Drive não bloqueia o
+  // salvamento. O upload substitui a versão corrente e preserva a revisão
+  // anterior antes da escrita.
   return {
     operation,
     ref,
@@ -1102,8 +1093,9 @@ async function driveSyncPreflightState(env, input = {}, username = '') {
     current,
     publicResult: {
       operation,
-      conflict,
-      blocking: operation === 'replace_pdf' && conflict,
+      conflict: false,
+      blocking: false,
+      sourceChangedSinceOpen,
       baseVersion,
       currentVersion: current.version,
       modifiedTime: current.modifiedTime,
@@ -1474,7 +1466,8 @@ export async function startDriveSync(env, username, input = {}) {
     operation: prepared.operation,
     totalBytes,
     chunkSize: DRIVE_SYNC_CHUNK_BYTES,
-    conflictDetected: prepared.publicResult.conflict === true,
+    conflictDetected: false,
+    sourceChangedSinceOpen: prepared.publicResult.sourceChangedSinceOpen === true,
     safetyRevisionPreserved: prepared.operation === 'replace_pdf' && input.preserveRevision !== false
   };
 }
@@ -1509,34 +1502,26 @@ async function confirmedDriveMetadataAfterUpload(env, ref, payload, size, minimu
   for (const delayMs of DRIVE_SYNC_CONFIRMATION_DELAYS_MS) {
     if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
     current = await currentDrivePdfMetadata(env, ref);
+
     if (
       driveSyncReceiptMatchesCurrent(current, payload, size)
       && BigInt(current.version) >= BigInt(minimumVersion)
     ) {
-      return current;
+      return { current, superseded: false };
     }
 
-    // Só vale repetir quando o files.get ainda está atrás do recibo do próprio
-    // upload. Se a versão já alcançou/superou o recibo e head/checksum/tamanho
-    // divergem, é conflito real e deve falhar imediatamente.
-    if (!driveSyncMetadataMayBeStale(current, payload, minimumVersion)) break;
-  }
+    // files.get ainda pode estar atrás do recibo recém-confirmado; nesse único
+    // caso repetimos por uma janela curta. Se o Drive já avançou para outra
+    // versão, a gravação posterior é aceita como vencedora (last-write-wins).
+    if (driveSyncMetadataMayBeStale(current, payload, minimumVersion)) continue;
 
-  if (
-    driveSyncReceiptMatchesCurrent(current, payload, size)
-    || driveSyncMetadataMayBeStale(current, payload, minimumVersion)
-  ) {
-    throw new DriveIntegrationError(
-      'DRIVE_SYNC_INTERRUPTED',
-      'O Google Drive ainda não confirmou a versão atual do upload. Consulte o status antes de retomar.',
-      503
-    );
+    return { current, superseded: true };
   }
 
   throw new DriveIntegrationError(
-    'DRIVE_VERSION_CONFLICT',
-    'O arquivo foi alterado no Google Drive durante a confirmação do salvamento. Reabra o documento antes de substituir o original.',
-    409
+    'DRIVE_SYNC_INTERRUPTED',
+    'O Google Drive ainda não confirmou a versão atual do upload. Consulte o status antes de retomar.',
+    503
   );
 }
 
@@ -1561,8 +1546,11 @@ async function completedDriveSyncResult(env, session, response) {
   // O Drive pode devolver o recibo do upload antes de propagar os mesmos metadados
   // para files.get. Fazemos poucas releituras curtas antes de classificar a diferença
   // como conflito real. Nunca aceitamos outro head/checksum/tamanho.
-  const current = await confirmedDriveMetadataAfterUpload(env, ref, payload, size, version);
-  const confirmedRef = await sealConfirmedDriveFileRef(env, current, session.username);
+  const confirmation = await confirmedDriveMetadataAfterUpload(env, ref, payload, size, version);
+  const current = confirmation.current;
+  const confirmedRef = confirmation.superseded
+    ? await sealDriveFileRef(env, current.id, PDF_MIME)
+    : await sealConfirmedDriveFileRef(env, current, session.username);
   await deleteDriveSyncSession(env, session.syncId);
   return {
     completed: true,
@@ -1571,7 +1559,8 @@ async function completedDriveSyncResult(env, session, response) {
     modifiedTime: current.modifiedTime,
     size: current.size,
     ref: confirmedRef,
-    cacheKey
+    cacheKey,
+    superseded: confirmation.superseded === true
   };
 }
 
