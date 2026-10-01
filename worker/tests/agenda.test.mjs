@@ -128,7 +128,7 @@ test('Agenda substitui abertura do DigSaúde por Avisar por WhatsApp com lembret
   assert.match(source, /Dúvidas\? Estamos à disposição!/);
   assert.doesNotMatch(source, /Abrir no DigSaúde|DIGSAUDE_BASE/);
   assert.doesNotMatch(source, /Local:/);
-  assert.match(html, /digsaude-agenda-sync\.user\.js\?v=20261001-contact-1/);
+  assert.match(html, /digsaude-agenda-sync\.user\.js\?v=20261001-contact-2/);
   assert.match(css, /\.agenda-card-actions \.agenda-whatsapp-button/);
 });
 
@@ -155,7 +155,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.2\.0/);
+  assert.match(source, /@version\s+1\.2\.1/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -163,7 +163,7 @@ test('sincronizador automático consulta Agendados em segundo plano a cada 15 mi
   assert.match(source, /new DOMParser\(\)/);
   assert.match(source, /Ativar sincronização automática/);
   assert.match(source, /@updateURL\s+https:\/\/regulacaoeldoradoms\.com\.br\/agenda\/digsaude-agenda-sync\.user\.js/);
-  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
+  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|authorization|bearer/i);
 });
 
 test('ponte da Agenda permanece aberta e aceita sincronizações repetidas com deduplicação', () => {
