@@ -200,6 +200,10 @@ sqliteTest('last-write-wins accepts remote content drift without blocking replac
   assert.equal(next.conflictDetected, false);
   assert.equal(next.sourceChangedSinceOpen, true);
   assert.equal(fixture.drive.starts, 2);
+  assert.ok(
+    fixture.drive.requests.some(({ url, method }) => method === 'PATCH' && url.includes('/revisions/external-head-12')),
+    'A revisão remota vencedora antes do novo save deve ser preservada antes da substituição.'
+  );
 });
 
 for (const baseVersion of ['7', '8', '10']) {
