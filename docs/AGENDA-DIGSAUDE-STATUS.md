@@ -138,7 +138,7 @@ A V2 continua sendo uma automação local assistida. Monitoramento com navegador
 ## Alternativas descartadas
 
 - recarregar a tela atual do DigSaúde a cada intervalo: interromperia o trabalho do usuário;
-- tratar `/livewire/update` como API estável: acoplamento frágil ao framework interno;
+- tratar `/livewire/update` como API pública/estável ou hardcodar nome de ação/snapshot: acoplamento frágil. Na V3 o endpoint é usado somente same-origin e o método, parâmetros, snapshot e CSRF são derivados da página atual a cada leitura;
 - abrir uma nova janela do Portal silenciosamente a cada 15 minutos: bloqueado por políticas normais do navegador;
 - guardar senha ou sessão do DigSaúde no Portal: risco de segurança e governança;
 - enviar snapshots idênticos continuamente: desperdício de chamadas e gravações.
@@ -237,7 +237,7 @@ Pedido operacional aprovado: cortar o caminho manual **Agenda → Abrir no DigSa
 Fluxo implementado nesta unidade:
 1. sincronização base continua lendo **Agendados**;
 2. Worker identifica somente os registros sem telefone recente;
-3. userscript abre a consulta individual em frame técnico same-origin, aciona **Ver Dados do Paciente** e extrai somente o telefone;
+3. userscript faz GET same-origin da consulta individual, identifica no HTML atual a ação **Ver Dados do Paciente** e reproduz localmente a chamada Livewire `/livewire/update`; somente o telefone é extraído da resposta;
 4. contato é enviado em snapshot parcial e persistido privadamente no Firestore;
 5. `GET /api/agenda` expõe apenas `contactAvailable`;
 6. `POST /api/agenda/contact` libera o número somente a sessão autorizada de Telemedicina/Desenvolvedor;
@@ -247,7 +247,8 @@ Fluxo implementado nesta unidade:
 Privacidade:
 - nenhum telefone em PostHog, logs, GitHub ou telemetria;
 - nenhum CPF/CNS/endereço/outro campo da ficha individual é coletado;
-- cookies, senha, CSRF e token do DigSaúde continuam restritos ao próprio navegador;
+- cookies, senha, CSRF e token do DigSaúde continuam restritos ao próprio navegador; o CSRF é usado apenas na chamada same-origin e nunca segue para o Portal;
+- o DigSaúde envia `X-Frame-Options: DENY`; por isso a implementação final não usa iframe e trabalha com GET + Livewire same-origin;
 - respostas permanecem `no-store`.
 
 Robustez:
@@ -256,9 +257,9 @@ Robustez:
 - falha de contato não apaga a Agenda nem bloqueia os demais agendamentos;
 - contato ausente continua pendente e é tentado novamente;
 - revalidação diária do contato quando houver nova sincronização de rotina;
-- records antigos passam a receber telefone na primeira execução do sincronizador V1.2.0.
+- records antigos passam a receber telefone na primeira execução do sincronizador V1.2.1.
 
-Validação técnica local inicial: sintaxe de `js/agenda.js`, `js/agenda-sync-bridge.js`, userscript e Worker aprovada; suíte dirigida Agenda/Capacidade/recuperação com **49/49 testes aprovados**.
+Validação técnica local: sintaxe de `js/agenda.js`, `js/agenda-sync-bridge.js`, userscript e Worker aprovada; suíte dirigida Agenda/Capacidade/recuperação com **49/49 testes aprovados** e suíte completa do Worker com **689/689 testes aprovados** antes do ajuste final de transporte. Após a troca de iframe por GET + Livewire same-origin, as suítes devem ser executadas novamente antes da publicação.
 
-Próximo aceite operacional: instalar/atualizar o userscript V1.2.0 no computador sincronizador, executar **Verificar agora**, confirmar que os cards passam para **Avisar por WhatsApp** e validar um envio real com a Ediane sem abrir o DigSaúde.
+Próximo aceite operacional: instalar/atualizar o userscript V1.2.1 no computador sincronizador, executar **Verificar agora**, confirmar que os cards passam para **Avisar por WhatsApp** e validar um envio real com a Ediane sem abrir o DigSaúde.
 
