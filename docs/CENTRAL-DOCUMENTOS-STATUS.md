@@ -275,3 +275,18 @@ Correção permanente:
 
 Validação local da alteração: checks de sintaxe aprovados; regressões focais de confirmação/fechamento aprovadas; suíte completa do Worker com **701/701 testes aprovados**. Nenhum identificador de arquivo, conteúdo clínico ou dado de paciente foi adicionado à documentação ou telemetria.
 
+## Titon — last-write-wins para conteúdo do PDF — 01/10/2026
+
+Nova decisão permanente após recorrência de bloqueios por “arquivo alterado no Google Drive”: **não bloquear o salvamento de conteúdo por divergência de versão**. A presença multiusuário já fornece o alerta visual; o fluxo operacional deve permanecer utilizável.
+
+Implementação prevista nesta unidade:
+- preflight de `replace_pdf` relê a versão atual, informa `sourceChangedSinceOpen` e segue sem `DRIVE_VERSION_CONFLICT`;
+- a revisão remota atual é preservada antes do novo upload;
+- a última gravação confirmada no Google Drive prevalece;
+- se uma gravação posterior superar a que acabou de ser enviada, o resultado é técnico `superseded=true`, não um bloqueio;
+- Blob local não é gravado no cache como versão atual quando já foi superado;
+- identidade do arquivo, referência opaca, MIME, permissão, sessão, write gate e recibo válido permanecem obrigatórios;
+- renomeação não é abrangida por esta mudança.
+
+A Fase 7G em `docs/CENTRAL-DOCUMENTOS-FASE-7.md` passa a prevalecer sobre trechos históricos das Fases 4/4D/7F que descrevem bloqueio por conflito de conteúdo.
+
