@@ -21,7 +21,7 @@ A interface aplica a mesma regra do módulo de Telemedicina e o Worker revalida 
 
 A aba **Agendados** do DigSaúde é renderizada como uma tabela Filament/Livewire. Cada consulta possui um identificador estável no registro da tabela e uma rota individual no formato `/consultas/{id}/view`.
 
-A V1 não trata endpoints internos do Livewire como API pública e não armazena credenciais do DigSaúde.
+O Portal não trata endpoints internos do Livewire como API pública e não armazena credenciais do DigSaúde. Para o contato do paciente, o sincronizador usa a própria página individual da consulta dentro da sessão same-origin já autenticada no navegador, aciona **Ver Dados do Paciente** em um frame técnico invisível e lê somente o campo de telefone exibido pelo DigSaúde.
 
 ## Fluxo de sincronização V2 — automático enquanto o DigSaúde estiver aberto
 
@@ -31,10 +31,12 @@ A V1 não trata endpoints internos do Livewire como API pública e não armazena
 4. A ponte valida a sessão do Portal e permanece aberta; ela pode ser minimizada, mas não fechada enquanto a automação estiver ativa.
 5. A cada 15 minutos, o userscript faz um GET autenticado **somente no próprio domínio do DigSaúde** para `consultas?activeTab=Agendados`, com `credentials: include` e `cache: no-store`.
 6. A resposta HTML é interpretada em memória com `DOMParser`; a tela do DigSaúde em uso não é recarregada nem alterada.
-7. O script calcula uma assinatura local do snapshot. Se nada mudou desde a última sincronização confirmada, não envia novamente ao Portal.
+7. O script calcula uma assinatura local do snapshot. Se nada mudou desde a última sincronização confirmada e não há atualização de contato pendente, evita envio desnecessário.
 8. Quando há mudança — ou quando o usuário força uma verificação pelo botão — o snapshot é enviado à ponte por `postMessage`.
 9. A ponte aceita mensagens somente da origem oficial do DigSaúde, deduplica cada envio por `syncId`, valida a sessão do Portal e chama a API same-origin.
-10. O Worker compara e persiste os registros em lote no Firestore.
+10. O Worker compara e persiste os registros em lote no Firestore e responde somente com os identificadores dos agendamentos cujo telefone está ausente ou precisa de atualização.
+11. O userscript consulta no máximo **2 fichas simultaneamente**, dentro do próprio domínio autenticado do DigSaúde, localiza o campo de telefone em **Dados do Paciente** e envia um segundo snapshot parcial somente com os contatos necessários.
+12. O telefone fica persistido de forma privada junto ao registro da Agenda e é atualizado novamente após 24 horas de uso/sincronização, sem exigir que o DigSaúde permaneça aberto para a Ediane depois da coleta.
 
 A sessão, cookie, senha, token CSRF ou token de autenticação do DigSaúde não é coletado nem enviado ao Portal. O `credentials: include` é usado exclusivamente pelo navegador no GET same-origin do próprio DigSaúde; o userscript não lê nem exporta cookies.
 
@@ -67,13 +69,14 @@ A V1 limita-se aos campos operacionais visíveis na lista:
 - data e horário do agendamento;
 - especialista;
 - paciente;
+- telefone do paciente, normalizado para uso operacional no WhatsApp e com data técnica da última sincronização;
 - município;
 - tipo de agendamento;
 - estabelecimento;
 - status;
 - datas técnicas de primeira detecção, última detecção e última alteração.
 
-Não são importados PDF, encaminhamento, diagnóstico, CID, prescrição, resultado de exame ou conteúdo clínico da página individual.
+Da página individual, **somente o telefone** é importado. Não são importados CPF, CNS, endereço, data de nascimento, PDF, encaminhamento, diagnóstico, CID, prescrição, resultado de exame ou demais campos do cadastro/atendimento.
 
 ## Estado de leitura
 
@@ -83,9 +86,9 @@ Um registro volta a ficar não lido para o usuário se sofrer alteração após 
 
 ## Privacidade e observabilidade
 
-A página Agenda não carrega a camada de observabilidade do Portal. Nome de paciente, identificador do DigSaúde, especialidade associada ao paciente e demais campos da Agenda não podem ser enviados ao PostHog ou a outra ferramenta de analytics.
+A página Agenda não carrega a camada de observabilidade do Portal. Nome de paciente, telefone, identificador do DigSaúde, especialidade associada ao paciente e demais campos da Agenda não podem ser enviados ao PostHog ou a outra ferramenta de analytics.
 
-As respostas da API usam `Cache-Control: no-store`.
+O telefone não é devolvido na listagem geral da Agenda. O card recebe somente `contactAvailable`; o número é liberado apenas sob demanda em `POST /api/agenda/contact`, depois da mesma validação de sessão e capacidade Telemedicina aplicada ao restante do módulo. As respostas da API usam `Cache-Control: no-store`.
 
 ## Limitações conhecidas da V2
 
@@ -106,3 +109,38 @@ Monitoramento totalmente autônomo com navegador fechado somente deve ser consid
 - `worker/agenda.js`
 - `worker/tests/agenda.test.mjs`
 - `.github/workflows/validate-agenda.yml`
+
+## V3 — Avisar por WhatsApp sem abrir o DigSaúde — 01/10/2026
+
+Decisão operacional permanente:
+
+- Wellyton/operador responsável mantém a sincronização do DigSaúde;
+- Ediane, que acompanha as teleconsultas, deve conseguir trabalhar somente pela `/agenda/` depois que os contatos já estiverem sincronizados;
+- o botão **Abrir no DigSaúde** é removido do card e substituído por **Avisar por WhatsApp**;
+- o clique consulta o telefone privado no backend, abre diretamente `wa.me` para aquele paciente e preenche a mensagem; o Portal **não envia automaticamente**;
+- clicar em **Avisar por WhatsApp** também marca o agendamento como visualizado para aquele usuário, preservando a memória individual de leitura;
+- se um registro legado ainda não tiver telefone, o card mostra **Aguardando contato** até a próxima sincronização; como o DigSaúde exige telefone no cadastro do paciente, ausência persistente é tratada como falha de coleta/sincronização, não como estado normal do paciente.
+
+Mensagem pré-preenchida:
+
+```text
+Olá, [nome do paciente]
+Este é um lembrete da sua consulta agendada:
+Data: [DATA] Horário: [HORARIO]
+Especialidade: [ESPECIALIDADE]
+Caso não possa comparecer, pedimos que nos avise com antecedência na unidade de atendimento.
+Dúvidas? Estamos à disposição!
+```
+
+O **local não é inserido automaticamente**. Ediane informa o local em uma mensagem seguinte, de acordo com a organização daquele atendimento.
+
+### Segurança do contato
+
+- número armazenado somente no Firestore protegido da Agenda;
+- número não aparece na listagem geral, no HTML estático, GitHub, PostHog, logs ou telemetria;
+- nenhuma senha, cookie, CSRF ou token do DigSaúde é exportado;
+- a extração ocorre por sessão same-origin no navegador autorizado;
+- a consulta individual é usada somente para obter o campo de telefone;
+- o sincronizador limita a concorrência a 2 fichas para não sobrecarregar o DigSaúde;
+- contatos faltantes são tentados novamente e contatos existentes são revalidados periodicamente.
+
