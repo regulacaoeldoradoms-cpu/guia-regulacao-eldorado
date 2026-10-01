@@ -54,7 +54,7 @@ test('release MP aprovada entra no catálogo; a mesma entrada draft continua exc
   assert.equal(publicationSnapshot([...baseline, ...drafts]).newCount, 0);
   assert.deepEqual(publishedCatalog([...baseline, ...candidate.missions]), PUBLISHED_MISSIONS);
   assert.equal(PUBLISHED_MISSIONS.length, 20);
-  assert.equal(PLANNED_MISSIONS.filter(m => !m.id.startsWith('banking.pc.')).length, 20);
+  assert.equal(PLANNED_MISSIONS.filter(m => PUBLISHED_MISSIONS.some(p => p.id === m.id)).length, 20);
   assert.ok(candidate.sources.every(s => STUDY_SOURCES.some(active => active.id === s.id)));
   assert.equal(publicationSnapshot(PUBLISHED_MISSIONS).newCount, 11);
   const map = curriculumSnapshot(PUBLISHED_MISSIONS);

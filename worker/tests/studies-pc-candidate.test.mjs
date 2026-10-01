@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadPcEditorial, compilePcCandidate, PC_PLAN } from '../scripts/studies-pc-candidate.mjs';
-import { PUBLISHED_MISSIONS, PLANNED_MISSIONS, STUDY_SOURCES } from '../studies-content/manifest.js';
+import { PUBLISHED_MISSIONS as LIVE_MISSIONS, PLANNED_MISSIONS as LIVE_PLANNED, STUDY_SOURCES } from '../studies-content/manifest.js';
 import { publishedCatalog, publicationSnapshot } from '../studies-content/publication-registry.js';
 import { curriculumSnapshot, EXAM_PROFILES } from '../studies-content/curriculum-v1.js';
 import { questionFeedbackById } from '../studies-content/question-feedback-v1.js';
 
+// Recorte da release PC, independente de blocos posteriores.
+const PUBLISHED_MISSIONS = LIVE_MISSIONS.filter(m => m.order < 38);
+const PLANNED_MISSIONS = LIVE_PLANNED.filter(m => PUBLISHED_MISSIONS.some(p => p.id === m.id));
 const editorial = await loadPcEditorial();
 const baseline = PUBLISHED_MISSIONS.filter(m => !m.id.startsWith('banking.pc.'));
 const before = structuredClone(editorial);

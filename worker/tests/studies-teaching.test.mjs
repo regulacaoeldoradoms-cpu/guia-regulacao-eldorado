@@ -20,8 +20,8 @@ test('introdução explica nomes antes de cobrar siglas', () => {
 
 test('todas as missões atuais têm ensino, exemplos, consulta e resumo', () => {
   assert.deepEqual(validateTeachingCatalog(), []);
-  assert.equal(PUBLISHED_MISSIONS.length, 37);
-  assert.equal(PUBLISHED_MISSIONS.filter((mission) => mission.kind === 'boss').length, 3);
+  assert.equal(PUBLISHED_MISSIONS.length, 50);
+  assert.equal(PUBLISHED_MISSIONS.filter((mission) => mission.kind === 'boss').length, 4);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.equal(mission.contentVersion, mission.id.startsWith('banking.sfn.') ? 2 : 1);
     for (const section of mission.sections) {
@@ -48,9 +48,9 @@ test('correção do curso inteiro preserva IDs, questões, recompensas e regras 
   }
 });
 
-test('as 266 questões apontam para trechos reais de ensino', () => {
+test('as 374 questões apontam para trechos reais de ensino', () => {
   const total = PUBLISHED_MISSIONS.reduce((sum, mission) => sum + mission.questions.length, 0);
-  assert.equal(total, 266);
+  assert.equal(total, 374);
   for (const mission of PUBLISHED_MISSIONS) {
     assert.strictEqual(missionByTopicId(mission.topicId), mission);
     for (const question of mission.questions) {
@@ -115,6 +115,6 @@ test('fontes de todas as aulas são únicas e resolvíveis', () => {
   for (const source of STUDY_SOURCES) {
     const url = new URL(source.url);
     assert.equal(url.protocol, 'https:');
-    assert.ok(url.hostname === 'www.gov.br' || url.hostname.endsWith('.bcb.gov.br') || url.hostname === 'www.bb.com.br' || url.hostname === 'www.caixa.gov.br' || url.hostname === 'www.planalto.gov.br' || url.hostname === 'www.ecb.europa.eu' || url.hostname === 'www.bankofengland.co.uk');
+    assert.ok(url.hostname === 'www.gov.br' || url.hostname.endsWith('.bcb.gov.br') || url.hostname === 'www.bb.com.br' || url.hostname === 'www.caixa.gov.br' || url.hostname === 'www.planalto.gov.br' || url.hostname === 'www.ecb.europa.eu' || url.hostname === 'www.bankofengland.co.uk' || url.hostname === 'conteudo.cvm.gov.br' || url.hostname === 'www.imf.org');
   }
 });
