@@ -229,3 +229,36 @@ Justificativa: automatizar a conferência operacional antes feita pela planilha 
 - se a lista futura ultrapassar uma página do DigSaúde, snapshots parciais não podem desativar ausentes;
 - mudanças futuras no HTML Filament/Livewire podem exigir ajuste do extrator;
 - o Tampermonkey já instalado manualmente precisa receber esta atualização uma vez; a partir da V1.1.0 ficam registrados URLs de atualização.
+
+## V3 — contato persistente e Avisar por WhatsApp — 01/10/2026
+
+Pedido operacional aprovado: cortar o caminho manual **Agenda → Abrir no DigSaúde → Ver Dados do Paciente → copiar telefone**.
+
+Fluxo implementado nesta unidade:
+1. sincronização base continua lendo **Agendados**;
+2. Worker identifica somente os registros sem telefone recente;
+3. userscript abre a consulta individual em frame técnico same-origin, aciona **Ver Dados do Paciente** e extrai somente o telefone;
+4. contato é enviado em snapshot parcial e persistido privadamente no Firestore;
+5. `GET /api/agenda` expõe apenas `contactAvailable`;
+6. `POST /api/agenda/contact` libera o número somente a sessão autorizada de Telemedicina/Desenvolvedor;
+7. card troca **Abrir no DigSaúde** por **Avisar por WhatsApp**;
+8. WhatsApp abre com nome, data, horário e especialidade preenchidos; o local fica para Ediane informar em seguida.
+
+Privacidade:
+- nenhum telefone em PostHog, logs, GitHub ou telemetria;
+- nenhum CPF/CNS/endereço/outro campo da ficha individual é coletado;
+- cookies, senha, CSRF e token do DigSaúde continuam restritos ao próprio navegador;
+- respostas permanecem `no-store`.
+
+Robustez:
+- concorrência de coleta limitada a 2 consultas;
+- timeout por ficha;
+- falha de contato não apaga a Agenda nem bloqueia os demais agendamentos;
+- contato ausente continua pendente e é tentado novamente;
+- revalidação diária do contato quando houver nova sincronização de rotina;
+- records antigos passam a receber telefone na primeira execução do sincronizador V1.2.0.
+
+Validação técnica local inicial: sintaxe de `js/agenda.js`, `js/agenda-sync-bridge.js`, userscript e Worker aprovada; suíte dirigida Agenda/Capacidade/recuperação com **49/49 testes aprovados**.
+
+Próximo aceite operacional: instalar/atualizar o userscript V1.2.0 no computador sincronizador, executar **Verificar agora**, confirmar que os cards passam para **Avisar por WhatsApp** e validar um envio real com a Ediane sem abrir o DigSaúde.
+
