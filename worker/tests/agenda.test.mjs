@@ -49,22 +49,27 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
   assert.match(source, /Cache-Control': 'no-store'/);
   assert.match(source, /\/api\/agenda\/sync/);
   assert.match(source, /\/api\/agenda\/read/);
+  assert.match(source, /\/api\/agenda\/contact/);
   assert.doesNotMatch(source, /console\.(log|info|warn|error)/);
 });
 
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20260916-3/);
+  assert.match(html, /js\/agenda\.js\?v=20261001-whatsapp-1/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
 
-test('sincronizador lê somente a tabela Agendados e não extrai credenciais', () => {
+test('sincronizador lê Agendados e consulta somente o telefone nos Dados do Paciente sem extrair credenciais', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
   assert.match(source, /fi-ta-row/);
   assert.match(source, /\.table\.records\./);
   assert.match(source, /Agendados/);
+  assert.match(source, /Ver Dados do Paciente/);
+  assert.match(source, /telefonecel/);
+  assert.match(source, /CONTACT_CONCURRENCY = 2/);
+  assert.match(source, /contactPass: true/);
   assert.match(source, /postMessage/);
   assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
 });
@@ -75,6 +80,44 @@ test('ponte aceita mensagens somente da origem oficial do DigSaúde', () => {
   assert.match(source, /event\.origin !== DIGSAUDE_ORIGIN/);
   assert.match(source, /event\.source !== window\.opener/);
   assert.match(source, /RegulationAuth/);
+});
+
+test('telefone fica privado no backend e a listagem da Agenda expõe apenas disponibilidade', () => {
+  const source = read('worker/agenda.js');
+  const publicBlock = source.slice(
+    source.indexOf('function publicRecord'),
+    source.indexOf('function agendaSort')
+  );
+  const contactBlock = source.slice(
+    source.indexOf('async function patientContact'),
+    source.indexOf('export function isAgendaApi')
+  );
+
+  assert.match(source, /patientPhone: normalizePatientPhone/);
+  assert.match(source, /patientPhoneSyncedAt/);
+  assert.match(publicBlock, /contactAvailable: Boolean\(normalizePatientPhone\(record\.patientPhone\)\)/);
+  assert.doesNotMatch(publicBlock, /\n\s*patientPhone\s*:/);
+  assert.match(contactBlock, /firestoreGet/);
+  assert.match(contactBlock, /AGENDA_CONTACT_NOT_SYNCED/);
+  assert.match(contactBlock, /return \{ sourceId: validSourceId, phone \}/);
+});
+
+test('Agenda substitui abertura do DigSaúde por Avisar por WhatsApp com lembrete pré-preenchido', () => {
+  const source = read('js/agenda.js');
+  const html = read('agenda/index.html');
+  const css = read('css/agenda.css');
+
+  assert.match(source, /Avisar por WhatsApp/);
+  assert.match(source, /\/api\/agenda\/contact/);
+  assert.match(source, /Este é um lembrete da sua consulta agendada:/);
+  assert.match(source, /Data: \$\{formatDate\(record\.appointmentDate\)\} Horário:/);
+  assert.match(source, /Especialidade: \$\{record\.specialty/);
+  assert.match(source, /Caso não possa comparecer, pedimos que nos avise com antecedência na unidade de atendimento\./);
+  assert.match(source, /Dúvidas\? Estamos à disposição!/);
+  assert.doesNotMatch(source, /Abrir no DigSaúde|DIGSAUDE_BASE/);
+  assert.doesNotMatch(source, /Local:/);
+  assert.match(html, /digsaude-agenda-sync\.user\.js\?v=20261001-contact-1/);
+  assert.match(css, /\.agenda-card-actions \.agenda-whatsapp-button/);
 });
 
 
@@ -100,7 +143,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.1\.1/);
+  assert.match(source, /@version\s+1\.2\.0/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -115,6 +158,8 @@ test('ponte da Agenda permanece aberta e aceita sincronizações repetidas com d
   const source = read('js/agenda-sync-bridge.js');
   assert.match(source, /lastSyncId/);
   assert.match(source, /syncId === lastSyncId/);
+  assert.match(source, /contactPass: snapshot\.contactPass === true/);
+  assert.match(source, /contactRefreshSourceIds/);
   assert.match(source, /Sincronização automática conectada/);
   assert.doesNotMatch(source, /window\.close\(/);
   assert.doesNotMatch(source, /completed\s*=\s*true/);
