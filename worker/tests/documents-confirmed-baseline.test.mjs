@@ -153,8 +153,9 @@ sqliteTest('a confirmed baseline permits drift within the same preview control a
 sqliteTest('completion keeps baseline private inside a compatible opaque file reference', async (t) => {
   const fixture = await confirmedFixture(t, { fileId: 'f'.repeat(300), head: 'revision-'.repeat(400) });
   assert.deepEqual(Object.keys(fixture.completed).sort(), [
-    'cacheKey', 'completed', 'currentVersion', 'modifiedTime', 'operation', 'ref', 'size'
+    'cacheKey', 'completed', 'currentVersion', 'modifiedTime', 'operation', 'ref', 'size', 'superseded'
   ].sort());
+  assert.equal(fixture.completed.superseded, false);
   assert.ok(fixture.completed.ref.length <= 1200);
   assert.deepEqual(await openDriveFileRef(fixture.env, fixture.completed.ref), { id: 'f'.repeat(300), mime: 'application/pdf' });
   assert.equal((await fixture.preflight()).blocking, false);
@@ -177,39 +178,39 @@ sqliteTest('maximum file ID, actor and version fit existing ref limits with long
   assert.ok((await fixture.start(fixture.completed.ref, versions.confirmed)).syncId);
 });
 
-for (const [name, patch] of [
-  ['a different revision even with identical bytes', { headRevisionId: 'external-head' }],
-  ['a different checksum', { md5Checksum: 'b'.repeat(32) }],
-  ['a different size', { size: '999' }],
-  ['missing current revision metadata', { headRevisionId: undefined }],
-  ['missing current checksum metadata', { md5Checksum: undefined }],
-  ['missing current size metadata', { size: undefined }],
-  ['a different file', { id: 'external-file' }],
-  ['a version older than the certified baseline', { version: '8' }]
-]) {
-  sqliteTest(`confirmed baseline rejects ${name}`, async (t) => {
-    const fixture = await confirmedFixture(t);
-    Object.assign(fixture.drive.metadata, patch);
-    const writes = fixture.drive.requests.filter(({ method }) => method !== 'GET').length;
-    await assert.rejects(fixture.preflight(), versionConflict);
-    await assert.rejects(fixture.start(fixture.completed.ref, '9'), versionConflict);
-    assert.equal(fixture.drive.starts, 1);
-    assert.equal(fixture.drive.requests.filter(({ method }) => method !== 'GET').length, writes);
-  });
-}
+sqliteTest('last-write-wins accepts remote content drift without blocking replace', async (t) => {
+  const fixture = await confirmedFixture(t);
+  fixture.drive.metadata = {
+    ...fixture.drive.metadata,
+    version: '12',
+    headRevisionId: 'external-head-12',
+    md5Checksum: 'b'.repeat(32),
+    size: '999',
+    capabilities: { canEdit: true, canDownload: true }
+  };
 
-for (const actor of ['another.editor', '']) {
-  sqliteTest(`confirmed baseline rejects drift for ${actor || 'a missing trusted actor'}`, async (t) => {
-    const fixture = await confirmedFixture(t);
-    await assert.rejects(fixture.preflight({}, actor), versionConflict);
-    assert.equal(fixture.drive.starts, 1);
-  });
-}
+  const result = await fixture.preflight();
+  assert.equal(result.blocking, false);
+  assert.equal(result.conflict, false);
+  assert.equal(result.sourceChangedSinceOpen, true);
+  assert.equal(result.currentVersion, '12');
+
+  const next = await fixture.start(fixture.completed.ref, '9');
+  assert.ok(next.syncId);
+  assert.equal(next.conflictDetected, false);
+  assert.equal(next.sourceChangedSinceOpen, true);
+  assert.equal(fixture.drive.starts, 2);
+});
 
 for (const baseVersion of ['7', '8', '10']) {
-  sqliteTest(`confirmed baseline cannot justify a different client baseVersion ${baseVersion}`, async (t) => {
+  sqliteTest(`last-write-wins permits stale client baseVersion ${baseVersion}`, async (t) => {
     const fixture = await confirmedFixture(t);
-    await assert.rejects(fixture.preflight({ baseVersion }), versionConflict);
+    fixture.drive.metadata.version = '11';
+    const result = await fixture.preflight({ baseVersion });
+    assert.equal(result.blocking, false);
+    assert.equal(result.conflict, false);
+    assert.equal(result.sourceChangedSinceOpen, true);
+    assert.ok((await fixture.start(fixture.completed.ref, baseVersion)).syncId);
   });
 }
 
@@ -223,66 +224,32 @@ sqliteTest('tampering with a confirmed opaque reference is rejected before Drive
   assert.equal(fixture.drive.requests.length, reads);
 });
 
-sqliteTest('baseline expires after 30 minutes while its ordinary file reference remains usable', async (t) => {
+sqliteTest('stale second tab is allowed to save last under last-write-wins', async (t) => {
   const fixture = await confirmedFixture(t);
-  const mintedAt = Date.now();
-  const originalNow = Date.now;
-  t.after(() => { Date.now = originalNow; });
-  Date.now = () => mintedAt + 29 * 60 * 1000;
-  assert.equal((await fixture.preflight()).blocking, false);
-  Date.now = () => mintedAt + 31 * 60 * 1000;
-  assert.deepEqual(await openDriveFileRef(fixture.env, fixture.completed.ref), { id: 'synthetic-baseline-file', mime: 'application/pdf' });
-  await assert.rejects(fixture.preflight(), versionConflict);
-  fixture.drive.metadata.version = '9';
-  assert.equal((await fixture.preflight({}, 'another.editor')).blocking, false,
-    'Matching versions still use the ordinary strict-version path; baseline is not an authorization token.');
+  const staleRef = fixture.originalRef;
+  fixture.drive.metadata = { ...fixture.drive.metadata, version: '11', headRevisionId: 'external-head-11' };
+
+  const stalePreflight = await preflightDriveSync(fixture.env, {
+    operation: 'replace_pdf',
+    ref: staleRef,
+    baseVersion: '7'
+  }, fixture.username);
+  assert.equal(stalePreflight.blocking, false);
+  assert.equal(stalePreflight.sourceChangedSinceOpen, true);
+
+  const started = await fixture.start(staleRef, '7');
+  assert.ok(started.syncId);
+  assert.equal(started.sourceChangedSinceOpen, true);
 });
 
-for (const [name, initial, change] of [
-  ['core to preview', {}, previewScope],
-  ['preview to core', previewScope, { DOCUMENTS_HOMOLOGATION_CONTROL_ID: '', DOCUMENTS_HOMOLOGATION_WORKER_ORIGIN: '', DOCUMENTS_HOMOLOGATION_ORIGIN: '' }],
-  ['another preview control', previewScope, { DOCUMENTS_HOMOLOGATION_CONTROL_ID: 'synthetic-control-b' }],
-  ['another worker origin', previewScope, { DOCUMENTS_HOMOLOGATION_WORKER_ORIGIN: 'https://preview-b.workers.dev' }],
-  ['another Pages origin', previewScope, { DOCUMENTS_HOMOLOGATION_ORIGIN: 'https://preview-b.pages.dev' }]
-]) {
-  sqliteTest(`confirmed baseline cannot cross ${name}`, async (t) => {
-    const fixture = await confirmedFixture(t, { scope: initial });
-    Object.assign(fixture.env, change);
-    await assert.rejects(fixture.preflight(), versionConflict);
-    await assert.rejects(fixture.start(fixture.completed.ref, '9'), versionConflict);
-  });
-}
-
-sqliteTest('legacy and list references never inherit proof from another completed upload', async (t) => {
-  const fixture = await confirmedFixture(t);
-  fixture.drive.metadata.version = '9';
-  const listed = await listDriveFolder(fixture.env);
-  const legacy = await sealDriveFileRef(fixture.env, 'synthetic-baseline-file', 'application/pdf');
-  fixture.drive.metadata.version = '11';
-  for (const ref of [legacy, listed.items[0].ref]) {
-    await assert.rejects(fixture.preflight({ ref }), versionConflict);
-  }
-  await assert.rejects(fixture.preflight({ ref: legacy, baseline: fixture.drive.metadata, username: fixture.username }), versionConflict);
-});
-
-sqliteTest('a stale second tab cannot adopt the first tab confirmed content baseline', async (t) => {
-  const fixture = await confirmedFixture(t);
-  await assert.rejects(fixture.preflight({ ref: fixture.originalRef, baseVersion: '7' }), versionConflict);
-  assert.equal((await fixture.preflight()).blocking, false);
-  const second = await fixture.start(fixture.completed.ref, '9');
-  fixture.drive.receipt = { ...fixture.drive.metadata, version: '12', headRevisionId: 'second-confirmed-head' };
-  fixture.drive.afterUpload = { ...fixture.drive.receipt, version: '13' };
-  const completed = await fixture.upload(second.syncId);
-  assert.equal(completed.currentVersion, '13');
-  await assert.rejects(fixture.preflight(), versionConflict, 'An earlier valid proof cannot authorize a newer revision with identical bytes.');
-});
-
-sqliteTest('start revalidates current content after an accepted metadata-only preflight', async (t) => {
+sqliteTest('start revalidates current metadata but does not block a later remote version', async (t) => {
   const fixture = await confirmedFixture(t);
   assert.equal((await fixture.preflight()).blocking, false);
   fixture.drive.metadata = { ...fixture.drive.metadata, version: '12', headRevisionId: 'external-after-preflight' };
-  await assert.rejects(fixture.start(fixture.completed.ref, '9'), versionConflict);
-  assert.equal(fixture.drive.starts, 1);
+  const started = await fixture.start(fixture.completed.ref, '9');
+  assert.ok(started.syncId);
+  assert.equal(started.sourceChangedSinceOpen, true);
+  assert.equal(fixture.drive.starts, 2);
 });
 
 sqliteTest('a valid baseline never bypasses a disabled write gate or current file capabilities', async (t) => {
