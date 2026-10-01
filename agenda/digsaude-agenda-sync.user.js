@@ -27,6 +27,7 @@
   const CONTACT_TIMEOUT_MS = 14 * 1000;
   const CONTACT_POLL_MS = 140;
   const CONTACT_CONCURRENCY = 2;
+  const CONTACT_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
   const currentUrl = new URL(window.location.href);
 
   // Frames de leitura individual usam a própria sessão same-origin do DigSaúde,
@@ -46,6 +47,8 @@
   let pendingMode = '';
   let pendingContactFailures = 0;
   let lastFingerprint = '';
+  let lastPortalSyncAt = 0;
+  let contactsPending = false;
   let lastCheckAt = 0;
   let syncInFlight = false;
   let everActivated = false;
@@ -271,7 +274,12 @@
       const direct = phoneFromDocument(root);
       if (direct) return direct;
 
-      const trigger = patientDataTrigger(root);
+      let trigger = patientDataTrigger(root);
+      const triggerDeadline = Date.now() + Math.min(6000, CONTACT_TIMEOUT_MS);
+      while (!trigger && Date.now() < triggerDeadline) {
+        await wait(CONTACT_POLL_MS);
+        trigger = patientDataTrigger(frame.contentDocument);
+      }
       if (!trigger) throw new Error('A ação Ver Dados do Paciente não foi localizada.');
       trigger.click();
 
@@ -517,7 +525,8 @@
       lastCheckAt = Date.now();
       const nextFingerprint = fingerprint(nextSnapshot);
 
-      if (!force && nextFingerprint === lastFingerprint) {
+      const contactRefreshDue = !lastPortalSyncAt || Date.now() - lastPortalSyncAt >= CONTACT_REFRESH_INTERVAL_MS;
+      if (!force && nextFingerprint === lastFingerprint && !contactsPending && !contactRefreshDue) {
         syncInFlight = false;
         setButton(`Automático ativo · sem mudanças · ${clock()}`, 'success');
         return;
@@ -622,6 +631,7 @@
 
     if (pendingMode === 'agenda') {
       lastFingerprint = pendingFingerprint;
+      lastPortalSyncAt = Date.now();
       const baseSnapshot = pendingSnapshot;
       const created = Number(event.data.created || 0);
       const changed = Number(event.data.changed || 0);
@@ -635,6 +645,7 @@
       pendingSyncId = '';
       pendingMode = '';
 
+      contactsPending = refreshIds.length > 0;
       if (refreshIds.length) {
         setButton(`Automático ativo · localizando ${refreshIds.length} contato(s)…`, 'working');
         try {
@@ -673,6 +684,7 @@
       pendingSyncId = '';
       pendingMode = '';
       pendingContactFailures = 0;
+      contactsPending = failed > 0;
       if (failed) {
         setButton(`Automático ativo · ${updated} contato(s) sincronizado(s); ${failed} falha(s) · ${clock()}`, 'error');
       } else {
