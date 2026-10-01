@@ -14,6 +14,7 @@ const READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state';
 const MAX_RECORDS_PER_SYNC = 250;
 const MAX_LIST_PAGES = 20;
 const FIRESTORE_COMMIT_CHUNK = 450;
+const CONTACT_REFRESH_MS = 24 * 60 * 60 * 1000;
 
 function responseHeaders(origin, allowed = true) {
   const headers = {
