@@ -1,18 +1,18 @@
-# PC — ativação autorizada e validação
+# PC — publicação e validação
 
-30/09/2026. Ativação e correção contextual do detector aprovadas pelo usuário às 23:16 UTC. Código validado: `30e2787a2bb2d51ee57ae76b781b89a092bc9926`. Fonte editorial `4deec466c22669e6d187282c9f0cfff615e223f9`, [#565 integrado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/565) em `1b3e74892e425f6dd514cd93b0b81d4da71c7483`. [#568](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/568) contém ativação validada localmente, ainda pendente de CI/integração/publicação. Fase 2 ativa, sem aceite humano pedagógico observado; Fase 3 não aberta.
+30/09/2026. Ativação e correção contextual aprovadas às 23:16 UTC; merge/deploy explicitamente aprovados às 23:39 UTC. Código validado: `30e2787a2bb2d51ee57ae76b781b89a092bc9926`. Fonte editorial `4deec466c22669e6d187282c9f0cfff615e223f9`, [#565 integrado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/565) em `1b3e74892e425f6dd514cd93b0b81d4da71c7483`. [#568 integrado/publicado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/568) em **`986ca718fd3696daf5c5fee957a83e3eded7142a`**. Fase 2 ativa, sem aceite humano pedagógico observado; Fase 3 não aberta.
 
 ## Pacote preparado
 
 Quinze aulas PC-01A/01–06/08–10/11A–E, revisão e Chefe: **17 missões, 208 trechos, 144 questões e 576 justificativas**. [Mapa editorial](77-PC-CONJUNTO-COMUM-RASCUNHOS.md) e [revisão/Chefe](78-PC-REVISAO-E-PROPOSTA-CHEFE.md) definem o recorte. Não representa cobertura integral de produtos, edital ou prontidão.
 
-O [conversor offline](../../worker/scripts/studies-pc-candidate.mjs) gera [dados do Worker](../../worker/studies-content/banking-products-credit-v1.js), sem duplicar a autoria. O núcleo autorizado tem `publication.status: published` no candidato: **37 missões/266 questões, três dos 43 blocos disponíveis**. A comparação serializada confirmou as 20 missões/122 questões, fontes e planejamento SFN/MP integralmente preservados. Drafts equivalentes continuam excluídos pelo registro de publicação. Esse estado candidato ainda precisa de integração e deploy para chegar ao usuário.
+O [conversor offline](../../worker/scripts/studies-pc-candidate.mjs) gera [dados do Worker](../../worker/studies-content/banking-products-credit-v1.js), sem duplicar a autoria. O núcleo autorizado está publicado: **37 missões/266 questões, três dos 43 blocos disponíveis**. A comparação serializada confirmou as 20 missões/122 questões, fontes e planejamento SFN/MP integralmente preservados. Drafts equivalentes continuam excluídos pelo registro de publicação.
 
 - IDs `banking.pc.*`, tópicos iguais aos IDs candidatos, questões `q.` + ID editorial e fontes com prefixo por unidade. Nenhum ID SFN/MP renomeado.
 - Ordem preparada 21–37: PC-01A após Chefe MP, demais unidades após conclusão anterior. Defaults existentes: 100 XP/aula/revisão; Chefe 220 XP/75% (9/12), sem medalha nova. `parametersApproved: true`, conforme aprovação específica de publicação.
 - Ensino, exemplos, alternativas, gabaritos, justificativas e fontes preservados. Somente quatro avisos editoriais de status foram ajustados na cópia publicada, discriminados abaixo; os rascunhos originais permanecem intactos. A precisão da questão 9 do Chefe explicita **conta de poupança aberta em 2011**, sem alterar resposta C ou cálculos.
 - O mesmo conversor de apresentação MP prepara **três tabelas e 68 links de aula**. Não existem diagramas no material aprovado; não foram inventados. São 320 referências de recuperação nas questões, todas resolvíveis e sem cobrança futura.
-- Leitor, autenticação, roteador, armazenamento, revisões e avaliação A/B não foram alterados. Nenhuma migração, novo binding, consulta D1 ou acesso à produção.
+- Leitor, autenticação, roteador, armazenamento, revisões e avaliação A/B não foram alterados. Nenhuma migração, novo binding ou consulta D1; validação offline e smoke produtivo mínimo descritos abaixo.
 
 | Ordem | Unidades | Sufixos de `banking.pc.` |
 | --- | --- | --- |
@@ -56,8 +56,12 @@ As seis ocorrências abaixo são identificadas pelo arquivo gerado PC, missão, 
 
 Comandos executados: node --test worker/tests/studies-isolation.test.mjs; node worker/scripts/check-studies-isolation.mjs; verificação de sintaxe/diff. O restante da validação está registrado acima. A verificação continua lexical, com limites anteriores; não substitui autorização ou testes de isolamento do aplicativo. O ajuste não dispensa nenhum outro gate.
 
-## Próxima ação e limites
+## Publicação comprovada e limites
 
-Concluir os checks de #568 no SHA efetivo, integrar após #565 e acompanhar publicação por [deploy seguro](../WORKER-SAFE-DEPLOY.md), preservando bindings/rollback. Confirmar versão Worker ativa, frontend e smoke mínimo, sem varrer dados. Publicação só será relatada após essa confirmação. Preview Worker legado permanece separado da produção.
+Head `367d1b74d77d6fc23856b1a711f9ab12979e11e2`: 26 checks aplicáveis verdes, incluindo auditoria global Chromium. A árvore integrada é idêntica; no merge `986ca718fd3696daf5c5fee957a83e3eded7142a`, os **28 checks pós-merge passaram**, incluindo Worker e Pages. Nenhuma exceção visual foi usada nesta entrega. O check legado de preview falhou no ramo, com diagnóstico já registrado, separado do build produtivo aprovado.
+
+O build produtivo [1181c37e-56c4-4201-8ac5-079130ed443f](https://dash.cloudflare.com/467be828c364ccf084240c34bb609b42/workers/services/view/yellow-wave-d0a1guia-regulacao-ia/production/builds/1181c37e-56c4-4201-8ac5-079130ed443f) desse SHA publicou a versão **`c1f2398b-3e73-4829-8e6d-33692713f8f6` a 100%**, deployment `003e98df-492c-44e6-b229-7ea8384b46d0`, às 23:55:42 UTC. Consulta somente de metadados confirmou `workers/tag=portal-safe-deploy` e mensagem do candidato validado pelo [gate protegido](../WORKER-SAFE-DEPLOY.md). Nenhum deploy direto ou alteração de bindings/segurança foi necessário.
+
+Às 23:56:46 UTC, os hashes normalizados de `estudos/index.html`, `js/studies.js`, `js/studies-reader.js` e `css/studies-reader.css` no domínio público corresponderam ao commit integrado. Smoke anônimo: estudos 401, Agenda 403, preflight administrativo 204 e GET administrativo 401, com CORS esperado. Sem consulta ao histórico do aluno ou varredura D1; preservação foi comprovada nos testes offline, não por leitura de dados reais. A autoria seguinte depende de especificar o recorte de `banking.capital-exchange`; o preparo existente detalha apenas MP/PC.
 
 **PC-07 é crédito habitacional.** Falta correspondência nominal/profundidade no edital efetivamente adotado para decidir requisito ou complemento identificado. Sistemas, fundos e programas exigiriam fontes próprias. Continua fora do catálogo, revisão e Chefe, sem bloquear o núcleo comum. Não presumir essa inclusão ou o aceite humano da Fase 2.
