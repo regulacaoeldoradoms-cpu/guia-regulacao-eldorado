@@ -126,6 +126,9 @@
     const contentType = response.headers.get('Content-Type') || '';
     const payload = contentType.includes('application/json') ? await response.json().catch(() => ({})) : null;
     if (!response.ok) {
+      // V34.8: qualquer API protegida que confirme 401 encerra o token local obsoleto.
+      // Login inválido não interfere em uma sessão já existente.
+      if (response.status === 401 && token && path !== '/api/auth/login') clearSession();
       const error = new Error(payload?.error || `Falha no portal (${response.status}).`);
       error.status = response.status;
       error.code = payload?.code || '';

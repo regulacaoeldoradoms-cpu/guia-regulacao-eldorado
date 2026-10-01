@@ -9,6 +9,7 @@ const sqliteTest = DatabaseSync ? test : test.skip;
 
 import { handlePortalRoute } from '../auth-management-flex.js';
 import { handleDocumentsRoute } from '../documents-router.js';
+import { grantTelemedicineAccess } from '../telemedicine-access.js';
 
 class D1Statement {
   constructor(database, sql, values = []) {
@@ -48,6 +49,18 @@ class D1Database {
 
   prepare(sql) {
     return new D1Statement(this.database, sql);
+  }
+
+  batch(statements) {
+    this.database.exec('BEGIN');
+    try {
+      const results = statements.map((statement) => statement.run());
+      this.database.exec('COMMIT');
+      return results;
+    } catch (error) {
+      this.database.exec('ROLLBACK');
+      throw error;
+    }
   }
 }
 
@@ -185,3 +198,51 @@ sqliteTest('alteração de papel da própria conta continua invalidando a sessã
   const payload = await staleResponse.json();
   assert.match(payload.error, /Sessão inválida ou expirada/);
 });
+
+sqliteTest('V34.8: edição comum de conta Telemedicina não invalida a sessão operacional', async () => {
+  const env = environment();
+  const manager = await register(env, 'desenvolvedor.manager', '127.0.0.93');
+  const technician = await register(env, 'tecnico.operacional', '127.0.0.94');
+
+  await env.AUTH_DB.prepare(`
+    UPDATE auth_users
+    SET role = 'admin', name = 'Desenvolvedor Manager'
+    WHERE username = ?
+  `).bind('desenvolvedor.manager').run();
+
+  await env.AUTH_DB.prepare(`
+    UPDATE auth_users
+    SET role = 'recepcao', name = 'Tecnico Operacional', job_title = 'Auxiliar de enfermagem'
+    WHERE username = ?
+  `).bind('tecnico.operacional').run();
+
+  await grantTelemedicineAccess(env, 'tecnico.operacional', 'desenvolvedor.manager');
+
+  const before = await env.AUTH_DB.prepare('SELECT session_version FROM auth_users WHERE username = ?')
+    .bind('tecnico.operacional').first();
+  assert.equal(Number(before.session_version), 1);
+
+  const updateResponse = await handlePortalRoute(request('/api/admin/users/tecnico.operacional', manager.token, {
+    method: 'PATCH',
+    body: {
+      name: 'Tecnico Operacional Atualizado',
+      jobTitle: 'Auxiliar de enfermagem',
+      active: true,
+      role: 'telemedicina',
+      telemedicineAccess: true
+    }
+  }), env, 'https://regulacaoeldoradoms.com.br', true);
+
+  assert.equal(updateResponse.status, 200);
+
+  const after = await env.AUTH_DB.prepare('SELECT session_version FROM auth_users WHERE username = ?')
+    .bind('tecnico.operacional').first();
+  assert.equal(Number(after.session_version), 1);
+
+  const meResponse = await handlePortalRoute(request('/api/auth/me', technician.token), env, 'https://regulacaoeldoradoms.com.br', true);
+  assert.equal(meResponse.status, 200);
+  const mePayload = await meResponse.json();
+  assert.equal(mePayload.user.role, 'telemedicina');
+  assert.equal(mePayload.user.telemedicineAccess, true);
+});
+

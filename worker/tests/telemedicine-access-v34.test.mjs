@@ -46,19 +46,22 @@ test('V34.1 recupera somente papel legado explícito sem reativar revogação ex
   assert.doesNotMatch(migration, /job_title/);
 });
 
-test('backend continua exigindo autorização de servidor em todas as rotas Telemedicina', () => {
+test('backend continua exigindo autorização de servidor e distingue sessão inválida de falta de acesso', () => {
   for (const path of ['worker/telemedicine.js', 'worker/telemedicine-router-v2.js']) {
     const source = read(path);
     assert.match(source, /validatePortalSession/);
     assert.match(source, /telemedicineAccessFor/);
-    assert.match(source, /Acesso exclusivo da Telemedicina ou do Desenvolvedor/);
+    assert.match(source, /status: 401[\s\S]+Sessão inválida ou expirada/);
+    assert.match(source, /status: 403[\s\S]+Acesso exclusivo da Telemedicina ou do Desenvolvedor/);
+    assert.match(source, /authorizationDenied/);
   }
 });
 
 test('rotas usam a capacidade explícita como fonte de verdade e autocorrigem papel-base divergente', () => {
   for (const path of ['worker/telemedicine.js', 'worker/telemedicine-router-v2.js', 'worker/agenda.js']) {
     const source = read(path);
-    assert.match(source, /if \(!\(await telemedicineAccessFor\(env, user\.username\)\)\) return null/);
+    assert.match(source, /if \(!\(await telemedicineAccessFor\(env, user\.username\)\)\) \{/);
+    assert.match(source, /authorizationDenied: true[\s\S]+status: 403/);
     assert.match(source, /user\.role !== 'recepcao'\) await ensureTelemedicineUnderlyingRole\(env, user\.username\)/);
     assert.doesNotMatch(source, /user\.role === 'recepcao' && await telemedicineAccessFor/);
   }
@@ -148,6 +151,13 @@ test('V34.7: lista administrativa usa decoração Telemedicina em lote', () => {
   assert.match(access, /repairCandidates/);
   assert.match(access, /bulk-admin-list-integrity/);
   assert.doesNotMatch(access, /for \(const user of Array\.isArray\(users\)[\s\S]+decorateTelemedicineUser/);
+});
+
+test('V34.8: Agenda também separa sessão expirada de ausência de capacidade', () => {
+  const source = read('worker/agenda.js');
+  assert.match(source, /status: 401[\s\S]+Sessão inválida ou expirada/);
+  assert.match(source, /status: 403[\s\S]+Acesso exclusivo da Telemedicina ou do Desenvolvedor/);
+  assert.match(source, /user\?\.authorizationDenied/);
 });
 
 test('V34.7: preflight administrativo responde antes de migração ou acesso ao D1', () => {

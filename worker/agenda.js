@@ -136,9 +136,21 @@ async function listReadMemory(env, username) {
 
 async function authorizedUser(request, env) {
   const user = await validatePortalSession(request, env, []);
-  if (!user) return null;
+  if (!user) {
+    return {
+      authorizationDenied: true,
+      status: 401,
+      error: 'Sessão inválida ou expirada. Entre novamente.'
+    };
+  }
   if (user.role === 'admin') return { ...user, agendaAdmin: true };
-  if (!(await telemedicineAccessFor(env, user.username))) return null;
+  if (!(await telemedicineAccessFor(env, user.username))) {
+    return {
+      authorizationDenied: true,
+      status: 403,
+      error: 'Acesso exclusivo da Telemedicina ou do Desenvolvedor.'
+    };
+  }
   if (user.role !== 'recepcao') await ensureTelemedicineUnderlyingRole(env, user.username);
   return { ...user, role: 'recepcao', agendaAdmin: false };
 }
@@ -383,7 +395,7 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
   if (!firebaseConfigured(env)) return json({ error: 'Armazenamento da Agenda indisponível.' }, 503, origin, originAllowed);
 
   const user = await authorizedUser(request, env);
-  if (!user) return json({ error: 'Acesso exclusivo da Telemedicina ou do Desenvolvedor.' }, 403, origin, originAllowed);
+  if (user?.authorizationDenied) return json({ error: user.error }, user.status, origin, originAllowed);
 
   if (url.pathname === '/api/agenda' && request.method === 'GET') {
     const sourceRecords = await listAll(env);
