@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.1.1
+// @version      1.2.0
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -23,6 +23,8 @@
   const AUTO_INTERVAL_MS = 15 * 60 * 1000;
   const RESULT_TIMEOUT_MS = 60 * 1000;
   const BRIDGE_WATCH_MS = 15 * 1000;
+  const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+  const CONTACT_CONCURRENCY = 1;
 
   let portalWindow = null;
   let autoEnabled = false;
@@ -41,6 +43,7 @@
   let detailHideTimer = null;
   let currentStatusText = 'Sincronização automática ainda não ativada.';
   let currentTone = '';
+  const contactCache = new Map();
 
   function compact(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -145,6 +148,162 @@
       complete: declaredTotal !== null && declaredTotal === records.length,
       records
     };
+  }
+
+  function normalizeSearch(value) {
+    return compact(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  function normalizePhone(value) {
+    let digits = String(value || '').replace(/\D/g, '');
+    if (digits.startsWith('0')) digits = digits.slice(1);
+    if (digits.length === 10 || digits.length === 11) digits = '55' + digits;
+    return /^55\d{10,11}$/.test(digits) ? digits : '';
+  }
+
+  function consultationUrl(sourceId) {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    const basePath = url.pathname.replace(/\/consultas(?:\/.*)?$/, '/consultas/');
+    url.pathname = basePath + encodeURIComponent(sourceId) + '/view';
+    return url.toString();
+  }
+
+  function phoneFromRoot(root) {
+    const selectors = [
+      'input[name*="telefonecel" i]',
+      'input[id*="telefonecel" i]',
+      '[wire\\:model*="telefonecel" i]',
+      'input[name*="telefone" i]',
+      'input[id*="telefone" i]',
+      '[wire\\:model*="telefone" i]',
+      'input[name*="celular" i]',
+      'input[id*="celular" i]'
+    ];
+    for (const selector of selectors) {
+      for (const node of root.querySelectorAll(selector)) {
+        const phone = normalizePhone(node.value || node.getAttribute('value') || node.textContent);
+        if (phone) return phone;
+      }
+    }
+    return '';
+  }
+
+  function phoneFromJson(value) {
+    if (!value || typeof value !== 'object') return '';
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const phone = phoneFromJson(item);
+        if (phone) return phone;
+      }
+      return '';
+    }
+    for (const [key, item] of Object.entries(value)) {
+      if (/telefonecel|telefone|celular/i.test(key)) {
+        const phone = normalizePhone(item);
+        if (phone) return phone;
+      }
+      const nested = phoneFromJson(item);
+      if (nested) return nested;
+    }
+    return '';
+  }
+
+  function patientAction(root) {
+    return [...root.querySelectorAll('button, a, [role="button"]')]
+      .find((node) => normalizeSearch(node.textContent).includes('ver dados do paciente')) || null;
+  }
+
+  function livewireAction(action) {
+    const raw = String(
+      action?.getAttribute('wire:click')
+      || action?.getAttribute('x-on:click')
+      || action?.getAttribute('@click')
+      || ''
+    );
+    const match = raw.match(/(?:\$wire\.)?(mountAction)\(\s*['"]([^'"]+)['"]/);
+    return match ? { method: match[1], params: [match[2]] } : null;
+  }
+
+  async function extractContact(sourceId) {
+    const cached = contactCache.get(sourceId);
+    if (cached && cached.phone && Date.now() - cached.checkedAt < CONTACT_CACHE_TTL_MS) return cached.phone;
+
+    const response = await fetch(consultationUrl(sourceId), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'text/html' }
+    });
+    if (!response.ok || /\/login(?:\?|$)/i.test(new URL(response.url).pathname)) {
+      throw new Error('A sessão do DigSaúde expirou.');
+    }
+
+    const html = await response.text();
+    const root = new DOMParser().parseFromString(html, 'text/html');
+    let phone = phoneFromRoot(root);
+    if (phone) {
+      contactCache.set(sourceId, { phone, checkedAt: Date.now() });
+      return phone;
+    }
+
+    const action = patientAction(root);
+    const call = livewireAction(action);
+    const component = action?.closest('[wire\\:snapshot]') || root.querySelector('[wire\\:snapshot]');
+    const snapshot = component?.getAttribute('wire:snapshot') || '';
+    const token = root.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    if (!call || !snapshot || !token) throw new Error('Não foi possível preparar a leitura do contato.');
+
+    const update = await fetch(new URL('/livewire/update', window.location.origin), {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-Livewire': 'true'
+      },
+      body: JSON.stringify({
+        _token: token,
+        components: [{ snapshot, updates: {}, calls: [{ path: '', method: call.method, params: call.params }] }]
+      })
+    });
+    if (!update.ok) throw new Error('O DigSaúde não respondeu aos dados do paciente.');
+
+    const payload = await update.json();
+    phone = phoneFromJson(payload);
+    if (!phone) {
+      const effectHtml = payload?.components?.[0]?.effects?.html;
+      if (effectHtml) phone = phoneFromRoot(new DOMParser().parseFromString(effectHtml, 'text/html'));
+    }
+    if (!phone) throw new Error('O telefone não foi identificado na resposta do DigSaúde.');
+
+    contactCache.set(sourceId, { phone, checkedAt: Date.now() });
+    return phone;
+  }
+
+  async function enrichSnapshotContacts(snapshot) {
+    const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
+    let cursor = 0;
+    let failed = 0;
+
+    const runner = async () => {
+      while (cursor < records.length) {
+        const index = cursor++;
+        const record = records[index];
+        setButton(`Automático ativo · contatos ${index + 1}/${records.length}…`, 'working');
+        try {
+          record.phone = await extractContact(record.sourceId);
+        } catch (_) {
+          record.phone = '';
+          failed += 1;
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(CONTACT_CONCURRENCY, records.length || 1) }, () => runner()));
+    return { total: records.length, failed };
   }
 
   function agendadosUrl() {
@@ -352,18 +511,29 @@
     try {
       const nextSnapshot = await fetchSnapshot();
       lastCheckAt = Date.now();
+      const contactResult = await enrichSnapshotContacts(nextSnapshot);
       const nextFingerprint = fingerprint(nextSnapshot);
 
       if (!force && nextFingerprint === lastFingerprint) {
         syncInFlight = false;
-        setButton(`Automático ativo · sem mudanças · ${clock()}`, 'success');
+        setButton(
+          contactResult.failed
+            ? `Automático ativo · sem mudanças · ${contactResult.failed} contato(s) pendente(s) · ${clock()}`
+            : `Automático ativo · sem mudanças · ${clock()}`,
+          contactResult.failed ? 'error' : 'success'
+        );
         return;
       }
 
       pendingSnapshot = nextSnapshot;
       pendingFingerprint = nextFingerprint;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      setButton(`Automático ativo · enviando ${nextSnapshot.records.length}…`, 'working');
+      setButton(
+        contactResult.failed
+          ? `Automático ativo · enviando agenda · ${contactResult.failed} contato(s) pendente(s)…`
+          : `Automático ativo · enviando ${nextSnapshot.records.length}…`,
+        'working'
+      );
       scheduleDeliveryRetry();
     } catch (error) {
       syncInFlight = false;

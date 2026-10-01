@@ -229,3 +229,26 @@ Justificativa: automatizar a conferência operacional antes feita pela planilha 
 - se a lista futura ultrapassar uma página do DigSaúde, snapshots parciais não podem desativar ausentes;
 - mudanças futuras no HTML Filament/Livewire podem exigir ajuste do extrator;
 - o Tampermonkey já instalado manualmente precisa receber esta atualização uma vez; a partir da V1.1.0 ficam registrados URLs de atualização.
+
+## V3 — telefone persistido e ação “Avisar por WhatsApp” — 01/10/2026
+
+Decisão operacional:
+- a sincronização feita no computador autorizado passa a obter também o telefone do paciente;
+- o telefone é persistido no Firestore privado da Agenda para continuar disponível quando o DigSaúde estiver fechado;
+- a interface da Ediane deixa de exigir abertura da consulta no DigSaúde e passa a oferecer **Avisar por WhatsApp** diretamente no card;
+- nome, data, horário e especialidade são inseridos automaticamente na mensagem; o local permanece manual e é informado em seguida;
+- o envio nunca é automático: o Portal abre o WhatsApp com o texto preenchido e o operador confirma o envio.
+
+A investigação visual real mostrou que **Ver Dados do Paciente** dispara uma chamada Livewire `update` e que o campo de telefone é carregado no componente da consulta. Por isso, a decisão antiga deste documento de não usar `/livewire/update` como parte do fluxo foi revisada: a V3 usa a ação Livewire somente como fallback controlado dentro da mesma sessão/origem do DigSaúde, extraindo apenas o telefone. O sincronizador primeiro procura o contato no HTML retornado e só executa a ação quando necessário.
+
+Proteções:
+- uma consulta por vez para reduzir carga;
+- `credentials: include` somente same-origin no DigSaúde;
+- nenhuma leitura de `document.cookie`, `localStorage` ou `sessionStorage`;
+- token CSRF usado apenas localmente na chamada Livewire e nunca enviado ao Portal;
+- telefone não entra em PostHog, logs, documentação ou repositório;
+- falha temporária de enriquecimento não apaga telefone previamente conhecido;
+- usuários sem capacidade Telemedicina continuam sem acesso à API da Agenda.
+
+Arquivos alterados nesta entrega: `agenda/digsaude-agenda-sync.user.js`, `worker/agenda.js`, `js/agenda.js`, `css/agenda.css`, `agenda/index.html`, testes e documentação.
+

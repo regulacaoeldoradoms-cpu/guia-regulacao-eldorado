@@ -106,3 +106,56 @@ Monitoramento totalmente autônomo com navegador fechado somente deve ser consid
 - `worker/agenda.js`
 - `worker/tests/agenda.test.mjs`
 - `.github/workflows/validate-agenda.yml`
+
+## V3 — contato do paciente e aviso por WhatsApp
+
+Decisão permanente registrada em 01/10/2026.
+
+Objetivo operacional: o profissional que realiza a sincronização do DigSaúde alimenta a Agenda com o telefone do paciente para que o Técnico em Telemedicina possa, depois, trabalhar somente no `/agenda/`, inclusive com o DigSaúde fechado.
+
+### Coleta do contato
+
+- o telefone é obtido somente dentro da sessão já autenticada do DigSaúde;
+- o sincronizador consulta a rota individual `/consultas/{id}/view` correspondente ao mesmo `sourceId` já presente na aba Agendados;
+- quando o telefone não está presente no HTML inicial, o sincronizador reproduz a ação Livewire **Ver Dados do Paciente** usando o snapshot e o token CSRF obtidos da própria página;
+- a chamada continua same-origin no DigSaúde com `credentials: include`;
+- senha, cookie, bearer token e sessão do DigSaúde não são enviados ao Portal;
+- a extração é serializada para reduzir carga no sistema estadual;
+- o contato fica em cache apenas em memória no navegador por até 24 horas; não usa `localStorage` nem `sessionStorage`.
+
+### Persistência no Portal
+
+O telefone normalizado é enviado junto com o snapshot operacional da Agenda e armazenado no Firestore privado do módulo. Ele não é versionado no GitHub, não entra em PostHog, logs ou observabilidade e é devolvido apenas pela API autenticada da Agenda para usuários autorizados de Telemedicina/Desenvolvedor.
+
+Se uma coleta temporária falhar, um telefone previamente sincronizado é preservado; a falha não apaga o contato conhecido.
+
+### Ação no card
+
+O botão principal do card deixa de ser **Abrir no DigSaúde** e passa a ser **Avisar por WhatsApp**.
+
+Ao clicar:
+- o WhatsApp abre diretamente no número sincronizado do paciente;
+- a mensagem é apenas preparada; o envio continua exigindo confirmação humana no WhatsApp;
+- o agendamento é marcado como visualizado para aquele usuário;
+- o local do atendimento não é incluído automaticamente, pois será informado em seguida pelo Técnico em Telemedicina.
+
+Mensagem-base:
+
+```text
+Olá, [nome do paciente]
+Este é um lembrete da sua consulta agendada:
+Data: [DATA]
+Horário: [HORÁRIO]
+Especialidade: [ESPECIALIDADE]
+
+Caso não possa comparecer, pedimos que nos avise com antecedência na unidade de atendimento.
+
+Dúvidas? Estamos à disposição!
+```
+
+Para Psiquiatria, a apresentação usa **Médico Psiquiatra**, preservando o texto operacional já utilizado pela equipe.
+
+### Privacidade
+
+Telefone é dado pessoal protegido. Não deve aparecer em documentação pública com valor real, telemetria, logs, mensagens de erro ou URLs internas do Portal. A única URL externa formada com o número é a ação consciente do usuário para `wa.me`, aberta no navegador do usuário autorizado.
+
