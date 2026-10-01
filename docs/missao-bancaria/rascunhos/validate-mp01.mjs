@@ -5,7 +5,8 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01'].includes(unit), 'Unidade editorial desconhecida');
+const sourceDate = unit === 'ce01' ? '2026-10-01' : '2026-09-30';
 const isBoss = ['mpchefe', 'pcchefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
@@ -19,7 +20,7 @@ unique(SOURCES); unique(draft.sections); unique(draft.questions);
 assert.equal(draft.publication.status, 'draft');
 assert.equal(draft.teaching.contractVersion, 1);
 assert.equal(draft.teaching.reviewStatus, 'human-review-pending');
-assert.equal(draft.candidateBlockId, unit.startsWith('pc') ? 'banking.products-credit' : 'banking.markets-policy');
+assert.equal(draft.candidateBlockId, unit === 'ce01' ? 'banking.capital-exchange' : unit.startsWith('pc') ? 'banking.products-credit' : 'banking.markets-policy');
 assert.equal(draft.xp, undefined);
 assert.equal(draft.order, undefined);
 assert.deepEqual(validatePublicationCatalog([draft]), []);
@@ -28,7 +29,7 @@ assert(!PUBLISHED_MISSIONS.some(mission => mission.id === draft.id));
 const sources = new Map(SOURCES.map(source => [source.id, source]));
 for (const source of SOURCES) {
   assert(['www.gov.br', 'www.bcb.gov.br', 'normativos.bcb.gov.br', 'www.caixa.gov.br', 'www.ecb.europa.eu', 'www.planalto.gov.br', 'www.bankofengland.co.uk'].includes(new URL(source.url).hostname));
-  assert(source.checkedAt === '2026-09-30' && source.version && source.locator);
+  assert(source.checkedAt === sourceDate && source.version && source.locator);
 }
 for (const sourceId of draft.sourceIds) assert(sources.has(sourceId));
 const sections = new Map(draft.sections.map(section => [section.id, section]));
@@ -95,7 +96,7 @@ for (const calculation of content.ARITHMETIC || []) {
 let markdown = `# ${draft.editorialKey} — ${draft.title}\n\n**Rascunho para revisão, não publicado.** ${EDITORIAL.stage}.\n\nFonte editorial: [${stem}.mjs](${stem}.mjs). Regenerar com \`node docs/missao-bancaria/rascunhos/validate-mp01.mjs${unitFlag} --render\`.\n\nObjetivo: ${draft.objective}\n\n`;
 for (const section of draft.sections) {
   markdown += `<a id="${section.id}"></a>\n\n## ${section.heading}\n\n${section.body}\n\n`;
-  if (section.sourceIds.length) markdown += `Base conceitual: ${section.sourceIds.map(id => { const source = sources.get(id); return `[${source.label}](${source.url})`; }).join('; ')}. Consulta: 30/09/2026.\n\n`;
+  if (section.sourceIds.length) markdown += `Base conceitual: ${section.sourceIds.map(id => { const source = sources.get(id); return `[${source.label}](${source.url})`; }).join('; ')}. Consulta: ${sourceDate.split('-').reverse().join('/')}.\n\n`;
 }
 markdown += '## Recordação e recuperação\n\n' + draft.recall.map(text => `- ${text}`).join('\n') + '\n\n';
 markdown += '## Prática comentada\n\nTodos os casos são fictícios. Tente responder antes de abrir cada comentário.\n\n';
@@ -112,7 +113,7 @@ markdown += EDITORIAL.limits.map(text => `- ${text}`).join('\n') + '\n';
 const output = path.join(import.meta.dirname, `${stem}.md`);
 if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
-const review = { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md', pcchefe: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
+const review = unit === 'ce01' ? '../80-CE-PLANO-E-PRIMEIRA-UNIDADE.md' : { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md', pcchefe: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
 const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
@@ -126,7 +127,7 @@ for (const relative of related) {
     if (local) {
       const targetFile = path.resolve(path.dirname(file), decodeURIComponent(local));
       assert(fs.existsSync(targetFile), `${relative}: ${target}`);
-      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe))-v1\.md$/.test(targetFile)) {
+      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe)|ce-01)-v1\.md$/.test(targetFile)) {
         assert(fs.readFileSync(targetFile, 'utf8').includes(`id="${anchor}"`), `${relative}: origem ${target}`);
       }
     }
