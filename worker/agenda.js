@@ -14,7 +14,6 @@ const READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state';
 const MAX_RECORDS_PER_SYNC = 250;
 const MAX_LIST_PAGES = 20;
 const FIRESTORE_COMMIT_CHUNK = 450;
-const CONTACT_REFRESH_MS = 24 * 60 * 60 * 1000;
 
 function responseHeaders(origin, allowed = true) {
   const headers = {
@@ -52,11 +51,6 @@ function normalizeBrazilPhone(value) {
   return digits;
 }
 
-function contactNeedsRefresh(record = {}, nowMs = Date.now()) {
-  if (!normalizeBrazilPhone(record.phone)) return true;
-  const checkedAt = Date.parse(String(record.phoneCheckedAt || ''));
-  return !Number.isFinite(checkedAt) || nowMs - checkedAt >= CONTACT_REFRESH_MS;
-}
 
 function normalizeRecord(input = {}) {
   const sourceId = cleanSourceId(input.sourceId);
@@ -75,7 +69,8 @@ function normalizeRecord(input = {}) {
     municipality: clean(input.municipality, 120),
     appointmentType: clean(input.appointmentType, 120),
     facility: clean(input.facility, 180),
-    status: clean(input.status, 120)
+    status: clean(input.status, 120),
+    phone: normalizeBrazilPhone(input.phone)
   };
 }
 
@@ -259,8 +254,6 @@ async function syncRecords(env, input, user) {
   }
 
   const writes = [];
-  const contactsNeeded = new Set();
-  const nowMs = Date.parse(now) || Date.now();
   let created = 0;
   let changed = 0;
   let unchanged = 0;
@@ -270,13 +263,10 @@ async function syncRecords(env, input, user) {
     const existing = existingBySourceId.get(record.sourceId) || null;
 
     if (!existing) {
-      contactsNeeded.add(record.sourceId);
       writes.push({
         documentPath: `${COLLECTION}/${documentId}`,
         data: {
           ...record,
-          phone: '',
-          phoneCheckedAt: '',
           firstSeenAt: now,
           lastSeenAt: now,
           lastChangedAt: now,
@@ -292,7 +282,6 @@ async function syncRecords(env, input, user) {
 
     const didChange = comparable(existing) !== comparable(record);
     const stateChanged = didChange || existing.active === false;
-    if (didChange || contactNeedsRefresh(existing, nowMs)) contactsNeeded.add(record.sourceId);
     const { id: _existingId, ...existingData } = existing;
     writes.push({
       documentPath: `${COLLECTION}/${existing.id || documentId}`,
@@ -347,57 +336,8 @@ async function syncRecords(env, input, user) {
     created,
     changed,
     unchanged,
-    deactivated,
-    contactsNeeded: [...contactsNeeded]
+    deactivated
   };
-}
-
-async function saveContacts(env, input = {}, user) {
-  const contacts = Array.isArray(input.contacts) ? input.contacts : [];
-  if (!contacts.length) return { updated: 0, rejected: 0 };
-  if (contacts.length > MAX_RECORDS_PER_SYNC) {
-    throw Object.assign(new Error('Quantidade de contatos acima do limite de segurança.'), { status: 413 });
-  }
-
-  const normalized = new Map();
-  for (const item of contacts) {
-    const sourceId = cleanSourceId(item?.sourceId);
-    const phone = normalizeBrazilPhone(item?.phone);
-    if (!sourceId || !phone) continue;
-    normalized.set(sourceId, phone);
-  }
-
-  const existingRecords = await listAll(env);
-  const existingBySourceId = new Map();
-  for (const existing of existingRecords) {
-    const sourceId = cleanSourceId(existing.sourceId);
-    if (sourceId) existingBySourceId.set(sourceId, existing);
-  }
-
-  const now = new Date().toISOString();
-  const writes = [];
-  let rejected = contacts.length - normalized.size;
-
-  for (const [sourceId, phone] of normalized.entries()) {
-    const existing = existingBySourceId.get(sourceId);
-    if (!existing) {
-      rejected += 1;
-      continue;
-    }
-    const { id: _existingId, ...existingData } = existing;
-    writes.push({
-      documentPath: `${COLLECTION}/${existing.id || await digestId(sourceId)}`,
-      data: {
-        ...existingData,
-        phone,
-        phoneCheckedAt: now,
-        phoneLastSyncedBy: clean(user.username, 80)
-      }
-    });
-  }
-
-  if (writes.length) await commitWrites(env, writes);
-  return { updated: writes.length, rejected };
 }
 
 async function migrateEmbeddedReadMemory(env, username, records, collectionPath, memory) {
