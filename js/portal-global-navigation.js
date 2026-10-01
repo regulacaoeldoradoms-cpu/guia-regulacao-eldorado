@@ -8,7 +8,7 @@
   const NOTIFICATION_CSS = '/css/social-notification-panel.css?v=20260910-1';
   const SOCIAL_API = '/js/social-api.js?v=20260910-4';
   const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';
-  const AUTH_CLIENT = '/js/auth-client.js?v=20260910-4';
+  const AUTH_CLIENT = '/js/auth-client.js?v=20261001-v34-8';
   const SOCIAL_NAVIGATION = '/js/social-navigation.js?v=20260928-2';
   let started = false;
   let running = null;
