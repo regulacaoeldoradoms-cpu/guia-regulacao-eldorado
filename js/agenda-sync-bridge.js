@@ -59,6 +59,7 @@
           records: snapshot.records,
           totalCount: snapshot.totalCount,
           complete: snapshot.complete === true,
+          contactPass: snapshot.contactPass === true,
           capturedAt: snapshot.capturedAt
         })
       });
@@ -71,12 +72,17 @@
         changed: Number(result.changed || 0),
         unchanged: Number(result.unchanged || 0),
         deactivated: Number(result.deactivated || 0),
+        contactsUpdated: Number(result.contactsUpdated || 0),
+        contactRefreshSourceIds: Array.isArray(result.contactRefreshSourceIds)
+          ? result.contactRefreshSourceIds.map((value) => String(value || '')).filter(Boolean).slice(0, 250)
+          : [],
         complete: result.complete === true
       };
 
       lastSyncId = syncId;
       lastResult = message;
-      status.textContent = `Automático ativo · última sincronização: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${message.created} novo(s), ${message.changed} alterado(s).`;
+      const contactSuffix = message.contactsUpdated ? ` · ${message.contactsUpdated} contato(s) atualizado(s)` : '';
+      status.textContent = `Automático ativo · última sincronização: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${message.created} novo(s), ${message.changed} alterado(s)${contactSuffix}.`;
       agendaLink.hidden = false;
       reply(message);
     } catch (error) {
