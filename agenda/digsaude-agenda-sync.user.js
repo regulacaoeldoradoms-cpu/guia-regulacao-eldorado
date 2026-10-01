@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Sincroniza Agendados e os telefones dos pacientes com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-contact-1
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-contact-1
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-contact-2
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-contact-2
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -23,16 +23,13 @@
   const AUTO_INTERVAL_MS = 15 * 60 * 1000;
   const RESULT_TIMEOUT_MS = 60 * 1000;
   const BRIDGE_WATCH_MS = 15 * 1000;
-  const CONTACT_PROBE_PARAM = 'portalAgendaContactProbe';
   const CONTACT_TIMEOUT_MS = 14 * 1000;
-  const CONTACT_POLL_MS = 140;
   const CONTACT_CONCURRENCY = 2;
   const CONTACT_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
   const currentUrl = new URL(window.location.href);
 
-  // Frames de leitura individual usam a própria sessão same-origin do DigSaúde,
-  // mas não devem montar uma segunda instância do sincronizador.
-  if (currentUrl.searchParams.get(CONTACT_PROBE_PARAM) === '1') return;
+  // O widget existe apenas na lista de consultas. A leitura dos contatos usa
+  // GET + Livewire same-origin e nunca injeta outra instância do sincronizador.
   if (!/\/consultas\/?$/.test(currentUrl.pathname)) return;
 
   let portalWindow = null;
@@ -186,10 +183,6 @@
     return snapshotFrom(root);
   }
 
-  function wait(milliseconds) {
-    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
-  }
-
   function phoneDigits(value) {
     const digits = String(value || '').replace(/\D/g, '');
     return digits.length >= 10 && digits.length <= 13 ? digits : '';
@@ -213,6 +206,43 @@
     return '';
   }
 
+  function phoneFromValue(value, depth = 0, seen = new WeakSet()) {
+    if (depth > 10 || value == null) return '';
+    if (typeof value === 'string' || typeof value === 'number') return '';
+
+    if (typeof value !== 'object') return '';
+    if (seen.has(value)) return '';
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const phone = phoneFromValue(item, depth + 1, seen);
+        if (phone) return phone;
+      }
+      return '';
+    }
+
+    for (const [key, item] of Object.entries(value)) {
+      if (/telefone(?:cel)?|celular|fone/i.test(key)) {
+        const phone = phoneDigits(item);
+        if (phone) return phone;
+      }
+    }
+    for (const item of Object.values(value)) {
+      const phone = phoneFromValue(item, depth + 1, seen);
+      if (phone) return phone;
+    }
+    return '';
+  }
+
+  function phoneFromSnapshot(snapshot) {
+    try {
+      return phoneFromValue(JSON.parse(String(snapshot || '')));
+    } catch (_) {
+      return '';
+    }
+  }
+
   function patientDataTrigger(root) {
     if (!root) return null;
     return [...root.querySelectorAll('button, a')].find((node) =>
@@ -225,74 +255,205 @@
     const basePath = url.pathname.replace(/\/consultas(?:\/.*)?$/, '/consultas');
     url.pathname = `${basePath}/${encodeURIComponent(sourceId)}/view`;
     url.search = '';
-    url.searchParams.set(CONTACT_PROBE_PARAM, '1');
     url.hash = '';
     return url.toString();
   }
 
-  function waitForFrameLoad(frame) {
-    return new Promise((resolve, reject) => {
-      const timer = window.setTimeout(() => reject(new Error('Tempo esgotado ao abrir a consulta para localizar o contato.')), CONTACT_TIMEOUT_MS);
-      frame.addEventListener('load', () => {
-        window.clearTimeout(timer);
-        resolve();
-      }, { once: true });
-      frame.addEventListener('error', () => {
-        window.clearTimeout(timer);
-        reject(new Error('Não foi possível abrir a consulta para localizar o contato.'));
-      }, { once: true });
-    });
+  async function fetchWithContactTimeout(url, options = {}) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), CONTACT_TIMEOUT_MS);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } catch (error) {
+      if (String(error?.name || '') === 'AbortError') {
+        throw new Error('Tempo esgotado ao consultar os Dados do Paciente.');
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  function csrfToken(root) {
+    return compact(root?.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+  }
+
+  function wireClickExpression(node) {
+    if (!node) return '';
+    for (const attribute of [...node.attributes]) {
+      const name = String(attribute.name || '').toLowerCase();
+      if (name === 'wire:click' || name.startsWith('wire:click.')) {
+        return compact(attribute.value);
+      }
+    }
+    return '';
+  }
+
+  function parseWireArguments(source) {
+    const input = String(source || '');
+    const values = [];
+    let index = 0;
+
+    function skipSeparators() {
+      while (index < input.length && /[\s,]/.test(input[index])) index += 1;
+    }
+
+    skipSeparators();
+    while (index < input.length) {
+      const char = input[index];
+
+      if (char === "'" || char === '"') {
+        const quote = char;
+        index += 1;
+        let value = '';
+        let closed = false;
+        while (index < input.length) {
+          const next = input[index];
+          index += 1;
+          if (next === '\\' && index < input.length) {
+            value += input[index];
+            index += 1;
+            continue;
+          }
+          if (next === quote) {
+            closed = true;
+            break;
+          }
+          value += next;
+        }
+        if (!closed) throw new Error('A ação de Dados do Paciente possui parâmetros não reconhecidos.');
+        values.push(value);
+      } else {
+        const start = index;
+        while (index < input.length && input[index] !== ',') index += 1;
+        const token = input.slice(start, index).trim();
+        if (!token) throw new Error('A ação de Dados do Paciente possui parâmetros vazios.');
+        if (/^-?\d+(?:\.\d+)?$/.test(token)) values.push(Number(token));
+        else if (token === 'true') values.push(true);
+        else if (token === 'false') values.push(false);
+        else if (token === 'null') values.push(null);
+        else throw new Error('A ação de Dados do Paciente usa um parâmetro Livewire não suportado.');
+      }
+      skipSeparators();
+    }
+    return values;
+  }
+
+  function livewireCallFromTrigger(trigger) {
+    let expression = wireClickExpression(trigger);
+    expression = expression.replace(/^\$wire\./, '').trim();
+    const match = /^([A-Za-z_$][\w$]*)\s*\(([\s\S]*)\)$/.exec(expression);
+    if (!match) throw new Error('Não foi possível identificar a ação Livewire de Dados do Paciente.');
+    return {
+      method: match[1],
+      params: parseWireArguments(match[2])
+    };
+  }
+
+  function livewireComponentForTrigger(root, trigger) {
+    const component = trigger?.closest?.('[wire\\:id][wire\\:snapshot]')
+      || root?.querySelector?.('[wire\\:id][wire\\:snapshot]');
+    const snapshot = String(component?.getAttribute?.('wire:snapshot') || '');
+    if (!snapshot) throw new Error('O componente Livewire da consulta não foi localizado.');
+    return { component, snapshot };
+  }
+
+  function livewireUpdateUrl(root, html) {
+    const scripted = root?.querySelector?.('script[data-update-uri]')?.getAttribute?.('data-update-uri');
+    if (scripted) return new URL(scripted, window.location.origin).toString();
+
+    const source = String(html || '');
+    const dataMatch = source.match(/data-update-uri=["']([^"']*livewire\/update[^"']*)["']/i);
+    if (dataMatch?.[1]) return new URL(dataMatch[1].replace(/&amp;/g, '&'), window.location.origin).toString();
+
+    const configMatch = source.match(/["']uri["']\s*:\s*["']([^"']*livewire\/update[^"']*)["']/i);
+    if (configMatch?.[1]) return new URL(configMatch[1].replace(/\\\//g, '/'), window.location.origin).toString();
+
+    return new URL('/livewire/update', window.location.origin).toString();
+  }
+
+  function phoneFromLivewireResponse(payload) {
+    const components = Array.isArray(payload?.components) ? payload.components : [];
+    for (const component of components) {
+      const snapshotPhone = phoneFromSnapshot(component?.snapshot);
+      if (snapshotPhone) return snapshotPhone;
+
+      const html = String(component?.effects?.html || '');
+      if (html) {
+        const root = new DOMParser().parseFromString(html, 'text/html');
+        const htmlPhone = phoneFromDocument(root);
+        if (htmlPhone) return htmlPhone;
+      }
+    }
+    return '';
   }
 
   async function contactForSourceId(sourceId) {
-    const frame = document.createElement('iframe');
-    frame.setAttribute('aria-hidden', 'true');
-    frame.tabIndex = -1;
-    frame.style.cssText = [
-      'position:fixed',
-      'left:-20000px',
-      'top:0',
-      'width:1280px',
-      'height:900px',
-      'opacity:.01',
-      'pointer-events:none',
-      'border:0'
-    ].join(';');
+    const pageResponse = await fetchWithContactTimeout(consultationViewUrl(sourceId), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'text/html' }
+    });
 
-    try {
-      frame.src = consultationViewUrl(sourceId);
-      document.body.appendChild(frame);
-      await waitForFrameLoad(frame);
+    const finalUrl = new URL(pageResponse.url || consultationViewUrl(sourceId));
+    if (!pageResponse.ok || /\/login(?:\/|$)/i.test(finalUrl.pathname)) {
+      throw new Error('A sessão do DigSaúde expirou ou a consulta não pôde ser carregada.');
+    }
 
-      const frameWindow = frame.contentWindow;
-      const root = frame.contentDocument;
-      if (!frameWindow || !root) throw new Error('A consulta não pôde ser lida no DigSaúde.');
-      if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
+    const html = await pageResponse.text();
+    const root = new DOMParser().parseFromString(html, 'text/html');
+
+    const direct = phoneFromDocument(root);
+    if (direct) return direct;
+
+    const trigger = patientDataTrigger(root);
+    if (!trigger) throw new Error('A ação Ver Dados do Paciente não foi localizada.');
+
+    const { snapshot } = livewireComponentForTrigger(root, trigger);
+    const embedded = phoneFromSnapshot(snapshot);
+    if (embedded) return embedded;
+
+    const call = livewireCallFromTrigger(trigger);
+    const token = csrfToken(root);
+    if (!token) throw new Error('O token local da página do DigSaúde não foi localizado.');
+
+    const updateResponse = await fetchWithContactTimeout(livewireUpdateUrl(root, html), {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': token,
+        'X-Livewire': 'true'
+      },
+      body: JSON.stringify({
+        _token: token,
+        components: [{
+          snapshot,
+          updates: {},
+          calls: [{
+            path: '',
+            method: call.method,
+            params: call.params
+          }]
+        }]
+      })
+    });
+
+    if (!updateResponse.ok) {
+      if (updateResponse.status === 419 || updateResponse.status === 401 || updateResponse.status === 403) {
         throw new Error('A sessão do DigSaúde expirou. Entre novamente no sistema.');
       }
-
-      const direct = phoneFromDocument(root);
-      if (direct) return direct;
-
-      let trigger = patientDataTrigger(root);
-      const triggerDeadline = Date.now() + Math.min(6000, CONTACT_TIMEOUT_MS);
-      while (!trigger && Date.now() < triggerDeadline) {
-        await wait(CONTACT_POLL_MS);
-        trigger = patientDataTrigger(frame.contentDocument);
-      }
-      if (!trigger) throw new Error('A ação Ver Dados do Paciente não foi localizada.');
-      trigger.click();
-
-      const deadline = Date.now() + CONTACT_TIMEOUT_MS;
-      while (Date.now() < deadline) {
-        await wait(CONTACT_POLL_MS);
-        const phone = phoneFromDocument(frame.contentDocument);
-        if (phone) return phone;
-      }
-      throw new Error('O telefone não apareceu após abrir os dados do paciente.');
-    } finally {
-      frame.remove();
+      throw new Error('O DigSaúde não retornou os Dados do Paciente.');
     }
+
+    const payload = await updateResponse.json().catch(() => null);
+    const phone = phoneFromLivewireResponse(payload);
+    if (phone) return phone;
+
+    throw new Error('O telefone não foi localizado na resposta dos Dados do Paciente.');
   }
 
   async function contactSnapshot(baseSnapshot, sourceIds) {
