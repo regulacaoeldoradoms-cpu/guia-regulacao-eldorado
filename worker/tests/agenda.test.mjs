@@ -69,9 +69,21 @@ test('sincronizador lê Agendados e consulta somente o telefone nos Dados do Pac
   assert.match(source, /Ver Dados do Paciente/);
   assert.match(source, /telefonecel/);
   assert.match(source, /CONTACT_CONCURRENCY = 2/);
+  assert.match(source, /\/livewire\/update/);
+  assert.match(source, /meta\[name="csrf-token"\]/);
+  assert.match(source, /'X-CSRF-TOKEN': token/);
+  assert.match(source, /'X-Livewire': 'true'/);
   assert.match(source, /contactPass: true/);
   assert.match(source, /postMessage/);
-  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
+  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|authorization|bearer/i);
+});
+
+test('coleta de contato não depende de iframe bloqueado pelo DigSaúde', () => {
+  const source = read('agenda/digsaude-agenda-sync.user.js');
+  assert.doesNotMatch(source, /createElement\('iframe'\)|frame\.contentDocument|CONTACT_PROBE_PARAM/);
+  assert.match(source, /fetchWithContactTimeout\(consultationViewUrl\(sourceId\)/);
+  assert.match(source, /livewireCallFromTrigger/);
+  assert.match(source, /phoneFromLivewireResponse/);
 });
 
 test('ponte aceita mensagens somente da origem oficial do DigSaúde', () => {
