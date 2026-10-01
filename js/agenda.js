@@ -5,7 +5,6 @@
   const user = await auth.requireRole(['telemedicina']);
   if (!user) return;
 
-  const DIGSAUDE_BASE = 'https://teleatendimento.saude.ms.gov.br/N%C3%BAcleo%20de%20Telessa%C3%BAde%20-%20SES-Fiocruz/consultas/';
   const WHATSAPP_SUPPORT_NUMBER = '556781631815';
   const capacityRules = window.AgendaCapacity;
   const els = {
@@ -301,6 +300,60 @@
     return wrap;
   }
 
+  function reminderMessage(record) {
+    return [
+      `Olá, ${record.patient || 'paciente'}`,
+      'Este é um lembrete da sua consulta agendada:',
+      `Data: ${formatDate(record.appointmentDate)} Horário: ${record.appointmentTime || '—'}`,
+      `Especialidade: ${record.specialty || '—'}`,
+      'Caso não possa comparecer, pedimos que nos avise com antecedência na unidade de atendimento.',
+      'Dúvidas? Estamos à disposição!'
+    ].join('\n');
+  }
+
+  function patientWhatsappUrl(phone, record) {
+    const digits = String(phone || '').replace(/\D/g, '');
+    if (digits.length < 12 || digits.length > 13) return '';
+    return `https://wa.me/${digits}?text=${encodeURIComponent(reminderMessage(record))}`;
+  }
+
+  async function notifyPatientByWhatsapp(record, button) {
+    if (!record?.sourceId || !record.active) return false;
+    const originalText = button?.textContent || 'Avisar por WhatsApp';
+    const popup = window.open('', '_blank');
+    if (popup) {
+      try { popup.opener = null; } catch (_) {}
+    }
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Abrindo WhatsApp…';
+    }
+
+    try {
+      const result = await auth.api('/api/agenda/contact', {
+        method: 'POST',
+        body: JSON.stringify({ sourceId: record.sourceId })
+      });
+      const url = patientWhatsappUrl(result?.phone, record);
+      if (!url) throw new Error('O contato sincronizado não é válido para WhatsApp.');
+
+      if (popup && !popup.closed) popup.location.replace(url);
+      else window.location.href = url;
+      markRead(record, true);
+      return true;
+    } catch (error) {
+      try { if (popup && !popup.closed) popup.close(); } catch (_) {}
+      showStatus(error.message || 'Não foi possível abrir o WhatsApp deste paciente.', 'error');
+      return false;
+    } finally {
+      if (button?.isConnected) {
+        button.disabled = !record.contactAvailable;
+        button.textContent = originalText;
+      }
+    }
+  }
+
   async function markRead(record, silent = false) {
     if (!record?.sourceId || !record.unread) return true;
     try {
@@ -363,12 +416,17 @@
     const actions = document.createElement('div');
     actions.className = 'agenda-card-actions';
 
-    const open = document.createElement('a');
-    open.href = DIGSAUDE_BASE + encodeURIComponent(record.sourceId) + '/view';
-    open.target = '_blank';
-    open.rel = 'noopener noreferrer';
-    open.textContent = 'Abrir no DigSaúde';
-    open.addEventListener('click', () => { markRead(record, true); });
+    const whatsapp = document.createElement('button');
+    whatsapp.type = 'button';
+    whatsapp.className = 'agenda-whatsapp-button';
+    whatsapp.textContent = record.active
+      ? (record.contactAvailable ? 'Avisar por WhatsApp' : 'Aguardando contato')
+      : 'Agendamento inativo';
+    whatsapp.disabled = !record.active || !record.contactAvailable;
+    whatsapp.title = record.contactAvailable
+      ? 'Abrir o WhatsApp do paciente com o lembrete preenchido'
+      : 'O telefone será disponibilizado após a sincronização do DigSaúde.';
+    whatsapp.addEventListener('click', () => { notifyPatientByWhatsapp(record, whatsapp); });
 
     const read = document.createElement('button');
     read.type = 'button';
@@ -388,7 +446,7 @@
       patient.appendChild(status);
     }
 
-    actions.append(open, read);
+    actions.append(whatsapp, read);
     card.append(patient, specialty, schedule, specialist, actions);
     return card;
   }
