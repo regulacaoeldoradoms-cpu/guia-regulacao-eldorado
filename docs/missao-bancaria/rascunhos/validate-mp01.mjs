@@ -5,10 +5,10 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe'].includes(unit), 'Unidade editorial desconhecida');
 const isCE = unit.startsWith('ce');
 const sourceDate = isCE ? '2026-10-01' : '2026-09-30';
-const isBoss = ['mpchefe', 'pcchefe'].includes(unit);
+const isBoss = ['mpchefe', 'pcchefe', 'cechefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -72,7 +72,7 @@ for (const question of draft.questions) {
 }
 assert.deepEqual([...objectives].sort(), ['O1', 'O2', 'O3', 'O4', 'O5', 'O6']);
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
-if (isCE) assert.equal(draft.questions.length, 8);
+if (isCE && !isBoss) assert.equal(draft.questions.length, 8);
 if (unit === 'cer') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 11 }, (_, i) => `ce${String(i + 1).padStart(2, '0')}`));
 if (isBoss) {
   assert.equal(draft.kind, 'boss');
@@ -118,7 +118,7 @@ const output = path.join(import.meta.dirname, `${stem}.md`);
 if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
 const review = unit === 'ce01' ? '../80-CE-PLANO-E-PRIMEIRA-UNIDADE.md' : { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md', pcchefe: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
-const ceReview = unit === 'cer' ? '../82-CE-REVISAO-E-PROPOSTA-CHEFE.md' : '../81-CE-CONJUNTO-RASCUNHOS.md';
+const ceReview = ['cer', 'cechefe'].includes(unit) ? '../82-CE-REVISAO-E-PROPOSTA-CHEFE.md' : '../81-CE-CONJUNTO-RASCUNHOS.md';
 const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', isCE && unit !== 'ce01' ? ceReview : review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
@@ -132,7 +132,7 @@ for (const relative of related) {
     if (local) {
       const targetFile = path.resolve(path.dirname(file), decodeURIComponent(local));
       assert(fs.existsSync(targetFile), `${relative}: ${target}`);
-      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe)|ce-(?:0[1-9]|1[01]|r))-v1\.md$/.test(targetFile)) {
+      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe)|ce-(?:0[1-9]|1[01]|r|chefe))-v1\.md$/.test(targetFile)) {
         assert(fs.readFileSync(targetFile, 'utf8').includes(`id="${anchor}"`), `${relative}: origem ${target}`);
       }
     }

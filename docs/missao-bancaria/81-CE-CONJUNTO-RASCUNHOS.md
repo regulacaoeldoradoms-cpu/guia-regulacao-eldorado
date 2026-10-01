@@ -19,7 +19,7 @@ Cada unidade contém quatro exemplos resolvidos, oito questões novas com quatro
 | [CE-10](rascunhos/ce-10-v1.md) | Receita/custo em dólares, resultado e efeitos condicionais no comércio | 10 / 24 | 21 |
 | [CE-11](rascunhos/ce-11-v1.md) | Diferencial em pontos percentuais, reconversão, risco e fluxos condicionais | 11 / 25 | 13 |
 
-A [revisão cumulativa e proposta do Chefe](82-CE-REVISAO-E-PROPOSTA-CHEFE.md) fecham o recorte. O lote CE-02–11 + CE-R soma **118 trechos, 44 exemplos, 88 questões/352 justificativas e 128 contas**. Incluindo CE-01 já entregue: **11 aulas + revisão, 48 exemplos e 96 questões/384 justificativas**. O Chefe tem somente proposta de 12 itens; não somar itens ainda não escritos como entregues.
+A [revisão cumulativa e o Chefe](82-CE-REVISAO-E-PROPOSTA-CHEFE.md) fecham o recorte. O lote CE-02–11 + CE-R soma **118 trechos, 44 exemplos, 88 questões/352 justificativas e 128 contas**. Incluindo CE-01: **11 aulas + revisão, 48 exemplos e 96 questões/384 justificativas**. O Chefe posterior acrescenta 12 itens próprios, 48 justificativas e um exemplo de método; conjunto de **13 unidades/108 questões**, ainda fora do catálogo.
 
 ## Fontes e limites
 
@@ -33,6 +33,6 @@ Casos e valores são fictícios. Fórmulas declaram moeda, período, custos e hi
 
 Executados em 01/10/2026: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=<ce02…ce11|cer> --render` e conferência final sem `--render`. Passaram esquema, quatro alternativas/justificativas, gabaritos válidos, objetivos, recuperação, origens, cálculos declarados, UTF-8, links locais e sincronização MD/MJS. Conferência conjunta confirmou 96 IDs/enunciados distintos e que adicionar os 12 drafts ao filtro preserva as **37 missões publicadas**. A revisão exige referências para **todas as 11 aulas**, e cada questão tem origem existente.
 
-O validador ganhou somente a lista CE, os dois hosts oficiais adicionais restritos a CE, a consulta BCB reaproveitada com ID/data exatos, links/origens e conferência de oito itens. As restrições anteriores de MP/PC permanecem. Nenhuma suíte app, Chromium, D1 ou produção executada; evidências anteriores não afetadas são reaproveitadas. Verificação estrutural e conferência autoral não substituem revisão pedagógica independente, ainda **pendente para o conjunto CE**.
+O validador ganhou somente a lista CE, os dois hosts oficiais adicionais restritos a CE, a consulta BCB reaproveitada com ID/data exatos, links/origens e conferência de oito itens (12 no Chefe, pelos seis grupos existentes). As restrições anteriores de MP/PC permanecem. Nenhuma suíte app, Chromium, D1 ou produção executada neste lote editorial; evidências anteriores não afetadas são reaproveitadas. A revisão pedagógica independente de **CE-01–11/CE-R em `96cdd5b2` foi aprovada sem correções substantivas**. Limitou-se à leitura dos 12 Markdown, sem repetir cálculos, esquema, fontes ou links; não inclui o Chefe e não representa aceite humano de fase.
 
-Próxima entrega: receber a revisão agrupada e redigir os 12 itens próprios do Chefe mapeados no documento 82. Sem ativar catálogo, progressão ou XP. #569 permanece draft e sem autorização de integração.
+Próxima entrega: revisão independente do Chefe e preparo técnico desativado pelo pipeline existente. Sem ativar catálogo, progressão ou XP. #569 permanece draft e sem autorização de integração.

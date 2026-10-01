@@ -19,9 +19,9 @@
 
 Os links por questão apontam às seções exatas, conferidas pelo validador. O aluno deve nomear a confusão, reler a origem e reconstruir o exemplo; não se cria indicador novo de domínio. A prática é exposta e não corresponde à avaliação independente A/B.
 
-## Chefe proposto — 12 itens próprios, ainda não escritos
+## Chefe redigido — 12 itens próprios
 
-Seis grupos, dois itens por grupo, preservando o padrão editorial existente. Os casos abaixo definem objetivos e recuperação, não são questões prontas nem gabaritos. Usar dados diferentes dos 96 itens já redigidos; não copiar a prática original. Nenhum assunto externo ao recorte comum histórico BB/CAIXA.
+[Leitura do Chefe](rascunhos/ce-chefe-v1.md) e [fonte estruturada](rascunhos/ce-chefe-v1.mjs): cinco trechos de orientação/recuperação, um exemplo de método, **12 questões novas e 48 justificativas**, seis grupos com dois itens cada. O mapa abaixo orientou os casos efetivamente escritos. Nenhum assunto externo ao recorte comum histórico BB/CAIXA; fontes já verificadas nas aulas foram reaproveitadas.
 
 | Grupo / itens | Desenho do caso e limite da conclusão | Retomada prevista |
 | --- | --- | --- |
@@ -32,8 +32,8 @@ Seis grupos, dois itens por grupo, preservando o padrão editorial existente. Os
 | G5 / 9–10 — Real e comércio | (9) eP*/P ou índice com base explícita, sem inferir equilíbrio. (10) Receita e custo de comércio exterior sob contratos definidos, sem garantir reação dos volumes | [CE-09](rascunhos/ce-09-v1.md#formula), [CE-09](rascunhos/ce-09-v1.md#indice), [CE-10](rascunhos/ce-10-v1.md#ex-resultado) |
 | G6 / 11–12 — Juros e fluxos | (11) Reconversão e diferencial em período compatível. (12) Risco/expectativas e direção condicional de uma conversão de capital, sem previsão | [CE-11](rascunhos/ce-11-v1.md#moedas), [CE-11](rascunhos/ce-11-v1.md#risco), [CE-11](rascunhos/ce-11-v1.md#fluxo) |
 
-Antes de considerar o Chefe revisado: escrever os 12 enunciados, quatro opções e quatro justificativas por item; declarar hipóteses e mapas de recuperação; conferir novas contas e unicidade do gabarito; receber revisão independente. Não repetir avaliação das aulas inalteradas. Regras de XP/desbloqueio, ativação e preparo de runtime não são implementadas nesta proposta.
+Validação do Chefe: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=cechefe --render` passou em 01/10/2026: 12 gabaritos com quatro justificativas, seis grupos, origens existentes, **32 contas**, UTF-8, links e MD/MJS sincronizados. Conferência de originalidade literal confirmou os 12 enunciados distintos dos 96 anteriores; não houve repetição da validação dessas questões. Próximo gate editorial: revisão independente somente do Chefe. Regras de ativação não foram implementadas pela autoria.
 
 ## Evidência e limite
 
-Validação direcionada CE-R em 01/10/2026 aprovada: **oito questões, cada uma com uma ou mais referências de origem**, cobertura cumulativa das 11 aulas, 17 contas, Markdown sincronizado, UTF-8/âncoras e exclusão do catálogo. O validador exige a união CE-01–11. Revisão independente pendente; não é teste do aplicativo nem evidência de retenção do aluno. Nenhum acesso D1/produção.
+Validação direcionada CE-R em 01/10/2026 aprovada e reaproveitada: **oito questões, cada uma com uma ou mais referências de origem**, cobertura cumulativa das 11 aulas, 17 contas, Markdown sincronizado, UTF-8/âncoras e exclusão do catálogo. O validador exige a união CE-01–11. Revisão independente de CE-01–11/CE-R no head `96cdd5b2` aprovada, sem correções substantivas; leitura pedagógica dos 12 Markdown, sem repetir cálculos, esquema, fontes ou links. **Não inclui o Chefe**, não é aceite humano da Fase 2 nem avaliação de retenção. Nenhum acesso D1/produção.
