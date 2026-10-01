@@ -1,6 +1,6 @@
 # Central de Documentos — Status
 
-Última atualização: 29/09/2026.
+Última atualização: 01/10/2026.
 
 ## Central de Documentos — recuperação de falhas transitórias de conexão — PUBLICADA — 29/09/2026
 
@@ -290,4 +290,58 @@ Implementação concluída na **PR #575**:
 - `npm run check` aprovado e suíte completa local do Worker com **685/685 testes aprovados** antes da publicação.
 
 A Fase 7G em `docs/CENTRAL-DOCUMENTOS-FASE-7.md` passa a prevalecer sobre trechos históricos das Fases 4/4D/7F que descrevem bloqueio por conflito de conteúdo.
+
+## Central de Documentos — preflight CORS blindado e reconexão ampliada — 01/10/2026
+
+Incidente real em produção: ao pesquisar na Central, o navegador exibiu o banner **“Falha temporária de conexão com a Central de Documentos. A reconexão automática não conseguiu concluir esta leitura.”**. O DevTools mostrou uma resposta **503 Service Unavailable** seguida de bloqueio CORS por ausência de `Access-Control-Allow-Origin`.
+
+Diagnóstico com evidência:
+- o computador autorizado `PC-REGULACAO-3` estava com Ethernet Realtek **Up / 1 Gbps**, rota padrão via `10.1.1.1`, conectividade IP, DNS e TLS com o Worker funcionando;
+- não houve erro de pacote no adaptador nem aviso/erro de Sistema entre 08:05 e 08:15, janela do incidente;
+- 40/40 preflights de `/api/documents/drive/search` e um monitor adicional de 60 ciclos gateway + preflight concluíram sem falha no momento do diagnóstico, confirmando caráter intermitente;
+- havia um único evento DNS 1014 às 06:34 para domínio não relacionado, insuficiente para justificar alteração de DNS institucional;
+- no Worker, o `OPTIONS /api/documents/*` era resolvido apenas depois da etapa global de migração/guards, enquanto o próprio código já tinha uma proteção equivalente para `/api/admin/users` justamente porque um preflight atrasado pode aparecer no navegador apenas como `Failed to fetch`.
+
+Decisão e correção:
+1. `OPTIONS /api/documents/*` passa a ser respondido antes de migração, D1 e guards globais, sem sessão e sem tocar dados;
+2. a operação real continua validando sessão e capabilities no `documents-router`;
+3. as leituras seguras passam de dois retries rápidos para quatro retries em **350 / 900 / 2200 / 5000 ms**;
+4. o warmup privado do Service Worker usa a mesma janela;
+5. mutações continuam fora de retry automático: renomear, OAuth, `replace_pdf`, `save_copy` e demais gravações permanecem fail-closed;
+6. cache da Central renovado para `20261001-documents-network-2` e cliente para `documents.js?v=20261001-network-2`.
+
+Entrega: PR **#576** integrada em `5899b492e101389ca54b1fa5a3618565e079350f`.
+
+Validação:
+- **Validar Central de Documentos — Fases 1–6** success no candidato e no merge;
+- **Validar bundle de staging da Central** success no candidato;
+- navegador PDF.js do candidato: **78 passed / 4 skipped**, sem falha;
+- GitHub Pages run `36895004388` success;
+- Cloudflare Pages success;
+- Worker Build do merge **success**;
+- no computador autorizado, a produção já servia `documents.js?v=20261001-network-2` e `CACHE_VERSION = '20261001-documents-network-2'` após o deploy.
+
+Alternativas descartadas:
+- alterar DNS, reiniciar adaptador ou modificar configuração de rede do computador sem evidência;
+- retry global de toda API;
+- repetir automaticamente mutações do Drive;
+- mascarar 503 indefinidamente.
+
+Risco residual: falhas de plataforma/edge que durem além da janela total de reconexão ainda podem aparecer ao usuário. A correção reduz a probabilidade e evita que um preflight documental dependa de D1/guards antes de liberar o CORS, mas não pode garantir disponibilidade de terceiros.
+
+**Próxima ação exata:** uso normal em produção. Se o banner reaparecer, registrar horário e ação imediatamente anterior; comparar o status HTTP/preflight sem incluir nome de arquivo, ID do Drive ou conteúdo clínico. Não alterar rede local sem nova evidência.
+
+## Handoff atualizado — 01/10/2026
+
+| Campo | Estado persistente |
+|---|---|
+| Fase atual | Fase 7 — Robustez e otimização contínua. |
+| Subfase / objetivo atual | Robustez de conectividade/CORS da Central corrigida na #576; validação humana contínua em produção. |
+| Última ação concluída | #576 merged em `5899b492`; Pages e Worker Build do merge success; produção servindo os novos assets. |
+| Decisão principal | Preflight documental antes de D1/guards; retries ampliados somente para leituras idempotentes. |
+| O que não pode ser reintroduzido | Retry automático em mutações/Drive writes; mudança de DNS/rede por hipótese; preflight documental dependente de D1. |
+| Evidência local | PC-REGULACAO-3: Ethernet 1 Gbps, gateway/internet/DNS/TLS funcionais; 40/40 + monitor 60/60 sem falha no diagnóstico. |
+| Risco residual | Indisponibilidade externa persistente pode exceder a janela de reconexão. |
+| Próxima ação exata | Operar normalmente; se houver nova falha, correlacionar horário + ação + status/preflight e só então abrir novo reparo. |
+| Fontes | Guia Mestre 1.1; `worker/index.js`; `js/documents.js`; `portal-sw.js`; `documentos/index.html`; testes documentais; PR #576; merge `5899b492`. |
 
