@@ -321,7 +321,7 @@ async function syncRecords(env, input, user) {
       }
     });
 
-    if (incomingPhone && incomingPhone !== existingPhone) contactsUpdated += 1;
+    if (incomingPhone) contactsUpdated += 1;
     if (!contactPass && !incomingPhone && contactNeedsRefresh({ ...existing, patientPhone, patientPhoneSyncedAt })) {
       contactRefreshSourceIds.push(record.sourceId);
     }
