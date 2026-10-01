@@ -1,5 +1,8 @@
 # Central de Documentos — Fase 4: Sincronização segura com Drive
 
+
+> **Regra posterior que prevalece — 01/10/2026 (Fase 7G):** a política de concorrência de **conteúdo** em `replace_pdf` passou a ser **last-write-wins**. Divergência de `version`, revisão, MD5 ou tamanho causada por outra gravação no mesmo arquivo não bloqueia mais um novo salvamento autorizado. O Worker relê o arquivo atual, preserva a revisão corrente e a gravação confirmada mais recente prevalece. Continuam fail-closed: referência opaca/identidade do arquivo, MIME PDF, capability de edição, sessão, feature gate, recibo final inválido e identidade de arquivo incompatível. As seções 4A/4D abaixo registram o desenho histórico anterior e não devem ser usadas para reintroduzir bloqueio por versão no salvamento de conteúdo. A renomeação continua com sua política própria de conflito.
+
 Data de início: 16/09/2026  
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: `#201`
