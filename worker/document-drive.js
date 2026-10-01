@@ -1495,6 +1495,15 @@ function driveSyncReceiptMatchesCurrent(current, payload, size) {
     && current.size === size;
 }
 
+function driveSyncMetadataMayBeStale(current, payload, minimumVersion) {
+  if (!current || current.id !== String(payload.id)) return false;
+  try {
+    return BigInt(current.version) < BigInt(minimumVersion);
+  } catch (_) {
+    return false;
+  }
+}
+
 async function confirmedDriveMetadataAfterUpload(env, ref, payload, size, minimumVersion) {
   let current = null;
   for (const delayMs of DRIVE_SYNC_CONFIRMATION_DELAYS_MS) {
@@ -1506,9 +1515,17 @@ async function confirmedDriveMetadataAfterUpload(env, ref, payload, size, minimu
     ) {
       return current;
     }
+
+    // Só vale repetir quando o files.get ainda está atrás do recibo do próprio
+    // upload. Se a versão já alcançou/superou o recibo e head/checksum/tamanho
+    // divergem, é conflito real e deve falhar imediatamente.
+    if (!driveSyncMetadataMayBeStale(current, payload, minimumVersion)) break;
   }
 
-  if (driveSyncReceiptMatchesCurrent(current, payload, size)) {
+  if (
+    driveSyncReceiptMatchesCurrent(current, payload, size)
+    || driveSyncMetadataMayBeStale(current, payload, minimumVersion)
+  ) {
     throw new DriveIntegrationError(
       'DRIVE_SYNC_INTERRUPTED',
       'O Google Drive ainda não confirmou a versão atual do upload. Consulte o status antes de retomar.',
