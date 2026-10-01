@@ -239,7 +239,7 @@ Decisão operacional:
 - nome, data, horário e especialidade são inseridos automaticamente na mensagem; o local permanece manual e é informado em seguida;
 - o envio nunca é automático: o Portal abre o WhatsApp com o texto preenchido e o operador confirma o envio.
 
-A investigação visual real mostrou que **Ver Dados do Paciente** dispara uma chamada Livewire `update` e que o campo de telefone é carregado no componente da consulta. Por isso, a decisão antiga deste documento de não usar `/livewire/update` como parte do fluxo foi revisada: a V3 usa a ação Livewire somente como fallback controlado dentro da mesma sessão/origem do DigSaúde, extraindo apenas o telefone. O sincronizador primeiro procura o contato no HTML retornado e só executa a ação quando necessário.
+A investigação visual real mostrou que **Ver Dados do Paciente** dispara uma atualização Livewire e que o campo de telefone aparece no DOM da própria consulta. A primeira implementação tentou reconstruir essa chamada manualmente e falhou no ambiente real. A correção V3.1 abandona esse acoplamento: o sincronizador abre a consulta em um iframe same-origin invisível, clica no botão real **Ver Dados do Paciente** e lê somente o telefone quando o próprio DigSaúde terminar a atualização.
 
 Proteções:
 - uma consulta por vez para reduzir carga;
@@ -251,4 +251,12 @@ Proteções:
 - usuários sem capacidade Telemedicina continuam sem acesso à API da Agenda.
 
 Arquivos alterados nesta entrega: `agenda/digsaude-agenda-sync.user.js`, `worker/agenda.js`, `js/agenda.js`, `css/agenda.css`, `agenda/index.html`, testes e documentação.
+
+### V3.1 — correção da captura de contato — 01/10/2026
+
+A primeira V3 foi publicada com reconstrução manual da chamada Livewire observada no DevTools. Em produção, os cards permaneceram em **Sincronizando contato…**, indicando que o enriquecimento falhava antes de obter o telefone. O snapshot da Agenda continuava sendo enviado, mas com contato vazio.
+
+Correção: usar a própria interface/componente do DigSaúde como executor. Para cada consulta, o userscript cria um iframe same-origin fora da tela, aguarda o carregamento, procura o telefone, clica no botão real **Ver Dados do Paciente** quando necessário e observa o DOM até o telefone aparecer. O iframe é removido imediatamente depois e o processo é serializado em uma consulta por vez.
+
+Isso elimina dependência do formato interno do payload Livewire e mantém a coleta dentro da sessão autenticada do DigSaúde, sem copiar cookies, token CSRF ou credenciais para o Portal.
 
