@@ -587,3 +587,19 @@ Critérios de aceite:
 6. paginação e refresh preservam filtros ativos;
 7. criptografia/aprovações aparecem somente como nota de indisponibilidade, não como controles enganosos;
 8. CI, navegador e governança verdes.
+
+## 7F — confirmação assíncrona do Drive e recuperação segura do editor — 01/10/2026
+
+A confirmação final de uma substituição de PDF precisa distinguir três estados: confirmação real, propagação ainda atrasada e conflito real.
+
+Regra:
+- o recibo 200/201 do upload continua insuficiente sozinho;
+- `files.get` continua obrigatório para confirmar ID, headRevisionId, MD5, tamanho e versão;
+- se a versão lida ainda for **menor** que a versão do recibo, o Worker pode repetir poucas leituras curtas, pois esse estado é compatível com atraso de propagação;
+- se a versão já for igual/maior e head/checksum/tamanho divergirem, não repetir: tratar como conflito;
+- nunca aceitar bytes diferentes, outra revisão ou outro arquivo apenas para liberar o editor;
+- se a confirmação não chegar, manter o PDF protegido e oferecer no fechamento uma cópia local antes de liberar a interface;
+- o fallback local não substitui a confirmação do Drive e não é usado silenciosamente em logout/desconexão.
+
+Critério operacional: uma falha transitória de propagação não deve aprisionar o usuário indefinidamente no Titon, mas conflito real continua fail-closed.
+
