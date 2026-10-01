@@ -43,6 +43,21 @@ function cleanSourceId(value) {
   return /^[A-Za-z0-9_-]{1,80}$/.test(sourceId) ? sourceId : '';
 }
 
+function normalizeBrazilPhone(value) {
+  let digits = String(value ?? '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  if ((digits.length === 10 || digits.length === 11) && !digits.startsWith('55')) digits = '55' + digits;
+  if (!/^55\d{10,11}$/.test(digits)) return '';
+  return digits;
+}
+
+function contactNeedsRefresh(record = {}, nowMs = Date.now()) {
+  if (!normalizeBrazilPhone(record.phone)) return true;
+  const checkedAt = Date.parse(String(record.phoneCheckedAt || ''));
+  return !Number.isFinite(checkedAt) || nowMs - checkedAt >= CONTACT_REFRESH_MS;
+}
+
 function normalizeRecord(input = {}) {
   const sourceId = cleanSourceId(input.sourceId);
   if (!sourceId) throw Object.assign(new Error('Identificador do agendamento inválido.'), { status: 400 });
