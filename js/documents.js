@@ -3379,7 +3379,10 @@
           'warning'
         );
         syncEditorControls();
-        if (!allowLocalRecovery) return false;
+        const newerRevisionPending = synced === true
+          && session === state.editorSession
+          && currentEditorRevision() !== state.driveSyncLastConfirmedRevision;
+        if (!allowLocalRecovery || newerRevisionPending || session !== state.editorSession) return false;
 
         const exportBeforeClose = confirm(
           'O Google Drive não confirmou esta versão. Deseja salvar uma cópia local do PDF e fechar o editor com segurança?'
