@@ -630,7 +630,7 @@ sqliteTest('Fase 4A bloqueia preflight sem documents_edit antes de consultar o D
   }
 });
 
-sqliteTest('Fase 4A detecta conflito de versão sem upload e mantém resposta sem fileId/nome', async () => {
+sqliteTest('Fase 7G permite substituir versão mais nova sem expor fileId/nome', async () => {
   const env = environment();
   const user = await register(env, 'documentos.sync', '127.0.0.102');
   await setDocumentCapabilities(env, 'documentos.sync', { view: true, edit: true }, 'admin');
@@ -678,7 +678,7 @@ sqliteTest('Fase 4A detecta conflito de versão sem upload e mantém resposta se
     await completeDriveOAuth(env, 'authorization-code-sync', state);
     const ref = await sealDriveFileRef(env, 'raw-sync-pdf-id', 'application/pdf');
 
-    const conflictResponse = await handleDocumentsRoute(
+    const staleReplaceResponse = await handleDocumentsRoute(
       documentRequest('/api/documents/drive/sync/preflight', user.token, {
         method: 'POST',
         body: { operation: 'replace_pdf', ref, baseVersion: '8' }
@@ -687,11 +687,15 @@ sqliteTest('Fase 4A detecta conflito de versão sem upload e mantém resposta se
       'https://regulacaoeldoradoms.com.br',
       true
     );
-    assert.equal(conflictResponse.status, 409);
-    const conflict = await conflictResponse.json();
-    assert.equal(conflict.code, 'DRIVE_VERSION_CONFLICT');
-    assert.equal(JSON.stringify(conflict).includes('raw-sync-pdf-id'), false);
-    assert.equal(JSON.stringify(conflict).includes('NOME-QUE-NAO-PODE-VOLTAR'), false);
+    assert.equal(staleReplaceResponse.status, 200);
+    const staleReplace = await staleReplaceResponse.json();
+    assert.equal(staleReplace.operation, 'replace_pdf');
+    assert.equal(staleReplace.conflict, false);
+    assert.equal(staleReplace.blocking, false);
+    assert.equal(staleReplace.sourceChangedSinceOpen, true);
+    assert.equal(staleReplace.currentVersion, '9');
+    assert.equal(JSON.stringify(staleReplace).includes('raw-sync-pdf-id'), false);
+    assert.equal(JSON.stringify(staleReplace).includes('NOME-QUE-NAO-PODE-VOLTAR'), false);
 
     const copyResponse = await handleDocumentsRoute(
       documentRequest('/api/documents/drive/sync/preflight', user.token, {
@@ -705,8 +709,9 @@ sqliteTest('Fase 4A detecta conflito de versão sem upload e mantém resposta se
     assert.equal(copyResponse.status, 200);
     const copy = await copyResponse.json();
     assert.equal(copy.operation, 'save_copy');
-    assert.equal(copy.conflict, true);
+    assert.equal(copy.conflict, false);
     assert.equal(copy.blocking, false);
+    assert.equal(copy.sourceChangedSinceOpen, true);
     assert.equal(copy.currentVersion, '9');
     assert.equal(JSON.stringify(copy).includes('raw-sync-pdf-id'), false);
     assert.equal(JSON.stringify(copy).includes('NOME-QUE-NAO-PODE-VOLTAR'), false);
@@ -727,6 +732,7 @@ sqliteTest('Fase 4A detecta conflito de versão sem upload e mantém resposta se
     assert.equal(replace.operation, 'replace_pdf');
     assert.equal(replace.conflict, false);
     assert.equal(replace.blocking, false);
+    assert.equal(replace.sourceChangedSinceOpen, false);
     assert.equal(replace.canEditOriginal, true);
 
     const driveCalls = calls.filter((call) => call.url.startsWith('https://www.googleapis.com/'));
@@ -1191,7 +1197,8 @@ sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e p
     assert.equal(response.status, 201);
     const started = await response.json();
     assert.equal(started.operation, 'save_copy');
-    assert.equal(started.conflictDetected, true);
+    assert.equal(started.conflictDetected, false);
+    assert.equal(started.sourceChangedSinceOpen, true);
     assert.equal(started.safetyRevisionPreserved, false);
     assert.equal(revisionCalls, 0);
     assert.equal(createMetadata.name, 'Cópia editada.pdf');
