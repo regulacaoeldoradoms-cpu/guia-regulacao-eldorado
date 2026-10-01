@@ -13,6 +13,7 @@ const DRIVE_SYNC_SESSION_TTL_SECONDS = 6 * 24 * 60 * 60;
 const DRIVE_SYNC_CHUNK_BYTES = 4 * 1024 * 1024;
 const DRIVE_SYNC_MAX_CHUNK_BYTES = 8 * 1024 * 1024;
 const DRIVE_SYNC_MIN_CHUNK_UNIT = 256 * 1024;
+const DRIVE_SYNC_CONFIRMATION_DELAYS_MS = Object.freeze([0, 120, 320, 700]);
 const TOKEN_ROW_ID = 'institutional';
 const tokenSchemaReady = new WeakSet();
 const tokenSchemaPromises = new WeakMap();
@@ -1487,6 +1488,41 @@ function nextOffsetFromRange(value, totalBytes) {
   return Number.isSafeInteger(next) && next >= 0 && next <= totalBytes ? next : 0;
 }
 
+function driveSyncReceiptMatchesCurrent(current, payload, size) {
+  return current?.id === String(payload.id)
+    && current.headRevisionId === String(payload.headRevisionId)
+    && current.md5Checksum.toLowerCase() === String(payload.md5Checksum).toLowerCase()
+    && current.size === size;
+}
+
+async function confirmedDriveMetadataAfterUpload(env, ref, payload, size, minimumVersion) {
+  let current = null;
+  for (const delayMs of DRIVE_SYNC_CONFIRMATION_DELAYS_MS) {
+    if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    current = await currentDrivePdfMetadata(env, ref);
+    if (
+      driveSyncReceiptMatchesCurrent(current, payload, size)
+      && BigInt(current.version) >= BigInt(minimumVersion)
+    ) {
+      return current;
+    }
+  }
+
+  if (driveSyncReceiptMatchesCurrent(current, payload, size)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_INTERRUPTED',
+      'O Google Drive ainda não confirmou a versão atual do upload. Consulte o status antes de retomar.',
+      503
+    );
+  }
+
+  throw new DriveIntegrationError(
+    'DRIVE_VERSION_CONFLICT',
+    'O arquivo foi alterado no Google Drive durante a confirmação do salvamento. Reabra o documento antes de substituir o original.',
+    409
+  );
+}
+
 async function completedDriveSyncResult(env, session, response) {
   const payload = await response.json().catch(() => ({}));
   const version = normalizeDriveVersion(payload.version, { required: true });
@@ -1505,27 +1541,10 @@ async function completedDriveSyncResult(env, session, response) {
     sealDriveFileRef(env, String(payload.id), PDF_MIME),
     stableDriveCacheKey(env, String(payload.id))
   ]);
-  // Drive's version includes metadata changes, not only binary revisions. Re-read
-  // it after the resumable receipt so the next queued edit starts from the current
-  // version, but never adopt a different head (even with identical PDF bytes).
-  const current = await currentDrivePdfMetadata(env, ref);
-  if (current.id !== String(payload.id)
-    || current.headRevisionId !== String(payload.headRevisionId)
-    || current.md5Checksum.toLowerCase() !== String(payload.md5Checksum).toLowerCase()
-    || current.size !== size) {
-    throw new DriveIntegrationError(
-      'DRIVE_VERSION_CONFLICT',
-      'O arquivo foi alterado no Google Drive durante a confirmação do salvamento. Reabra o documento antes de substituir o original.',
-      409
-    );
-  }
-  if (BigInt(current.version) < BigInt(version)) {
-    throw new DriveIntegrationError(
-      'DRIVE_SYNC_INTERRUPTED',
-      'O Google Drive ainda não confirmou a versão atual do upload. Consulte o status antes de retomar.',
-      503
-    );
-  }
+  // O Drive pode devolver o recibo do upload antes de propagar os mesmos metadados
+  // para files.get. Fazemos poucas releituras curtas antes de classificar a diferença
+  // como conflito real. Nunca aceitamos outro head/checksum/tamanho.
+  const current = await confirmedDriveMetadataAfterUpload(env, ref, payload, size, version);
   const confirmedRef = await sealConfirmedDriveFileRef(env, current, session.username);
   await deleteDriveSyncSession(env, session.syncId);
   return {
