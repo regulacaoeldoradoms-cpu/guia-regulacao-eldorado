@@ -117,8 +117,10 @@ Objetivo operacional: o profissional que realiza a sincronização do DigSaúde 
 
 - o telefone é obtido somente dentro da sessão já autenticada do DigSaúde;
 - o sincronizador consulta a rota individual `/consultas/{id}/view` correspondente ao mesmo `sourceId` já presente na aba Agendados;
-- quando o telefone não está presente no HTML inicial, o sincronizador reproduz a ação Livewire **Ver Dados do Paciente** usando o snapshot e o token CSRF obtidos da própria página;
-- a chamada continua same-origin no DigSaúde com `credentials: include`;
+- quando o telefone não está presente no HTML inicial, o sincronizador abre a própria consulta em um iframe same-origin invisível, aciona o botão real **Ver Dados do Paciente** e aguarda o campo de telefone aparecer no DOM;
+- o userscript não roda sua interface dentro desse iframe, evitando recursão;
+- o próprio DigSaúde executa o Livewire normalmente; o sincronizador não monta nem replica payload interno do framework;
+- todo o fluxo permanece same-origin e usa somente a sessão já autenticada do navegador;
 - senha, cookie, bearer token e sessão do DigSaúde não são enviados ao Portal;
 - a extração é serializada para reduzir carga no sistema estadual;
 - o contato fica em cache apenas em memória no navegador por até 24 horas; não usa `localStorage` nem `sessionStorage`.
@@ -158,4 +160,12 @@ Para Psiquiatria, a apresentação usa **Médico Psiquiatra**, preservando o tex
 ### Privacidade
 
 Telefone é dado pessoal protegido. Não deve aparecer em documentação pública com valor real, telemetria, logs, mensagens de erro ou URLs internas do Portal. A única URL externa formada com o número é a ação consciente do usuário para `wa.me`, aberta no navegador do usuário autorizado.
+
+### V3.1 — correção da captura de contato — 01/10/2026
+
+A primeira V3 foi publicada com reconstrução manual da chamada Livewire observada no DevTools. Em produção, os cards permaneceram em **Sincronizando contato…**, indicando que o enriquecimento falhava antes de obter o telefone. O snapshot da Agenda continuava sendo enviado, mas com contato vazio.
+
+Correção: usar a própria interface/componente do DigSaúde como executor. Para cada consulta, o userscript cria um iframe same-origin fora da tela, aguarda o carregamento, procura o telefone, clica no botão real **Ver Dados do Paciente** quando necessário e observa o DOM até o telefone aparecer. O iframe é removido imediatamente depois e o processo é serializado em uma consulta por vez.
+
+Isso elimina dependência do formato interno do payload Livewire e mantém a coleta dentro da sessão autenticada do DigSaúde, sem copiar cookies, token CSRF ou credenciais para o Portal.
 
