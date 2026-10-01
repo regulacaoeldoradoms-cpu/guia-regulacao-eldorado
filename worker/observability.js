@@ -114,6 +114,7 @@ function sanitizeValue(key, value) {
     const status = Number(value);
     return Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
   }
+  if (key === 'superseded') return typeof value === 'boolean' ? value : null;
   const allowed = ENUMS[key];
   if (allowed) {
     const normalized = String(value || '');
