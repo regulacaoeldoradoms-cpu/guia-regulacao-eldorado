@@ -659,20 +659,29 @@ async function updateManagedUser(request, env, url, origin) {
   const body = await request.json().catch(() => ({}));
   const fields = [];
   const values = [];
-  let invalidatesSessions = target.username !== actor.username;
+  // V34.8: edição administrativa de metadados não pode derrubar uma sessão operacional.
+  // A versão da sessão só muda quando a alteração afeta autenticação/autorização.
+  let invalidatesSessions = false;
 
   if (Object.prototype.hasOwnProperty.call(body, 'name')) {
     const name = bounded(body.name);
     if (name.length < 3) return json({ error: 'Informe o nome da pessoa.' }, 400, origin);
-    fields.push('name = ?'); values.push(name);
+    if (name !== target.name) {
+      fields.push('name = ?'); values.push(name);
+    }
   }
   if (Object.prototype.hasOwnProperty.call(body, 'jobTitle')) {
-    fields.push('job_title = ?'); values.push(bounded(body.jobTitle));
+    const jobTitle = bounded(body.jobTitle);
+    if (jobTitle !== target.jobTitle) {
+      fields.push('job_title = ?'); values.push(jobTitle);
+    }
   }
   if (Object.prototype.hasOwnProperty.call(body, 'active')) {
     const nextActive = body.active ? 1 : 0;
-    if (nextActive !== (target.active ? 1 : 0)) invalidatesSessions = true;
-    fields.push('active = ?'); values.push(nextActive);
+    if (nextActive !== (target.active ? 1 : 0)) {
+      invalidatesSessions = true;
+      fields.push('active = ?'); values.push(nextActive);
+    }
   }
   if (Object.prototype.hasOwnProperty.call(body, 'role') && body.role !== target.role) {
     const nextRole = bounded(body.role, 30);
@@ -684,7 +693,10 @@ async function updateManagedUser(request, env, url, origin) {
     if (actor.role !== 'admin') return json({ error: 'Somente o Desenvolvedor pode atribuir funções do Conselho.' }, 403, origin);
     const councilRole = bounded(body.councilRole, 30);
     if (!COUNCIL_ROLES.has(councilRole)) return json({ error: 'Função do Conselho inválida.' }, 400, origin);
-    fields.push('council_role = ?'); values.push(councilRole);
+    if (councilRole !== target.councilRole) {
+      invalidatesSessions = true;
+      fields.push('council_role = ?'); values.push(councilRole);
+    }
   }
   if (!fields.length) return json({ user: publicUser(target) }, 200, origin);
   if (invalidatesSessions) fields.push('session_version = session_version + 1');
