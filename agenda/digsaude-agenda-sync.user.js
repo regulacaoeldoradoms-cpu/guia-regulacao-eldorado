@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.1.1
+// @version      1.2.0
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -23,6 +23,8 @@
   const AUTO_INTERVAL_MS = 15 * 60 * 1000;
   const RESULT_TIMEOUT_MS = 60 * 1000;
   const BRIDGE_WATCH_MS = 15 * 1000;
+  const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+  const CONTACT_CONCURRENCY = 1;
 
   let portalWindow = null;
   let autoEnabled = false;
@@ -41,6 +43,7 @@
   let detailHideTimer = null;
   let currentStatusText = 'Sincronização automática ainda não ativada.';
   let currentTone = '';
+  const contactCache = new Map();
 
   function compact(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
