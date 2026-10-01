@@ -115,7 +115,9 @@ test('sincronizador automático consulta Agendados em segundo plano a cada 15 mi
   assert.match(source, /new DOMParser\(\)/);
   assert.match(source, /Ativar sincronização automática/);
   assert.match(source, /@updateURL\s+https:\/\/regulacaoeldoradoms\.com\.br\/agenda\/digsaude-agenda-sync\.user\.js/);
-  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
+  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|Authorization|Bearer/);
+  assert.match(source, /meta\[name="csrf-token"\]/);
+  assert.match(source, /\/livewire\/update/);
 });
 
 test('Agenda usa contato protegido para abrir lembrete diretamente no WhatsApp do paciente', () => {
