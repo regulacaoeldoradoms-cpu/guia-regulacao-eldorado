@@ -1,6 +1,6 @@
 # Capitais e Câmbio — preparação técnica desativada
 
-01/10/2026. Fonte editorial: [#570 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/570), head `2bbbb0a4da4041c90dd764b65760773ea627baee`. CE-01–11/CE-R tiveram parecer pedagógico independente favorável em `96cdd5b2`; parecer do Chefe pendente. Fase 2 sem aceite humano observado, Fase 3 não aberta. #569 permanece draft, sem autorização de transição/merge.
+01/10/2026. Preparo no [#571 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/571), código validado `f8075c0089c81959f43e14caf7affd0c348b7a54`. Fonte editorial: [#570 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/570), head `2bbbb0a4da4041c90dd764b65760773ea627baee`. CE-01–11/CE-R tiveram parecer pedagógico independente favorável em `96cdd5b2`; parecer do Chefe pendente. Fase 2 sem aceite humano observado, Fase 3 não aberta. #569 permanece draft, sem autorização de transição/merge.
 
 ## Pacote e estado efetivo
 
@@ -40,4 +40,4 @@ Ativação simulada ocorre somente em memória. SQLite e API Chromium são fixtu
 
 ## Próxima decisão agrupada
 
-Receber revisão independente do Chefe; corrigir só pontos afetados se houver. Agrupar checkpoint #569, editorial #570 e PR técnico baseado nele, com números exatos, para autorização específica de integração e ativação/publicação CE nos parâmetros acima. Nenhum merge, transição de #569 ou deploy realizado. Eventual publicação deve seguir [deploy protegido](../WORKER-SAFE-DEPLOY.md), CI da árvore final e smoke mínimo, preservando SFN/MP/PC. PC-07 excluído; não declarar cobertura integral de edital ou produto.
+Receber revisão independente do Chefe; corrigir só pontos afetados se houver. Agrupar **checkpoint #569, editorial #570 e preparo técnico #571**, nessa dependência, para autorização específica de integração e ativação/publicação CE nos parâmetros acima. Nenhum merge, transição de #569 ou deploy realizado. Eventual publicação deve seguir [deploy protegido](../WORKER-SAFE-DEPLOY.md), CI da árvore final e smoke mínimo, preservando SFN/MP/PC. PC-07 excluído; não declarar cobertura integral de edital ou produto.
