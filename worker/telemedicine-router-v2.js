@@ -122,9 +122,21 @@ async function upsert(env, collection, id, data) {
 
 async function authorizedUser(request, env) {
   const user = await validatePortalSession(request, env, []);
-  if (!user) return null;
+  if (!user) {
+    return {
+      authorizationDenied: true,
+      status: 401,
+      error: 'Sessão inválida ou expirada. Entre novamente.'
+    };
+  }
   if (user.role === 'admin') return { ...user, telemedicineAdmin: true };
-  if (!(await telemedicineAccessFor(env, user.username))) return null;
+  if (!(await telemedicineAccessFor(env, user.username))) {
+    return {
+      authorizationDenied: true,
+      status: 403,
+      error: 'Acesso exclusivo da Telemedicina ou do Desenvolvedor.'
+    };
+  }
   if (user.role !== 'recepcao') await ensureTelemedicineUnderlyingRole(env, user.username);
   return { ...user, role: 'recepcao', telemedicineAdmin: false };
 }
@@ -811,7 +823,7 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
 
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const user = await authorizedUser(request, env);
-  if (!user) return json({ error: 'Acesso exclusivo da Telemedicina ou do Desenvolvedor.' }, 403, origin);
+  if (user?.authorizationDenied) return json({ error: user.error }, user.status, origin);
   if (!firebaseConfigured(env)) {
     return json({ error: 'Firebase/Firestore ainda não está disponível para o módulo de Telemedicina.', code: 'FIREBASE_PENDING' }, 503, origin);
   }
