@@ -224,7 +224,7 @@ Aceite:
 - quando alguém edita, o destaque/aviso aumenta de importância;
 - fechar a sessão remove a presença; encerramento abrupto expira em até 75 s;
 - nenhuma ação é bloqueada somente pela presença;
-- conflito real de Drive continua fail-closed;
+- presença simultânea continua apenas visual; para **salvamento de conteúdo PDF**, a política vigente desde 01/10/2026 é **last-write-wins** e a última gravação confirmada no mesmo arquivo prevalece; identidade do arquivo, permissões, MIME e confirmação do upload continuam fail-closed;
 - duas abas do mesmo username não geram falso alerta de “outro usuário”;
 - nenhuma identidade documental ou conteúdo vai para observabilidade externa.
 

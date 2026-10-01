@@ -2014,7 +2014,12 @@
 
     state.pdfItem = next;
     renderViewerTitle(nextName);
-    storeCachedPdf(next, blob).catch(() => false);
+    // Se outra gravação venceu depois do nosso upload, o metadado retornado já
+    // representa a versão remota mais nova. Não associe o Blob local antigo a
+    // essa versão no cache; uma reabertura deve ler o conteúdo vencedor do Drive.
+    if (result.superseded !== true) {
+      storeCachedPdf(next, blob).catch(() => false);
+    }
     refreshPdfListActions();
     refreshPdfListMetadata();
     return next;
@@ -2106,10 +2111,11 @@
       });
       syncStarted = true;
 
-      // /sync/start executa o mesmo preflight autoritativo no Worker antes de
-      // preservar revisão ou iniciar o upload. Evitar um preflight HTTP separado
-      // remove uma leitura duplicada do Google Drive sem reduzir a proteção contra
-      // conflito de versão.
+      // /sync/start executa a validação autoritativa no Worker antes de
+      // preservar revisão ou iniciar o upload. A política de conteúdo é
+      // last-write-wins: mudança de versão no Drive não bloqueia o envio; a
+      // referência opaca, a capacidade de edição e a identidade do arquivo
+      // continuam validadas no backend.
       setDriveSyncProgress('Validando e iniciando envio seguro ao Google Drive…');
       const preserveRevision = replace && !state.driveSyncSafetyRevisionPreserved;
       const driveStartStarted = performance.now();
@@ -2185,7 +2191,13 @@
       if (session !== state.editorSession || generation !== state.driveSyncGeneration) return false;
 
       applyConfirmedDriveSync(operation, completed, blob, copyName);
-      setDriveSyncProgress('Salvo no Google Drive.', 'success');
+      const superseded = completed.superseded === true;
+      setDriveSyncProgress(
+        superseded
+          ? 'Salvo; outra gravação posterior já é a versão atual no Google Drive.'
+          : 'Salvo no Google Drive.',
+        superseded ? 'warning' : 'success'
+      );
       capture('drive_sync_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
@@ -2193,15 +2205,24 @@
         size_bucket: sizeBucket(blob.size),
         build_ms: buildMs,
         drive_start_ms: driveStartMs,
-        drive_upload_ms: driveUploadMs
+        drive_upload_ms: driveUploadMs,
+        superseded
       });
 
       if (replace) {
         state.driveSyncLastConfirmedRevision = targetRevision;
         state.driveSyncFailureRevision = -1;
         if (currentEditorRevision() === targetRevision) {
-          setEditorStatus('Sincronizado com o Google Drive.', 'success');
-          showDriveSyncSuccess(targetRevision);
+          if (superseded) {
+            setDriveSyncVisualState('normal');
+            setEditorStatus(
+              'Sua gravação foi concluída, mas outra gravação posterior já prevaleceu no Google Drive.',
+              'warning'
+            );
+          } else {
+            setEditorStatus('Sincronizado com o Google Drive.', 'success');
+            showDriveSyncSuccess(targetRevision);
+          }
         } else {
           setDriveSyncVisualState('pending');
           setEditorStatus('Uma versão foi sincronizada; há alterações mais recentes aguardando envio.', 'success');
@@ -2211,11 +2232,8 @@
       }
       return true;
     } catch (error) {
-      const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
-      const message = conflict
-        ? 'Conflito detectado: o arquivo foi alterado no Google Drive. Reabra o documento antes de substituir o original.'
-        : (error?.message || 'Não foi possível sincronizar o PDF com o Google Drive.');
-      setDriveSyncProgress(message, conflict ? 'warning' : 'error');
+      const message = error?.message || 'Não foi possível sincronizar o PDF com o Google Drive.';
+      setDriveSyncProgress(message, 'error');
       setEditorStatus(message, 'warning');
 
       if (replace && session === state.editorSession && generation === state.driveSyncGeneration) {

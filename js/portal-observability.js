@@ -29,7 +29,7 @@
     pdf_ready: new Set(['route', 'duration_ms', 'source', 'size_bucket', 'cache_state']),
     pdf_edit_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
     drive_sync_started: new Set(['route', 'operation', 'size_bucket']),
-    drive_sync_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'build_ms', 'drive_start_ms', 'drive_upload_ms']),
+    drive_sync_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'build_ms', 'drive_start_ms', 'drive_upload_ms', 'superseded']),
     drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code', 'failure_kind']),
     document_ai_started: new Set(['route', 'operation', 'size_bucket', 'source']),
     document_ai_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source']),
@@ -141,6 +141,7 @@
       const status = Number(value);
       return Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
     }
+    if (key === 'superseded') return typeof value === 'boolean' ? value : null;
     const allowed = ENUMS[key];
     if (allowed) {
       const normalized = String(value || '');

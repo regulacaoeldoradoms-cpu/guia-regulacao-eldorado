@@ -603,3 +603,29 @@ Regra:
 
 Critério operacional: uma falha transitória de propagação não deve aprisionar o usuário indefinidamente no Titon, mas conflito real continua fail-closed.
 
+## 7G — concorrência de conteúdo: última gravação prevalece — 01/10/2026
+
+Decisão permanente do responsável: a marcação visual de presença simultânea já cumpre o papel de alertar que outra pessoa pode estar no mesmo PDF. Essa concorrência **não deve impedir o trabalho**. Para substituição do conteúdo do PDF no Titon, vale **last-write-wins**: se o arquivo tiver mudado no Google Drive desde a abertura, o usuário autorizado ainda pode salvar e a última gravação confirmada passa a ser a versão vigente.
+
+Esta decisão **substitui**, apenas para `replace_pdf`, a regra de conflito de conteúdo descrita nas Fases 4/4D e no 7F.
+
+Regras vigentes:
+- `baseVersion` continua sendo enviada e comparada para diagnóstico técnico, mas divergência vira `sourceChangedSinceOpen=true` e **não bloqueia**;
+- o Worker sempre relê os metadados atuais do mesmo arquivo antes de iniciar a gravação;
+- a revisão que estiver vigente naquele momento continua sendo preservada com `keepForever=true` antes da substituição;
+- referência opaca, ID do arquivo, MIME PDF, capability `edit`, conexão, write gate e sessão continuam obrigatórios;
+- referência adulterada ou resposta do Google com identidade de arquivo diferente continua sendo erro e nunca é tratada como last-write-wins;
+- recibo final incompleto continua inválido; versão do `files.get` ainda anterior ao recibo continua aguardando/repetindo na janela curta do 7F;
+- se outra gravação acontecer **depois** do upload deste usuário, ela é a mais recente e portanto passa a prevalecer; o Titon recebe `superseded=true`, não associa o Blob local antigo ao cache da versão remota e não bloqueia o editor por conflito;
+- `save_copy` permanece criação de novo arquivo;
+- renomeação mantém política própria de proteção contra renomeação concorrente; esta decisão trata do **conteúdo PDF**;
+- presença simultânea segue como aviso/borda visual, sem lock de escrita.
+
+Critérios de aceite:
+1. abrir uma versão A, alterar o mesmo PDF no Drive para B e então salvar A pelo Titon deve substituir B sem 409 de versão;
+2. a revisão B deve ser preservada antes da substituição quando o Drive permitir;
+3. duas abas/usuários podem salvar sequencialmente e a última gravação confirmada deve prevalecer;
+4. adulteração da referência, perda de permissão, mudança de MIME ou identidade de arquivo incompatível continuam bloqueadas;
+5. nenhum dado clínico, nome de arquivo ou fileId entra em observabilidade; somente o booleano técnico `superseded` pode ser registrado;
+6. cache local nunca deve rotular os bytes de uma gravação já superada como se fossem a versão atual do Drive.
+
