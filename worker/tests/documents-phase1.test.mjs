@@ -1051,22 +1051,17 @@ sqliteTest('Fase 4B substituição usa revisão preservada, resumable e só conc
 for (const scenario of [
   { name: 'outra revisão com os mesmos bytes', current: { headRevisionId: 'external-head' } },
   { name: 'outro checksum', current: { md5Checksum: 'b'.repeat(32) } },
-  { name: 'outro tamanho', current: { size: '999' } },
-  { name: 'outro arquivo', current: { id: 'external-file' } },
-  { name: 'recibo sem checksum', receipt: { md5Checksum: '' }, code: 'DRIVE_SYNC_CONFIRMATION_INVALID', status: 502 },
-  { name: 'recibo sem revisão', receipt: { headRevisionId: '' }, code: 'DRIVE_SYNC_CONFIRMATION_INVALID', status: 502 },
-  { name: 'recibo com tamanho incorreto', receipt: { size: '999' }, code: 'DRIVE_SYNC_CONFIRMATION_INVALID', status: 502 },
-  { name: 'versão lida anterior ao recibo', current: { version: '7' }, code: 'DRIVE_SYNC_INTERRUPTED', status: 503, recover: true }
+  { name: 'outro tamanho', current: { size: '999' } }
 ]) {
-  sqliteTest('Fase 4D confirmação não adota ' + scenario.name, async () => {
+  sqliteTest('Fase 7G aceita gravação posterior como vencedora: ' + scenario.name, async () => {
     const env = environment();
     env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
-    const pdf = new TextEncoder().encode('%PDF-1.7\nconfirmation-test\n');
-    const username = 'confirmation.test';
+    const pdf = new TextEncoder().encode('%PDF-1.7\nlast-write-wins\n');
+    const username = 'confirmation.lww';
     const base = { id: 'synthetic-confirmation-file', mimeType: 'application/pdf', size: String(pdf.length),
       version: '7', headRevisionId: 'head-7', md5Checksum: '0'.repeat(32), capabilities: { canEdit: true } };
-    const receipt = { ...base, version: '8', headRevisionId: 'head-8', md5Checksum: 'a'.repeat(32), ...scenario.receipt };
-    let current = { ...receipt, version: '9', ...scenario.current };
+    const receipt = { ...base, version: '8', headRevisionId: 'head-8', md5Checksum: 'a'.repeat(32) };
+    const current = { ...receipt, version: '9', ...scenario.current };
     let uploaded = false;
     let metadataReads = 0;
     const originalFetch = globalThis.fetch;
@@ -1075,10 +1070,7 @@ for (const scenario of [
       if (value.hostname === 'oauth2.googleapis.com') return Response.json({
         access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600
       });
-      if (value.pathname.endsWith('/revisions/head-7')) {
-        assert.equal(JSON.parse(init.body).keepForever, true);
-        return Response.json({ keepForever: true });
-      }
+      if (value.pathname.endsWith('/revisions/head-7')) return Response.json({ keepForever: true });
       if (value.pathname.startsWith('/upload/') && !value.searchParams.has('upload_id')) {
         return new Response(null, { headers: {
           Location: 'https://www.googleapis.com/upload/drive/v3/files/synthetic-confirmation-file?upload_id=confirmation'
@@ -1099,24 +1091,178 @@ for (const scenario of [
       const { syncId } = await startDriveSync(env, username, {
         operation: 'replace_pdf', ref, baseVersion: '7', totalBytes: pdf.length, preserveRevision: true
       });
-      await assert.rejects(uploadDriveSyncChunk(env, username, syncId,
-        syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length)),
-      (error) => error.code === (scenario.code || 'DRIVE_VERSION_CONFLICT') && error.status === (scenario.status || 409));
-      const expectedMetadataReads = scenario.receipt ? 1 : (scenario.recover ? 5 : 2);
-      assert.equal(metadataReads, expectedMetadataReads, 'confirmação deve repetir somente metadado ainda atrasado');
-      assert.ok(await env.AUTH_DB.prepare('SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?').bind(syncId).first());
-      if (scenario.recover) {
-        current = { ...receipt, version: '9' };
-        const completed = await queryDriveSyncStatus(env, username, syncId);
-        assert.equal(completed.completed, true);
-        assert.equal(completed.currentVersion, '9');
-      }
+      const completed = await uploadDriveSyncChunk(env, username, syncId,
+        syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length));
+      assert.equal(completed.completed, true);
+      assert.equal(completed.superseded, true);
+      assert.equal(completed.currentVersion, '9');
+      assert.equal(metadataReads, 2);
+      assert.equal(await env.AUTH_DB.prepare(
+        'SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?'
+      ).bind(syncId).first(), null);
     } finally {
       globalThis.fetch = originalFetch;
       env.AUTH_DB.database.close();
     }
   });
 }
+
+for (const scenario of [
+  { name: 'recibo sem checksum', receipt: { md5Checksum: '' } },
+  { name: 'recibo sem revisão', receipt: { headRevisionId: '' } },
+  { name: 'recibo com tamanho incorreto', receipt: { size: '999' } }
+]) {
+  sqliteTest('Fase 4D continua recusando ' + scenario.name, async () => {
+    const env = environment();
+    env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+    const pdf = new TextEncoder().encode('%PDF-1.7\ninvalid-receipt\n');
+    const username = 'confirmation.invalid';
+    const base = { id: 'synthetic-confirmation-file', mimeType: 'application/pdf', size: String(pdf.length),
+      version: '7', headRevisionId: 'head-7', md5Checksum: '0'.repeat(32), capabilities: { canEdit: true } };
+    const receipt = { ...base, version: '8', headRevisionId: 'head-8', md5Checksum: 'a'.repeat(32), ...scenario.receipt };
+    let uploaded = false;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url, init = {}) => {
+      const value = new URL(String(url));
+      if (value.hostname === 'oauth2.googleapis.com') return Response.json({
+        access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600
+      });
+      if (value.pathname.endsWith('/revisions/head-7')) return Response.json({ keepForever: true });
+      if (value.pathname.startsWith('/upload/') && !value.searchParams.has('upload_id')) {
+        return new Response(null, { headers: {
+          Location: 'https://www.googleapis.com/upload/drive/v3/files/synthetic-confirmation-file?upload_id=invalid'
+        } });
+      }
+      if (value.searchParams.has('upload_id')) {
+        uploaded = true;
+        return Response.json(receipt);
+      }
+      assert.equal(init.method, 'GET');
+      return Response.json(base);
+    };
+    try {
+      const authorization = await createDriveAuthorizationUrl(env, username);
+      await completeDriveOAuth(env, 'synthetic-code', new URL(authorization).searchParams.get('state'));
+      const ref = await sealDriveFileRef(env, base.id, 'application/pdf');
+      const { syncId } = await startDriveSync(env, username, {
+        operation: 'replace_pdf', ref, baseVersion: '7', totalBytes: pdf.length, preserveRevision: true
+      });
+      await assert.rejects(
+        uploadDriveSyncChunk(env, username, syncId,
+          syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length)),
+        (error) => error.code === 'DRIVE_SYNC_CONFIRMATION_INVALID' && error.status === 502
+      );
+      assert.ok(await env.AUTH_DB.prepare(
+        'SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?'
+      ).bind(syncId).first());
+      assert.equal(uploaded, true);
+    } finally {
+      globalThis.fetch = originalFetch;
+      env.AUTH_DB.database.close();
+    }
+  });
+}
+
+sqliteTest('Fase 7G nunca aceita identidade de arquivo diferente na confirmação', async () => {
+  const env = environment();
+  env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+  const pdf = new TextEncoder().encode('%PDF-1.7\nidentity-guard\n');
+  const username = 'confirmation.identity';
+  const base = { id: 'synthetic-confirmation-file', mimeType: 'application/pdf', size: String(pdf.length),
+    version: '7', headRevisionId: 'head-7', md5Checksum: '0'.repeat(32), capabilities: { canEdit: true } };
+  const receipt = { ...base, version: '8', headRevisionId: 'head-8', md5Checksum: 'a'.repeat(32) };
+  let uploaded = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    const value = new URL(String(url));
+    if (value.hostname === 'oauth2.googleapis.com') return Response.json({
+      access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600
+    });
+    if (value.pathname.endsWith('/revisions/head-7')) return Response.json({ keepForever: true });
+    if (value.pathname.startsWith('/upload/') && !value.searchParams.has('upload_id')) {
+      return new Response(null, { headers: {
+        Location: 'https://www.googleapis.com/upload/drive/v3/files/synthetic-confirmation-file?upload_id=identity'
+      } });
+    }
+    if (value.searchParams.has('upload_id')) {
+      uploaded = true;
+      return Response.json(receipt);
+    }
+    assert.equal(init.method, 'GET');
+    return Response.json(uploaded ? { ...receipt, id: 'external-file', version: '9' } : base);
+  };
+  try {
+    const authorization = await createDriveAuthorizationUrl(env, username);
+    await completeDriveOAuth(env, 'synthetic-code', new URL(authorization).searchParams.get('state'));
+    const ref = await sealDriveFileRef(env, base.id, 'application/pdf');
+    const { syncId } = await startDriveSync(env, username, {
+      operation: 'replace_pdf', ref, baseVersion: '7', totalBytes: pdf.length, preserveRevision: true
+    });
+    await assert.rejects(
+      uploadDriveSyncChunk(env, username, syncId,
+        syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length)),
+      (error) => error.code === 'DRIVE_FILE_ID_MISMATCH' && error.status === 502
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    env.AUTH_DB.database.close();
+  }
+});
+
+sqliteTest('Fase 4D continua aguardando versão do Drive anterior ao recibo', async () => {
+  const env = environment();
+  env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+  const pdf = new TextEncoder().encode('%PDF-1.7\nstale-version\n');
+  const username = 'confirmation.stale';
+  const base = { id: 'synthetic-confirmation-file', mimeType: 'application/pdf', size: String(pdf.length),
+    version: '7', headRevisionId: 'head-7', md5Checksum: '0'.repeat(32), capabilities: { canEdit: true } };
+  const receipt = { ...base, version: '8', headRevisionId: 'head-8', md5Checksum: 'a'.repeat(32) };
+  let current = { ...receipt, version: '7' };
+  let uploaded = false;
+  let metadataReads = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    const value = new URL(String(url));
+    if (value.hostname === 'oauth2.googleapis.com') return Response.json({
+      access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600
+    });
+    if (value.pathname.endsWith('/revisions/head-7')) return Response.json({ keepForever: true });
+    if (value.pathname.startsWith('/upload/') && !value.searchParams.has('upload_id')) {
+      return new Response(null, { headers: {
+        Location: 'https://www.googleapis.com/upload/drive/v3/files/synthetic-confirmation-file?upload_id=stale'
+      } });
+    }
+    if (value.searchParams.has('upload_id')) {
+      uploaded = true;
+      return Response.json(receipt);
+    }
+    assert.equal(init.method, 'GET');
+    metadataReads += 1;
+    return Response.json(uploaded ? current : base);
+  };
+  try {
+    const authorization = await createDriveAuthorizationUrl(env, username);
+    await completeDriveOAuth(env, 'synthetic-code', new URL(authorization).searchParams.get('state'));
+    const ref = await sealDriveFileRef(env, base.id, 'application/pdf');
+    const { syncId } = await startDriveSync(env, username, {
+      operation: 'replace_pdf', ref, baseVersion: '7', totalBytes: pdf.length, preserveRevision: true
+    });
+    await assert.rejects(
+      uploadDriveSyncChunk(env, username, syncId,
+        syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length)),
+      (error) => error.code === 'DRIVE_SYNC_INTERRUPTED' && error.status === 503
+    );
+    assert.equal(metadataReads, 5);
+    current = { ...receipt, version: '9' };
+    const completed = await queryDriveSyncStatus(env, username, syncId);
+    assert.equal(completed.completed, true);
+    assert.equal(completed.superseded, false);
+    assert.equal(completed.currentVersion, '9');
+  } finally {
+    globalThis.fetch = originalFetch;
+    env.AUTH_DB.database.close();
+  }
+});
 
 sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e pode ser cancelado', async () => {
   const env = environment();
