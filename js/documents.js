@@ -89,7 +89,7 @@
   const DEFAULT_VIEWER_ZOOM_SCALE = 1.14;
   const MIN_VIEWER_ZOOM_SCALE = 0.45;
   const MAX_VIEWER_ZOOM_SCALE = 3;
-  const DOCUMENT_READ_RETRY_DELAYS_MS = Object.freeze([350, 900]);
+  const DOCUMENT_READ_RETRY_DELAYS_MS = Object.freeze([350, 900, 2200, 5000]);
   const DOCUMENT_READ_LABELS = Object.freeze({
     '/api/documents/access': 'access',
     '/api/documents/preferences': 'preferences',

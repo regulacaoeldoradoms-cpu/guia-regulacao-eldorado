@@ -1445,3 +1445,35 @@ sqliteTest('IA documental acompanha o acesso integral e produção bloqueia proc
   assert.equal(blockedChat.status, 503);
   assert.equal((await blockedChat.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
 });
+
+
+test('preflight CORS documental não consulta D1 nem sessão', async () => {
+  const origin = 'https://regulacaoeldoradoms.com.br';
+  let dbTouched = 0;
+  const env = {
+    AUTH_DB: {
+      prepare() {
+        dbTouched += 1;
+        throw new Error('D1 não deveria ser tocado no preflight');
+      }
+    }
+  };
+
+  const response = await handleDocumentsRoute(new Request(
+    'https://worker.test/api/documents/drive/search',
+    {
+      method: 'OPTIONS',
+      headers: {
+        Origin: origin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'authorization,content-type'
+      }
+    }
+  ), env, origin, true);
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), origin);
+  assert.match(response.headers.get('Access-Control-Allow-Methods') || '', /POST/);
+  assert.match(response.headers.get('Access-Control-Allow-Headers') || '', /Authorization/i);
+  assert.equal(dbTouched, 0);
+});

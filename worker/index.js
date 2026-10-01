@@ -191,6 +191,13 @@ export default {
       return handlePortalRoute(request, env, origin, originAllowed);
     }
 
+    // Fase 7: o preflight documental também precisa ser resolvido antes de
+    // migrações, D1 ou qualquer guard global. Se um desses passos oscilar,
+    // o navegador mascara a chamada real como erro CORS/Failed to fetch.
+    if (request.method === 'OPTIONS' && isDocumentsApi(url.pathname)) {
+      return handleDocumentsRoute(request, env, origin, originAllowed);
+    }
+
     await enforceDeveloperSeparation(env);
 
     if (isGmailJudicialBridgeApi(url.pathname)) {

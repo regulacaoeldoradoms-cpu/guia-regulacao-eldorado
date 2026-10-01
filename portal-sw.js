@@ -1,7 +1,7 @@
 'use strict';
 
-// 20261001-documents-lww-1 invalida páginas em cache para carregar imediatamente o reparo de rede da Central.
-const CACHE_VERSION = '20261001-documents-lww-1';
+// 20261001-documents-network-2 invalida páginas em cache para aplicar o preflight CORS antecipado e a reconexão ampliada.
+const CACHE_VERSION = '20261001-documents-network-2';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -16,7 +16,7 @@ const DOCUMENT_WORKER_ORIGINS = new Set([
 const DOCUMENTS_WARM_TTL_MS = 90 * 1000;
 const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
 const DOCUMENTS_WARM_PAGE_SIZE = 20;
-const DOCUMENTS_WARM_RETRY_DELAYS_MS = Object.freeze([350, 900]);
+const DOCUMENTS_WARM_RETRY_DELAYS_MS = Object.freeze([350, 900, 2200, 5000]);
 const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
   '/vendor/pdfjs-legacy/pdf.min.mjs',
   '/vendor/pdfjs-legacy/pdf.worker.min.mjs',
