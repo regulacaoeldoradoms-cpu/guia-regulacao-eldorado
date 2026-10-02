@@ -727,20 +727,30 @@
     receipt.setAttribute('aria-label', state.title);
   }
 
-  function applyReceiptState(receiptState) {
-    if (!activeContact || !receiptState) return;
+  function applyReceiptStateFor(username, receiptState) {
+    const key = messageCacheKey(username);
+    if (!key || !receiptState) return;
     const deliveredThroughId = Number(receiptState.deliveredThroughId || 0);
     const readThroughId = Number(receiptState.readThroughId || 0);
-    const cached = messageCache.get(messageCacheKey(activeContact.username));
+    const cached = messageCache.get(key);
     if (!cached?.messages?.length) return;
+
     cached.messages.forEach((message) => {
       if (message.fromUser !== currentUser?.username) return;
       const id = Number(message.id || 0);
       if (id && id <= deliveredThroughId && !message.deliveredAt) message.deliveredAt = 'ack';
       if (id && id <= readThroughId && !message.readAt) message.readAt = 'ack';
-      const element = document.querySelector(`#portalChatMessages [data-message-id="${id}"]`);
-      updateMessageReceiptElement(element, message);
+      if (activeContact?.username === key) {
+        const element = document.querySelector(`#portalChatMessages [data-message-id="${id}"]`);
+        updateMessageReceiptElement(element, message);
+      }
     });
+    queueChatSessionPersist();
+  }
+
+  function applyReceiptState(receiptState) {
+    if (!activeContact) return;
+    applyReceiptStateFor(activeContact.username, receiptState);
   }
 
   async function markChatDelivered(force = false) {
