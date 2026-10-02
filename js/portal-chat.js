@@ -86,6 +86,270 @@
     });
   }
 
+  function realtimeEndpoint() {
+    try {
+      const url = new URL(endpoint);
+      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      url.pathname = '/api/chat/realtime';
+      url.search = '';
+      url.hash = '';
+      return url.toString();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function clearRealtimeTimers() {
+    window.clearTimeout(realtimeReconnectTimer);
+    window.clearInterval(realtimePingTimer);
+    window.clearTimeout(realtimeRotateTimer);
+    realtimeReconnectTimer = null;
+    realtimePingTimer = null;
+    realtimeRotateTimer = null;
+  }
+
+  function updateRealtimeMode(connected) {
+    realtimeConnected = Boolean(connected);
+    if (realtimeConnected) stopMessagePolling();
+    else if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
+    restartContactsTimer();
+  }
+
+  function scheduleRealtimeReconnect() {
+    if (realtimeStopped || realtimeReconnectTimer || document.hidden) return;
+    const delay = realtimeBackoffMs;
+    realtimeBackoffMs = Math.min(15000, Math.max(1000, realtimeBackoffMs * 2));
+    realtimeReconnectTimer = window.setTimeout(() => {
+      realtimeReconnectTimer = null;
+      void connectRealtime();
+    }, delay);
+  }
+
+  function closeRealtime({ permanent = false } = {}) {
+    if (permanent) realtimeStopped = true;
+    clearRealtimeTimers();
+    const socket = realtimeSocket;
+    realtimeSocket = null;
+    updateRealtimeMode(false);
+    if (socket && socket.readyState < WebSocket.CLOSING) {
+      try { socket.close(1000, 'portal-navigation'); } catch (_) {}
+    }
+  }
+
+  async function connectRealtime() {
+    if (realtimeStopped || document.hidden || !('WebSocket' in window)) return false;
+    if (realtimeSocket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(realtimeSocket.readyState)) return true;
+    const url = realtimeEndpoint();
+    if (!url) return false;
+
+    let ticketPayload;
+    try {
+      ticketPayload = await api('/api/chat/realtime/ticket', { method: 'POST', body: '{}' });
+    } catch (_) {
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+      return false;
+    }
+    const ticket = String(ticketPayload?.ticket || '');
+    const protocol = String(ticketPayload?.protocol || CHAT_REALTIME_PROTOCOL);
+    if (!ticket || protocol !== CHAT_REALTIME_PROTOCOL) {
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+      return false;
+    }
+
+    let socket;
+    try {
+      socket = new WebSocket(url, [CHAT_REALTIME_PROTOCOL, ticket]);
+    } catch (_) {
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+      return false;
+    }
+
+    realtimeSocket = socket;
+    socket.addEventListener('open', () => {
+      if (realtimeSocket !== socket) return;
+      realtimeBackoffMs = 1000;
+      updateRealtimeMode(true);
+      window.clearInterval(realtimePingTimer);
+      realtimePingTimer = window.setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          try { socket.send('ping'); } catch (_) {}
+        }
+      }, CHAT_REALTIME_PING_MS);
+      window.clearTimeout(realtimeRotateTimer);
+      realtimeRotateTimer = window.setTimeout(() => {
+        if (realtimeSocket === socket && socket.readyState === WebSocket.OPEN) {
+          try { socket.close(1000, 'revalidate'); } catch (_) {}
+        }
+      }, CHAT_REALTIME_ROTATE_MS);
+      void loadContacts();
+      if (activeContact) void loadMessages(false);
+    });
+
+    socket.addEventListener('message', (event) => {
+      if (realtimeSocket !== socket || typeof event.data !== 'string') return;
+      let payload;
+      try { payload = JSON.parse(event.data); } catch (_) { return; }
+      handleRealtimeEvent(payload);
+    });
+
+    socket.addEventListener('error', () => {
+      if (realtimeSocket !== socket) return;
+      try { socket.close(); } catch (_) {}
+    });
+
+    socket.addEventListener('close', () => {
+      if (realtimeSocket === socket) realtimeSocket = null;
+      clearRealtimeTimers();
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+    });
+
+    return true;
+  }
+
+  function updateContactPresence(username, online, lastSeen = '') {
+    const contact = contacts.find((item) => item.username === username);
+    if (!contact) return false;
+    contact.online = Boolean(online);
+    if (lastSeen) contact.lastSeen = lastSeen;
+    renderContacts();
+    if (activeContact?.username === username) {
+      activeContact = { ...activeContact, ...contact };
+      updateConversationHeader();
+    }
+    return true;
+  }
+
+  function clearRemoteTyping() {
+    window.clearTimeout(remoteTypingTimer);
+    remoteTypingTimer = null;
+    remoteTypingUsername = '';
+    const typing = document.getElementById('portalChatTyping');
+    if (typing) typing.hidden = true;
+  }
+
+  function setRemoteTyping(username, active, expiresAt = 0) {
+    if (!active || activeContact?.username !== username) {
+      if (remoteTypingUsername === username || !active) clearRemoteTyping();
+      return;
+    }
+    remoteTypingUsername = username;
+    const typing = document.getElementById('portalChatTyping');
+    if (typing) typing.hidden = false;
+    window.clearTimeout(remoteTypingTimer);
+    const ttl = Math.max(350, Math.min(CHAT_TYPING_REMOTE_TTL_MS, Number(expiresAt || 0) - Date.now() || CHAT_TYPING_REMOTE_TTL_MS));
+    remoteTypingTimer = window.setTimeout(clearRemoteTyping, ttl);
+  }
+
+  function handleRealtimeMessage(message) {
+    const id = Number(message?.id || 0);
+    const sender = messageCacheKey(message?.fromUser);
+    if (!id || !sender || sender === currentUser?.username) return;
+
+    const contact = contacts.find((item) => item.username === sender);
+    if (!contact) {
+      void loadContacts();
+      return;
+    }
+
+    mergeCachedMessages(sender, [message], message.sentAt || contact.lastMessageAt || '', {
+      hasOlder: messageCache.get(sender)?.hasOlder || false
+    });
+    contact.lastMessageAt = message.sentAt || contact.lastMessageAt || '';
+
+    const root = document.getElementById('portalChatRoot');
+    const conversationVisible = !document.hidden
+      && root?.classList.contains('open')
+      && activeContact?.username === sender;
+
+    if (conversationVisible) {
+      appendMessages([message], false);
+      contact.unread = 0;
+      unreadSnapshot.set(sender, 0);
+      renderContacts();
+      api('/api/chat/read', {
+        method: 'POST',
+        body: JSON.stringify({ with: sender, throughId: id })
+      }).catch(() => loadMessages(false));
+      return;
+    }
+
+    const previousUnread = Number(contact.unread || 0);
+    contact.unread = previousUnread + 1;
+    unreadSnapshot.set(sender, contact.unread);
+    renderContacts();
+    window.PortalInteractions?.emit?.('notification', { debounce: 900 });
+    void showMessageNotification(contact, 1);
+    if (root?.classList.contains('open')) void markChatDelivered(true);
+  }
+
+  function handleRealtimeEvent(payload) {
+    const type = String(payload?.type || '');
+    if (type === 'ready' || type === 'pong') return;
+    if (type === 'message') {
+      handleRealtimeMessage(payload.message);
+      return;
+    }
+    if (type === 'receipt') {
+      const username = messageCacheKey(payload.with);
+      if (username) applyReceiptStateFor(username, payload);
+      return;
+    }
+    if (type === 'typing') {
+      const username = messageCacheKey(payload.username);
+      if (username) setRemoteTyping(username, Boolean(payload.active), Number(payload.expiresAt || 0));
+      return;
+    }
+    if (type === 'presence') {
+      const username = messageCacheKey(payload.username);
+      if (username && !updateContactPresence(username, Boolean(payload.online), String(payload.lastSeen || ''))) {
+        void loadContacts();
+      }
+      return;
+    }
+    if (type === 'contact-refresh') void loadContacts();
+  }
+
+  function sendTypingState(active) {
+    if (!activeContact) return;
+    const username = activeContact.username;
+    if (!username) return;
+    api('/api/chat/typing', {
+      method: 'POST',
+      body: JSON.stringify({ with: username, active: Boolean(active) })
+    }).catch(() => {});
+  }
+
+  function noteLocalTyping() {
+    const input = document.getElementById('portalChatInput');
+    const hasText = Boolean(String(input?.value || '').trim());
+    window.clearTimeout(typingStopTimer);
+    if (!hasText || !activeContact) {
+      typingLastSentAt = 0;
+      sendTypingState(false);
+      return;
+    }
+    const now = Date.now();
+    if (now - typingLastSentAt >= CHAT_TYPING_RESEND_MS) {
+      typingLastSentAt = now;
+      sendTypingState(true);
+    }
+    typingStopTimer = window.setTimeout(() => {
+      typingLastSentAt = 0;
+      sendTypingState(false);
+    }, CHAT_TYPING_STOP_MS);
+  }
+
+  function stopLocalTyping() {
+    window.clearTimeout(typingStopTimer);
+    typingStopTimer = null;
+    typingLastSentAt = 0;
+    sendTypingState(false);
+  }
+
   function messageCacheKey(username) {
     return String(username || '').trim().toLowerCase();
   }
