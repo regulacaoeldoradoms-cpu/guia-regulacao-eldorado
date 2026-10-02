@@ -187,7 +187,9 @@ test('chat profissional continua por cargo e chat social exige amizade aceita', 
   assert.match(client, /MESSAGE_PRELOAD_PAGE_GUARD = 100/);
   assert.match(client, /&peek=1/);
   assert.match(client, /&before=/);
-  assert.match(client, /seenFirstIds/);
+  assert.match(client, /function loadOlderMessages/);
+  assert.match(client, /hasOlder/);
+  assert.doesNotMatch(client, /seenFirstIds/);
   assert.match(client, /renderCachedConversation\(contact\)/);
   assert.match(client, /void loadMessages\(!renderedFromMemory\)/);
   assert.match(client, /portal:session-cleared/);
