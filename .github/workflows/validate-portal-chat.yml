@@ -34,8 +34,8 @@ jobs:
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-body' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-contact:hover' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-message.mine' css/portal-chat.css
-          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20261002-realtime-1'" js/portal-global-chat.js
-          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20261002-realtime-1'" js/portal-global-chat.js
+          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20261002-d1guard-1'" js/portal-global-chat.js
+          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20261002-d1guard-1'" js/portal-global-chat.js
           grep -q "CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1'" js/portal-global-chat.js
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
@@ -71,6 +71,12 @@ jobs:
           grep -q "MESSAGE_HISTORY_PAGE_SIZE = 120" worker/portal-chat-v2.js
           grep -q "preloadConversationsInBackground" js/portal-chat.js
           grep -q "MESSAGE_PRELOAD_PAGE_GUARD = 100" js/portal-chat.js
+          grep -q "MESSAGE_PRELOAD_CONTACT_LIMIT = 2" js/portal-chat.js
+          grep -q "CHAT_CONTACTS_REALTIME_REFRESH_MS = 120000" js/portal-chat.js
+          grep -q "CHAT_HEARTBEAT_MS = 60000" js/portal-chat.js
+          grep -q "citizenOnlyClause" worker/portal-chat-v2.js
+          grep -q "LEFT JOIN social_users social ON social.auth_username = u.username" worker/portal-chat-v2.js
+          ! grep -q "function socialHandleForUsername" worker/portal-chat-v2.js
           grep -q "messageCache = new Map" js/portal-chat.js
           grep -q "notifyUserPush" worker/portal-chat-v2.js
           grep -q "addEventListener('push'" portal-sw.js
@@ -79,7 +85,7 @@ jobs:
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "version: '20261002-realtime-1'" js/portal-chat.js
+          grep -q "version: '20261002-d1guard-1'" js/portal-chat.js
           grep -q "PortalChatSwitchOptimizer" js/portal-chat-switch-optimizer.js
           grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q "id=\"portalChatProfileLink\"" js/portal-chat.js
@@ -99,7 +105,7 @@ jobs:
             documentos/index.html agenda/index.html agenda/sync/index.html cidadao/index.html \
             conselho/painel/index.html admin/usuarios/index.html admin/monitoramento/index.html \
             admin/configuracao/index.html admin/social/index.html; do
-            grep -q "portal-global-chat.js?v=20261002-realtime-1" "$file"
+            grep -q "portal-global-chat.js?v=20261002-d1guard-1" "$file"
             ! grep -q "portal-chat.js?v=" "$file"
             ! grep -q "portal-chat-switch-optimizer.js?v=" "$file"
           done
