@@ -300,6 +300,19 @@
     return wrap;
   }
 
+  function localIsoToday() {
+    const now = new Date();
+    const year = String(now.getFullYear()).padStart(4, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function isPastAppointment(record) {
+    const date = String(record?.appointmentDate || '').trim();
+    return Boolean(date && date < localIsoToday());
+  }
+
   function normalizedPatientPhone(value) {
     const digits = String(value || '').replace(/\D/g, '');
     return /^55\d{10,11}$/.test(digits) ? digits : '';
@@ -393,7 +406,8 @@
     const actions = document.createElement('div');
     actions.className = 'agenda-card-actions';
 
-    const whatsappUrl = record.active ? patientWhatsappUrl(record) : '';
+    const pastAppointment = isPastAppointment(record);
+    const whatsappUrl = record.active && !pastAppointment ? patientWhatsappUrl(record) : '';
     const notify = whatsappUrl ? document.createElement('a') : document.createElement('button');
     notify.className = 'agenda-whatsapp-patient-button';
     if (whatsappUrl) {
@@ -405,10 +419,16 @@
     } else {
       notify.type = 'button';
       notify.disabled = true;
-      notify.textContent = record.active ? 'Sincronizando contato…' : 'Agendamento inativo';
-      notify.title = record.active
-        ? 'O contato será disponibilizado após a próxima sincronização do DigSaúde.'
-        : 'Este agendamento não está mais na aba Agendados.';
+      if (!record.active) {
+        notify.textContent = 'Agendamento inativo';
+        notify.title = 'Este agendamento não está mais na aba Agendados.';
+      } else if (pastAppointment) {
+        notify.textContent = 'Data já passou';
+        notify.title = 'Lembretes por WhatsApp são preparados somente para hoje e datas futuras.';
+      } else {
+        notify.textContent = 'Sincronizando contato…';
+        notify.title = 'O contato será disponibilizado após a próxima sincronização do DigSaúde.';
+      }
     }
 
     const read = document.createElement('button');
