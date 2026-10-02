@@ -124,20 +124,31 @@
     };
   }
 
-  async function persistChatSessionSnapshot() {
-    if (!('serviceWorker' in navigator)) return false;
+  function postChatSessionSnapshot(worker) {
     const authorization = chatAuthorization();
-    if (!authorization) return false;
+    if (!worker || !authorization) return false;
     try {
-      const registration = await ensureNotificationWorker();
-      const worker = activeServiceWorker(registration);
-      if (!worker) return false;
       worker.postMessage({
         type: 'PORTAL_CHAT_SESSION_PUT',
         authorization,
         snapshot: snapshotForServiceWorker()
       });
       return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function persistChatSessionSnapshotNow() {
+    return postChatSessionSnapshot(navigator.serviceWorker?.controller || null);
+  }
+
+  async function persistChatSessionSnapshot() {
+    if (!('serviceWorker' in navigator)) return false;
+    if (persistChatSessionSnapshotNow()) return true;
+    try {
+      const registration = await ensureNotificationWorker();
+      return postChatSessionSnapshot(activeServiceWorker(registration));
     } catch (_) {
       return false;
     }
@@ -1197,7 +1208,7 @@
 
   window.addEventListener('pagehide', () => {
     saveActiveDraft();
-    void persistChatSessionSnapshot();
+    if (!persistChatSessionSnapshotNow()) void persistChatSessionSnapshot();
   });
   window.addEventListener('portal:session-cleared', () => {
     clearMessageMemory();
