@@ -20,6 +20,7 @@ const MESSAGE_HISTORY_PAGE_SIZE = 120;
 const ONLINE_WINDOW_SECONDS = 75;
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
 const CHAT_ROLES = new Set([...PROFESSIONAL_ROLES, 'cidadao']);
+const chatSchemaPromises = new WeakMap();
 
 function headers(origin, allowed = true) {
   const result = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
@@ -49,7 +50,7 @@ function normalizeUsername(value) {
     .replace(/^[._-]+|[._-]+$/g, '').slice(0, 40);
 }
 
-async function ensureSchema(env) {
+async function createChatSchema(env) {
   if (!env.AUTH_DB) return false;
   await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS portal_chat_presence (
     username TEXT PRIMARY KEY, last_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -88,6 +89,17 @@ async function ensureSchema(env) {
   return true;
 }
 
+async function ensureSchema(env) {
+  if (!env.AUTH_DB || (typeof env.AUTH_DB !== 'object' && typeof env.AUTH_DB !== 'function')) return false;
+  if (!chatSchemaPromises.has(env.AUTH_DB)) {
+    const operation = createChatSchema(env).catch((error) => {
+      chatSchemaPromises.delete(env.AUTH_DB);
+      throw error;
+    });
+    chatSchemaPromises.set(env.AUTH_DB, operation);
+  }
+  return chatSchemaPromises.get(env.AUTH_DB);
+}
 async function touchPresence(env, username) {
   await env.AUTH_DB.prepare(`INSERT INTO portal_chat_presence(username, last_seen) VALUES (?, CURRENT_TIMESTAMP)
     ON CONFLICT(username) DO UPDATE SET last_seen = CURRENT_TIMESTAMP`).bind(username).run();
@@ -122,22 +134,11 @@ function socialBackendEnabled(env) {
   return String(env.SOCIAL_BACKEND_ENABLED || '').trim().toLowerCase() === 'true';
 }
 
-async function socialHandleForUsername(env, username) {
-  if (!socialBackendEnabled(env)) return '';
-  try {
-    if (!(await ensureSocialSchema(env))) return '';
-    const row = await env.AUTH_DB.prepare('SELECT handle FROM social_users WHERE auth_username = ? LIMIT 1')
-      .bind(username).first();
-    return String(row?.handle || '');
-  } catch (_) {
-    return '';
-  }
-}
-
 async function professionalContacts(env, currentUsername) {
   const result = await env.AUTH_DB.prepare(`SELECT
       u.username, u.name, u.job_title AS jobTitle, u.role,
       COALESCE(u.avatar_data, '') AS avatarDataUrl,
+      COALESCE(social.handle, '') AS socialHandle,
       p.last_seen AS lastSeen,
       CASE WHEN p.last_seen IS NOT NULL AND p.last_seen >= datetime('now', '-' || ? || ' seconds') THEN 1 ELSE 0 END AS online,
       COALESCE((SELECT MAX(m2.sent_at) FROM portal_chat_messages m2
@@ -148,31 +149,29 @@ async function professionalContacts(env, currentUsername) {
         WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
     FROM auth_users u
     LEFT JOIN portal_chat_presence p ON p.username = u.username
+    LEFT JOIN social_users social ON social.auth_username = u.username
     WHERE u.active = 1 AND u.username <> ? AND u.role IN ('medico','recepcao','coordenacao','admin')
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
     .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
-  const output = [];
-  for (const item of users.filter((candidate) => PROFESSIONAL_ROLES.has(candidate.role))) {
-    output.push({
-      username: item.username,
-      socialHandle: await socialHandleForUsername(env, item.username),
-      name: item.name || item.username,
-      jobTitle: item.jobTitle || '',
-      role: item.role,
-      avatarDataUrl: item.avatarDataUrl || '',
-      online: Number(item.online) === 1,
-      lastSeen: item.lastSeen || null,
-      lastMessageAt: item.lastMessageAt || null,
-      unread: Number(item.unread || 0),
-      firstUnreadId: Number(item.firstUnreadId || 0)
-    });
-  }
-  return output;
+  return users.filter((candidate) => PROFESSIONAL_ROLES.has(candidate.role)).map((item) => ({
+    username: item.username,
+    socialHandle: item.socialHandle || '',
+    name: item.name || item.username,
+    jobTitle: item.jobTitle || '',
+    role: item.role,
+    avatarDataUrl: item.avatarDataUrl || '',
+    online: Number(item.online) === 1,
+    lastSeen: item.lastSeen || null,
+    lastMessageAt: item.lastMessageAt || null,
+    unread: Number(item.unread || 0),
+    firstUnreadId: Number(item.firstUnreadId || 0)
+  }));
 }
 
-async function socialFriendContacts(env, currentUsername) {
+async function socialFriendContacts(env, currentUsername, options = {}) {
   if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return [];
+  const citizenOnlyClause = options.citizenOnly === true ? " AND u.role = 'cidadao'" : '';
   const result = await env.AUTH_DB.prepare(`SELECT
       u.username, u.name, u.job_title AS jobTitle, u.role,
       COALESCE(u.avatar_data, '') AS avatarDataUrl,
@@ -194,7 +193,7 @@ async function socialFriendContacts(env, currentUsername) {
     JOIN auth_users u ON u.username = friend.auth_username
     LEFT JOIN portal_chat_presence p ON p.username = u.username
     WHERE viewer.auth_username = ? AND viewer.suspended_at IS NULL
-      AND friend.suspended_at IS NULL AND u.active = 1
+      AND friend.suspended_at IS NULL AND u.active = 1${citizenOnlyClause}
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
     .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
@@ -257,11 +256,14 @@ function mergeContacts(...groups) {
 }
 
 async function contacts(env, currentUser) {
-  const socialFriends = await socialFriendContacts(env, currentUser.username);
   if (PROFESSIONAL_ROLES.has(currentUser.role)) {
-    return mergeContacts(await professionalContacts(env, currentUser.username), socialFriends);
+    const [institutional, citizenFriends] = await Promise.all([
+      professionalContacts(env, currentUser.username),
+      socialFriendContacts(env, currentUser.username, { citizenOnly: true })
+    ]);
+    return mergeContacts(institutional, citizenFriends);
   }
-  if (currentUser.role === 'cidadao') return socialFriends;
+  if (currentUser.role === 'cidadao') return socialFriendContacts(env, currentUser.username);
   return [];
 }
 
@@ -376,8 +378,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     if (!realtimeUser) return json({ error: 'O chat não está disponível para esta conta.' }, 403, origin);
     const username = normalizeUsername(realtimeUser.username);
     await touchPresence(env, username);
-    const realtimeContacts = await contacts(env, { ...realtimeUser, username });
-    return upgradeChatRealtime(request, env, username, realtimeContacts.map((item) => item.username));
+    return upgradeChatRealtime(request, env, username);
   }
 
   const sessionUser = await validatePortalSession(request, env, []);
@@ -388,9 +389,9 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
   const username = normalizeUsername(user.username);
-  await touchPresence(env, username);
 
   if (url.pathname === '/api/chat/presence' && request.method === 'POST') {
+    await touchPresence(env, username);
     const body = await request.json().catch(() => ({}));
     await recordUsageHeartbeat(env, username, body).catch(() => {});
     return json({ ok: true }, 200, origin);
@@ -403,6 +404,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   }
 
   if (url.pathname === '/api/chat/users' && request.method === 'GET') {
+    await touchPresence(env, username);
     const users = await contacts(env, { ...user, username });
     runBackground(executionContext, configureChatRealtimeContacts(env, username, users.map((item) => item.username)));
     return json({ users }, 200, origin);
@@ -425,6 +427,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   }
 
   if (url.pathname === '/api/chat/delivery' && request.method === 'POST') {
+    await touchPresence(env, username);
     const delivered = await markChatDelivered(env, username);
     for (const receipt of delivered.receipts) {
       runBackground(executionContext, broadcastChatRealtime(env, receipt.fromUser, {
