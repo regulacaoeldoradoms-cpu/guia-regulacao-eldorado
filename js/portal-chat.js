@@ -337,6 +337,16 @@
     return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
+  function localServerTimestamp() {
+    return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  }
+
+  function createClientMessageId() {
+    if (crypto?.randomUUID) return `chat-${crypto.randomUUID()}`;
+    pendingSequence += 1;
+    return `chat-${Date.now().toString(36)}-${pendingSequence.toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
   function receiptLabel(message) {
     if (message?.readAt) return { title: 'Visualizada', state: 'read', double: true };
     if (message?.deliveredAt) return { title: 'Recebida no chat', state: 'delivered', double: false };
@@ -360,7 +370,48 @@
 
   function updateMessageReceiptElement(element, message) {
     if (!element) return;
+    const time = element.querySelector('.portal-chat-message-time');
     let receipt = element.querySelector('.portal-chat-message-receipt');
+    let sendState = element.querySelector('.portal-chat-message-send-state');
+
+    element.classList.toggle('pending', Boolean(message?.pending));
+    element.classList.toggle('failed', Boolean(message?.failed));
+
+    if (message?.pending || message?.failed) {
+      receipt?.remove();
+      receipt = null;
+      if (!sendState) {
+        sendState = message.failed ? document.createElement('button') : document.createElement('span');
+        sendState.className = 'portal-chat-message-send-state';
+        time?.appendChild(sendState);
+      }
+      if (message.failed && sendState.tagName !== 'BUTTON') {
+        const replacement = document.createElement('button');
+        sendState.replaceWith(replacement);
+        sendState = replacement;
+      } else if (message.pending && sendState.tagName === 'BUTTON') {
+        const replacement = document.createElement('span');
+        sendState.replaceWith(replacement);
+        sendState = replacement;
+      }
+
+      if (message.failed) {
+        sendState.type = 'button';
+        sendState.className = 'portal-chat-message-send-state failed';
+        sendState.dataset.chatRetry = String(message.clientId || '');
+        sendState.textContent = 'Reenviar';
+        sendState.title = 'Falha ao enviar. Clique para tentar novamente.';
+        sendState.setAttribute('aria-label', 'Falha ao enviar. Reenviar mensagem.');
+      } else {
+        sendState.className = 'portal-chat-message-send-state pending';
+        sendState.textContent = '';
+        sendState.title = 'Enviando...';
+        sendState.setAttribute('aria-label', 'Enviando mensagem');
+      }
+      return;
+    }
+
+    sendState?.remove();
     const state = receiptLabel(message);
     if (!state) {
       receipt?.remove();
@@ -369,7 +420,7 @@
     if (!receipt) {
       receipt = document.createElement('span');
       receipt.className = 'portal-chat-message-receipt';
-      element.querySelector('.portal-chat-message-time')?.appendChild(receipt);
+      time?.appendChild(receipt);
     }
     receipt.className = `portal-chat-message-receipt ${state.state}`;
     receipt.replaceChildren(receiptSvg(state.double));
@@ -677,13 +728,68 @@
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
     if (replace) box.innerHTML = '';
     messages.forEach((message) => {
-      if (box.querySelector(`[data-message-id="${message.id}"]`)) return;
+      const id = Number(message?.id || 0);
+      const clientId = String(message?.clientId || '');
+      if (id && box.querySelector(`[data-message-id="${id}"]`)) return;
+      if (clientId && box.querySelector(`[data-client-id="${CSS.escape(clientId)}"]`)) return;
       const element = messageElement(message);
       element.dataset.messageId = String(message.id || '');
+      if (clientId) element.dataset.clientId = clientId;
       box.appendChild(element);
-      lastMessageId = Math.max(lastMessageId, Number(message.id || 0));
+      lastMessageId = Math.max(lastMessageId, id);
     });
     if (replace || nearBottom) box.scrollTop = box.scrollHeight;
+  }
+
+  function prependMessages(messages) {
+    const box = document.getElementById('portalChatMessages');
+    if (!box || !Array.isArray(messages) || !messages.length) return;
+    const previousHeight = box.scrollHeight;
+    const fragment = document.createDocumentFragment();
+    messages.forEach((message) => {
+      const id = Number(message?.id || 0);
+      if (!id || box.querySelector(`[data-message-id="${id}"]`)) return;
+      const element = messageElement(message);
+      element.dataset.messageId = String(id);
+      if (message.clientId) element.dataset.clientId = String(message.clientId);
+      fragment.appendChild(element);
+    });
+    box.insertBefore(fragment, box.firstChild);
+    box.scrollTop += Math.max(0, box.scrollHeight - previousHeight);
+  }
+
+  async function loadOlderMessages() {
+    if (!activeContact || historyLoadPending) return;
+    const username = activeContact.username;
+    const key = messageCacheKey(username);
+    const cached = messageCache.get(key);
+    if (!cached?.hasOlder || !cached.messages?.length) return;
+    const before = Number(cached.messages[0]?.id || 0);
+    if (!before) return;
+
+    historyLoadPending = (async () => {
+      try {
+        const payload = await api(
+          `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&before=${before}&peek=1`,
+          { method: 'GET' }
+        );
+        if (!activeContact || activeContact.username !== username) return;
+        const page = Array.isArray(payload.messages) ? payload.messages : [];
+        const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+        replaceCachedMessages(
+          username,
+          [...page, ...(cached.messages || [])],
+          cached.lastMessageAt || '',
+          { hasOlder: page.length >= pageSize }
+        );
+        prependMessages(page);
+      } catch (_) {
+        // Histórico antigo é um carregamento auxiliar; a conversa atual continua utilizável.
+      }
+    })().finally(() => {
+      historyLoadPending = null;
+    });
+    return historyLoadPending;
   }
 
   async function loadMessages(initial = false) {
@@ -695,8 +801,14 @@
       if (!activeContact || activeContact.username !== username) return;
       const messages = Array.isArray(payload.messages) ? payload.messages : [];
       const contact = contacts.find((item) => item.username === username);
-      if (initial) replaceCachedMessages(username, messages, contact?.lastMessageAt || '');
-      else mergeCachedMessages(username, messages, contact?.lastMessageAt || '');
+      const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+      if (initial) {
+        replaceCachedMessages(username, messages, contact?.lastMessageAt || '', { hasOlder: messages.length >= pageSize });
+      } else {
+        mergeCachedMessages(username, messages, contact?.lastMessageAt || '', {
+          hasOlder: messageCache.get(messageCacheKey(username))?.hasOlder || false
+        });
+      }
       appendMessages(messages, initial);
       applyReceiptState(payload.receipt);
       if (contact) {
@@ -718,10 +830,19 @@
     stopMessagePolling();
     messageTimer = window.setInterval(() => {
       if (!document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) loadMessages(false);
-    }, 3500);
+    }, CHAT_ACTIVE_POLL_MS);
   }
 
-  function openConversation(contact) {
+  function saveActiveDraft() {
+    const input = document.getElementById('portalChatInput');
+    if (!activeContact || !input) return;
+    const value = String(input.value || '');
+    if (value) draftCache.set(activeContact.username, value);
+    else draftCache.delete(activeContact.username);
+  }
+
+  function openConversation(contact, options = {}) {
+    saveActiveDraft();
     activeContact = contact;
     lastMessageId = 0;
     document.getElementById('portalChatRoot')?.classList.add('open');
@@ -733,7 +854,10 @@
     const renderedFromMemory = renderCachedConversation(contact);
     void loadMessages(!renderedFromMemory);
     startMessagePolling();
-    document.getElementById('portalChatInput')?.focus();
+    const input = document.getElementById('portalChatInput');
+    if (input) input.value = draftCache.get(contact.username) || '';
+    queueChatSessionPersist();
+    if (options.focus !== false) input?.focus();
   }
 
   async function openChatByUsername(username) {
