@@ -5,6 +5,7 @@ import { handleObservabilityRoute, isObservabilityApi } from './observability.js
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
 import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
+export { PortalChatRealtime } from './chat-realtime-do.js';
 import { handleSocialRoute, isSocialApi } from './social.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
