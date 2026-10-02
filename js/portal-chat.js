@@ -342,7 +342,7 @@
   }
 
   function createClientMessageId() {
-    if (crypto?.randomUUID) return `chat-${crypto.randomUUID()}`;
+    if (globalThis.crypto?.randomUUID) return `chat-${globalThis.crypto.randomUUID()}`;
     pendingSequence += 1;
     return `chat-${Date.now().toString(36)}-${pendingSequence.toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   }
@@ -731,7 +731,15 @@
       const id = Number(message?.id || 0);
       const clientId = String(message?.clientId || '');
       if (id && box.querySelector(`[data-message-id="${id}"]`)) return;
-      if (clientId && box.querySelector(`[data-client-id="${CSS.escape(clientId)}"]`)) return;
+      if (clientId) {
+        const pending = box.querySelector(`[data-client-id="${clientId}"]`);
+        if (pending) {
+          if (id > 0 && pendingMessages.has(clientId)) {
+            replacePendingMessage(clientId, message, message.toUser || activeContact?.username || '');
+          }
+          return;
+        }
+      }
       const element = messageElement(message);
       element.dataset.messageId = String(message.id || '');
       if (clientId) element.dataset.clientId = clientId;
