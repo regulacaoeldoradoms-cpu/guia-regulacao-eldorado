@@ -200,3 +200,35 @@ A V3.3 muda o ciclo:
 
 Consequência operacional: a primeira carga ainda precisa enriquecer os contatos faltantes; depois disso, sincronizações normais não percorrem novamente pacientes cujo telefone já está salvo.
 
+### V3.4 — extração robusta do telefone e foco somente em lembretes úteis — 02/10/2026
+
+Após a V3.3, a cobertura persistida confirmou que apenas uma pequena parte dos contatos realmente havia sido capturada. A causa remanescente estava no formato real do campo: o DigSaúde pode apresentar o telefone em estruturas Filament diferentes, com rótulo visual, wrappers sem `name/id/wire:model` previsíveis e, em alguns casos, texto com formatação ou mais de um número.
+
+A V3.4 amplia a leitura sem relaxar a privacidade:
+- tenta atributos técnicos conhecidos;
+- usa também o vínculo visual do rótulo **Telefone** com seu wrapper;
+- aceita número formatado, múltiplos valores separados por `/`, `;`, vírgula, quebra de linha ou barra vertical e escolhe o primeiro telefone brasileiro válido;
+- evita falsos positivos próximos de campos CPF, CNS, CEP e Número;
+- continua sem exportar o telefone para logs/telemetria;
+- contatos já persistidos continuam sendo ignorados;
+- somente agendamentos de **hoje ou datas futuras** entram na coleta de telefone; cards antigos não desperdiçam tempo nem continuam exibindo “Sincronizando contato…”;
+- cards com data passada passam a mostrar **Data já passou** no lugar da ação de WhatsApp.
+
+Esse recorte é coerente com a finalidade do recurso: preparar lembretes de consultas atuais/futuras, não enriquecer retrospectivamente agendamentos antigos.
+
+### V3.4 — extração robusta e lembretes úteis — 02/10/2026
+
+A cobertura persistida revelou que o fluxo ainda não reconhecia de forma confiável todos os formatos do campo de telefone no DOM real do DigSaúde.
+
+A V3.4:
+- tenta os atributos técnicos conhecidos do campo;
+- usa também o wrapper associado ao rótulo visual **Telefone**;
+- aceita número formatado e mais de um número no mesmo campo, usando o primeiro telefone brasileiro válido;
+- evita interpretar campos numéricos vizinhos como telefone;
+- continua sem registrar telefone em logs ou telemetria;
+- contatos já persistidos não são consultados novamente;
+- somente consultas de hoje ou futuras entram no enriquecimento de contato;
+- cards antigos exibem **Data já passou** em vez de “Sincronizando contato…”.
+
+A finalidade é operacional: preparar lembretes para consultas atuais e futuras sem gastar tempo enriquecendo retrospectivamente agendamentos antigos.
+

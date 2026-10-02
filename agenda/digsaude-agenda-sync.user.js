@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.3
+// @version      1.2.4
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-4
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-4
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-5
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-5
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -180,6 +180,58 @@
     return url.toString();
   }
 
+  function phoneCandidate(value) {
+    const source = String(value || '').trim();
+    if (!source) return '';
+
+    const direct = normalizePhone(source);
+    if (direct) return direct;
+
+    const pieces = source.split(/[\n|;,/]+/).map((item) => item.trim()).filter(Boolean);
+    for (const piece of pieces) {
+      const phone = normalizePhone(piece);
+      if (phone) return phone;
+    }
+
+    const pattern = /(?:\+?55[\s().-]*)?(?:\(?\d{2}\)?[\s().-]*)?(?:9[\s.-]?\d{4}|\d{4})[\s.-]?\d{4}/g;
+    for (const match of source.matchAll(pattern)) {
+      const phone = normalizePhone(match[0]);
+      if (phone) return phone;
+    }
+
+    return '';
+  }
+
+  function phoneFromNode(node) {
+    if (!node) return '';
+    const values = [
+      node.value,
+      node.getAttribute?.('value'),
+      node.textContent,
+      node.getAttribute?.('aria-label'),
+      node.getAttribute?.('placeholder')
+    ];
+    for (const value of values) {
+      const phone = phoneCandidate(value);
+      if (phone) return phone;
+    }
+    return '';
+  }
+
+  function phoneFieldWrapper(label) {
+    if (!label) return null;
+    const preferred = label.closest?.(
+      '.fi-fo-field-wrp, .fi-input-wrp, [data-field-wrapper], [data-state-path], .grid'
+    );
+    if (preferred) return preferred;
+
+    let current = label.parentElement;
+    for (let depth = 0; current && depth < 6; depth += 1, current = current.parentElement) {
+      if (current.querySelector?.('input, textarea, [role="textbox"], [contenteditable="true"]')) return current;
+    }
+    return label.parentElement;
+  }
+
   function phoneFromRoot(root) {
     const selectors = [
       'input[name*="telefonecel" i]',
@@ -195,26 +247,54 @@
       'input[type="tel"]',
       'input[inputmode="tel"]'
     ];
+
     for (const selector of selectors) {
       for (const node of root.querySelectorAll(selector)) {
-        const phone = normalizePhone(node.value || node.getAttribute('value') || node.textContent);
+        const phone = phoneFromNode(node);
         if (phone) return phone;
       }
     }
 
-    const labels = [...root.querySelectorAll('label, span, div')]
-      .filter((node) => node.children.length === 0 && normalizeSearch(node.textContent) === 'telefone');
+    const labels = [...root.querySelectorAll('label, span, div, p')]
+      .filter((node) => {
+        const text = normalizeSearch(node.textContent);
+        return text === 'telefone' || text.startsWith('telefone ');
+      });
+
     for (const label of labels) {
-      let container = label.parentElement;
-      for (let depth = 0; container && depth < 5; depth += 1, container = container.parentElement) {
-        const inputs = [...container.querySelectorAll('input')];
-        for (const input of inputs) {
-          const phone = normalizePhone(input.value || input.getAttribute('value'));
-          if (phone) return phone;
-        }
-        if (inputs.length) break;
+      const explicitTarget = label.getAttribute?.('for');
+      if (explicitTarget) {
+        const target = root.getElementById?.(explicitTarget);
+        const phone = phoneFromNode(target);
+        if (phone) return phone;
       }
+
+      const wrapper = phoneFieldWrapper(label);
+      if (!wrapper) continue;
+
+      const nodes = [
+        ...wrapper.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"], output, dd, p, span')
+      ];
+      for (const node of nodes) {
+        const phone = phoneFromNode(node);
+        if (phone) return phone;
+      }
+
+      const phone = phoneCandidate(wrapper.textContent);
+      if (phone) return phone;
     }
+
+    const genericInputs = [...root.querySelectorAll('input, textarea')];
+    for (const node of genericInputs) {
+      const phone = phoneFromNode(node);
+      if (!phone) continue;
+      const nearby = normalizeSearch(
+        node.closest?.('.fi-fo-field-wrp, .fi-input-wrp, [data-field-wrapper], .grid')?.textContent || ''
+      );
+      if (/cpf|cns|cep|número|numero/.test(nearby)) continue;
+      return phone;
+    }
+
     return '';
   }
 
@@ -329,9 +409,32 @@
     );
   }
 
+  function localIsoToday() {
+    const now = new Date();
+    const year = String(now.getFullYear()).padStart(4, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function contactEligible(record) {
+    const date = compact(record?.appointmentDate);
+    return !date || date >= localIsoToday();
+  }
+
+  function contactCoverage(snapshot) {
+    const records = Array.isArray(snapshot?.records) ? snapshot.records.filter(contactEligible) : [];
+    const available = records.filter((record) => knownContactIds.has(record.sourceId)).length;
+    return { total: records.length, available, missing: Math.max(0, records.length - available) };
+  }
+
   async function enrichSnapshotContacts(snapshot) {
     const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
-    const targets = records.filter((record) => record?.sourceId && !knownContactIds.has(record.sourceId));
+    const targets = records.filter((record) => (
+      record?.sourceId
+      && contactEligible(record)
+      && !knownContactIds.has(record.sourceId)
+    ));
     let cursor = 0;
     let found = 0;
     let failed = 0;
@@ -681,11 +784,9 @@
         return;
       }
       if (!autoEnabled || syncInFlight) return;
-      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
-      const missing = Number(event.data?.contactsMissing || 0);
       setButton(
-        `Automático ativo · ${available} contato(s) já salvos · ${missing} pendente(s)…`,
-        missing ? 'working' : 'success'
+        `Automático ativo · ${knownContactIds.size} contato(s) já persistidos · conferindo agenda…`,
+        'working'
       );
       runAutomaticSync({ force: true });
       return;
@@ -700,11 +801,10 @@
     if (event.data.ok) {
       updateKnownContactIds(event.data?.knownSourceIds);
       lastFingerprint = pendingFingerprint;
-      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
-      const missing = Number(event.data?.contactsMissing || 0);
+      const coverage = contactCoverage(pendingSnapshot);
       setButton(
-        `Automático ativo · ${available} contato(s) disponíveis · ${missing} pendente(s) · ${clock()}`,
-        missing ? 'error' : 'success'
+        `Automático ativo · ${coverage.available}/${coverage.total} contato(s) úteis disponíveis · ${coverage.missing} pendente(s) · ${clock()}`,
+        coverage.missing ? 'error' : 'success'
       );
     } else {
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');

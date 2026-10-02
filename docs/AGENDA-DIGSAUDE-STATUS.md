@@ -291,3 +291,18 @@ Ajustes:
 
 Nenhum número de telefone, nome de paciente ou conteúdo clínico é incluído em logs, testes, documentação pública ou observabilidade.
 
+### V3.4 — correção após cobertura real reduzida — 02/10/2026
+
+A homologação real mostrou que percorrer todos os registros não significava que os contatos tinham sido persistidos. A cobertura confirmada pelo backend permaneceu baixa, então o gargalo restante estava no reconhecimento do valor do campo de telefone no DOM real do DigSaúde.
+
+A V3.4:
+- amplia a leitura para atributos técnicos e para o wrapper associado ao rótulo visual **Telefone**;
+- aceita número formatado e múltiplos números no mesmo campo, escolhendo o primeiro telefone brasileiro válido;
+- mantém filtros para não interpretar outros campos numéricos como telefone;
+- não relê contatos já persistidos;
+- limita a coleta aos agendamentos de hoje ou do futuro;
+- cards de datas passadas deixam de exibir “Sincronizando contato…” e passam a indicar **Data já passou**;
+- renova as versões publicadas do userscript e do cliente da Agenda.
+
+Critério de aceite: o status pós-sincronização deve refletir a cobertura realmente persistida dos agendamentos atuais/futuros, e os cards elegíveis com contato confirmado devem liberar **Avisar por WhatsApp**.
+

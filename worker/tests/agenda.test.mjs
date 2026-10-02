@@ -56,7 +56,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20261001-whatsapp-1/);
+  assert.match(html, /js\/agenda\.js\?v=20261002-whatsapp-2/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -69,7 +69,10 @@ test('sincronizador lê Agendados e consulta somente o contato necessário na se
   assert.match(source, /consultationUrl/);
   assert.match(source, /ver dados do paciente/);
   assert.match(source, /telefonecel/);
-  assert.match(source, /normalizeSearch\(node\.textContent\) === 'telefone'/);
+  assert.match(source, /function phoneCandidate/);
+  assert.match(source, /source\.split\(\/\[\\n\|;,\/\]\+\//);
+  assert.match(source, /normalizeSearch\(node\.textContent\)/);
+  assert.match(source, /phoneFieldWrapper/);
   assert.match(source, /knownContactIds/);
   assert.match(source, /window\.open\(/);
   assert.match(source, /portal-agenda-contact-bridge/);
@@ -117,7 +120,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.2\.3/);
+  assert.match(source, /@version\s+1\.2\.4/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -133,15 +136,16 @@ test('sincronizador automático consulta Agendados em segundo plano a cada 15 mi
   assert.match(source, /!knownContactIds\.has\(record\.sourceId\)/);
 });
 
-test('sincronizador confirma cobertura persistida e não repete contatos já salvos', () => {
+test('sincronizador confirma cobertura persistida, ignora passados e não repete contatos já salvos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
   const bridge = read('js/agenda-sync-bridge.js');
   const backend = read('worker/agenda.js');
 
   assert.match(source, /knownContactIds = new Set\(\)/);
-  assert.match(source, /contactsAvailable/);
-  assert.match(source, /contactsMissing/);
-  assert.match(source, /contato\(s\) disponíveis/);
+  assert.match(source, /function contactEligible/);
+  assert.match(source, /appointmentDate/);
+  assert.match(source, /!knownContactIds\.has\(record\.sourceId\)/);
+  assert.match(source, /contato\(s\) úteis disponíveis/);
   assert.match(source, /hasContactUpdates/);
   assert.match(bridge, /\/api\/agenda\/contact-state/);
   assert.match(bridge, /knownSourceIds/);
@@ -158,6 +162,8 @@ test('Agenda usa contato protegido para abrir lembrete diretamente no WhatsApp d
   assert.match(backend, /phone:\s*normalizeBrazilPhone\(record\.phone\)/);
   assert.match(backend, /phone:\s*record\.phone \|\| normalizeBrazilPhone\(existing\.phone\)/);
   assert.match(frontend, /Avisar por WhatsApp/);
+  assert.match(frontend, /Data já passou/);
+  assert.match(frontend, /function isPastAppointment/);
   assert.match(frontend, /Este é um lembrete da sua consulta agendada:/);
   assert.match(frontend, /Data:/);
   assert.match(frontend, /Horário:/);
