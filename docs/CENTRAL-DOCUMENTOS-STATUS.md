@@ -403,3 +403,44 @@ Entrega em andamento: branch `fix/titon-print-normalizacao-20261002`, PR **#583*
 | Métricas / observabilidade | Nenhuma nova propriedade clínica ou conteúdo documental; sem mudança de telemetria. |
 | Próxima ação exata | Conferir checks #583; se verdes, integrar e validar 1:1 páginas PDF→folhas na produção. |
 | Arquivos e fontes principais | `js/documents.js`; `testing/central-docs/editor-harness.js`; `testing/browser/central-docs-flatten.spec.mjs`; `worker/tests/documents-ui.test.mjs`; `documentos/index.html`; `portal-sw.js`; PR #583; Guia Mestre 1.1. |
+
+
+## Titon — impressão heterogênea corrigida e publicada — 02/10/2026
+
+Fechamento técnico da unidade iniciada acima. A PR **#583** foi integrada à `main` no merge `97d6147042c0c0d80fd325dcf2abc15bcd8bd72a`. O reparo mantém a decisão registrada: **cada página lógica do PDF ocupa uma folha A4 própria e é ajustada proporcionalmente dentro dela**, sem crop automático e sem modificar o PDF no Google Drive.
+
+Validação do candidato:
+- **Validar Central de Documentos — navegador** run `37020532840`, job `110882154702`: **78 passed / 4 skipped**, sem falha; o teste focal de impressão/flatten passou em desktop e mobile;
+- **Validar Central de Documentos — Fases 1–6** run `37020532214`: success;
+- **Validar bundle de staging da Central** run `37020532105`: success;
+- **Validar governança Central de Documentos** run `37020532154`: success;
+- **Validar site** run `37020532480`: success.
+
+Validação pós-merge:
+- GitHub Pages run `37021058366`, job de deploy `110884142143`: **success**;
+- Cloudflare Pages check `110884108874`: **success**;
+- Workers Build `yellow-wave-d0a1guia-regulacao-ia` check `110884445829`: **success**;
+- Central Fases 1–6, governança e site voltaram a concluir com success no merge.
+
+O reparo está tecnicamente publicado. A homologação humana do caso real continua necessária porque a caixa nativa de impressão e o driver físico não são reproduzidos pelo CI. O aceite esperado no PDF relatado é: **9 páginas lógicas → 9 páginas na prévia**, páginas normais não ficam reduzidas por causa da página fora do padrão e a página anormal cabe inteira em uma folha sem distorção ou corte. Se a própria página anormal possuir grande área branca no MediaBox/CropBox, essa área continua fazendo parte do documento e só deve ser removida por Recortar explicitamente no Titon.
+
+### Handoff para o próximo chat — estado final desta unidade
+
+| Campo | Estado persistente |
+|---|---|
+| Fase atual | Fase 7 — Robustez e otimização contínua; nenhuma fase encerrada foi reaberta. |
+| Subfase / objetivo atual | Correção técnica da impressão heterogênea encerrada e publicada; falta somente homologação humana do PDF real. |
+| Última ação concluída | PR #583 merged em `97d6147042c0c0d80fd325dcf2abc15bcd8bd72a`; Pages, Cloudflare Pages, Worker Build e checks documentais pertinentes concluíram com success. |
+| Branch atual | `docs/titon-print-normalizacao-final-20261002` apenas para registrar este fechamento pós-merge. |
+| PR atual | #583 merged; PR documental de fechamento deve ser integrada sem alterar código funcional. |
+| Último commit funcional relevante | `97d6147042c0c0d80fd325dcf2abc15bcd8bd72a` — merge da correção de impressão. |
+| Checks e testes | Navegador PDF.js: 78 passed / 4 skipped; Central Fases 1–6, staging, governança e site success; pós-merge Pages, Cloudflare Pages e Worker Build success. |
+| Decisões tomadas | Uma página lógica = uma folha A4; fit proporcional individual; sem crop automático; sem mutação de PDF/Drive; bitmap limitado. |
+| Justificativas | A folha dinâmica baseada no viewport da página permitia que uma página gigante atravessasse várias folhas e alterasse a escala/paginação do restante. |
+| Alternativas descartadas | Vincular ao zoom; crop heurístico; deformar; regravar PDF no Drive; abrir viewer nativo em nova aba. |
+| Ações externas concluídas | Context7 confirmou o contrato de viewport/escala do PDF.js; Jam não tinha gravação relacionada; Create State não tinha world model existente; publicação técnica concluída. |
+| Pendências e bloqueios | Somente homologação humana na prévia/ impressão real; nenhuma intervenção de credencial, OAuth ou Drive é necessária. |
+| Riscos conhecidos | Uma página cujo próprio box contenha área branca muito grande será reduzida para caber inteira, preservando conteúdo; remover área branca requer crop explícito. |
+| Métricas / observabilidade | Nenhuma nova telemetria documental ou clínica; nenhuma informação sensível adicionada. |
+| Próxima ação exata | Abrir o mesmo PDF em produção e imprimir: confirmar 9→9 páginas, tamanho normal das páginas comuns e página anormal inteira em uma folha. Se falhar, registrar a prévia e não alterar o Drive; reabrir diagnóstico apenas com a evidência nova. |
+| Arquivos e fontes principais | `js/documents.js`; `testing/central-docs/editor-harness.js`; `testing/browser/central-docs-flatten.spec.mjs`; `worker/tests/documents-ui.test.mjs`; `documentos/index.html`; `portal-sw.js`; PR #583; merge `97d6147`; Pages run `37021058366`; Guia Mestre 1.1. |
