@@ -542,6 +542,22 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
     WHERE to_user = 'dora.social' AND from_user = 'clara.social' AND read_at IS NULL`).first();
   assert.equal(Number(unreadAfterOpen.total || 0), 0, 'abrir a conversa continua marcando as mensagens como lidas');
 
+  const optimisticClientId = 'chat-123456789abc-idempotente';
+  const optimisticFirst = await callChat(env, '/api/chat/messages', first.token, {
+    method: 'POST',
+    body: { to: 'dora.social', body: 'Envio otimista idempotente', clientId: optimisticClientId }
+  });
+  assert.equal(optimisticFirst.status, 201);
+  const optimisticRetry = await callChat(env, '/api/chat/messages', first.token, {
+    method: 'POST',
+    body: { to: 'dora.social', body: 'Envio otimista idempotente', clientId: optimisticClientId }
+  });
+  assert.equal(optimisticRetry.status, 200);
+  assert.equal((await payload(optimisticRetry)).duplicate, true);
+  const optimisticRows = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM portal_chat_messages
+    WHERE from_user = 'clara.social' AND client_id = ?`).bind(optimisticClientId).first();
+  assert.equal(Number(optimisticRows.total || 0), 1, 'reenvio com o mesmo client_id não duplica mensagem');
+
   for (let index = 0; index < 125; index += 1) {
     await env.AUTH_DB.prepare(`INSERT INTO portal_chat_messages(from_user, to_user, body, read_at)
       VALUES ('clara.social', 'dora.social', ?, CURRENT_TIMESTAMP)`).bind(`Histórico ${index}`).run();

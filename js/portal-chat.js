@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-receipts-1') return;
+  if (window.PortalChat?.version === '20261002-fluid-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -19,14 +19,22 @@
   let notificationWorker = null;
   let deliverySyncPending = null;
   let lastDeliverySyncAt = 0;
+  let chatSessionPersistTimer = null;
+  let restoredChatSession = null;
+  let historyLoadPending = null;
+  let pendingSequence = 0;
   const unreadSnapshot = new Map();
   const messageCache = new Map();
   const messagePreloadRequests = new Map();
+  const pendingMessages = new Map();
+  const draftCache = new Map();
   let messageCacheGeneration = 0;
   let messagePreloadSweep = null;
   const MESSAGE_PRELOAD_CONCURRENCY = 3;
   const MESSAGE_HISTORY_PAGE_SIZE = 120;
   const MESSAGE_PRELOAD_PAGE_GUARD = 100;
+  const CHAT_ACTIVE_POLL_MS = 2500;
+  const CHAT_SESSION_GET_TIMEOUT_MS = 550;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
 
   const escapeText = (value) => String(value || '');
@@ -66,38 +74,179 @@
     messageCacheGeneration += 1;
     messageCache.clear();
     messagePreloadRequests.clear();
+    pendingMessages.clear();
+    draftCache.clear();
+    restoredChatSession = null;
   }
 
   function normalizeMessageList(messages) {
     const byId = new Map();
     for (const message of Array.isArray(messages) ? messages : []) {
       const id = Number(message?.id || 0);
-      if (!id) continue;
+      if (!Number.isInteger(id) || id <= 0) continue;
       byId.set(id, message);
     }
     return Array.from(byId.values()).sort((first, second) => Number(first.id || 0) - Number(second.id || 0));
   }
 
-  function replaceCachedMessages(username, messages, lastMessageAt = '') {
+  function chatAuthorization() {
+    const token = String(auth.getToken?.() || '');
+    return token ? `Bearer ${token}` : '';
+  }
+
+  function activeServiceWorker(registration) {
+    return navigator.serviceWorker?.controller
+      || registration?.active
+      || registration?.waiting
+      || registration?.installing
+      || null;
+  }
+
+  function snapshotForServiceWorker() {
+    const root = document.getElementById('portalChatRoot');
+    const input = document.getElementById('portalChatInput');
+    if (activeContact && input) {
+      const draft = String(input.value || '');
+      if (draft) draftCache.set(activeContact.username, draft);
+      else draftCache.delete(activeContact.username);
+    }
+    return {
+      panelOpen: Boolean(root?.classList.contains('open')),
+      activeUsername: activeContact?.username || '',
+      conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
+        username,
+        lastMessageAt: entry?.lastMessageAt || '',
+        loadedAt: Number(entry?.loadedAt || 0),
+        hasOlder: Boolean(entry?.hasOlder),
+        messages: entry?.messages || []
+      })),
+      drafts: Array.from(draftCache.entries()).map(([username, body]) => ({ username, body }))
+    };
+  }
+
+  function postChatSessionSnapshot(worker) {
+    const authorization = chatAuthorization();
+    if (!worker || !authorization) return false;
+    try {
+      worker.postMessage({
+        type: 'PORTAL_CHAT_SESSION_PUT',
+        authorization,
+        snapshot: snapshotForServiceWorker()
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function persistChatSessionSnapshotNow() {
+    return postChatSessionSnapshot(navigator.serviceWorker?.controller || null);
+  }
+
+  async function persistChatSessionSnapshot() {
+    if (!('serviceWorker' in navigator)) return false;
+    if (persistChatSessionSnapshotNow()) return true;
+    try {
+      const registration = await ensureNotificationWorker();
+      return postChatSessionSnapshot(activeServiceWorker(registration));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function queueChatSessionPersist(delay = 140) {
+    window.clearTimeout(chatSessionPersistTimer);
+    chatSessionPersistTimer = window.setTimeout(() => {
+      chatSessionPersistTimer = null;
+      persistChatSessionSnapshot().catch(() => false);
+    }, Math.max(0, Number(delay || 0)));
+  }
+
+  async function getChatSessionSnapshot() {
+    if (!('serviceWorker' in navigator) || typeof MessageChannel !== 'function') return null;
+    const authorization = chatAuthorization();
+    if (!authorization) return null;
+    try {
+      const registration = await ensureNotificationWorker();
+      const worker = activeServiceWorker(registration);
+      if (!worker) return null;
+      return await new Promise((resolve) => {
+        const channel = new MessageChannel();
+        let settled = false;
+        const finish = (snapshot) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          try { channel.port1.close(); } catch (_) {}
+          resolve(snapshot || null);
+        };
+        const timer = window.setTimeout(() => finish(null), CHAT_SESSION_GET_TIMEOUT_MS);
+        channel.port1.onmessage = (event) => finish(event.data?.ok === true ? event.data.snapshot : null);
+        try {
+          worker.postMessage({
+            type: 'PORTAL_CHAT_SESSION_GET',
+            authorization
+          }, [channel.port2]);
+        } catch (_) {
+          finish(null);
+        }
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function clearChatSessionSnapshot() {
+    window.clearTimeout(chatSessionPersistTimer);
+    chatSessionPersistTimer = null;
+    ensureNotificationWorker()
+      .then((registration) => activeServiceWorker(registration)?.postMessage?.({ type: 'PORTAL_CHAT_SESSION_CLEAR' }))
+      .catch(() => {});
+  }
+
+  function hydrateChatSessionSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    restoredChatSession = snapshot;
+    for (const conversation of Array.isArray(snapshot.conversations) ? snapshot.conversations : []) {
+      const key = messageCacheKey(conversation?.username);
+      if (!key) continue;
+      messageCache.set(key, {
+        messages: normalizeMessageList(conversation?.messages),
+        lastMessageAt: String(conversation?.lastMessageAt || ''),
+        loadedAt: Number(conversation?.loadedAt || Date.now()),
+        hasOlder: Boolean(conversation?.hasOlder)
+      });
+    }
+    for (const draft of Array.isArray(snapshot.drafts) ? snapshot.drafts : []) {
+      const key = messageCacheKey(draft?.username);
+      const body = String(draft?.body || '');
+      if (key && body) draftCache.set(key, body);
+    }
+  }
+
+  function replaceCachedMessages(username, messages, lastMessageAt = '', options = {}) {
     const key = messageCacheKey(username);
     if (!key) return null;
     const entry = {
       messages: normalizeMessageList(messages),
       lastMessageAt: String(lastMessageAt || ''),
-      loadedAt: Date.now()
+      loadedAt: Date.now(),
+      hasOlder: Boolean(options.hasOlder)
     };
     messageCache.set(key, entry);
+    queueChatSessionPersist();
     return entry;
   }
 
-  function mergeCachedMessages(username, messages, lastMessageAt = '') {
+  function mergeCachedMessages(username, messages, lastMessageAt = '', options = {}) {
     const key = messageCacheKey(username);
     if (!key) return null;
     const previous = messageCache.get(key);
     return replaceCachedMessages(
       key,
       [...(previous?.messages || []), ...(Array.isArray(messages) ? messages : [])],
-      lastMessageAt || previous?.lastMessageAt || ''
+      lastMessageAt || previous?.lastMessageAt || '',
+      { hasOlder: options.hasOlder ?? previous?.hasOlder ?? false }
     );
   }
 
@@ -109,7 +258,7 @@
     const lastMessageAt = String(contact?.lastMessageAt || '');
     const cached = messageCache.get(key);
     if (!lastMessageAt) {
-      if (!cached) replaceCachedMessages(key, [], '');
+      if (!cached) replaceCachedMessages(key, [], '', { hasOlder: false });
       return [];
     }
     if (cached?.lastMessageAt === lastMessageAt) return cached.messages;
@@ -124,37 +273,23 @@
           { method: 'GET' }
         );
         if (generation !== messageCacheGeneration) return [];
-        mergeCachedMessages(key, Array.isArray(payload.messages) ? payload.messages : [], lastMessageAt);
+        mergeCachedMessages(
+          key,
+          Array.isArray(payload.messages) ? payload.messages : [],
+          lastMessageAt,
+          { hasOlder: cached.hasOlder }
+        );
         return messageCache.get(key)?.messages || [];
       }
 
-      let allMessages = [];
-      let before = 0;
-      let pageCount = 0;
-      const seenFirstIds = new Set();
-
-      while (pageCount < MESSAGE_PRELOAD_PAGE_GUARD) {
-        const beforeSuffix = before > 0 ? `&before=${before}` : '';
-        const payload = await api(
-          `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&peek=1${beforeSuffix}`,
-          { method: 'GET' }
-        );
-        const page = Array.isArray(payload.messages) ? payload.messages : [];
-        if (!page.length) break;
-
-        allMessages = before > 0 ? [...page, ...allMessages] : page;
-        const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
-        if (page.length < pageSize) break;
-
-        const firstId = Number(page[0]?.id || 0);
-        if (!firstId || seenFirstIds.has(firstId)) break;
-        seenFirstIds.add(firstId);
-        before = firstId;
-        pageCount += 1;
-      }
-
+      const payload = await api(
+        `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&peek=1`,
+        { method: 'GET' }
+      );
       if (generation !== messageCacheGeneration) return [];
-      replaceCachedMessages(key, allMessages, lastMessageAt);
+      const page = Array.isArray(payload.messages) ? payload.messages : [];
+      const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+      replaceCachedMessages(key, page, lastMessageAt, { hasOlder: page.length >= pageSize });
       return messageCache.get(key)?.messages || [];
     })()
       .catch(() => cached?.messages || [])
@@ -194,10 +329,14 @@
   }
 
   function renderCachedConversation(contact) {
-    const cached = messageCache.get(messageCacheKey(contact?.username));
-    if (!cached) return false;
+    const username = messageCacheKey(contact?.username);
+    const cached = messageCache.get(username);
+    const transient = Array.from(pendingMessages.values())
+      .filter((entry) => messageCacheKey(entry?.username) === username)
+      .map((entry) => entry.message);
+    if (!cached && !transient.length) return false;
     lastMessageId = 0;
-    appendMessages(cached.messages, true);
+    appendMessages([...(cached?.messages || []), ...transient], true);
     return true;
   }
 
@@ -211,6 +350,16 @@
     const parsed = parseServerDate(value);
     if (!parsed) return '';
     return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function localServerTimestamp() {
+    return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  }
+
+  function createClientMessageId() {
+    if (globalThis.crypto?.randomUUID) return `chat-${globalThis.crypto.randomUUID()}`;
+    pendingSequence += 1;
+    return `chat-${Date.now().toString(36)}-${pendingSequence.toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   }
 
   function receiptLabel(message) {
@@ -236,7 +385,48 @@
 
   function updateMessageReceiptElement(element, message) {
     if (!element) return;
+    const time = element.querySelector('.portal-chat-message-time');
     let receipt = element.querySelector('.portal-chat-message-receipt');
+    let sendState = element.querySelector('.portal-chat-message-send-state');
+
+    element.classList.toggle('pending', Boolean(message?.pending));
+    element.classList.toggle('failed', Boolean(message?.failed));
+
+    if (message?.pending || message?.failed) {
+      receipt?.remove();
+      receipt = null;
+      if (!sendState) {
+        sendState = message.failed ? document.createElement('button') : document.createElement('span');
+        sendState.className = 'portal-chat-message-send-state';
+        time?.appendChild(sendState);
+      }
+      if (message.failed && sendState.tagName !== 'BUTTON') {
+        const replacement = document.createElement('button');
+        sendState.replaceWith(replacement);
+        sendState = replacement;
+      } else if (message.pending && sendState.tagName === 'BUTTON') {
+        const replacement = document.createElement('span');
+        sendState.replaceWith(replacement);
+        sendState = replacement;
+      }
+
+      if (message.failed) {
+        sendState.type = 'button';
+        sendState.className = 'portal-chat-message-send-state failed';
+        sendState.dataset.chatRetry = String(message.clientId || '');
+        sendState.textContent = 'Reenviar';
+        sendState.title = 'Falha ao enviar. Clique para tentar novamente.';
+        sendState.setAttribute('aria-label', 'Falha ao enviar. Reenviar mensagem.');
+      } else {
+        sendState.className = 'portal-chat-message-send-state pending';
+        sendState.textContent = '';
+        sendState.title = 'Enviando...';
+        sendState.setAttribute('aria-label', 'Enviando mensagem');
+      }
+      return;
+    }
+
+    sendState?.remove();
     const state = receiptLabel(message);
     if (!state) {
       receipt?.remove();
@@ -245,7 +435,7 @@
     if (!receipt) {
       receipt = document.createElement('span');
       receipt.className = 'portal-chat-message-receipt';
-      element.querySelector('.portal-chat-message-time')?.appendChild(receipt);
+      time?.appendChild(receipt);
     }
     receipt.className = `portal-chat-message-receipt ${state.state}`;
     receipt.replaceChildren(receiptSvg(state.double));
@@ -553,13 +743,87 @@
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
     if (replace) box.innerHTML = '';
     messages.forEach((message) => {
-      if (box.querySelector(`[data-message-id="${message.id}"]`)) return;
+      const id = Number(message?.id || 0);
+      const clientId = String(message?.clientId || '');
+      if (id && box.querySelector(`[data-message-id="${id}"]`)) return;
+      if (clientId) {
+        const pending = box.querySelector(`[data-client-id="${clientId}"]`);
+        if (pending) {
+          if (id > 0 && pendingMessages.has(clientId)) {
+            replacePendingMessage(clientId, message, message.toUser || activeContact?.username || '');
+          }
+          return;
+        }
+      }
       const element = messageElement(message);
       element.dataset.messageId = String(message.id || '');
+      if (clientId) element.dataset.clientId = clientId;
       box.appendChild(element);
-      lastMessageId = Math.max(lastMessageId, Number(message.id || 0));
+      lastMessageId = Math.max(lastMessageId, id);
     });
+    if (replace && activeContact) {
+      for (const entry of pendingMessages.values()) {
+        if (entry?.username !== activeContact.username) continue;
+        const clientId = String(entry.message?.clientId || '');
+        if (!clientId || box.querySelector(`[data-client-id="${clientId}"]`)) continue;
+        const element = messageElement(entry.message);
+        element.dataset.messageId = String(entry.message?.id || '');
+        element.dataset.clientId = clientId;
+        box.appendChild(element);
+      }
+    }
     if (replace || nearBottom) box.scrollTop = box.scrollHeight;
+  }
+
+  function prependMessages(messages) {
+    const box = document.getElementById('portalChatMessages');
+    if (!box || !Array.isArray(messages) || !messages.length) return;
+    const previousHeight = box.scrollHeight;
+    const fragment = document.createDocumentFragment();
+    messages.forEach((message) => {
+      const id = Number(message?.id || 0);
+      if (!id || box.querySelector(`[data-message-id="${id}"]`)) return;
+      const element = messageElement(message);
+      element.dataset.messageId = String(id);
+      if (message.clientId) element.dataset.clientId = String(message.clientId);
+      fragment.appendChild(element);
+    });
+    box.insertBefore(fragment, box.firstChild);
+    box.scrollTop += Math.max(0, box.scrollHeight - previousHeight);
+  }
+
+  async function loadOlderMessages() {
+    if (!activeContact || historyLoadPending) return;
+    const username = activeContact.username;
+    const key = messageCacheKey(username);
+    const cached = messageCache.get(key);
+    if (!cached?.hasOlder || !cached.messages?.length) return;
+    const before = Number(cached.messages[0]?.id || 0);
+    if (!before) return;
+
+    historyLoadPending = (async () => {
+      try {
+        const payload = await api(
+          `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&before=${before}&peek=1`,
+          { method: 'GET' }
+        );
+        if (!activeContact || activeContact.username !== username) return;
+        const page = Array.isArray(payload.messages) ? payload.messages : [];
+        const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+        replaceCachedMessages(
+          username,
+          [...page, ...(cached.messages || [])],
+          cached.lastMessageAt || '',
+          { hasOlder: page.length >= pageSize }
+        );
+        prependMessages(page);
+      } catch (_) {
+        // Histórico antigo é um carregamento auxiliar; a conversa atual continua utilizável.
+      }
+    })().finally(() => {
+      historyLoadPending = null;
+    });
+    return historyLoadPending;
   }
 
   async function loadMessages(initial = false) {
@@ -571,8 +835,14 @@
       if (!activeContact || activeContact.username !== username) return;
       const messages = Array.isArray(payload.messages) ? payload.messages : [];
       const contact = contacts.find((item) => item.username === username);
-      if (initial) replaceCachedMessages(username, messages, contact?.lastMessageAt || '');
-      else mergeCachedMessages(username, messages, contact?.lastMessageAt || '');
+      const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+      if (initial) {
+        replaceCachedMessages(username, messages, contact?.lastMessageAt || '', { hasOlder: messages.length >= pageSize });
+      } else {
+        mergeCachedMessages(username, messages, contact?.lastMessageAt || '', {
+          hasOlder: messageCache.get(messageCacheKey(username))?.hasOlder || false
+        });
+      }
       appendMessages(messages, initial);
       applyReceiptState(payload.receipt);
       if (contact) {
@@ -594,10 +864,19 @@
     stopMessagePolling();
     messageTimer = window.setInterval(() => {
       if (!document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) loadMessages(false);
-    }, 3500);
+    }, CHAT_ACTIVE_POLL_MS);
   }
 
-  function openConversation(contact) {
+  function saveActiveDraft() {
+    const input = document.getElementById('portalChatInput');
+    if (!activeContact || !input) return;
+    const value = String(input.value || '');
+    if (value) draftCache.set(activeContact.username, value);
+    else draftCache.delete(activeContact.username);
+  }
+
+  function openConversation(contact, options = {}) {
+    saveActiveDraft();
     activeContact = contact;
     lastMessageId = 0;
     document.getElementById('portalChatRoot')?.classList.add('open');
@@ -609,7 +888,10 @@
     const renderedFromMemory = renderCachedConversation(contact);
     void loadMessages(!renderedFromMemory);
     startMessagePolling();
-    document.getElementById('portalChatInput')?.focus();
+    const input = document.getElementById('portalChatInput');
+    if (input) input.value = draftCache.get(contact.username) || '';
+    queueChatSessionPersist();
+    if (options.focus !== false) input?.focus();
   }
 
   async function openChatByUsername(username) {
@@ -638,6 +920,7 @@
   }
 
   function closeConversation() {
+    saveActiveDraft();
     activeContact = null;
     lastMessageId = 0;
     stopMessagePolling();
@@ -650,33 +933,125 @@
     if (name) name.textContent = 'Chat interno';
     if (status) status.textContent = 'Comunicação entre usuários do portal';
     if (profile) profile.hidden = true;
+    queueChatSessionPersist();
     loadContacts();
   }
 
-  async function sendMessage() {
-    const input = document.getElementById('portalChatInput');
-    const send = document.getElementById('portalChatSend');
-    const body = String(input?.value || '').trim();
-    if (!body || !activeContact) return;
-    if (send) send.disabled = true;
+  function pendingElement(clientId) {
+    if (!clientId) return null;
+    return document.querySelector(`#portalChatMessages [data-client-id="${clientId}"]`);
+  }
+
+  function replacePendingMessage(clientId, confirmed, username) {
+    pendingMessages.delete(clientId);
+    const existing = pendingElement(clientId);
+    const confirmedId = Number(confirmed?.id || 0);
+    if (existing) {
+      const replacement = messageElement(confirmed);
+      replacement.dataset.messageId = String(confirmedId || '');
+      if (confirmed.clientId) replacement.dataset.clientId = String(confirmed.clientId);
+      existing.replaceWith(replacement);
+      lastMessageId = Math.max(lastMessageId, confirmedId);
+    } else if (activeContact?.username === username) {
+      appendMessages([confirmed], false);
+    }
+    const contact = contacts.find((item) => item.username === username);
+    mergeCachedMessages(
+      username,
+      [confirmed],
+      confirmed.sentAt || contact?.lastMessageAt || '',
+      { hasOlder: messageCache.get(messageCacheKey(username))?.hasOlder || false }
+    );
+  }
+
+  function updatePendingMessage(clientId, values = {}) {
+    const entry = pendingMessages.get(clientId);
+    if (!entry) return null;
+    Object.assign(entry.message, values);
+    const element = pendingElement(clientId);
+    if (element) updateMessageReceiptElement(element, entry.message);
+    return entry;
+  }
+
+  async function transmitPendingMessage(clientId) {
+    const entry = pendingMessages.get(clientId);
+    if (!entry) return false;
+    const { username, message } = entry;
+    updatePendingMessage(clientId, { pending: true, failed: false });
+
     try {
       const payload = await api('/api/chat/messages', {
         method: 'POST',
-        body: JSON.stringify({ to: activeContact.username, body })
+        keepalive: true,
+        body: JSON.stringify({
+          to: username,
+          body: message.body,
+          clientId
+        })
       });
-      if (input) input.value = '';
-      if (payload.message) {
-        appendMessages([payload.message], false);
-        mergeCachedMessages(activeContact.username, [payload.message], payload.message.sentAt || activeContact.lastMessageAt || '');
-      }
-      window.PortalInteractions?.notify?.('success', 'Mensagem enviada.', send);
+      if (!payload.message) throw new Error('O servidor não confirmou a mensagem.');
+      replacePendingMessage(clientId, payload.message, username);
+      queueChatSessionPersist();
       loadContacts();
+      return true;
     } catch (error) {
-      showStatus(error.message || 'Não foi possível enviar a mensagem.');
-    } finally {
-      if (send) send.disabled = false;
-      input?.focus();
+      updatePendingMessage(clientId, { pending: false, failed: true });
+      showStatus(error.message || 'Não foi possível enviar a mensagem. Você pode tentar novamente.');
+      return false;
     }
+  }
+
+  function retryPendingMessage(clientId) {
+    const normalized = String(clientId || '');
+    if (!pendingMessages.has(normalized)) return;
+    void transmitPendingMessage(normalized);
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('portalChatInput');
+    const body = String(input?.value || '').trim();
+    const username = activeContact?.username || '';
+    if (!body || !username) return;
+
+    pendingSequence += 1;
+    const clientId = createClientMessageId();
+    const message = {
+      id: -(Date.now() * 100 + pendingSequence),
+      clientId,
+      fromUser: currentUser?.username || '',
+      toUser: username,
+      body,
+      sentAt: localServerTimestamp(),
+      deliveredAt: null,
+      readAt: null,
+      pending: true,
+      failed: false
+    };
+
+    pendingMessages.set(clientId, { username, message });
+    if (input) input.value = '';
+    draftCache.delete(username);
+    appendMessages([message], false);
+    queueChatSessionPersist();
+    void transmitPendingMessage(clientId);
+    input?.focus();
+  }
+
+  function restoreChatUiFromSession(snapshot) {
+    if (!snapshot?.panelOpen) return;
+    const root = document.getElementById('portalChatRoot');
+    root?.classList.add('open');
+    void markChatDelivered(true);
+    const username = String(snapshot.activeUsername || '');
+    const contact = contacts.find((item) => item.username === username);
+    if (contact) {
+      openConversation(contact, { focus: false });
+      return;
+    }
+    document.getElementById('portalChatConversationView')?.classList.remove('active');
+    document.getElementById('portalChatContactsView')?.classList.add('active');
+    document.getElementById('portalChatBack').hidden = true;
+    queueChatSessionPersist();
   }
 
   function mount() {
@@ -726,6 +1101,7 @@
     document.getElementById('portalChatLauncher')?.addEventListener('click', () => {
       root.classList.add('open');
       void markChatDelivered(true);
+      queueChatSessionPersist();
       updateNotificationUi();
       if (notificationSupported() && Notification.permission === 'default') requestNotificationPermission();
       loadContacts();
@@ -733,6 +1109,7 @@
     document.getElementById('portalChatClose')?.addEventListener('click', () => {
       root.classList.remove('open');
       closeConversation();
+      queueChatSessionPersist(0);
     });
     document.getElementById('portalChatBack')?.addEventListener('click', closeConversation);
     document.getElementById('portalChatEnableNotifications')?.addEventListener('click', requestNotificationPermission);
@@ -744,7 +1121,18 @@
       const contact = contacts.find((item) => item.username === username);
       if (contact) openConversation(contact);
     });
+    document.getElementById('portalChatMessages')?.addEventListener('scroll', (event) => {
+      if (Number(event.currentTarget?.scrollTop || 0) < 120) void loadOlderMessages();
+    }, { passive: true });
+    document.getElementById('portalChatMessages')?.addEventListener('click', (event) => {
+      const retry = event.target.closest?.('[data-chat-retry]');
+      if (retry?.dataset.chatRetry) retryPendingMessage(retry.dataset.chatRetry);
+    });
     document.getElementById('portalChatSend')?.addEventListener('click', sendMessage);
+    document.getElementById('portalChatInput')?.addEventListener('input', () => {
+      saveActiveDraft();
+      queueChatSessionPersist();
+    });
     document.getElementById('portalChatInput')?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
@@ -770,12 +1158,24 @@
     currentUser = await auth.me({ allowCached: true }).catch(() => auth.getCachedUser?.() || null);
     if (!currentUser || !CHAT_ROLES.has(currentUser.role)) return;
     mount();
+
+    const params = new URLSearchParams(location.search);
+    const chatFromUrl = params.get('chat');
+    const chatHandleFromUrl = params.get('chatHandle');
+    const snapshotPromise = getChatSessionSnapshot();
+    const heartbeatPromise = heartbeat(true);
+
     if (notificationSupported() && Notification.permission === 'granted') {
       await ensureNotificationWorker();
       window.PortalPWA?.syncPush?.({ createIfPermitted: true });
     }
-    await heartbeat(true);
+
+    const snapshot = await snapshotPromise;
+    hydrateChatSessionSnapshot(snapshot);
+    await heartbeatPromise;
     await loadContacts();
+
+    if (!chatFromUrl && !chatHandleFromUrl) restoreChatUiFromSession(snapshot);
 
     heartbeatTimer = window.setInterval(() => heartbeat(false), 25000);
     contactsTimer = window.setInterval(loadContacts, 12000);
@@ -794,9 +1194,6 @@
       }
     });
 
-    const params = new URLSearchParams(location.search);
-    const chatFromUrl = params.get('chat');
-    const chatHandleFromUrl = params.get('chatHandle');
     if (chatFromUrl || chatHandleFromUrl) {
       if (chatHandleFromUrl) openChatByHandle(chatHandleFromUrl);
       else openChatByUsername(chatFromUrl);
@@ -809,11 +1206,17 @@
     }
   }
 
-  window.addEventListener('pagehide', clearMessageMemory);
-  window.addEventListener('portal:session-cleared', clearMessageMemory);
+  window.addEventListener('pagehide', () => {
+    saveActiveDraft();
+    if (!persistChatSessionSnapshotNow()) void persistChatSessionSnapshot();
+  });
+  window.addEventListener('portal:session-cleared', () => {
+    clearMessageMemory();
+    clearChatSessionSnapshot();
+  });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-receipts-1',
+    version: '20261002-fluid-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

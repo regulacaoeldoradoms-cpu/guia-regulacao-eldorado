@@ -74,35 +74,60 @@ Ao retornar à lista, ele deve ser ocultado novamente.
 - Nenhum conteúdo de conversa, credencial ou dado protegido deve ser versionado no GitHub.
 - Alterações futuras em perfis profissionais devem atualizar também os testes de `validate-portal-chat.yml`.
 
-## Pré-carregamento privado das conversas
+## Pré-carregamento privado, continuidade entre módulos e histórico
 
-Depois que a lista de contatos autorizados é carregada, o cliente inicia em segundo
-plano o pré-carregamento paginado do histórico da conversa. O primeiro lote mantém a
-janela de 120 mensagens já usada pelo chat e, quando houver conteúdo anterior, o
-cliente busca os lotes mais antigos em sequência até completar o histórico disponível.
-O objetivo é que, ao tocar em uma pessoa, as mensagens já estejam na memória da
-página e apareçam imediatamente.
+Decisão permanente atualizada em 02/10/2026: o chat deve priorizar abertura imediata e
+continuidade entre módulos sem persistir o conteúdo das conversas em armazenamento
+durável do navegador.
 
-Regras permanentes desse comportamento:
+O carregamento passa a funcionar em camadas:
 
-- o pré-carregamento usa no máximo três requisições concorrentes para não disputar
-  recursos com a navegação principal;
-- a rota protegida de mensagens aceita `peek=1`: ela revalida sessão e autorização,
-  entrega o conteúdo permitido, mas **não** marca mensagens como lidas;
-- somente a abertura efetiva da conversa mantém o comportamento de leitura e marca
-  as mensagens recebidas como lidas;
-- o conteúdo pré-carregado fica apenas em memória JavaScript da página; não é
-  gravado em `localStorage`, `sessionStorage`, Cache Storage nem no cache estático
-  do Service Worker;
-- a memória é descartada ao sair da página ou quando a sessão é limpa;
-- o histórico anterior é buscado em páginas de 120 mensagens, com trava defensiva
-  contra paginação infinita; novas mensagens são incorporadas ao snapshot em segundo
-  plano quando `lastMessageAt` muda, sem refazer todo o histórico;
-- qualquer falha de pré-carregamento é silenciosa e a conversa continua podendo ser
-  carregada normalmente sob demanda.
+- depois da lista autorizada de contatos, o cliente pré-carrega somente a página mais
+  recente de cada conversa, com até 120 mensagens, em no máximo três requisições
+  concorrentes;
+- páginas antigas deixam de ser carregadas integralmente para todos os contatos no
+  início. Quando o usuário rola uma conversa para o topo, o histórico anterior é
+  buscado em páginas de 120 mensagens e inserido sem deslocar a leitura;
+- mensagens já confirmadas, rascunhos e o estado visual do painel podem ser
+  compartilhados entre as páginas autenticadas por uma memória privada do Service
+  Worker. Isso permite trocar de Agenda, Telemedicina, Documentos, Guia Médico e
+  demais módulos sem reconstruir o chat do zero;
+- essa memória é separada por um hash derivado da sessão autenticada, possui validade
+  limitada e tamanho defensivo, e nunca é gravada em `localStorage`,
+  `sessionStorage`, IndexedDB ou Cache Storage;
+- o Service Worker pode ser encerrado pelo navegador. Portanto essa memória é uma
+  aceleração, não uma fonte de verdade. Se ela desaparecer, o D1 continua sendo a
+  fonte autoritativa e o cliente recupera apenas a página recente, sincronizando o
+  restante sob demanda;
+- contatos não são reaproveitados para autorização. A lista de contatos sempre é
+  validada novamente pelo Worker antes que uma conversa restaurada possa ser aberta;
+- `peek=1` continua sendo usado para pré-carregamento e histórico antigo sem marcar
+  mensagens como lidas;
+- a memória privada é limpa quando a sessão é encerrada.
 
-Esse cache transitório nunca substitui a autorização do Worker. O frontend não pode
-usar uma cópia antiga para liberar um contato que deixou de ser autorizado.
+Esse desenho preserva a regra de segurança: cache local nunca concede acesso a um
+contato e nunca substitui a autorização do Worker.
+
+## Envio otimista e tolerância a falhas
+
+Decisão permanente registrada em 02/10/2026: ao pressionar **Enviar** ou Enter, a
+mensagem deve aparecer imediatamente no balão, antes da resposta da rede.
+
+Enquanto a requisição está pendente, o balão mostra um indicador discreto de envio.
+Se a operação falhar, o próprio balão oferece **Reenviar**. O campo de texto é liberado
+imediatamente, permitindo enviar novas mensagens sem aguardar a anterior.
+
+Cada tentativa recebe um `client_id` gerado no navegador. O backend mantém esse
+identificador único por remetente, tornando reenvios idempotentes: se a rede cair
+depois de o servidor já ter gravado a mensagem, a nova tentativa recupera a mensagem
+existente em vez de criar uma duplicata. Requisições de envio usam `keepalive` para
+aumentar a chance de conclusão durante a troca de módulo.
+
+Mensagens ainda pendentes ou com falha não entram no snapshot compartilhado entre
+módulos. Somente mensagens confirmadas pelo backend são reaproveitadas.
+
+Os recibos mantêm a semântica definida abaixo: o indicador de envio pendente não
+substitui o recibo de recebimento nem o de visualização.
 
 ## Recibos de recebimento e visualização
 

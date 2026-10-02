@@ -50,6 +50,7 @@ async function ensureSchema(env) {
     from_user TEXT NOT NULL,
     to_user TEXT NOT NULL,
     body TEXT NOT NULL,
+    client_id TEXT,
     sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     delivered_at TEXT,
     read_at TEXT
@@ -63,9 +64,18 @@ async function ensureSchema(env) {
       if (!/duplicate column/i.test(String(error?.message || error))) throw error;
     }
   }
+  if (!messageColumnNames.has('client_id')) {
+    try {
+      await env.AUTH_DB.prepare('ALTER TABLE portal_chat_messages ADD COLUMN client_id TEXT').run();
+    } catch (error) {
+      if (!/duplicate column/i.test(String(error?.message || error))) throw error;
+    }
+  }
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_conversation ON portal_chat_messages(from_user, to_user, id)').run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_unread ON portal_chat_messages(to_user, read_at, from_user)').run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_undelivered ON portal_chat_messages(to_user, delivered_at, from_user)').run();
+  await env.AUTH_DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_client_message
+    ON portal_chat_messages(from_user, client_id) WHERE client_id IS NOT NULL`).run();
   return true;
 }
 
@@ -254,7 +264,7 @@ async function markChatDelivered(env, username) {
 
 async function messages(env, current, other, afterId, beforeId = 0) {
   if (afterId > 0) {
-    const result = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
+    const result = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body, client_id AS clientId,
         sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt FROM portal_chat_messages
       WHERE id > ? AND ((from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?))
       ORDER BY id ASC LIMIT 200`).bind(afterId, current, other, other, current).all();
@@ -262,7 +272,7 @@ async function messages(env, current, other, afterId, beforeId = 0) {
   }
   if (beforeId > 0) {
     const result = await env.AUTH_DB.prepare(`SELECT * FROM (
-        SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
+        SELECT id, from_user AS fromUser, to_user AS toUser, body, client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
         FROM portal_chat_messages
         WHERE id < ? AND ((from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?))
         ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
@@ -270,7 +280,7 @@ async function messages(env, current, other, afterId, beforeId = 0) {
     return result.results || [];
   }
   const result = await env.AUTH_DB.prepare(`SELECT * FROM (
-      SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
+      SELECT id, from_user AS fromUser, to_user AS toUser, body, client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
       FROM portal_chat_messages WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)
       ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
     ) ORDER BY id ASC`).bind(current, other, other, current).all();
@@ -332,19 +342,46 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const body = await request.json().catch(() => ({}));
     const to = normalizeUsername(body.to);
     const message = String(body.body || '').trim();
+    const clientId = String(body.clientId || '').trim().slice(0, 96);
     if (!message) return json({ error: 'Digite uma mensagem.' }, 400, origin);
     if (message.length > MESSAGE_LIMIT) return json({ error: `A mensagem pode ter no máximo ${MESSAGE_LIMIT} caracteres.` }, 400, origin);
+    if (clientId && !/^chat-[a-z0-9-]{12,90}$/i.test(clientId)) return json({ error: 'Identificador de envio inválido.' }, 400, origin);
     if (to === username) return json({ error: 'Escolha outro usuário para conversar.' }, 400, origin);
     if (!(await chatContact(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
-    const inserted = await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body) VALUES (?, ?, ?)')
-      .bind(username, to, message).run();
-    const id = Number(inserted.meta?.last_row_id || 0);
-    const row = id ? await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-      sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
-    const pushTask = notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 }));
+
+    let row = null;
+    let created = true;
+    if (clientId) {
+      row = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
+        client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
+        FROM portal_chat_messages WHERE from_user = ? AND client_id = ? LIMIT 1`).bind(username, clientId).first();
+      if (row) created = false;
+    }
+
+    if (!row) {
+      try {
+        const inserted = clientId
+          ? await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body, client_id) VALUES (?, ?, ?, ?)')
+            .bind(username, to, message, clientId).run()
+          : await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body) VALUES (?, ?, ?)')
+            .bind(username, to, message).run();
+        const id = Number(inserted.meta?.last_row_id || 0);
+        row = id ? await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
+          client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
+          FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
+      } catch (error) {
+        if (!clientId || !/unique|constraint/i.test(String(error?.message || error))) throw error;
+        row = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
+          client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
+          FROM portal_chat_messages WHERE from_user = ? AND client_id = ? LIMIT 1`).bind(username, clientId).first();
+        created = false;
+      }
+    }
+
+    const pushTask = created ? notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 })) : Promise.resolve({ attempted: 0, accepted: 0 });
     if (executionContext?.waitUntil) executionContext.waitUntil(pushTask);
     else await pushTask;
-    return json({ message: row || { id, fromUser: username, toUser: to, body: message } }, 201, origin);
+    return json({ message: row || { id: 0, fromUser: username, toUser: to, body: message, clientId }, duplicate: !created }, created ? 201 : 200, origin);
   }
 
   return json({ error: 'Rota do chat não encontrada.' }, 404, origin);
