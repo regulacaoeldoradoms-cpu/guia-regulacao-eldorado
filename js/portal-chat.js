@@ -318,10 +318,14 @@
   }
 
   function renderCachedConversation(contact) {
-    const cached = messageCache.get(messageCacheKey(contact?.username));
-    if (!cached) return false;
+    const username = messageCacheKey(contact?.username);
+    const cached = messageCache.get(username);
+    const transient = Array.from(pendingMessages.values())
+      .filter((entry) => messageCacheKey(entry?.username) === username)
+      .map((entry) => entry.message);
+    if (!cached && !transient.length) return false;
     lastMessageId = 0;
-    appendMessages(cached.messages, true);
+    appendMessages([...(cached?.messages || []), ...transient], true);
     return true;
   }
 
@@ -746,6 +750,17 @@
       box.appendChild(element);
       lastMessageId = Math.max(lastMessageId, id);
     });
+    if (replace && activeContact) {
+      for (const entry of pendingMessages.values()) {
+        if (entry?.username !== activeContact.username) continue;
+        const clientId = String(entry.message?.clientId || '');
+        if (!clientId || box.querySelector(`[data-client-id="${clientId}"]`)) continue;
+        const element = messageElement(entry.message);
+        element.dataset.messageId = String(entry.message?.id || '');
+        element.dataset.clientId = clientId;
+        box.appendChild(element);
+      }
+    }
     if (replace || nearBottom) box.scrollTop = box.scrollHeight;
   }
 
