@@ -56,6 +56,13 @@ HTTP permanece como fallback. Histórico antigo é carregado sob demanda e leitu
 protegida `peek=1` não altera o estado de não lida. A autorização continua sendo
 revalidada no backend em toda operação protegida.
 
+Após o incidente de cota D1 de 02/10/2026, o Chat passou a tratar orçamento de leitura
+como requisito arquitetural: não pode refazer a malha profissional pela consulta
+social, não pode resolver handles em N+1, não pode reconstruir contatos no upgrade
+WebSocket e não deve pré-carregar o histórico de todos os contatos. Reconciliações
+periódicas são espaçadas e coalescidas; trocas rápidas de módulo reutilizam snapshot
+efêmero do Service Worker sem transformar esse snapshot em fonte de autorização.
+
 A política completa, os limites e a validação estão em
 `docs/PORTAL-DESEMPENHO-CACHE-V1.md`.
 
