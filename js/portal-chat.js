@@ -1055,6 +1055,8 @@
     const divider = document.createElement('div');
     divider.className = 'portal-chat-unread-divider';
     divider.dataset.chatUnreadDivider = 'true';
+    divider.setAttribute('role', 'separator');
+    divider.setAttribute('aria-label', 'Início das novas mensagens');
     const label = document.createElement('span');
     label.textContent = 'Novas mensagens';
     divider.appendChild(label);
@@ -1438,7 +1440,7 @@
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
-          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><span class="portal-chat-typing" id="portalChatTyping" hidden>digitando…</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
+          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><span class="portal-chat-typing" id="portalChatTyping" aria-live="polite" hidden>digitando…</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
           <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">${ICONS.close}</button>
         </header>
         <div class="portal-chat-body">
