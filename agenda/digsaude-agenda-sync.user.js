@@ -204,83 +204,101 @@
       .find((node) => normalizeSearch(node.textContent).includes('ver dados do paciente')) || null;
   }
 
+  function clearBridgeReadyWait() {
+    if (bridgeReadyTimer) window.clearTimeout(bridgeReadyTimer);
+    bridgeReadyTimer = null;
+    bridgeReadyResolve = null;
+    bridgeReadyReject = null;
+  }
+
+  function waitForBridgeReady() {
+    clearBridgeReadyWait();
+    return new Promise((resolve, reject) => {
+      bridgeReadyResolve = () => {
+        clearBridgeReadyWait();
+        resolve();
+      };
+      bridgeReadyReject = (error) => {
+        clearBridgeReadyWait();
+        reject(error);
+      };
+      bridgeReadyTimer = window.setTimeout(() => {
+        bridgeReadyReject?.(new Error('A ponte do Portal não respondeu a tempo.'));
+      }, BRIDGE_READY_TIMEOUT_MS);
+    });
+  }
+
+  async function navigateContactWindow(targetUrl) {
+    if (!portalWindow || portalWindow.closed) throw new Error('A janela auxiliar foi fechada.');
+    try {
+      portalWindow.location = targetUrl;
+    } catch (_) {
+      throw new Error('Não foi possível abrir a consulta na janela auxiliar.');
+    }
+
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
+      if (!portalWindow || portalWindow.closed) throw new Error('A janela auxiliar foi fechada.');
+      try {
+        const currentUrl = new URL(portalWindow.location.href);
+        const root = portalWindow.document;
+        if (
+          currentUrl.origin === window.location.origin
+          && root
+          && (root.readyState === 'interactive' || root.readyState === 'complete')
+        ) {
+          return { root, frameWindow: portalWindow };
+        }
+      } catch (_) {}
+      await new Promise((resolve) => window.setTimeout(resolve, 160));
+    }
+    throw new Error('Tempo excedido ao abrir a consulta.');
+  }
+
   async function extractContact(sourceId) {
     const cached = contactCache.get(sourceId);
     if (cached && cached.phone && Date.now() - cached.checkedAt < CONTACT_CACHE_TTL_MS) return cached.phone;
 
-    const frame = document.createElement('iframe');
-    frame.setAttribute('aria-hidden', 'true');
-    frame.tabIndex = -1;
-    frame.style.cssText = [
-      'position:fixed',
-      'left:-10000px',
-      'top:-10000px',
-      'width:8px',
-      'height:8px',
-      'opacity:.01',
-      'pointer-events:none',
-      'border:0'
-    ].join(';');
+    const { root, frameWindow } = await navigateContactWindow(consultationUrl(sourceId));
+    if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
+      throw new Error('A sessão do DigSaúde expirou.');
+    }
 
-    const loaded = new Promise((resolve, reject) => {
-      const timer = window.setTimeout(() => reject(new Error('Tempo excedido ao abrir a consulta.')), CONTACT_FRAME_TIMEOUT_MS);
-      frame.addEventListener('load', () => {
-        window.clearTimeout(timer);
-        resolve();
-      }, { once: true });
-    });
+    let phone = phoneFromRoot(root);
+    if (phone) {
+      contactCache.set(sourceId, { phone, checkedAt: Date.now() });
+      return phone;
+    }
 
-    frame.src = consultationUrl(sourceId);
-    document.body.appendChild(frame);
-
-    try {
-      await loaded;
-      const frameWindow = frame.contentWindow;
-      const root = frame.contentDocument;
-      if (!frameWindow || !root) throw new Error('A consulta não ficou disponível para leitura.');
-
+    const startedAt = Date.now();
+    let clicked = false;
+    while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
       if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
         throw new Error('A sessão do DigSaúde expirou.');
       }
 
-      let phone = phoneFromRoot(root);
+      phone = phoneFromRoot(root);
       if (phone) {
         contactCache.set(sourceId, { phone, checkedAt: Date.now() });
         return phone;
       }
 
-      const startedAt = Date.now();
-      let clicked = false;
-      while (Date.now() - startedAt < CONTACT_FRAME_TIMEOUT_MS) {
-        if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
-          throw new Error('A sessão do DigSaúde expirou.');
+      if (!clicked) {
+        const action = patientAction(root);
+        if (action) {
+          action.click();
+          clicked = true;
         }
-
-        phone = phoneFromRoot(root);
-        if (phone) {
-          contactCache.set(sourceId, { phone, checkedAt: Date.now() });
-          return phone;
-        }
-
-        if (!clicked) {
-          const action = patientAction(root);
-          if (action) {
-            action.click();
-            clicked = true;
-          }
-        }
-
-        await new Promise((resolve) => window.setTimeout(resolve, 180));
       }
 
-      throw new Error(
-        clicked
-          ? 'O telefone não apareceu após abrir os dados do paciente.'
-          : 'A ação Ver Dados do Paciente não foi localizada.'
-      );
-    } finally {
-      frame.remove();
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
     }
+
+    throw new Error(
+      clicked
+        ? 'O telefone não apareceu após abrir os dados do paciente.'
+        : 'A ação Ver Dados do Paciente não foi localizada.'
+    );
   }
 
   async function enrichSnapshotContacts(snapshot) {
