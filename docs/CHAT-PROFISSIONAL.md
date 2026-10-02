@@ -104,6 +104,31 @@ Regras permanentes desse comportamento:
 Esse cache transitório nunca substitui a autorização do Worker. O frontend não pode
 usar uma cópia antiga para liberar um contato que deixou de ser autorizado.
 
+## Recibos de recebimento e visualização
+
+Decisão permanente registrada em 02/10/2026: mensagens enviadas pelo chat exibem
+recibos progressivos para o remetente, sem transformar o simples pré-carregamento em
+leitura.
+
+Estados definidos:
+
+- **sem marca**: a mensagem foi enviada, mas o destinatário ainda não abriu a área do chat;
+- **✓**: o destinatário abriu a área do chat. Esse estado representa recebimento no chat,
+  mesmo que ele não tenha aberto a conversa específica;
+- **✓✓ verde**: o destinatário abriu a conversa específica. Esse estado representa
+  visualização da conversa.
+
+A implementação mantém `delivered_at` separado de `read_at` em
+`portal_chat_messages`. A abertura do painel chama a rota autenticada
+`POST /api/chat/delivery`, que marca como recebidas as mensagens destinadas à conta.
+A leitura continua ocorrendo somente na abertura efetiva da conversa; requisições de
+pré-carregamento com `peek=1` não alteram nenhum recibo de leitura.
+
+Para mensagens que chegam enquanto o painel já está aberto, o cliente sincroniza o
+estado de recebimento durante as atualizações normais da lista. O remetente recebe o
+estado consolidado da conversa nas consultas de mensagens e atualiza os indicadores
+sem recarregar o histórico completo.
+
 ## Integração com o perfil social
 
 O cabeçalho de uma conversa ativa apresenta `Ver perfil`. O cliente usa o username

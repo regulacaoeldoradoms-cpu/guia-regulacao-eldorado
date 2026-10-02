@@ -51,10 +51,21 @@ async function ensureSchema(env) {
     to_user TEXT NOT NULL,
     body TEXT NOT NULL,
     sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    delivered_at TEXT,
     read_at TEXT
   )`).run();
+  const messageColumns = await env.AUTH_DB.prepare('PRAGMA table_info(portal_chat_messages)').all();
+  const messageColumnNames = new Set((messageColumns.results || []).map((column) => String(column.name || '')));
+  if (!messageColumnNames.has('delivered_at')) {
+    try {
+      await env.AUTH_DB.prepare('ALTER TABLE portal_chat_messages ADD COLUMN delivered_at TEXT').run();
+    } catch (error) {
+      if (!/duplicate column/i.test(String(error?.message || error))) throw error;
+    }
+  }
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_conversation ON portal_chat_messages(from_user, to_user, id)').run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_unread ON portal_chat_messages(to_user, read_at, from_user)').run();
+  await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_undelivered ON portal_chat_messages(to_user, delivered_at, from_user)').run();
   return true;
 }
 
@@ -223,17 +234,35 @@ async function chatContact(env, currentUser, targetUsername) {
   return null;
 }
 
+async function receiptState(env, current, other) {
+  const row = await env.AUTH_DB.prepare(`SELECT
+      COALESCE(MAX(CASE WHEN from_user = ? AND to_user = ? AND delivered_at IS NOT NULL THEN id END), 0) AS deliveredThroughId,
+      COALESCE(MAX(CASE WHEN from_user = ? AND to_user = ? AND read_at IS NOT NULL THEN id END), 0) AS readThroughId
+    FROM portal_chat_messages`).bind(current, other, current, other).first();
+  return {
+    deliveredThroughId: Number(row?.deliveredThroughId || 0),
+    readThroughId: Number(row?.readThroughId || 0)
+  };
+}
+
+async function markChatDelivered(env, username) {
+  const result = await env.AUTH_DB.prepare(`UPDATE portal_chat_messages
+    SET delivered_at = CURRENT_TIMESTAMP
+    WHERE to_user = ? AND delivered_at IS NULL`).bind(username).run();
+  return Number(result.meta?.changes || 0);
+}
+
 async function messages(env, current, other, afterId, beforeId = 0) {
   if (afterId > 0) {
     const result = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-        sent_at AS sentAt, read_at AS readAt FROM portal_chat_messages
+        sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt FROM portal_chat_messages
       WHERE id > ? AND ((from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?))
       ORDER BY id ASC LIMIT 200`).bind(afterId, current, other, other, current).all();
     return result.results || [];
   }
   if (beforeId > 0) {
     const result = await env.AUTH_DB.prepare(`SELECT * FROM (
-        SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, read_at AS readAt
+        SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
         FROM portal_chat_messages
         WHERE id < ? AND ((from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?))
         ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
@@ -241,7 +270,7 @@ async function messages(env, current, other, afterId, beforeId = 0) {
     return result.results || [];
   }
   const result = await env.AUTH_DB.prepare(`SELECT * FROM (
-      SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, read_at AS readAt
+      SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
       FROM portal_chat_messages WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)
       ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
     ) ORDER BY id ASC`).bind(current, other, other, current).all();
@@ -276,6 +305,11 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     return json({ users: await contacts(env, { ...user, username }) }, 200, origin);
   }
 
+  if (url.pathname === '/api/chat/delivery' && request.method === 'POST') {
+    const delivered = await markChatDelivered(env, username);
+    return json({ ok: true, delivered }, 200, origin);
+  }
+
   if (url.pathname === '/api/chat/messages' && request.method === 'GET') {
     const otherUsername = normalizeUsername(url.searchParams.get('with'));
     const other = await chatContact(env, { ...user, username }, otherUsername);
@@ -285,10 +319,13 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const peekOnly = url.searchParams.get('peek') === '1';
     const rows = await messages(env, username, otherUsername, afterId, beforeId);
     if (!peekOnly) {
-      await env.AUTH_DB.prepare(`UPDATE portal_chat_messages SET read_at = CURRENT_TIMESTAMP
+      await env.AUTH_DB.prepare(`UPDATE portal_chat_messages
+        SET delivered_at = COALESCE(delivered_at, CURRENT_TIMESTAMP),
+            read_at = CURRENT_TIMESTAMP
         WHERE to_user = ? AND from_user = ? AND read_at IS NULL`).bind(username, otherUsername).run();
     }
-    return json({ messages: rows, pageSize: MESSAGE_HISTORY_PAGE_SIZE }, 200, origin);
+    const receipt = await receiptState(env, username, otherUsername);
+    return json({ messages: rows, pageSize: MESSAGE_HISTORY_PAGE_SIZE, receipt }, 200, origin);
   }
 
   if (url.pathname === '/api/chat/messages' && request.method === 'POST') {
@@ -303,7 +340,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
       .bind(username, to, message).run();
     const id = Number(inserted.meta?.last_row_id || 0);
     const row = id ? await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-      sent_at AS sentAt, read_at AS readAt FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
+      sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
     const pushTask = notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 }));
     if (executionContext?.waitUntil) executionContext.waitUntil(pushTask);
     else await pushTask;
