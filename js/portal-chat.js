@@ -19,14 +19,22 @@
   let notificationWorker = null;
   let deliverySyncPending = null;
   let lastDeliverySyncAt = 0;
+  let chatSessionPersistTimer = null;
+  let restoredChatSession = null;
+  let historyLoadPending = null;
+  let pendingSequence = 0;
   const unreadSnapshot = new Map();
   const messageCache = new Map();
   const messagePreloadRequests = new Map();
+  const pendingMessages = new Map();
+  const draftCache = new Map();
   let messageCacheGeneration = 0;
   let messagePreloadSweep = null;
   const MESSAGE_PRELOAD_CONCURRENCY = 3;
   const MESSAGE_HISTORY_PAGE_SIZE = 120;
   const MESSAGE_PRELOAD_PAGE_GUARD = 100;
+  const CHAT_ACTIVE_POLL_MS = 2500;
+  const CHAT_SESSION_GET_TIMEOUT_MS = 550;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
 
   const escapeText = (value) => String(value || '');
@@ -66,38 +74,168 @@
     messageCacheGeneration += 1;
     messageCache.clear();
     messagePreloadRequests.clear();
+    pendingMessages.clear();
+    draftCache.clear();
+    restoredChatSession = null;
   }
 
   function normalizeMessageList(messages) {
     const byId = new Map();
     for (const message of Array.isArray(messages) ? messages : []) {
       const id = Number(message?.id || 0);
-      if (!id) continue;
+      if (!Number.isInteger(id) || id <= 0) continue;
       byId.set(id, message);
     }
     return Array.from(byId.values()).sort((first, second) => Number(first.id || 0) - Number(second.id || 0));
   }
 
-  function replaceCachedMessages(username, messages, lastMessageAt = '') {
+  function chatAuthorization() {
+    const token = String(auth.getToken?.() || '');
+    return token ? `Bearer ${token}` : '';
+  }
+
+  function activeServiceWorker(registration) {
+    return navigator.serviceWorker?.controller
+      || registration?.active
+      || registration?.waiting
+      || registration?.installing
+      || null;
+  }
+
+  function snapshotForServiceWorker() {
+    const root = document.getElementById('portalChatRoot');
+    const input = document.getElementById('portalChatInput');
+    if (activeContact && input) {
+      const draft = String(input.value || '');
+      if (draft) draftCache.set(activeContact.username, draft);
+      else draftCache.delete(activeContact.username);
+    }
+    return {
+      panelOpen: Boolean(root?.classList.contains('open')),
+      activeUsername: activeContact?.username || '',
+      conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
+        username,
+        lastMessageAt: entry?.lastMessageAt || '',
+        loadedAt: Number(entry?.loadedAt || 0),
+        hasOlder: Boolean(entry?.hasOlder),
+        messages: entry?.messages || []
+      })),
+      drafts: Array.from(draftCache.entries()).map(([username, body]) => ({ username, body }))
+    };
+  }
+
+  async function persistChatSessionSnapshot() {
+    if (!('serviceWorker' in navigator)) return false;
+    const authorization = chatAuthorization();
+    if (!authorization) return false;
+    try {
+      const registration = await ensureNotificationWorker();
+      const worker = activeServiceWorker(registration);
+      if (!worker) return false;
+      worker.postMessage({
+        type: 'PORTAL_CHAT_SESSION_PUT',
+        authorization,
+        snapshot: snapshotForServiceWorker()
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function queueChatSessionPersist(delay = 140) {
+    window.clearTimeout(chatSessionPersistTimer);
+    chatSessionPersistTimer = window.setTimeout(() => {
+      chatSessionPersistTimer = null;
+      persistChatSessionSnapshot().catch(() => false);
+    }, Math.max(0, Number(delay || 0)));
+  }
+
+  async function getChatSessionSnapshot() {
+    if (!('serviceWorker' in navigator) || typeof MessageChannel !== 'function') return null;
+    const authorization = chatAuthorization();
+    if (!authorization) return null;
+    try {
+      const registration = await ensureNotificationWorker();
+      const worker = activeServiceWorker(registration);
+      if (!worker) return null;
+      return await new Promise((resolve) => {
+        const channel = new MessageChannel();
+        let settled = false;
+        const finish = (snapshot) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          try { channel.port1.close(); } catch (_) {}
+          resolve(snapshot || null);
+        };
+        const timer = window.setTimeout(() => finish(null), CHAT_SESSION_GET_TIMEOUT_MS);
+        channel.port1.onmessage = (event) => finish(event.data?.ok === true ? event.data.snapshot : null);
+        try {
+          worker.postMessage({
+            type: 'PORTAL_CHAT_SESSION_GET',
+            authorization
+          }, [channel.port2]);
+        } catch (_) {
+          finish(null);
+        }
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function clearChatSessionSnapshot() {
+    window.clearTimeout(chatSessionPersistTimer);
+    chatSessionPersistTimer = null;
+    ensureNotificationWorker()
+      .then((registration) => activeServiceWorker(registration)?.postMessage?.({ type: 'PORTAL_CHAT_SESSION_CLEAR' }))
+      .catch(() => {});
+  }
+
+  function hydrateChatSessionSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    restoredChatSession = snapshot;
+    for (const conversation of Array.isArray(snapshot.conversations) ? snapshot.conversations : []) {
+      const key = messageCacheKey(conversation?.username);
+      if (!key) continue;
+      messageCache.set(key, {
+        messages: normalizeMessageList(conversation?.messages),
+        lastMessageAt: String(conversation?.lastMessageAt || ''),
+        loadedAt: Number(conversation?.loadedAt || Date.now()),
+        hasOlder: Boolean(conversation?.hasOlder)
+      });
+    }
+    for (const draft of Array.isArray(snapshot.drafts) ? snapshot.drafts : []) {
+      const key = messageCacheKey(draft?.username);
+      const body = String(draft?.body || '');
+      if (key && body) draftCache.set(key, body);
+    }
+  }
+
+  function replaceCachedMessages(username, messages, lastMessageAt = '', options = {}) {
     const key = messageCacheKey(username);
     if (!key) return null;
     const entry = {
       messages: normalizeMessageList(messages),
       lastMessageAt: String(lastMessageAt || ''),
-      loadedAt: Date.now()
+      loadedAt: Date.now(),
+      hasOlder: Boolean(options.hasOlder)
     };
     messageCache.set(key, entry);
+    queueChatSessionPersist();
     return entry;
   }
 
-  function mergeCachedMessages(username, messages, lastMessageAt = '') {
+  function mergeCachedMessages(username, messages, lastMessageAt = '', options = {}) {
     const key = messageCacheKey(username);
     if (!key) return null;
     const previous = messageCache.get(key);
     return replaceCachedMessages(
       key,
       [...(previous?.messages || []), ...(Array.isArray(messages) ? messages : [])],
-      lastMessageAt || previous?.lastMessageAt || ''
+      lastMessageAt || previous?.lastMessageAt || '',
+      { hasOlder: options.hasOlder ?? previous?.hasOlder ?? false }
     );
   }
 
@@ -109,7 +247,7 @@
     const lastMessageAt = String(contact?.lastMessageAt || '');
     const cached = messageCache.get(key);
     if (!lastMessageAt) {
-      if (!cached) replaceCachedMessages(key, [], '');
+      if (!cached) replaceCachedMessages(key, [], '', { hasOlder: false });
       return [];
     }
     if (cached?.lastMessageAt === lastMessageAt) return cached.messages;
@@ -124,37 +262,23 @@
           { method: 'GET' }
         );
         if (generation !== messageCacheGeneration) return [];
-        mergeCachedMessages(key, Array.isArray(payload.messages) ? payload.messages : [], lastMessageAt);
+        mergeCachedMessages(
+          key,
+          Array.isArray(payload.messages) ? payload.messages : [],
+          lastMessageAt,
+          { hasOlder: cached.hasOlder }
+        );
         return messageCache.get(key)?.messages || [];
       }
 
-      let allMessages = [];
-      let before = 0;
-      let pageCount = 0;
-      const seenFirstIds = new Set();
-
-      while (pageCount < MESSAGE_PRELOAD_PAGE_GUARD) {
-        const beforeSuffix = before > 0 ? `&before=${before}` : '';
-        const payload = await api(
-          `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&peek=1${beforeSuffix}`,
-          { method: 'GET' }
-        );
-        const page = Array.isArray(payload.messages) ? payload.messages : [];
-        if (!page.length) break;
-
-        allMessages = before > 0 ? [...page, ...allMessages] : page;
-        const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
-        if (page.length < pageSize) break;
-
-        const firstId = Number(page[0]?.id || 0);
-        if (!firstId || seenFirstIds.has(firstId)) break;
-        seenFirstIds.add(firstId);
-        before = firstId;
-        pageCount += 1;
-      }
-
+      const payload = await api(
+        `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&peek=1`,
+        { method: 'GET' }
+      );
       if (generation !== messageCacheGeneration) return [];
-      replaceCachedMessages(key, allMessages, lastMessageAt);
+      const page = Array.isArray(payload.messages) ? payload.messages : [];
+      const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+      replaceCachedMessages(key, page, lastMessageAt, { hasOlder: page.length >= pageSize });
       return messageCache.get(key)?.messages || [];
     })()
       .catch(() => cached?.messages || [])
