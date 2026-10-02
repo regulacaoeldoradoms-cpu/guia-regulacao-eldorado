@@ -514,6 +514,27 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
   const unreadAfterPeek = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM portal_chat_messages
     WHERE to_user = 'dora.social' AND from_user = 'clara.social' AND read_at IS NULL`).first();
   assert.equal(Number(unreadAfterPeek.total || 0), 1, 'pré-carregamento não pode marcar a mensagem como lida');
+  const receiptAfterPeek = await env.AUTH_DB.prepare(`SELECT delivered_at AS deliveredAt, read_at AS readAt
+    FROM portal_chat_messages WHERE to_user = 'dora.social' AND from_user = 'clara.social'
+    ORDER BY id DESC LIMIT 1`).first();
+  assert.equal(receiptAfterPeek.deliveredAt, null, 'pré-carregamento não equivale a abrir o chat');
+  assert.equal(receiptAfterPeek.readAt, null);
+
+  const delivered = await callChat(env, '/api/chat/delivery', second.token, { method: 'POST', body: {} });
+  assert.equal(delivered.status, 200);
+  const receiptAfterChatOpen = await env.AUTH_DB.prepare(`SELECT id, delivered_at AS deliveredAt, read_at AS readAt
+    FROM portal_chat_messages WHERE to_user = 'dora.social' AND from_user = 'clara.social'
+    ORDER BY id DESC LIMIT 1`).first();
+  assert.ok(receiptAfterChatOpen.deliveredAt, 'abrir o chat marca a mensagem como recebida');
+  assert.equal(receiptAfterChatOpen.readAt, null, 'abrir só o chat não pode marcar a conversa como visualizada');
+
+  const senderReceipt = await payload(await callChat(
+    env,
+    '/api/chat/messages?with=dora.social&after=0&peek=1',
+    first.token
+  ));
+  assert.ok(Number(senderReceipt.receipt.deliveredThroughId || 0) >= Number(receiptAfterChatOpen.id || 0));
+  assert.equal(Number(senderReceipt.receipt.readThroughId || 0), 0);
 
   const citizenConversation = await payload(await callChat(env, '/api/chat/messages?with=clara.social', second.token));
   assert.equal(citizenConversation.messages.at(-1).body, 'Conversa social entre amigos');
