@@ -1,6 +1,6 @@
 # Central de Documentos — Status
 
-Última atualização: 01/10/2026.
+Última atualização: 02/10/2026.
 
 ## Central de Documentos — recuperação de falhas transitórias de conexão — PUBLICADA — 29/09/2026
 
@@ -345,3 +345,61 @@ Risco residual: falhas de plataforma/edge que durem além da janela total de rec
 | Próxima ação exata | Operar normalmente; se houver nova falha, correlacionar horário + ação + status/preflight e só então abrir novo reparo. |
 | Fontes | Guia Mestre 1.1; `worker/index.js`; `js/documents.js`; `portal-sw.js`; `documentos/index.html`; testes documentais; PR #576; merge `5899b492`. |
 
+
+
+## Titon — normalização segura da impressão de páginas heterogêneas — 02/10/2026
+
+Incidente real em produção: um PDF com uma página visualmente muito maior que as demais continuou deformando a prévia de impressão mesmo com o zoom do Titon em 100%. O documento possuía páginas de dimensões físicas heterogêneas; a rotina de impressão copiava `page.getViewport({ scale: 1 }).width/height` diretamente para `sheet.style.width/height` em pontos. Uma página anormalmente alta passava a ocupar mais de uma folha física do Chromium e podia fazer o navegador recalcular a escala do trabalho inteiro. O zoom do visualizador não participava desse cálculo e foi descartado como causa.
+
+Diagnóstico confirmado no código da `main` `c5a24ae912642c7ca2b9ebdd2388d48789211b67`: `renderPdfBlobForPrint` criava cada `.print-sheet` com o tamanho do MediaBox/CropBox exposto pelo viewport do PDF e o canvas era forçado a `width:100%;height:100%`. Isso não garantia a relação **uma página lógica do PDF = uma folha física de impressão** quando as dimensões das páginas eram muito diferentes.
+
+Decisão técnica da Fase 7:
+1. a preparação local de impressão usa uma folha física A4 retrato fixa (`210 mm × 297 mm`) para cada página lógica;
+2. cada página é ajustada de forma independente pelo fator `min(595.28 / largura, 841.89 / altura)`, preservando a proporção;
+3. nenhum conteúdo é recortado automaticamente e o PDF original/Drive não é alterado;
+4. o bitmap PDF.js é renderizado de acordo com o tamanho final da impressão, com limite de 4 MP, evitando canvas excessivo para páginas fora do padrão;
+5. `break-after/page-break-after` e `break-inside/page-break-inside` mantêm uma quebra física por página;
+6. a correção vale tanto para impressão do visualizador quanto para o PDF final editado, pois ambos usam `renderPdfBlobForPrint`;
+7. cache renovado para `documents.js?v=20261002-print-1` e `CACHE_VERSION = '20261002-documents-print-1'`.
+
+A abordagem segue o contrato atual do PDF.js: cada página possui seu próprio viewport e a escala pode ser calculada a partir da largura/altura desejada; o ajuste é feito somente no estágio de renderização para impressão. Não há normalização destrutiva do PDF.
+
+Cobertura adicionada:
+- o harness do laboratório espelha a rotina produtiva;
+- o teste Chromium de flatten/impressão verifica que páginas heterogêneas resultam em folhas do mesmo tamanho A4, que o canvas fica contido na folha e que sua proporção é preservada;
+- o teste textual bloqueia a reintrodução de `sheet.style.width/height = base.width/base.height`;
+- impressão continua sem `window.open` e sem nova aba.
+
+Alternativas descartadas:
+- relacionar impressão ao zoom 100%/135%, pois o zoom não entra na rotina de impressão;
+- recortar automaticamente a página anormal, pois poderia eliminar conteúdo clínico legítimo;
+- deformar verticalmente para preencher A4;
+- regravar o PDF no Drive apenas para imprimir;
+- abrir o PDF em nova aba e delegar o comportamento ao viewer nativo.
+
+Risco residual: se uma página realmente contiver um MediaBox/CropBox extremamente alto com grande área branca, **essa página específica** será reduzida para caber inteira no A4 e poderá ter conteúdo visual menor; isso é deliberado para não cortar informação. O defeito corrigido é essa página alterar a escala/paginação das demais ou atravessar várias folhas. Se for desejado remover área branca de uma página, deve ser uma ação explícita de Recortar no Titon, não uma heurística automática de impressão.
+
+Entrega em andamento: branch `fix/titon-print-normalizacao-20261002`, PR **#583**, último commit funcional `a40179827991f1c105c95739faf6492a4b618edf`. Nenhuma mudança de autenticação, permissões, IA, Worker documental, Google Drive ou observabilidade clínica foi feita.
+
+**Próxima ação exata:** aguardar e conferir os checks da PR #583. Se a regressão focal e os checks aplicáveis passarem, integrar a PR e confirmar em produção com o PDF relatado que o número de páginas lógicas permanece igual ao número de páginas da prévia (por exemplo, 9 → 9), que páginas normais não são reduzidas pela página fora do padrão e que nenhuma informação da página anormal é cortada.
+
+## Handoff atualizado — 02/10/2026 — impressão do Titon
+
+| Campo | Estado persistente |
+|---|---|
+| Fase atual | Fase 7 — Robustez e otimização contínua. |
+| Subfase / objetivo atual | Corrigir impressão de PDFs com páginas de dimensões heterogêneas sem alterar o documento original. |
+| Última ação concluída | Diagnóstico no código confirmado; normalização A4, escala por página, cobertura de regressão e invalidação de cache implementadas na PR #583. |
+| Branch atual | `fix/titon-print-normalizacao-20261002`. |
+| PR atual | **#583** — `fix(documentos): normalizar impressão de páginas heterogêneas no Titon`; aberta, checks ainda precisam ser conferidos. |
+| Último commit relevante | `a40179827991f1c105c95739faf6492a4b618edf` — último commit funcional/cache antes deste registro documental. |
+| Checks e testes | Cobertura automatizada foi ampliada no código; resultado de CI ainda não deve ser antecipado. |
+| Decisões tomadas | Uma página lógica = uma folha A4; fit proporcional individual; sem crop automático; sem mutação do PDF/Drive; limite de bitmap de 4 MP. |
+| Justificativas | O tamanho dinâmico da folha baseado no viewport permitia que uma página gigante atravessasse folhas e afetasse a escala do trabalho inteiro. |
+| Alternativas descartadas | Ajustar zoom; crop automático; deformação; salvar PDF normalizado no Drive; nova aba/viewer nativo. |
+| Ações externas concluídas | GitHub, Context7, Jam e Create State foram consultados. Context7 confirmou o modelo de viewport/escala do PDF.js; não havia Jam relacionado nem world model existente no Create State. |
+| Pendências e bloqueios | Checks da PR #583 e homologação humana da prévia/ impressão em produção com o PDF real. |
+| Riscos conhecidos | Página realmente muito alta pode ficar visualmente menor para caber inteira, mas sem perda/corte de conteúdo. |
+| Métricas / observabilidade | Nenhuma nova propriedade clínica ou conteúdo documental; sem mudança de telemetria. |
+| Próxima ação exata | Conferir checks #583; se verdes, integrar e validar 1:1 páginas PDF→folhas na produção. |
+| Arquivos e fontes principais | `js/documents.js`; `testing/central-docs/editor-harness.js`; `testing/browser/central-docs-flatten.spec.mjs`; `worker/tests/documents-ui.test.mjs`; `documentos/index.html`; `portal-sw.js`; PR #583; Guia Mestre 1.1. |
