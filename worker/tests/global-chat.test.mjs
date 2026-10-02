@@ -155,7 +155,11 @@ test('chat reduz amplificação de leitura D1 no diretório e no preload', () =>
   assert.match(worker, /await configureChatRealtimeContacts\(env, username, users\.map/);
   assert.doesNotMatch(worker, /const realtimeContacts = await contacts/);
   assert.match(realtime, /upgradeChatRealtime\(request, env, username\)/);
-  assert.doesNotMatch(realtime, /configureChatRealtimeContacts\(env, username, contactUsernames\)/);
+  const upgradeBlock = realtime.slice(
+    realtime.indexOf('export async function upgradeChatRealtime'),
+    realtime.indexOf('export const CHAT_REALTIME_TEST')
+  );
+  assert.doesNotMatch(upgradeBlock, /configureChatRealtimeContacts/);
   assert.match(client, /MESSAGE_PRELOAD_CONTACT_LIMIT = 2/);
   assert.match(client, /CHAT_CONTACTS_REALTIME_REFRESH_MS = 120000/);
   assert.match(client, /CHAT_CONTACTS_FALLBACK_REFRESH_MS = 30000/);
