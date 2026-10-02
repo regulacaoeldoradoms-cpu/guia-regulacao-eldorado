@@ -1031,6 +1031,35 @@
     return element;
   }
 
+  function unreadBoundaryFor(contact, messages = []) {
+    const exact = Number(contact?.firstUnreadId || 0);
+    if (exact > 0) return exact;
+    const unread = Number(contact?.unread || 0);
+    if (!unread) return 0;
+    const incoming = (Array.isArray(messages) ? messages : [])
+      .filter((message) => message.fromUser === contact?.username && Number(message?.id || 0) > 0);
+    const explicit = incoming.filter((message) => !message.readAt);
+    const candidates = explicit.length ? explicit : incoming.slice(-unread);
+    return Number(candidates[0]?.id || 0);
+  }
+
+  function unreadDividerElement() {
+    const divider = document.createElement('div');
+    divider.className = 'portal-chat-unread-divider';
+    divider.dataset.chatUnreadDivider = 'true';
+    const label = document.createElement('span');
+    label.textContent = 'Novas mensagens';
+    divider.appendChild(label);
+    return divider;
+  }
+
+  function appendUnreadDividerBefore(container, reference, messageId) {
+    if (!activeUnreadBoundaryId || Number(messageId || 0) !== activeUnreadBoundaryId) return;
+    if (container.querySelector?.('[data-chat-unread-divider]')) return;
+    const divider = unreadDividerElement();
+    container.insertBefore(divider, reference || null);
+  }
+
   function appendMessages(messages, replace = false) {
     const box = document.getElementById('portalChatMessages');
     if (!box) return;
@@ -1052,6 +1081,7 @@
       const element = messageElement(message);
       element.dataset.messageId = String(message.id || '');
       if (clientId) element.dataset.clientId = clientId;
+      appendUnreadDividerBefore(box, null, id);
       box.appendChild(element);
       lastMessageId = Math.max(lastMessageId, id);
     });
@@ -1080,6 +1110,9 @@
       const element = messageElement(message);
       element.dataset.messageId = String(id);
       if (message.clientId) element.dataset.clientId = String(message.clientId);
+      if (activeUnreadBoundaryId && id === activeUnreadBoundaryId && !box.querySelector('[data-chat-unread-divider]')) {
+        fragment.appendChild(unreadDividerElement());
+      }
       fragment.appendChild(element);
     });
     box.insertBefore(fragment, box.firstChild);
@@ -1130,6 +1163,9 @@
       const messages = Array.isArray(payload.messages) ? payload.messages : [];
       const contact = contacts.find((item) => item.username === username);
       const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+      if (initial && !activeUnreadBoundaryId && contact) {
+        activeUnreadBoundaryId = unreadBoundaryFor(contact, messages);
+      }
       if (initial) {
         replaceCachedMessages(username, messages, contact?.lastMessageAt || '', { hasOlder: messages.length >= pageSize });
       } else {
@@ -1156,9 +1192,20 @@
 
   function startMessagePolling() {
     stopMessagePolling();
+    if (realtimeConnected) return;
     messageTimer = window.setInterval(() => {
-      if (!document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) loadMessages(false);
-    }, CHAT_ACTIVE_POLL_MS);
+      if (!realtimeConnected && !document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) {
+        loadMessages(false);
+      }
+    }, CHAT_FALLBACK_POLL_MS);
+  }
+
+  function restartContactsTimer() {
+    if (contactsTimer) window.clearInterval(contactsTimer);
+    const interval = realtimeConnected ? CHAT_CONTACTS_REALTIME_REFRESH_MS : CHAT_CONTACTS_FALLBACK_REFRESH_MS;
+    contactsTimer = window.setInterval(() => {
+      if (!document.hidden) loadContacts();
+    }, interval);
   }
 
   function saveActiveDraft() {
@@ -1171,7 +1218,11 @@
 
   function openConversation(contact, options = {}) {
     saveActiveDraft();
+    stopLocalTyping();
+    clearRemoteTyping();
     activeContact = contact;
+    const cachedForBoundary = messageCache.get(messageCacheKey(contact?.username));
+    activeUnreadBoundaryId = unreadBoundaryFor(contact, cachedForBoundary?.messages || []);
     lastMessageId = 0;
     document.getElementById('portalChatRoot')?.classList.add('open');
     void markChatDelivered(true);
@@ -1181,7 +1232,7 @@
     updateConversationHeader();
     const renderedFromMemory = renderCachedConversation(contact);
     void loadMessages(!renderedFromMemory);
-    startMessagePolling();
+    if (!realtimeConnected) startMessagePolling();
     const input = document.getElementById('portalChatInput');
     if (input) input.value = draftCache.get(contact.username) || '';
     queueChatSessionPersist();
@@ -1215,7 +1266,10 @@
 
   function closeConversation() {
     saveActiveDraft();
+    stopLocalTyping();
+    clearRemoteTyping();
     activeContact = null;
+    activeUnreadBoundaryId = 0;
     lastMessageId = 0;
     stopMessagePolling();
     document.getElementById('portalChatConversationView')?.classList.remove('active');
