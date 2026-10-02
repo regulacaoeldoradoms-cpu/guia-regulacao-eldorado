@@ -57,7 +57,11 @@ async function ensureSchema(env) {
   const messageColumns = await env.AUTH_DB.prepare('PRAGMA table_info(portal_chat_messages)').all();
   const messageColumnNames = new Set((messageColumns.results || []).map((column) => String(column.name || '')));
   if (!messageColumnNames.has('delivered_at')) {
-    await env.AUTH_DB.prepare('ALTER TABLE portal_chat_messages ADD COLUMN delivered_at TEXT').run();
+    try {
+      await env.AUTH_DB.prepare('ALTER TABLE portal_chat_messages ADD COLUMN delivered_at TEXT').run();
+    } catch (error) {
+      if (!/duplicate column/i.test(String(error?.message || error))) throw error;
+    }
   }
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_conversation ON portal_chat_messages(from_user, to_user, id)').run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_chat_unread ON portal_chat_messages(to_user, read_at, from_user)').run();
@@ -258,7 +262,7 @@ async function messages(env, current, other, afterId, beforeId = 0) {
   }
   if (beforeId > 0) {
     const result = await env.AUTH_DB.prepare(`SELECT * FROM (
-        SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, read_at AS readAt
+        SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
         FROM portal_chat_messages
         WHERE id < ? AND ((from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?))
         ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
@@ -266,7 +270,7 @@ async function messages(env, current, other, afterId, beforeId = 0) {
     return result.results || [];
   }
   const result = await env.AUTH_DB.prepare(`SELECT * FROM (
-      SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, read_at AS readAt
+      SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
       FROM portal_chat_messages WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)
       ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
     ) ORDER BY id ASC`).bind(current, other, other, current).all();
