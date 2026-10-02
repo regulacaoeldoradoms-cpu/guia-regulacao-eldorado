@@ -178,6 +178,13 @@ export class PortalChatRealtime extends DurableObject {
     const pendingAt = Number(await this.ctx.storage.get('offlinePendingAt') || 0);
     if (!pendingAt) return;
     await this.ctx.storage.delete('offlinePendingAt').catch(() => {});
+
+    const { username } = await this.configuration();
+    if (username && this.env?.AUTH_DB) {
+      await this.env.AUTH_DB.prepare(`UPDATE portal_chat_presence
+        SET last_seen = datetime('now', '-120 seconds')
+        WHERE username = ?`).bind(username).run().catch(() => {});
+    }
     await this.broadcastPresence(false);
   }
 }
