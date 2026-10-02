@@ -409,9 +409,32 @@
     );
   }
 
+  function localIsoToday() {
+    const now = new Date();
+    const year = String(now.getFullYear()).padStart(4, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function contactEligible(record) {
+    const date = compact(record?.appointmentDate);
+    return !date || date >= localIsoToday();
+  }
+
+  function contactCoverage(snapshot) {
+    const records = Array.isArray(snapshot?.records) ? snapshot.records.filter(contactEligible) : [];
+    const available = records.filter((record) => knownContactIds.has(record.sourceId)).length;
+    return { total: records.length, available, missing: Math.max(0, records.length - available) };
+  }
+
   async function enrichSnapshotContacts(snapshot) {
     const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
-    const targets = records.filter((record) => record?.sourceId && !knownContactIds.has(record.sourceId));
+    const targets = records.filter((record) => (
+      record?.sourceId
+      && contactEligible(record)
+      && !knownContactIds.has(record.sourceId)
+    ));
     let cursor = 0;
     let found = 0;
     let failed = 0;
