@@ -135,10 +135,16 @@ function socialBackendEnabled(env) {
 }
 
 async function professionalContacts(env, currentUsername) {
+  let socialReady = false;
+  if (socialBackendEnabled(env)) {
+    try { socialReady = Boolean(await ensureSocialSchema(env)); } catch (_) { socialReady = false; }
+  }
+  const socialHandleSelect = socialReady ? "COALESCE(social.handle, '') AS socialHandle," : "'' AS socialHandle,";
+  const socialJoin = socialReady ? 'LEFT JOIN social_users social ON social.auth_username = u.username' : '';
   const result = await env.AUTH_DB.prepare(`SELECT
       u.username, u.name, u.job_title AS jobTitle, u.role,
       COALESCE(u.avatar_data, '') AS avatarDataUrl,
-      COALESCE(social.handle, '') AS socialHandle,
+      ${socialHandleSelect}
       p.last_seen AS lastSeen,
       CASE WHEN p.last_seen IS NOT NULL AND p.last_seen >= datetime('now', '-' || ? || ' seconds') THEN 1 ELSE 0 END AS online,
       COALESCE((SELECT MAX(m2.sent_at) FROM portal_chat_messages m2
@@ -149,7 +155,7 @@ async function professionalContacts(env, currentUsername) {
         WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
     FROM auth_users u
     LEFT JOIN portal_chat_presence p ON p.username = u.username
-    LEFT JOIN social_users social ON social.auth_username = u.username
+    ${socialJoin}
     WHERE u.active = 1 AND u.username <> ? AND u.role IN ('medico','recepcao','coordenacao','admin')
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
     .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
