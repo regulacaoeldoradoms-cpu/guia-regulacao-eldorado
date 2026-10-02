@@ -1,7 +1,7 @@
 'use strict';
 
-// 20261002-documents-print-1 invalida páginas em cache para entregar a normalização A4 da impressão do Titon.
-const CACHE_VERSION = '20261002-documents-print-1';
+// 20261002-documents-rename-lww-1 invalida páginas para entregar rename e conteúdo como canais independentes.
+const CACHE_VERSION = '20261002-documents-rename-lww-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
