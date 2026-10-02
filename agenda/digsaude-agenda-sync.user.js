@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-2
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-2
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-3
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-3
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -14,6 +14,7 @@
   'use strict';
 
   if (window.top !== window.self) return;
+  if (window.name === 'portal-agenda-contact-bridge' && window.opener) return;
 
   const PORTAL_ORIGIN = 'https://regulacaoeldoradoms.com.br';
   const BRIDGE_URL = PORTAL_ORIGIN + '/agenda/sync/';
@@ -27,7 +28,8 @@
   const BRIDGE_WATCH_MS = 15 * 1000;
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
   const CONTACT_CONCURRENCY = 1;
-  const CONTACT_FRAME_TIMEOUT_MS = 15 * 1000;
+  const CONTACT_WINDOW_TIMEOUT_MS = 18 * 1000;
+  const BRIDGE_READY_TIMEOUT_MS = 15 * 1000;
 
   let portalWindow = null;
   let autoEnabled = false;
@@ -46,6 +48,10 @@
   let detailHideTimer = null;
   let currentStatusText = 'Sincronização automática ainda não ativada.';
   let currentTone = '';
+  let pendingContactFailures = 0;
+  let bridgeReadyResolve = null;
+  let bridgeReadyReject = null;
+  let bridgeReadyTimer = null;
   const contactCache = new Map();
 
   function compact(value) {
