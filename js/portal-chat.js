@@ -50,7 +50,7 @@
   const CHAT_CONTACTS_FALLBACK_REFRESH_MS = 12000;
   const CHAT_SESSION_GET_TIMEOUT_MS = 550;
   const CHAT_REALTIME_PROTOCOL = 'portal-chat-v1';
-  const CHAT_REALTIME_ROTATE_MS = 90000;
+  const CHAT_REALTIME_ROTATE_MS = 300000;
   const CHAT_REALTIME_PING_MS = 25000;
   const CHAT_TYPING_RESEND_MS = 1400;
   const CHAT_TYPING_STOP_MS = 2200;
@@ -232,10 +232,11 @@
   }
 
   function setRemoteTyping(username, active, expiresAt = 0) {
-    if (!active || activeContact?.username !== username) {
-      if (remoteTypingUsername === username || !active) clearRemoteTyping();
+    if (!active) {
+      if (remoteTypingUsername === username) clearRemoteTyping();
       return;
     }
+    if (activeContact?.username !== username) return;
     remoteTypingUsername = username;
     const typing = document.getElementById('portalChatTyping');
     if (typing) typing.hidden = false;
