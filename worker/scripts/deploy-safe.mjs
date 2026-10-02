@@ -44,6 +44,7 @@ export const ISOLATED_PREVIEW_PROFILES = Object.freeze([
 export const CRITICAL_BINDINGS = Object.freeze([
   Object.freeze({ name: 'AUTH_DB', types: Object.freeze(['d1']) }),
   Object.freeze({ name: 'AI', types: Object.freeze(['ai']) }),
+  Object.freeze({ name: 'CHAT_REALTIME', types: Object.freeze(['durable_object_namespace']) }),
   Object.freeze({ name: 'FIREBASE_PROJECT_ID', types: Object.freeze(['plain_text', 'secret_text']) }),
   Object.freeze({ name: 'FIREBASE_CLIENT_EMAIL', types: Object.freeze(['plain_text', 'secret_text']) }),
   Object.freeze({ name: 'FIREBASE_PRIVATE_KEY', types: Object.freeze(['secret_text']) }),
@@ -307,8 +308,8 @@ function comparableBinding(binding) {
   return stableJsonValue(item);
 }
 
-export function validateEquivalentNonProductionBindings(activeVersion, otherVersion) {
-  validateCandidateBindings(activeVersion, otherVersion);
+export function validateEquivalentNonProductionBindings(activeVersion, otherVersion, options = {}) {
+  validateCandidateBindings(activeVersion, otherVersion, options);
   const active = bindingMap(activeVersion);
   const other = bindingMap(otherVersion);
   must(active.size === other.size, 'VERSAO_NAO_PRODUTIVA_BINDINGS_DIVERGENTES');
@@ -325,12 +326,18 @@ export function validateEquivalentNonProductionBindings(activeVersion, otherVers
   return { bindings: active.size };
 }
 
-export function validateCandidateBindings(activeVersion, candidateVersion) {
+export function validateCandidateBindings(activeVersion, candidateVersion, options = {}) {
   const active = bindingMap(activeVersion);
   const candidate = bindingMap(candidateVersion);
+  const allowMissingCritical = new Set(
+    (Array.isArray(options.allowMissingCritical) ? options.allowMissingCritical : [])
+      .map(String)
+      .filter(Boolean)
+  );
 
   for (const requirement of CRITICAL_BINDINGS) {
     const binding = candidate.get(requirement.name);
+    if (!binding && allowMissingCritical.has(requirement.name)) continue;
     must(binding && requirement.types.includes(binding.type), 'BINDING_CRITICO_AUSENTE_' + requirement.name);
   }
 
@@ -435,6 +442,17 @@ function workerNameFromToml(toml) {
   must(match, 'WORKER_NAME_NAO_ENCONTRADO');
   must(match[1] === SAFE_DEPLOY.worker, 'WORKER_NAME_DIVERGENTE');
   return match[1];
+}
+
+export function pendingLifecycleBindings(toml, activeVersion) {
+  const source = String(toml || '');
+  const active = bindingMap(activeVersion);
+  const declaresRealtimeBinding = /\[\[durable_objects\.bindings\]\][\s\S]*?name\s*=\s*["']CHAT_REALTIME["'][\s\S]*?class_name\s*=\s*["']PortalChatRealtime["']/.test(source);
+  const declaresRealtimeMigration = /\[\[migrations\]\][\s\S]*?new_sqlite_classes\s*=\s*\[[^\]]*["']PortalChatRealtime["'][^\]]*\]/.test(source);
+  if (declaresRealtimeBinding && declaresRealtimeMigration && !active.has('CHAT_REALTIME')) {
+    return ['CHAT_REALTIME'];
+  }
+  return [];
 }
 
 export function classifyAgendaProbe(status) {
@@ -579,6 +597,27 @@ function dryRun(workerRoot, config) {
   );
 }
 
+function dryRunLifecycle(workerRoot, config) {
+  runWrangler(
+    ['deploy', '--dry-run', '--config', config],
+    workerRoot,
+    'DRY_RUN_DA_MIGRACAO_DURABLE_OBJECT_FALHOU'
+  );
+}
+
+function deployLifecycle(workerRoot, config) {
+  runWrangler(
+    [
+      'deploy',
+      '--message', SAFE_DEPLOY.candidateMessage,
+      '--tag', SAFE_DEPLOY.candidateTag,
+      '--config', config
+    ],
+    workerRoot,
+    'DEPLOY_DA_MIGRACAO_DURABLE_OBJECT_FALHOU'
+  );
+}
+
 export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch } = {}) {
   const root = path.resolve(workerRoot);
   const wranglerToml = path.join(root, 'wrangler.toml');
@@ -611,14 +650,19 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     originalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     const activeView = versionView(originalVersion, readConfig, tempRoot);
     const activeDbId = authDbDatabaseId(activeView);
-    const activeValidation = validateCandidateBindings(activeView, activeView);
+    const lifecycleBindings = pendingLifecycleBindings(sourceToml, activeView);
+    const activeValidation = validateCandidateBindings(activeView, activeView, {
+      allowMissingCritical: lifecycleBindings
+    });
 
     const versionsBefore = versionsList(readConfig, tempRoot);
     const latestBefore = latestVersionEntry(versionsBefore);
     if (latestBefore.id !== originalVersion) {
       const latestView = versionView(latestBefore.id, readConfig, tempRoot);
       if (isSafeDeployCandidateVersion(latestBefore, latestView)) {
-        const orphanValidation = validateCandidateBindings(activeView, latestView);
+        const orphanValidation = validateCandidateBindings(activeView, latestView, {
+          allowMissingCritical: lifecycleBindings
+        });
         safeLine('candidataOrfaAnterior', 'VALIDADA');
         safeLine('versaoOrfaAnterior', latestBefore.id);
         safeLine('segredosOrfaPreservados', orphanValidation.preservedSecrets);
@@ -630,7 +674,9 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
         safeLine('versaoPreviewIsoladoAnterior', latestBefore.id);
       } else {
         try {
-          const equivalent = validateEquivalentNonProductionBindings(activeView, latestView);
+          const equivalent = validateEquivalentNonProductionBindings(activeView, latestView, {
+            allowMissingCritical: lifecycleBindings
+          });
           safeLine('versaoNaoProdutivaEquivalente', 'RECONHECIDA_SEM_TRAFEGO_PRODUTIVO');
           safeLine('versaoNaoProdutivaEquivalenteId', latestBefore.id);
           safeLine('bindingsEquivalentes', equivalent.bindings);
@@ -643,7 +689,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     safeLine('versaoProducao', originalVersion);
     safeLine('segredosAtuais', activeValidation.preservedSecrets);
 
-    console.log('2/7 Preparando configuração efêmera e executando dry-run...');
+    console.log('2/8 Preparando configuração efêmera e executando dry-run...');
     fs.writeFileSync(
       deployConfig,
       injectRequiredSecrets(
@@ -652,31 +698,51 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
       ),
       { encoding: 'utf8', mode: 0o600 }
     );
-    dryRun(root, deployConfig);
 
-    console.log('3/7 Enviando versão candidata sem tráfego...');
-    candidateVersion = uploadCandidate(root, deployConfig);
-    safeLine('versaoCandidata', candidateVersion);
+    let candidateView;
+    let validation;
 
-    console.log('4/7 Validando bindings críticos e preservação de segredos...');
-    const candidateView = versionView(candidateVersion, readConfig, tempRoot);
-    const validation = validateCandidateBindings(activeView, candidateView);
-    must(
-      activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot)) === originalVersion,
-      'PRODUCAO_MUDOU_DURANTE_VALIDACAO'
-    );
+    if (lifecycleBindings.includes('CHAT_REALTIME')) {
+      // Exceção única e allowlisted: Cloudflare não aplica criação/renomeação/remoção
+      // de Durable Object via "versions upload". O primeiro namespace/classe SQLite
+      // precisa passar por "deploy"; depois disso o fluxo volta ao version-first normal.
+      safeLine('deployLifecycleDireto', 'CHAT_REALTIME');
+      dryRunLifecycle(root, deployConfig);
+      console.log('3/8 Aplicando migração Durable Object allowlisted com rollback armado...');
+      promotionStarted = true;
+      deployLifecycle(root, deployConfig);
+      candidateVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+      must(candidateVersion !== originalVersion, 'MIGRACAO_DURABLE_OBJECT_NAO_GEROU_NOVA_VERSAO');
+      candidateView = versionView(candidateVersion, readConfig, tempRoot);
+      validation = validateCandidateBindings(activeView, candidateView);
+      safeLine('versaoCandidata', candidateVersion);
+    } else {
+      dryRun(root, deployConfig);
+      console.log('3/8 Enviando versão candidata sem tráfego...');
+      candidateVersion = uploadCandidate(root, deployConfig);
+      safeLine('versaoCandidata', candidateVersion);
+
+      console.log('4/8 Validando bindings críticos e preservação de segredos...');
+      candidateView = versionView(candidateVersion, readConfig, tempRoot);
+      validation = validateCandidateBindings(activeView, candidateView);
+      must(
+        activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot)) === originalVersion,
+        'PRODUCAO_MUDOU_DURANTE_VALIDACAO'
+      );
+
+      console.log('5/8 Promovendo somente a versão validada...');
+      promotionStarted = true;
+      promoteVersion(
+        candidateVersion,
+        readConfig,
+        tempRoot,
+        'Portal: promoção após gate de bindings e segredos'
+      );
+    }
+
     safeLine('bindingsCriticos', validation.critical);
     safeLine('segredosPreservados', validation.preservedSecrets);
     console.log('gateBindings=OK');
-
-    console.log('5/7 Promovendo somente a versão validada...');
-    promotionStarted = true;
-    promoteVersion(
-      candidateVersion,
-      readConfig,
-      tempRoot,
-      'Portal: promoção após gate de bindings e segredos'
-    );
 
     const activeAfterPromotion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(activeAfterPromotion === candidateVersion, 'PROMOCAO_NAO_ATIVOU_CANDIDATA');
