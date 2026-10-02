@@ -24,6 +24,7 @@ import {
   listDriveFolder,
   openDriveFileRef,
   queryDriveSyncStatus,
+  renameDrivePdf,
   sealDriveFileRef,
   searchDrive,
   startDriveSync,
@@ -1476,4 +1477,114 @@ test('preflight CORS documental não consulta D1 nem sessão', async () => {
   assert.match(response.headers.get('Access-Control-Allow-Methods') || '', /POST/);
   assert.match(response.headers.get('Access-Control-Allow-Headers') || '', /Authorization/i);
   assert.equal(dbTouched, 0);
+});
+
+
+sqliteTest('Fase 7G renomeação usa last-write-wins sem bloquear drift de conteúdo ou nome', async () => {
+  const scenarios = [
+    {
+      label: 'pedido atual vence estado antigo',
+      afterName: 'NOME FINAL.pdf',
+      afterVersion: '10',
+      superseded: false,
+      expectedName: 'NOME FINAL.pdf'
+    },
+    {
+      label: 'renomeação posterior vence o pedido atual',
+      afterName: 'NOME POSTERIOR.pdf',
+      afterVersion: '11',
+      superseded: true,
+      expectedName: 'NOME POSTERIOR.pdf'
+    }
+  ];
+
+  for (const scenario of scenarios) {
+    const env = environment();
+    env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+    const username = 'rename.lww.' + (scenario.superseded ? 'posterior' : 'atual');
+    const authorization = await createDriveAuthorizationUrl(env, username);
+    const stateToken = new URL(authorization).searchParams.get('state');
+    const originalFetch = globalThis.fetch;
+    let patched = false;
+    let renamePatchCount = 0;
+
+    const before = {
+      id: 'raw-rename-pdf-id',
+      name: 'NOME EXTERNO.pdf',
+      mimeType: 'application/pdf',
+      size: '321',
+      modifiedTime: '2026-10-02T14:00:00Z',
+      version: '9',
+      md5Checksum: '1'.repeat(32),
+      headRevisionId: 'head-9',
+      parents: ['parent-test'],
+      capabilities: { canDownload: true, canEdit: true, canModifyContent: true }
+    };
+    const receipt = {
+      ...before,
+      name: 'NOME FINAL.pdf',
+      modifiedTime: '2026-10-02T14:01:00Z',
+      version: '10'
+    };
+    const after = {
+      ...receipt,
+      name: scenario.afterName,
+      version: scenario.afterVersion,
+      modifiedTime: scenario.superseded ? '2026-10-02T14:02:00Z' : receipt.modifiedTime
+    };
+
+    globalThis.fetch = async (url, options = {}) => {
+      const text = String(url);
+      if (text === 'https://oauth2.googleapis.com/token') {
+        return new Response(JSON.stringify({
+          access_token: 'rename-lww-access',
+          refresh_token: 'rename-lww-refresh',
+          expires_in: 3600
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      const driveUrl = new URL(text);
+      assert.equal(driveUrl.origin, 'https://www.googleapis.com');
+      assert.ok(driveUrl.pathname.endsWith('/drive/v3/files/raw-rename-pdf-id'));
+
+      if (String(options.method || 'GET').toUpperCase() === 'PATCH') {
+        renamePatchCount += 1;
+        assert.deepEqual(JSON.parse(String(options.body || '{}')), { name: 'NOME FINAL.pdf' });
+        patched = true;
+        return new Response(JSON.stringify(receipt), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      assert.equal(String(options.method || 'GET').toUpperCase(), 'GET');
+      return new Response(JSON.stringify(patched ? after : before), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    };
+
+    try {
+      await completeDriveOAuth(env, 'rename-lww-code', stateToken);
+      const ref = await sealDriveFileRef(env, before.id, 'application/pdf');
+      const result = await renameDrivePdf(env, {
+        ref,
+        baseVersion: '7',
+        baseName: 'ORIGINAL.pdf',
+        name: 'NOME FINAL'
+      }, username);
+
+      assert.equal(renamePatchCount, 1, scenario.label);
+      assert.equal(result.sourceChangedSinceOpen, true, scenario.label);
+      assert.equal(result.nameChangedSinceOpen, true, scenario.label);
+      assert.equal(result.superseded, scenario.superseded, scenario.label);
+      assert.equal(result.name, scenario.expectedName, scenario.label);
+      assert.equal(result.currentVersion, scenario.afterVersion, scenario.label);
+      assert.ok(result.ref);
+      assert.ok(result.cacheKey);
+    } finally {
+      globalThis.fetch = originalFetch;
+      env.AUTH_DB.database.close();
+    }
+  }
 });

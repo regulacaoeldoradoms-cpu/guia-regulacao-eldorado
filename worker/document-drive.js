@@ -999,19 +999,6 @@ async function sealConfirmedDriveFileRef(env, current, username) {
   });
 }
 
-async function confirmedBaselineMatches(env, file, current, baseVersion, username) {
-  const proof = file.confirmed;
-  const actor = normalizeUsername(username);
-  if (!proof || proof.kind !== 1 || !actor || proof.actor !== actor
-    || file.id !== current.id || proof.version !== baseVersion
-    || !Number.isSafeInteger(proof.expiresAt) || proof.expiresAt <= nowSeconds()
-    || !/^[A-Za-z0-9_-]{43}$/.test(String(proof.identity || ''))
-    || !/^[A-Za-z0-9_-]{43}$/.test(String(proof.scope || ''))
-    || BigInt(current.version) <= BigInt(baseVersion)) return false;
-  return proof.scope === await confirmedBaselineScope(env)
-    && proof.identity === await confirmedContentIdentity(current);
-}
-
 async function currentDrivePdfMetadata(env, ref, openedFile = null) {
   const file = openedFile || await openDriveFileRef(env, ref);
   if (file.mime !== PDF_MIME) {
@@ -1052,15 +1039,40 @@ async function currentDrivePdfMetadata(env, ref, openedFile = null) {
   };
 }
 
-async function waitForConfirmedDriveRename(env, ref, expectedName) {
-  const delays = [0, 120, 320, 700];
+function compareDriveVersions(left, right) {
+  try {
+    const a = BigInt(String(left || '0'));
+    const b = BigInt(String(right || '0'));
+    return a === b ? 0 : (a > b ? 1 : -1);
+  } catch (_) {
+    return String(left || '') === String(right || '') ? 0 : -1;
+  }
+}
+
+async function waitForConfirmedDriveRename(env, ref, expectedName, minimumVersion = '') {
+  const delays = [0, 120, 320, 700, 1500];
   let last = null;
   for (const delayMs of delays) {
     if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
     last = await currentDrivePdfMetadata(env, ref);
-    if (last.name === expectedName) return last;
+    if (
+      last.name === expectedName
+      && (!minimumVersion || compareDriveVersions(last.version, minimumVersion) >= 0)
+    ) {
+      return { current: last, superseded: false };
+    }
+
+    // Se o Drive já avançou além do recibo e o nome é outro, houve uma
+    // renomeação posterior. Essa alteração posterior é a vencedora.
+    if (
+      minimumVersion
+      && compareDriveVersions(last.version, minimumVersion) > 0
+      && last.name !== expectedName
+    ) {
+      return { current: last, superseded: true };
+    }
   }
-  return last;
+  return { current: last, superseded: false };
 }
 
 
@@ -1135,37 +1147,23 @@ export async function renameDrivePdf(env, input = {}, username = '') {
   if (!ref) {
     throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo ausente.', 400);
   }
-  const baseVersion = normalizeDriveVersion(input.baseVersion, { required: true });
+
+  // Fase 7G: nome e conteúdo são canais independentes. baseVersion/baseName
+  // continuam aceitos para diagnóstico de concorrência, mas nunca bloqueiam
+  // a renomeação. O último PATCH de nome confirmado pelo Drive prevalece.
+  const baseVersion = normalizeDriveVersion(input.baseVersion, { required: false });
   const baseName = safeName(input.baseName || '').trim();
   const name = normalizeDrivePdfName(input.name);
   const file = await openDriveFileRefPayload(env, ref);
   const before = await currentDrivePdfMetadata(env, ref, file);
+  const sourceChangedSinceOpen = Boolean(baseVersion && before.version !== baseVersion);
+  const nameChangedSinceOpen = Boolean(baseName && before.name !== baseName);
 
   if (!before.canEdit) {
     throw new DriveIntegrationError(
       'DRIVE_FILE_NOT_EDITABLE',
       'A conta institucional não possui permissão para renomear este arquivo.',
       403
-    );
-  }
-  let versionConflict = before.version !== baseVersion;
-  if (
-    versionConflict
-    && baseName
-    && before.name === baseName
-    && await confirmedBaselineMatches(env, file, before, baseVersion, username)
-  ) {
-    // Um upload recém-confirmado pode receber um incremento posterior do campo
-    // técnico "version" do Drive sem mudar o conteúdo. A prova selada pelo sync
-    // permite reconciliar somente esse caso. O nome-base também precisa continuar
-    // idêntico, para nunca sobrescrever uma renomeação concorrente real.
-    versionConflict = false;
-  }
-  if (versionConflict) {
-    throw new DriveIntegrationError(
-      'DRIVE_VERSION_CONFLICT',
-      'O arquivo foi alterado no Google Drive antes da renomeação. Reabra o documento e tente novamente.',
-      409
     );
   }
 
@@ -1177,12 +1175,15 @@ export async function renameDrivePdf(env, input = {}, username = '') {
     return {
       renamed: false,
       name,
+      requestedName: name,
       currentVersion: before.version,
       modifiedTime: before.modifiedTime,
       size: before.size,
       ref: sameRef,
       cacheKey,
-      contentConflict: false
+      sourceChangedSinceOpen,
+      nameChangedSinceOpen,
+      superseded: false
     };
   }
 
@@ -1204,42 +1205,46 @@ export async function renameDrivePdf(env, input = {}, username = '') {
       502
     );
   }
+  const receiptVersion = normalizeDriveVersion(payload.version, { required: true });
 
+  // A referência identifica o arquivo, não uma versão específica. Isso permite
+  // que upload de conteúdo e PATCH de nome sigam em paralelo sem um invalidar
+  // o outro.
   const nextRef = await sealDriveFileRef(env, String(payload.id), PDF_MIME);
-  const after = await waitForConfirmedDriveRename(env, nextRef, name);
-  if (after?.name !== name) {
+  const confirmation = await waitForConfirmedDriveRename(env, nextRef, name, receiptVersion);
+  const after = confirmation.current;
+  if (!after) {
     throw new DriveIntegrationError(
       'DRIVE_RENAME_CONFIRMATION_INVALID',
-      'O Google Drive não manteve o novo nome confirmado.',
+      'O Google Drive não retornou metadados suficientes após a renomeação.',
+      502
+    );
+  }
+  if (after.name !== name && confirmation.superseded !== true) {
+    throw new DriveIntegrationError(
+      'DRIVE_RENAME_CONFIRMATION_INVALID',
+      'O Google Drive ainda não confirmou o nome atual do PDF.',
       502
     );
   }
 
-  const contentConflict = Boolean(
-    before.headRevisionId && after.headRevisionId && before.headRevisionId !== after.headRevisionId
-  ) || Boolean(
-    before.md5Checksum && after.md5Checksum
-    && before.md5Checksum.toLowerCase() !== after.md5Checksum.toLowerCase()
-  ) || Boolean(
-    Number.isSafeInteger(before.size) && Number.isSafeInteger(after.size) && before.size !== after.size
-  );
-
   const [confirmedRef, cacheKey] = await Promise.all([
-    contentConflict
-      ? sealDriveFileRef(env, after.id, PDF_MIME)
-      : sealConfirmedDriveFileRef(env, after, username),
+    sealDriveFileRef(env, after.id, PDF_MIME),
     stableDriveCacheKey(env, after.id)
   ]);
 
   return {
     renamed: true,
-    name,
+    name: after.name || name,
+    requestedName: name,
     currentVersion: after.version,
     modifiedTime: after.modifiedTime,
     size: after.size,
     ref: confirmedRef,
     cacheKey,
-    contentConflict
+    sourceChangedSinceOpen,
+    nameChangedSinceOpen,
+    superseded: confirmation.superseded === true
   };
 }
 

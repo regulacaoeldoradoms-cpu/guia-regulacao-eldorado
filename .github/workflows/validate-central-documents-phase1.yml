@@ -231,7 +231,7 @@ jobs:
           grep -q "/api/documents/drive/sync/start" js/documents.js
           grep -q "driveSyncPreflightState" worker/document-drive.js
           grep -q "DOCUMENTS_DRIVE_WRITE_ENABLED" worker/document-drive.js
-          grep -q "DRIVE_VERSION_CONFLICT" worker/document-drive.js
+          ! grep -q "DRIVE_VERSION_CONFLICT" worker/document-drive.js
           grep -q "keepForever" worker/document-drive.js
           ! grep -R -E "https://www.googleapis.com/upload/drive" js/document-editor.js js/documents.js documentos/index.html
 

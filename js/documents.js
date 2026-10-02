@@ -828,6 +828,62 @@
     return descriptor ? `${descriptor.cacheKey}:${descriptor.version}` : '';
   }
 
+  function sameDriveDocumentIdentity(left, right) {
+    if (!left || !right) return false;
+    const leftKey = String(left.cacheKey || '');
+    const rightKey = String(right.cacheKey || '');
+    if (leftKey && rightKey) return leftKey === rightKey;
+    const leftRef = String(left.ref || '');
+    const rightRef = String(right.ref || '');
+    return Boolean(leftRef && rightRef && leftRef === rightRef);
+  }
+
+  function compareDriveVersions(left, right) {
+    try {
+      const a = BigInt(String(left || '0'));
+      const b = BigInt(String(right || '0'));
+      return a === b ? 0 : (a > b ? 1 : -1);
+    } catch (_) {
+      return String(left || '') === String(right || '') ? 0 : -1;
+    }
+  }
+
+  function newestDriveVersion(left, right) {
+    if (!left) return String(right || '');
+    if (!right) return String(left || '');
+    return compareDriveVersions(left, right) >= 0 ? String(left) : String(right);
+  }
+
+  function newestDriveModifiedTime(left, right) {
+    const a = Date.parse(String(left || ''));
+    const b = Date.parse(String(right || ''));
+    if (!Number.isFinite(a)) return String(right || left || '');
+    if (!Number.isFinite(b)) return String(left || right || '');
+    return a >= b ? String(left || '') : String(right || '');
+  }
+
+  function mergeRenamedDriveMetadata(current, result) {
+    const source = current || {};
+    const resultVersion = String(result?.currentVersion || '');
+    const sourceVersion = String(source.version || '');
+    const resultIsNewest = !sourceVersion || !resultVersion
+      ? Boolean(resultVersion)
+      : compareDriveVersions(resultVersion, sourceVersion) >= 0;
+    const nextName = String(result?.name || source.name || source.label || 'PDF');
+    return {
+      ...source,
+      ref: String(result?.ref || source.ref || ''),
+      cacheKey: String(result?.cacheKey || source.cacheKey || ''),
+      version: newestDriveVersion(sourceVersion, resultVersion),
+      modifiedTime: newestDriveModifiedTime(source.modifiedTime, result?.modifiedTime),
+      size: resultIsNewest && Number.isFinite(Number(result?.size))
+        ? Number(result.size)
+        : source.size,
+      name: nextName,
+      label: nextName
+    };
+  }
+
   function editorContainsItem(item) {
     const session = state.editorSession;
     const identity = itemCacheIdentity(item);
@@ -1919,7 +1975,7 @@
     if (els.editorSyncCopyNameField) els.editorSyncCopyNameField.hidden = operation !== 'save_copy';
     if (els.editorSyncWarning) {
       els.editorSyncWarning.textContent = operation === 'replace_pdf'
-        ? 'Antes de substituir, o Portal reconfere a versão no Google Drive. Se houver conflito, a operação é interrompida. A revisão anterior precisa ser preservada antes do upload.'
+        ? 'Antes de substituir, o Portal reconfere identidade e permissão, preserva a revisão atual e envia o conteúdo. A última gravação confirmada no Google Drive prevalece.'
         : 'Um novo PDF será criado no Google Drive e o arquivo original permanecerá intacto.';
     }
   }
@@ -2469,11 +2525,7 @@
       showStatus('Aguarde o salvamento ou a impressão terminar antes de entrar no editor.', 'warning');
       return;
     }
-    if (state.renameBusy) {
-      showStatus('Aguarde a renomeação terminar antes de entrar no editor.', 'warning');
-      return;
-    }
-    if (state.titleEditing) cancelPdfRename({ restoreFocus: false });
+    if (state.titleEditing && !state.renameBusy) cancelPdfRename({ restoreFocus: false });
     background?.cancelScope?.(state.backgroundScope, 'editor');
     state.backgroundPreparedImages.clear();
     state.backgroundPreparedAnalysis.clear();
@@ -2497,7 +2549,7 @@
     const isCurrentStart = () => (
       startSeq === state.editorStartSeq
       && openId === state.pdfOpenId
-      && item === state.pdfItem
+      && sameDriveDocumentIdentity(item, state.pdfItem)
     );
     els.editPdf.disabled = true;
     els.viewerState.className = 'documents-viewer-state';
@@ -3768,25 +3820,14 @@
   }
 
   function applyRenamedListResult(previous, result) {
-    const previousRef = String(previous?.ref || '');
-    const previousCacheKey = String(previous?.cacheKey || '');
-    const nextName = String(result?.name || previous?.name || 'PDF');
-    const next = {
-      ...previous,
-      ref: String(result?.ref || previous?.ref || ''),
-      cacheKey: String(result?.cacheKey || previous?.cacheKey || ''),
-      version: String(result?.currentVersion || previous?.version || ''),
-      modifiedTime: String(result?.modifiedTime || previous?.modifiedTime || ''),
-      size: Number.isFinite(Number(result?.size)) ? Number(result.size) : previous?.size,
-      name: nextName,
-      label: nextName
-    };
-    const matches = (item) => (
-      (previousRef && item?.ref === previousRef)
-      || (previousCacheKey && item?.cacheKey === previousCacheKey)
-    );
+    const current = state.items.find((item) => sameDriveDocumentIdentity(item, previous)) || previous;
+    const next = mergeRenamedDriveMetadata(current, result);
+    const matches = (item) => sameDriveDocumentIdentity(item, previous);
 
-    state.items = sortItems(state.items.map((item) => matches(item) ? { ...item, ...next } : item), state.listSortOrder);
+    state.items = sortItems(
+      state.items.map((item) => matches(item) ? { ...item, ...next } : item),
+      state.listSortOrder
+    );
     if (state.folderSnapshot && Array.isArray(state.folderSnapshot.items)) {
       state.folderSnapshot = {
         ...state.folderSnapshot,
@@ -3797,15 +3838,16 @@
       };
     }
     if (Array.isArray(state.backgroundRecentPdfs)) {
-      state.backgroundRecentPdfs = state.backgroundRecentPdfs.map((item) => matches(item) ? { ...item, ...next } : item);
+      state.backgroundRecentPdfs = state.backgroundRecentPdfs.map(
+        (item) => matches(item) ? { ...item, ...next } : item
+      );
     }
-    state.selectedListIndex = state.items.findIndex((item) => (
-      (next.ref && item?.ref === next.ref)
-      || (next.cacheKey && item?.cacheKey === next.cacheKey)
-    ));
+    state.selectedListIndex = state.items.findIndex((item) => sameDriveDocumentIdentity(item, next));
     return {
       next,
-      contentConflict: result?.contentConflict === true
+      superseded: result?.superseded === true,
+      sourceChangedSinceOpen: result?.sourceChangedSinceOpen === true,
+      nameChangedSinceOpen: result?.nameChangedSinceOpen === true
     };
   }
 
@@ -3860,24 +3902,16 @@
       const applied = applyRenamedListResult(previous, result);
       state.listRenameRef = '';
       renderItems();
-      if (applied.contentConflict) {
-        showStatus(
-          'Nome alterado no Google Drive. O conteúdo do PDF também mudou durante a operação; abra o arquivo novamente antes de editar.',
-          'warning'
-        );
-      } else {
-        showStatus('Nome do PDF atualizado e sincronizado com o Google Drive.', 'success');
-      }
+      showStatus(
+        applied.superseded
+          ? 'Nome atualizado, mas uma renomeação posterior já prevaleceu no Google Drive.'
+          : 'Nome do PDF atualizado e sincronizado com o Google Drive.',
+        applied.superseded ? 'warning' : 'success'
+      );
       return true;
     } catch (error) {
-      const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
-      const failureMessage = String(
-        error?.message || 'Não foi possível renomear o PDF no Google Drive.'
-      );
       showStatus(
-        conflict
-          ? 'Conflito: o arquivo mudou no Google Drive. Atualize a lista antes de renomear.'
-          : failureMessage,
+        String(error?.message || 'Não foi possível renomear o PDF no Google Drive.'),
         'warning'
       );
       return false;
@@ -3944,11 +3978,9 @@
       showStatus('Sua conta não possui permissão para renomear este PDF no Google Drive.', 'warning');
       return false;
     }
-    if (state.driveSyncInFlight || state.editorBusy) {
-      showStatus('Aguarde a operação atual terminar antes de renomear o PDF.', 'warning');
-      return false;
-    }
 
+    // Nome e conteúdo são canais independentes. Uma reconstrução local ou upload
+    // de conteúdo em andamento não impede o PATCH de metadado do nome.
     state.titleSelected = false;
     state.titleEditing = true;
     setPdfRenameFeedback('');
@@ -3967,34 +3999,26 @@
   }
 
   function applyRenamedPdfResult(previous, result) {
-    const previousRef = String(previous?.ref || '');
-    const previousCacheKey = String(previous?.cacheKey || '');
-    const contentConflict = result?.contentConflict === true;
-    const nextName = String(result?.name || previous?.name || 'PDF');
-    const next = {
-      ...previous,
-      ref: String(result?.ref || previous?.ref || ''),
-      cacheKey: String(result?.cacheKey || previous?.cacheKey || ''),
-      version: contentConflict
-        ? String(previous?.version || '')
-        : String(result?.currentVersion || previous?.version || ''),
-      modifiedTime: String(result?.modifiedTime || previous?.modifiedTime || ''),
-      size: Number.isFinite(Number(result?.size)) ? Number(result.size) : previous?.size,
-      name: nextName,
-      label: nextName
-    };
+    const current = sameDriveDocumentIdentity(state.pdfItem, previous)
+      ? state.pdfItem
+      : previous;
+    const next = mergeRenamedDriveMetadata(current, result);
 
     state.items = state.items.map((item) => (
-      (previousRef && item?.ref === previousRef)
-      || (previousCacheKey && item?.cacheKey === previousCacheKey)
+      sameDriveDocumentIdentity(item, previous)
         ? { ...item, ...next }
         : item
     ));
     state.pdfItem = next;
-    renderViewerTitle(nextName);
+    renderViewerTitle(next.name);
     refreshPdfListMetadata();
     refreshPdfListActions();
-    return { next, contentConflict };
+    return {
+      next,
+      superseded: result?.superseded === true,
+      sourceChangedSinceOpen: result?.sourceChangedSinceOpen === true,
+      nameChangedSinceOpen: result?.nameChangedSinceOpen === true
+    };
   }
 
   async function commitPdfRename() {
@@ -4010,10 +4034,6 @@
       showStatus('A sincronização com Google Drive não está disponível para renomear este PDF.', 'warning');
       return false;
     }
-    if (state.driveSyncInFlight || state.editorBusy) {
-      showStatus('Aguarde a operação atual terminar antes de renomear o PDF.', 'warning');
-      return false;
-    }
 
     const previous = state.pdfItem;
     const oldName = String(previous.name || '');
@@ -4026,7 +4046,6 @@
     state.renameBusy = true;
     if (els.viewerRenameInput) els.viewerRenameInput.disabled = true;
     setPdfRenameFeedback('Sincronizando nome com o Google Drive…', 'pending');
-    clearDriveSyncTimer();
 
     try {
       const result = await api('/api/documents/drive/rename', {
@@ -4039,7 +4058,10 @@
         })
       });
 
-      if (state.pdfItem !== previous) return false;
+      // O upload de conteúdo pode ter atualizado state.pdfItem enquanto o PATCH
+      // de nome estava em voo. Mesclamos o resultado somente se ainda é o mesmo
+      // arquivo, usando cacheKey estável em vez de igualdade de objeto/versão.
+      if (!sameDriveDocumentIdentity(state.pdfItem, previous)) return false;
       const applied = applyRenamedPdfResult(previous, result);
       state.titleEditing = false;
       state.titleSelected = true;
@@ -4047,43 +4069,24 @@
       if (els.viewerTitle) els.viewerTitle.hidden = false;
       renderViewerTitle(applied.next.name);
 
-      if (applied.contentConflict) {
-        setPdfRenameFeedback('Nome alterado no Drive; o conteúdo do PDF também mudou.', 'warning');
+      if (applied.superseded) {
+        setPdfRenameFeedback('Outra renomeação posterior já prevaleceu no Google Drive.', 'warning');
         showStatus(
-          'O nome foi alterado no Drive, mas o conteúdo também mudou durante a operação. Reabra o PDF antes de continuar editando.',
+          'A alteração de nome foi concluída, mas uma renomeação posterior já é a atual no Google Drive.',
           'warning'
         );
       } else {
         setPdfRenameFeedback('Nome alterado e sincronizado com o Google Drive.', 'success');
         showStatus('Nome do PDF atualizado no Google Drive.', 'success');
-        if (
-          state.editorSession
-          && currentEditorRevision() !== state.driveSyncLastConfirmedRevision
-        ) {
-          scheduleAutomaticDriveSync(currentEditorRevision());
-        }
       }
       heartbeatDocumentPresence().catch(() => {});
       return true;
     } catch (error) {
-      const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
       const failureMessage = String(
         error?.message || 'Não foi possível renomear o PDF no Google Drive.'
       );
-      setPdfRenameFeedback(
-        conflict
-          ? 'Conflito: o arquivo mudou no Google Drive. Reabra antes de renomear.'
-          : `Falha: ${failureMessage}`,
-        'warning'
-      );
+      setPdfRenameFeedback(`Falha: ${failureMessage}`, 'warning');
       showStatus(failureMessage, 'warning');
-      if (
-        state.editorSession
-        && currentEditorRevision() !== state.driveSyncLastConfirmedRevision
-        && !state.driveSyncInFlight
-      ) {
-        scheduleAutomaticDriveSync(currentEditorRevision());
-      }
       return false;
     } finally {
       state.renameBusy = false;
