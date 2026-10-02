@@ -420,6 +420,7 @@ function normalizeChatSessionSnapshot(snapshot) {
     savedAt: Date.now(),
     panelOpen: Boolean(snapshot?.panelOpen),
     activeUsername: safeChatUsername(snapshot?.activeUsername),
+    activeScrollFromBottom: Math.max(0, Math.min(1000000, Number(snapshot?.activeScrollFromBottom || 0))),
     conversations: conversations.slice(0, CHAT_SESSION_MAX_CONVERSATIONS),
     drafts: drafts.slice(0, CHAT_SESSION_MAX_CONVERSATIONS)
   };
