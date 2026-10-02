@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import aiWorker from '../gemini-assistant.js';
-import portalWorker from '../index.js';
+import { fetchAiResilient } from '../ai-resilience.js';
 
 const origin = 'https://regulacaoeldoradoms.com.br';
 
@@ -16,6 +16,10 @@ function aiRequest(question = 'Quais informações clínicas são obrigatórias?
       ...additions
     })
   });
+}
+
+function portalAiFetch(request, env) {
+  return fetchAiResilient(request, env, {}, origin, true);
 }
 
 function workerEnv(overrides = {}) {
@@ -128,7 +132,7 @@ test('usa Cloudflare imediatamente quando GEMINI_API_KEY não está configurada'
   console.error = () => {};
 
   try {
-    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+    const response = await portalAiFetch(aiRequest(), workerEnv({
       GEMINI_API_KEY: '',
       AI: {
         async run(model, input, options) {
@@ -139,7 +143,7 @@ test('usa Cloudflare imediatamente quando GEMINI_API_KEY não está configurada'
           return { response: 'Resposta Cloudflare sem depender do Gemini.' };
         }
       }
-    }), {});
+    }));
     const payload = await response.json();
     assert.equal(response.status, 200);
     assert.equal(payload.answer, 'Resposta Cloudflare sem depender do Gemini.');
@@ -167,7 +171,7 @@ test('usa a Cloudflare como segundo provedor quando os dois modelos Gemini falha
 
   try {
     let cloudflareCalls = 0;
-    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+    const response = await portalAiFetch(aiRequest(), workerEnv({
       GEMINI_MODEL: 'primary-model',
       GEMINI_FALLBACK_MODELS: 'fallback-model',
       GEMINI_REQUEST_TIMEOUT_MS: '1000',
@@ -183,7 +187,7 @@ test('usa a Cloudflare como segundo provedor quando os dois modelos Gemini falha
           return { response: 'Resposta da contingência independente.' };
         }
       }
-    }), {});
+    }));
     const payload = await response.json();
     assert.equal(response.status, 200);
     assert.equal(payload.answer, 'Resposta da contingência independente.');
@@ -211,7 +215,7 @@ test('tenta um segundo modelo Cloudflare quando o modelo rápido falha', async (
   const models = [];
 
   try {
-    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+    const response = await portalAiFetch(aiRequest(), workerEnv({
       GEMINI_FALLBACK_MODELS: '',
       AI: {
         async run(model, input) {
@@ -222,7 +226,7 @@ test('tenta um segundo modelo Cloudflare quando o modelo rápido falha', async (
           return { choices: [{ message: { content: 'Resposta do segundo modelo Cloudflare.' } }] };
         }
       }
-    }), {});
+    }));
     const payload = await response.json();
     assert.equal(response.status, 200);
     assert.equal(payload.answer, 'Resposta do segundo modelo Cloudflare.');
@@ -246,9 +250,9 @@ test('não consulta a contingência quando o Gemini responde', async () => {
   let cloudflareCalls = 0;
 
   try {
-    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+    const response = await portalAiFetch(aiRequest(), workerEnv({
       AI: { async run() { cloudflareCalls += 1; return {}; } }
-    }), {});
+    }));
     const payload = await response.json();
     assert.equal(response.status, 200);
     assert.equal(payload.provider, 'Gemini');
@@ -268,11 +272,11 @@ test('retorna contingência local somente quando ambos os provedores falham', as
 
   try {
     let cloudflareCalls = 0;
-    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+    const response = await portalAiFetch(aiRequest(), workerEnv({
       GEMINI_MODEL: 'primary-model',
       GEMINI_FALLBACK_MODELS: 'fallback-model',
       AI: { async run() { cloudflareCalls += 1; throw new Error('Cloudflare indisponível'); } }
-    }), {});
+    }));
     const payload = await response.json();
     assert.equal(response.status, 503);
     assert.equal(payload.code, 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE');
@@ -295,10 +299,9 @@ test('bloqueia dados identificáveis antes de consultar qualquer provedor', asyn
   };
 
   try {
-    const response = await portalWorker.fetch(
+    const response = await portalAiFetch(
       aiRequest('Paciente: Maria da Silva, CPF 123.456.789-09.'),
       workerEnv({ AI: { async run() { cloudflareCalls += 1; return {}; } } }),
-      {}
     );
     const payload = await response.json();
     assert.equal(response.status, 400);

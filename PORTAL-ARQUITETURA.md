@@ -43,10 +43,18 @@ segundo plano.
 A sessão local validada permite montar a interface imediatamente, com reconferência
 silenciosa no Worker. APIs, feed, mensagens, chat, manifestações, anexos, dados de
 pacientes e respostas administrativas nunca entram no cache estático. O Chat Interno
-pode pré-carregar conversas autorizadas somente na memória efêmera da página, usando
-leitura protegida que não altera o estado de não lida; esse conteúdo é descartado ao
-sair da página ou limpar a sessão. A autorização continua sendo revalidada no backend
-em toda operação protegida.
+pré-carrega somente a janela recente das conversas autorizadas e pode transferir entre
+módulos um snapshot privado e temporário pela memória do Service Worker. Esse snapshot
+não usa Cache Storage, localStorage, sessionStorage nem IndexedDB, expira e nunca
+substitui a autorização do Worker.
+
+A atualização primária do Chat usa WebSocket com Durable Object hibernável por usuário.
+O Durable Object mantém conexões e metadados mínimos de presença/contatos; conteúdo de
+mensagem continua no D1. Upgrade WebSocket usa ticket HMAC curto separado da sessão
+principal. Mensagens, recibos, presença e “digitando…” chegam em tempo real; polling
+HTTP permanece como fallback. Histórico antigo é carregado sob demanda e leitura
+protegida `peek=1` não altera o estado de não lida. A autorização continua sendo
+revalidada no backend em toda operação protegida.
 
 A política completa, os limites e a validação estão em
 `docs/PORTAL-DESEMPENHO-CACHE-V1.md`.

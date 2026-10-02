@@ -18,6 +18,7 @@ import {
   currentSecretBindingNames,
   validateCandidateBindings,
   validateEquivalentNonProductionBindings,
+  pendingLifecycleBindings,
   injectAuthDbDatabaseId,
   injectRequiredSecrets,
   classifyAgendaProbe,
@@ -36,6 +37,7 @@ function activeBindings() {
   return [
     { name: 'AUTH_DB', type: 'd1', id: DB },
     { name: 'AI', type: 'ai' },
+    { name: 'CHAT_REALTIME', type: 'durable_object_namespace', namespace_id: 'chat-realtime-test' },
     { name: 'FIREBASE_PROJECT_ID', type: 'plain_text', text: 'portal-projeto' },
     { name: 'FIREBASE_CLIENT_EMAIL', type: 'plain_text', text: 'firebase@example.test' },
     { name: 'FIREBASE_PRIVATE_KEY', type: 'secret_text' },
@@ -171,6 +173,30 @@ test('candidata íntegra preserva críticos, secrets e Firebase público', () =>
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
   assert.equal(result.preservedSecrets, 9);
   assert.equal(result.authDbId, DB);
+});
+
+test('migração inicial do chat realtime permite somente o binding allowlisted ausente na versão antiga', () => {
+  const withoutRealtime = activeBindings().filter((binding) => binding.name !== 'CHAT_REALTIME');
+  const active = version(withoutRealtime);
+  const toml = [
+    'name = "yellow-wave-d0a1guia-regulacao-ia"',
+    'keep_vars = true',
+    '',
+    '[[durable_objects.bindings]]',
+    'name = "CHAT_REALTIME"',
+    'class_name = "PortalChatRealtime"',
+    '',
+    '[[migrations]]',
+    'tag = "chat-realtime-v1"',
+    'new_sqlite_classes = ["PortalChatRealtime"]'
+  ].join('\n');
+
+  assert.deepEqual(pendingLifecycleBindings(toml, active), ['CHAT_REALTIME']);
+  assert.doesNotThrow(() => validateCandidateBindings(active, active, {
+    allowMissingCritical: ['CHAT_REALTIME']
+  }));
+  assert.throws(() => validateCandidateBindings(active, active), /BINDING_CRITICO_AUSENTE_CHAT_REALTIME/);
+  assert.deepEqual(pendingLifecycleBindings(toml, version(activeBindings())), []);
 });
 
 test('versão não produtiva equivalente pode ser ignorada sem relaxar bindings', () => {
@@ -360,7 +386,12 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.doesNotMatch(source, /AIza[0-9A-Za-z_-]{20,}/);
   assert.match(source, /'versions', 'upload'/);
   assert.match(source, /'versions', 'deploy'/);
+  assert.match(source, /function deployLifecycle/);
+  assert.match(source, /\['deploy'/);
+  assert.match(source, /deployLifecycleDireto/);
+  assert.match(source, /pendingLifecycleBindings/);
   assert.match(source, /--experimental-provision=false/);
+  assert.match(source, /DRY_RUN_DA_MIGRACAO_DURABLE_OBJECT_FALHOU/);
   assert.match(source, /--experimental-auto-create=false/);
   assert.doesNotMatch(source, /'--strict'/);
   assert.match(source, /'--tag', SAFE_DEPLOY\.candidateTag/);

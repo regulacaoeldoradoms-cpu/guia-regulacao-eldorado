@@ -39,6 +39,7 @@ O gate exige atualmente:
 
 - `AUTH_DB` como D1;
 - `AI` como binding Workers AI;
+- `CHAT_REALTIME` como namespace Durable Object do chat;
 - `FIREBASE_PROJECT_ID`;
 - `FIREBASE_CLIENT_EMAIL`;
 - `FIREBASE_PRIVATE_KEY` como secret;
@@ -99,6 +100,43 @@ As homologações que realmente precisam de alias de preview, como a Central 5E,
 - homologações continuam explicitamente opt-in;
 - um problema de Preview URL não deve derrubar o pipeline normal de publicação do Worker;
 - a configuração produtiva não precisa habilitar preview público permanentemente.
+
+## Exceção controlada para a criação inicial do Durable Object do chat
+
+A implantação do chat em tempo real introduz o primeiro Durable Object do Worker
+institucional: binding `CHAT_REALTIME`, classe SQLite `PortalChatRealtime`.
+
+A Cloudflare não aplica criação, remoção, renomeação ou transferência de classes
+Durable Object pelo fluxo `wrangler versions upload`. Por isso, **somente enquanto a
+produção ainda não possuir `CHAT_REALTIME`** e o `wrangler.toml` declarar
+simultaneamente o binding e a migration allowlisted
+`new_sqlite_classes = ["PortalChatRealtime"]`, o gate entra em um caminho especial.
+
+Esse caminho não relaxa as verificações:
+
+1. confirma a produção atual única em 100%;
+2. valida todos os bindings e secrets já existentes, aceitando temporariamente apenas
+   a ausência de `CHAT_REALTIME` na versão antiga;
+3. gera a mesma configuração efêmera protegida, com `AUTH_DB` explícito e
+   `secrets.required`;
+4. executa `wrangler deploy --dry-run`;
+5. arma o rollback e executa o deploy de lifecycle com a mensagem/tag reservadas do
+   gate;
+6. identifica a nova versão ativa e exige nela **todos** os bindings críticos,
+   incluindo `CHAT_REALTIME`;
+7. exige o mesmo D1, todos os secrets anteriores e os valores públicos estáveis do
+   Firebase;
+8. executa os smokes pós-deploy já obrigatórios;
+9. se qualquer etapa posterior ao início do deploy falhar, restaura a versão produtiva
+   anterior.
+
+Depois que `CHAT_REALTIME` existir na produção, essa exceção deixa de ser elegível e
+o gate volta automaticamente ao fluxo normal `versions upload` → inspeção →
+`versions deploy`.
+
+O rollback de código não apaga o namespace Durable Object já provisionado. Isso é
+intencional: o recurso pode permanecer sem tráfego enquanto a versão anterior volta a
+100%, evitando uma operação destrutiva durante recuperação.
 
 ## Rollback automático
 

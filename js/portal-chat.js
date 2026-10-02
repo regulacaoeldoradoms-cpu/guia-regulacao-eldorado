@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-fluid-1') return;
+  if (window.PortalChat?.version === '20261002-realtime-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -23,6 +23,18 @@
   let restoredChatSession = null;
   let historyLoadPending = null;
   let pendingSequence = 0;
+  let activeUnreadBoundaryId = 0;
+  let realtimeSocket = null;
+  let realtimeConnected = false;
+  let realtimeStopped = false;
+  let realtimeReconnectTimer = null;
+  let realtimePingTimer = null;
+  let realtimeRotateTimer = null;
+  let realtimeBackoffMs = 1000;
+  let typingLastSentAt = 0;
+  let typingStopTimer = null;
+  let remoteTypingTimer = null;
+  let remoteTypingUsername = '';
   const unreadSnapshot = new Map();
   const messageCache = new Map();
   const messagePreloadRequests = new Map();
@@ -33,8 +45,16 @@
   const MESSAGE_PRELOAD_CONCURRENCY = 3;
   const MESSAGE_HISTORY_PAGE_SIZE = 120;
   const MESSAGE_PRELOAD_PAGE_GUARD = 100;
-  const CHAT_ACTIVE_POLL_MS = 2500;
+  const CHAT_FALLBACK_POLL_MS = 4500;
+  const CHAT_CONTACTS_REALTIME_REFRESH_MS = 30000;
+  const CHAT_CONTACTS_FALLBACK_REFRESH_MS = 12000;
   const CHAT_SESSION_GET_TIMEOUT_MS = 550;
+  const CHAT_REALTIME_PROTOCOL = 'portal-chat-v1';
+  const CHAT_REALTIME_ROTATE_MS = 300000;
+  const CHAT_REALTIME_PING_MS = 25000;
+  const CHAT_TYPING_RESEND_MS = 1400;
+  const CHAT_TYPING_STOP_MS = 2200;
+  const CHAT_TYPING_REMOTE_TTL_MS = 4200;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
 
   const escapeText = (value) => String(value || '');
@@ -64,6 +84,273 @@
       if (!response.ok) throw new Error(payload.error || `Falha no chat (${response.status}).`);
       return payload;
     });
+  }
+
+  function realtimeEndpoint() {
+    try {
+      const url = new URL(endpoint);
+      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      url.pathname = '/api/chat/realtime';
+      url.search = '';
+      url.hash = '';
+      return url.toString();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function clearRealtimeTimers() {
+    window.clearTimeout(realtimeReconnectTimer);
+    window.clearInterval(realtimePingTimer);
+    window.clearTimeout(realtimeRotateTimer);
+    realtimeReconnectTimer = null;
+    realtimePingTimer = null;
+    realtimeRotateTimer = null;
+  }
+
+  function updateRealtimeMode(connected) {
+    realtimeConnected = Boolean(connected);
+    if (realtimeConnected) stopMessagePolling();
+    else if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
+    if (!realtimeStopped) restartContactsTimer();
+  }
+
+  function scheduleRealtimeReconnect() {
+    if (realtimeStopped || realtimeReconnectTimer || document.hidden) return;
+    const delay = realtimeBackoffMs;
+    realtimeBackoffMs = Math.min(15000, Math.max(1000, realtimeBackoffMs * 2));
+    realtimeReconnectTimer = window.setTimeout(() => {
+      realtimeReconnectTimer = null;
+      void connectRealtime();
+    }, delay);
+  }
+
+  function closeRealtime({ permanent = false } = {}) {
+    if (permanent) realtimeStopped = true;
+    clearRealtimeTimers();
+    const socket = realtimeSocket;
+    realtimeSocket = null;
+    updateRealtimeMode(false);
+    if (socket && socket.readyState < WebSocket.CLOSING) {
+      try { socket.close(1000, 'portal-navigation'); } catch (_) {}
+    }
+  }
+
+  async function connectRealtime() {
+    if (realtimeStopped || document.hidden || !('WebSocket' in window)) return false;
+    if (realtimeSocket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(realtimeSocket.readyState)) return true;
+    const url = realtimeEndpoint();
+    if (!url) return false;
+
+    let ticketPayload;
+    try {
+      ticketPayload = await api('/api/chat/realtime/ticket', { method: 'POST', body: '{}' });
+    } catch (_) {
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+      return false;
+    }
+    const ticket = String(ticketPayload?.ticket || '');
+    const protocol = String(ticketPayload?.protocol || CHAT_REALTIME_PROTOCOL);
+    if (!ticket || protocol !== CHAT_REALTIME_PROTOCOL) {
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+      return false;
+    }
+
+    let socket;
+    try {
+      socket = new WebSocket(url, [CHAT_REALTIME_PROTOCOL, ticket]);
+    } catch (_) {
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+      return false;
+    }
+
+    realtimeSocket = socket;
+    socket.addEventListener('open', () => {
+      if (realtimeSocket !== socket) return;
+      realtimeBackoffMs = 1000;
+      updateRealtimeMode(true);
+      window.clearInterval(realtimePingTimer);
+      realtimePingTimer = window.setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          try { socket.send('ping'); } catch (_) {}
+        }
+      }, CHAT_REALTIME_PING_MS);
+      window.clearTimeout(realtimeRotateTimer);
+      realtimeRotateTimer = window.setTimeout(() => {
+        if (realtimeSocket === socket && socket.readyState === WebSocket.OPEN) {
+          try { socket.close(1000, 'revalidate'); } catch (_) {}
+        }
+      }, CHAT_REALTIME_ROTATE_MS);
+      void loadContacts();
+      if (activeContact) void loadMessages(false);
+    });
+
+    socket.addEventListener('message', (event) => {
+      if (realtimeSocket !== socket || typeof event.data !== 'string') return;
+      let payload;
+      try { payload = JSON.parse(event.data); } catch (_) { return; }
+      handleRealtimeEvent(payload);
+    });
+
+    socket.addEventListener('error', () => {
+      if (realtimeSocket !== socket) return;
+      try { socket.close(); } catch (_) {}
+    });
+
+    socket.addEventListener('close', () => {
+      if (realtimeSocket === socket) realtimeSocket = null;
+      clearRealtimeTimers();
+      updateRealtimeMode(false);
+      scheduleRealtimeReconnect();
+    });
+
+    return true;
+  }
+
+  function updateContactPresence(username, online, lastSeen = '') {
+    const contact = contacts.find((item) => item.username === username);
+    if (!contact) return false;
+    contact.online = Boolean(online);
+    if (lastSeen) contact.lastSeen = lastSeen;
+    renderContacts();
+    if (activeContact?.username === username) {
+      activeContact = { ...activeContact, ...contact };
+      updateConversationHeader();
+    }
+    return true;
+  }
+
+  function clearRemoteTyping() {
+    window.clearTimeout(remoteTypingTimer);
+    remoteTypingTimer = null;
+    remoteTypingUsername = '';
+    const typing = document.getElementById('portalChatTyping');
+    if (typing) typing.hidden = true;
+  }
+
+  function setRemoteTyping(username, active, expiresAt = 0) {
+    if (!active) {
+      if (remoteTypingUsername === username) clearRemoteTyping();
+      return;
+    }
+    if (activeContact?.username !== username) return;
+    remoteTypingUsername = username;
+    const typing = document.getElementById('portalChatTyping');
+    if (typing) typing.hidden = false;
+    window.clearTimeout(remoteTypingTimer);
+    const ttl = Math.max(350, Math.min(CHAT_TYPING_REMOTE_TTL_MS, Number(expiresAt || 0) - Date.now() || CHAT_TYPING_REMOTE_TTL_MS));
+    remoteTypingTimer = window.setTimeout(clearRemoteTyping, ttl);
+  }
+
+  function handleRealtimeMessage(message) {
+    const id = Number(message?.id || 0);
+    const sender = messageCacheKey(message?.fromUser);
+    if (!id || !sender || sender === currentUser?.username) return;
+
+    const contact = contacts.find((item) => item.username === sender);
+    if (!contact) {
+      void loadContacts();
+      return;
+    }
+
+    mergeCachedMessages(sender, [message], message.sentAt || contact.lastMessageAt || '', {
+      hasOlder: messageCache.get(sender)?.hasOlder || false
+    });
+    contact.lastMessageAt = message.sentAt || contact.lastMessageAt || '';
+
+    const root = document.getElementById('portalChatRoot');
+    const conversationVisible = !document.hidden
+      && root?.classList.contains('open')
+      && activeContact?.username === sender;
+
+    if (conversationVisible) {
+      appendMessages([message], false);
+      contact.unread = 0;
+      contact.firstUnreadId = 0;
+      unreadSnapshot.set(sender, 0);
+      renderContacts();
+      api('/api/chat/read', {
+        method: 'POST',
+        body: JSON.stringify({ with: sender, throughId: id })
+      }).catch(() => loadMessages(false));
+      return;
+    }
+
+    const previousUnread = Number(contact.unread || 0);
+    contact.unread = previousUnread + 1;
+    if (!Number(contact.firstUnreadId || 0)) contact.firstUnreadId = id;
+    unreadSnapshot.set(sender, contact.unread);
+    renderContacts();
+    window.PortalInteractions?.emit?.('notification', { debounce: 900 });
+    void showMessageNotification(contact, 1);
+    if (root?.classList.contains('open')) void markChatDelivered(true);
+  }
+
+  function handleRealtimeEvent(payload) {
+    const type = String(payload?.type || '');
+    if (type === 'ready' || type === 'pong') return;
+    if (type === 'message') {
+      handleRealtimeMessage(payload.message);
+      return;
+    }
+    if (type === 'receipt') {
+      const username = messageCacheKey(payload.with);
+      if (username) applyReceiptStateFor(username, payload);
+      return;
+    }
+    if (type === 'typing') {
+      const username = messageCacheKey(payload.username);
+      if (username) setRemoteTyping(username, Boolean(payload.active), Number(payload.expiresAt || 0));
+      return;
+    }
+    if (type === 'presence') {
+      const username = messageCacheKey(payload.username);
+      if (username && !updateContactPresence(username, Boolean(payload.online), String(payload.lastSeen || ''))) {
+        void loadContacts();
+      }
+      return;
+    }
+    if (type === 'contact-refresh') void loadContacts();
+  }
+
+  function sendTypingState(active) {
+    if (!activeContact) return;
+    const username = activeContact.username;
+    if (!username) return;
+    api('/api/chat/typing', {
+      method: 'POST',
+      body: JSON.stringify({ with: username, active: Boolean(active) })
+    }).catch(() => {});
+  }
+
+  function noteLocalTyping() {
+    const input = document.getElementById('portalChatInput');
+    const hasText = Boolean(String(input?.value || '').trim());
+    window.clearTimeout(typingStopTimer);
+    if (!hasText || !activeContact) {
+      typingLastSentAt = 0;
+      sendTypingState(false);
+      return;
+    }
+    const now = Date.now();
+    if (now - typingLastSentAt >= CHAT_TYPING_RESEND_MS) {
+      typingLastSentAt = now;
+      sendTypingState(true);
+    }
+    typingStopTimer = window.setTimeout(() => {
+      typingLastSentAt = 0;
+      sendTypingState(false);
+    }, CHAT_TYPING_STOP_MS);
+  }
+
+  function stopLocalTyping() {
+    window.clearTimeout(typingStopTimer);
+    typingStopTimer = null;
+    typingLastSentAt = 0;
+    sendTypingState(false);
   }
 
   function messageCacheKey(username) {
@@ -110,9 +397,14 @@
       if (draft) draftCache.set(activeContact.username, draft);
       else draftCache.delete(activeContact.username);
     }
+    const messagesBox = document.getElementById('portalChatMessages');
+    const activeScrollFromBottom = messagesBox
+      ? Math.max(0, messagesBox.scrollHeight - messagesBox.scrollTop - messagesBox.clientHeight)
+      : 0;
     return {
       panelOpen: Boolean(root?.classList.contains('open')),
       activeUsername: activeContact?.username || '',
+      activeScrollFromBottom,
       conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
         username,
         lastMessageAt: entry?.lastMessageAt || '',
@@ -443,20 +735,30 @@
     receipt.setAttribute('aria-label', state.title);
   }
 
-  function applyReceiptState(receiptState) {
-    if (!activeContact || !receiptState) return;
+  function applyReceiptStateFor(username, receiptState) {
+    const key = messageCacheKey(username);
+    if (!key || !receiptState) return;
     const deliveredThroughId = Number(receiptState.deliveredThroughId || 0);
     const readThroughId = Number(receiptState.readThroughId || 0);
-    const cached = messageCache.get(messageCacheKey(activeContact.username));
+    const cached = messageCache.get(key);
     if (!cached?.messages?.length) return;
+
     cached.messages.forEach((message) => {
       if (message.fromUser !== currentUser?.username) return;
       const id = Number(message.id || 0);
       if (id && id <= deliveredThroughId && !message.deliveredAt) message.deliveredAt = 'ack';
       if (id && id <= readThroughId && !message.readAt) message.readAt = 'ack';
-      const element = document.querySelector(`#portalChatMessages [data-message-id="${id}"]`);
-      updateMessageReceiptElement(element, message);
+      if (activeContact?.username === key) {
+        const element = document.querySelector(`#portalChatMessages [data-message-id="${id}"]`);
+        updateMessageReceiptElement(element, message);
+      }
     });
+    queueChatSessionPersist();
+  }
+
+  function applyReceiptState(receiptState) {
+    if (!activeContact) return;
+    applyReceiptStateFor(activeContact.username, receiptState);
   }
 
   async function markChatDelivered(force = false) {
@@ -737,6 +1039,37 @@
     return element;
   }
 
+  function unreadBoundaryFor(contact, messages = []) {
+    const exact = Number(contact?.firstUnreadId || 0);
+    if (exact > 0) return exact;
+    const unread = Number(contact?.unread || 0);
+    if (!unread) return 0;
+    const incoming = (Array.isArray(messages) ? messages : [])
+      .filter((message) => message.fromUser === contact?.username && Number(message?.id || 0) > 0);
+    const explicit = incoming.filter((message) => !message.readAt);
+    const candidates = explicit.length ? explicit : incoming.slice(-unread);
+    return Number(candidates[0]?.id || 0);
+  }
+
+  function unreadDividerElement() {
+    const divider = document.createElement('div');
+    divider.className = 'portal-chat-unread-divider';
+    divider.dataset.chatUnreadDivider = 'true';
+    divider.setAttribute('role', 'separator');
+    divider.setAttribute('aria-label', 'Início das novas mensagens');
+    const label = document.createElement('span');
+    label.textContent = 'Novas mensagens';
+    divider.appendChild(label);
+    return divider;
+  }
+
+  function appendUnreadDividerBefore(container, reference, messageId) {
+    if (!activeUnreadBoundaryId || Number(messageId || 0) !== activeUnreadBoundaryId) return;
+    if (container.querySelector?.('[data-chat-unread-divider]')) return;
+    const divider = unreadDividerElement();
+    container.insertBefore(divider, reference || null);
+  }
+
   function appendMessages(messages, replace = false) {
     const box = document.getElementById('portalChatMessages');
     if (!box) return;
@@ -758,6 +1091,7 @@
       const element = messageElement(message);
       element.dataset.messageId = String(message.id || '');
       if (clientId) element.dataset.clientId = clientId;
+      appendUnreadDividerBefore(box, null, id);
       box.appendChild(element);
       lastMessageId = Math.max(lastMessageId, id);
     });
@@ -786,6 +1120,9 @@
       const element = messageElement(message);
       element.dataset.messageId = String(id);
       if (message.clientId) element.dataset.clientId = String(message.clientId);
+      if (activeUnreadBoundaryId && id === activeUnreadBoundaryId && !box.querySelector('[data-chat-unread-divider]')) {
+        fragment.appendChild(unreadDividerElement());
+      }
       fragment.appendChild(element);
     });
     box.insertBefore(fragment, box.firstChild);
@@ -836,6 +1173,9 @@
       const messages = Array.isArray(payload.messages) ? payload.messages : [];
       const contact = contacts.find((item) => item.username === username);
       const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+      if (initial && !activeUnreadBoundaryId && contact) {
+        activeUnreadBoundaryId = unreadBoundaryFor(contact, messages);
+      }
       if (initial) {
         replaceCachedMessages(username, messages, contact?.lastMessageAt || '', { hasOlder: messages.length >= pageSize });
       } else {
@@ -847,6 +1187,7 @@
       applyReceiptState(payload.receipt);
       if (contact) {
         contact.unread = 0;
+        contact.firstUnreadId = 0;
         unreadSnapshot.set(username, 0);
       }
       renderContacts();
@@ -862,9 +1203,20 @@
 
   function startMessagePolling() {
     stopMessagePolling();
+    if (realtimeConnected) return;
     messageTimer = window.setInterval(() => {
-      if (!document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) loadMessages(false);
-    }, CHAT_ACTIVE_POLL_MS);
+      if (!realtimeConnected && !document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) {
+        loadMessages(false);
+      }
+    }, CHAT_FALLBACK_POLL_MS);
+  }
+
+  function restartContactsTimer() {
+    if (contactsTimer) window.clearInterval(contactsTimer);
+    const interval = realtimeConnected ? CHAT_CONTACTS_REALTIME_REFRESH_MS : CHAT_CONTACTS_FALLBACK_REFRESH_MS;
+    contactsTimer = window.setInterval(() => {
+      if (!document.hidden) loadContacts();
+    }, interval);
   }
 
   function saveActiveDraft() {
@@ -877,7 +1229,11 @@
 
   function openConversation(contact, options = {}) {
     saveActiveDraft();
+    stopLocalTyping();
+    clearRemoteTyping();
     activeContact = contact;
+    const cachedForBoundary = messageCache.get(messageCacheKey(contact?.username));
+    activeUnreadBoundaryId = unreadBoundaryFor(contact, cachedForBoundary?.messages || []);
     lastMessageId = 0;
     document.getElementById('portalChatRoot')?.classList.add('open');
     void markChatDelivered(true);
@@ -887,7 +1243,7 @@
     updateConversationHeader();
     const renderedFromMemory = renderCachedConversation(contact);
     void loadMessages(!renderedFromMemory);
-    startMessagePolling();
+    if (!realtimeConnected) startMessagePolling();
     const input = document.getElementById('portalChatInput');
     if (input) input.value = draftCache.get(contact.username) || '';
     queueChatSessionPersist();
@@ -921,7 +1277,10 @@
 
   function closeConversation() {
     saveActiveDraft();
+    stopLocalTyping();
+    clearRemoteTyping();
     activeContact = null;
+    activeUnreadBoundaryId = 0;
     lastMessageId = 0;
     stopMessagePolling();
     document.getElementById('portalChatConversationView')?.classList.remove('active');
@@ -1008,6 +1367,7 @@
   }
 
   function sendMessage() {
+    stopLocalTyping();
     const input = document.getElementById('portalChatInput');
     const body = String(input?.value || '').trim();
     const username = activeContact?.username || '';
@@ -1046,6 +1406,12 @@
     const contact = contacts.find((item) => item.username === username);
     if (contact) {
       openConversation(contact, { focus: false });
+      const offset = Math.max(0, Number(snapshot.activeScrollFromBottom || 0));
+      window.requestAnimationFrame(() => {
+        const box = document.getElementById('portalChatMessages');
+        if (!box || activeContact?.username !== contact.username) return;
+        box.scrollTop = Math.max(0, box.scrollHeight - box.clientHeight - offset);
+      });
       return;
     }
     document.getElementById('portalChatConversationView')?.classList.remove('active');
@@ -1074,7 +1440,7 @@
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
-          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
+          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><span class="portal-chat-typing" id="portalChatTyping" aria-live="polite" hidden>digitando…</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
           <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">${ICONS.close}</button>
         </header>
         <div class="portal-chat-body">
@@ -1131,6 +1497,7 @@
     document.getElementById('portalChatSend')?.addEventListener('click', sendMessage);
     document.getElementById('portalChatInput')?.addEventListener('input', () => {
       saveActiveDraft();
+      noteLocalTyping();
       queueChatSessionPersist();
     });
     document.getElementById('portalChatInput')?.addEventListener('keydown', (event) => {
@@ -1177,15 +1544,24 @@
 
     if (!chatFromUrl && !chatHandleFromUrl) restoreChatUiFromSession(snapshot);
 
+    realtimeStopped = false;
+    void connectRealtime();
     heartbeatTimer = window.setInterval(() => heartbeat(false), 25000);
-    contactsTimer = window.setInterval(loadContacts, 12000);
+    restartContactsTimer();
 
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
+        realtimeStopped = false;
+        void connectRealtime();
         heartbeat(false);
         loadContacts();
-        if (activeContact) loadMessages(false);
+        if (activeContact && !realtimeConnected) loadMessages(false);
       }
+    });
+
+    window.addEventListener('online', () => {
+      realtimeStopped = false;
+      void connectRealtime();
     });
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
@@ -1211,12 +1587,21 @@
     if (!persistChatSessionSnapshotNow()) void persistChatSessionSnapshot();
   });
   window.addEventListener('portal:session-cleared', () => {
+    realtimeStopped = true;
+    closeRealtime({ permanent: true });
+    stopLocalTyping();
+    clearRemoteTyping();
+    stopMessagePolling();
+    if (contactsTimer) window.clearInterval(contactsTimer);
+    if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+    contactsTimer = null;
+    heartbeatTimer = null;
     clearMessageMemory();
     clearChatSessionSnapshot();
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-fluid-1',
+    version: '20261002-realtime-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts
