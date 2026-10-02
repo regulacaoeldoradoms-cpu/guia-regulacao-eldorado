@@ -112,7 +112,7 @@
     realtimeConnected = Boolean(connected);
     if (realtimeConnected) stopMessagePolling();
     else if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
-    restartContactsTimer();
+    if (!realtimeStopped) restartContactsTimer();
   }
 
   function scheduleRealtimeReconnect() {
@@ -1530,15 +1530,24 @@
 
     if (!chatFromUrl && !chatHandleFromUrl) restoreChatUiFromSession(snapshot);
 
+    realtimeStopped = false;
+    void connectRealtime();
     heartbeatTimer = window.setInterval(() => heartbeat(false), 25000);
-    contactsTimer = window.setInterval(loadContacts, 12000);
+    restartContactsTimer();
 
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
+        realtimeStopped = false;
+        void connectRealtime();
         heartbeat(false);
         loadContacts();
-        if (activeContact) loadMessages(false);
+        if (activeContact && !realtimeConnected) loadMessages(false);
       }
+    });
+
+    window.addEventListener('online', () => {
+      realtimeStopped = false;
+      void connectRealtime();
     });
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
@@ -1564,6 +1573,15 @@
     if (!persistChatSessionSnapshotNow()) void persistChatSessionSnapshot();
   });
   window.addEventListener('portal:session-cleared', () => {
+    realtimeStopped = true;
+    closeRealtime({ permanent: true });
+    stopLocalTyping();
+    clearRemoteTyping();
+    stopMessagePolling();
+    if (contactsTimer) window.clearInterval(contactsTimer);
+    if (heartbeatTimer) window.clearInterval(heartbeatTimer);
+    contactsTimer = null;
+    heartbeatTimer = null;
     clearMessageMemory();
     clearChatSessionSnapshot();
   });
