@@ -145,7 +145,9 @@ sqliteTest('renomeação do Titon altera o arquivo real no Drive e devolve basel
     assert.equal(result.renamed, true);
     assert.equal(result.name, 'Novo nome.pdf');
     assert.equal(result.currentVersion, '8');
-    assert.equal(result.contentConflict, false);
+    assert.equal(result.sourceChangedSinceOpen, false);
+    assert.equal(result.nameChangedSinceOpen, false);
+    assert.equal(result.superseded, false);
     assert.match(result.cacheKey, /^[A-Za-z0-9_-]{32}$/);
     assert.equal(String(result.ref).includes('rename-sensitive-file-id'), false);
     assert.equal(JSON.stringify(result).includes('parent-sensitive'), false);
