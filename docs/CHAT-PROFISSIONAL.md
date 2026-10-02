@@ -199,6 +199,52 @@ O estado **digitando…** aparece somente na conversa correspondente. Ele é enc
 ao enviar, esvaziar o campo, trocar de conversa ou após expiração defensiva, evitando
 indicador preso em caso de perda de rede.
 
+## Proteção de cota D1 e incidente de 02/10/2026
+
+Em 02/10/2026 a conta Workers Free atingiu o limite diário de **5 milhões de linhas
+lidas no D1**. Quando esse limite é alcançado, a Cloudflare rejeita novas consultas
+D1 até o reset diário de 00:00 UTC. O sintoma visível foi a Home cair para
+Ferramentas com `SOCIAL_TEMPORARILY_UNAVAILABLE · HTTP 500`; a Camada Social não
+era a origem do defeito, apenas uma das primeiras superfícies que precisavam consultar
+o D1 depois do esgotamento da cota.
+
+O diagnóstico de `wrangler d1 insights` mostrou amplificação concentrada no diretório
+do Chat:
+
+- a consulta de amizades sociais usada pelo Chat executou 3.467 vezes e respondeu por
+  aproximadamente 4,0 milhões de linhas lidas no período analisado;
+- a consulta institucional do diretório adicionou aproximadamente 397 mil linhas;
+- a resolução individual de `socialHandle` gerou mais de 73 mil consultas/leitura
+  unitária;
+- o restante da aplicação completou o consumo até o teto diário.
+
+A correção permanente mantém todas as funções de tempo real, mas reduz consultas:
+
+- contas profissionais consultam a malha institucional diretamente e usam a consulta
+  social adicional apenas para amizades com contas cidadãs, evitando carregar de novo
+  todos os profissionais já presentes no diretório;
+- o `socialHandle` profissional passa a vir por `JOIN`, eliminando o padrão N+1;
+- o upgrade WebSocket não recompõe o diretório no D1: ele reutiliza a configuração
+  enviada pela rota autenticada de usuários;
+- `digitando…` usa o próprio WebSocket quando disponível e só recorre à rota HTTP no
+  fallback;
+- o cliente pré-carrega no máximo as duas conversas recentes mais úteis, em vez de
+  varrer todos os contatos;
+- a reconciliação do diretório em tempo real passa para 120 segundos; no fallback,
+  30 segundos;
+- heartbeat D1 passa para 60 segundos;
+- chamadas duplicadas de diretório são coalescidas e respeitam janela mínima de
+  15 segundos;
+- a memória privada do Service Worker também preserva um snapshot leve dos contatos
+  por até a próxima reconciliação, evitando nova consulta imediata ao trocar de módulo;
+- a criação/verificação do schema do Chat é memoizada por binding D1 durante a vida
+  do isolate.
+
+A autorização continua no backend em operações protegidas. O snapshot local não
+concede permissão e não contém conteúdo clínico. O D1 permanece a fonte de verdade
+para mensagens e estados persistentes; o Durable Object continua restrito a eventos
+efêmeros e metadados mínimos.
+
 ## Integração com o perfil social
 
 O cabeçalho de uma conversa ativa apresenta `Ver perfil`. O cliente usa o username
