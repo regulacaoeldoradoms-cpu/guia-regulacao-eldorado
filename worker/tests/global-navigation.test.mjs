@@ -37,7 +37,7 @@ test('desktop mantém os seis elementos definidos para a Barra Global', () => {
 
 test('Service Worker aquece a versão nova sem alterar os endpoints sociais', () => {
   const sw = read('portal-sw.js');
-  assert.match(sw, /CACHE_VERSION = '20261002-documents-rename-lww-chat-receipts-1'/);
+  assert.match(sw, /CACHE_VERSION = '20261002-documents-rename-lww-chat-fluid-1'/);
   assert.match(sw, /portal-global-navigation\.js\?v=20260928-2/);
   assert.match(sw, /social-navigation\.js\?v=20260928-2/);
   assert.match(sw, /social-api\.js\?v=20260910-4/);
