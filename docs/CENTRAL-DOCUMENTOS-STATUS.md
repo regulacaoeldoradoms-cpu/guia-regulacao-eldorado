@@ -478,7 +478,7 @@ Cobertura adicionada:
 - fluxo de conteúdo não deve depender de `renameBusy`;
 - `replace_pdf` permanece com metadata vazia, impedindo que upload de conteúdo sobrescreva nome.
 
-Estado: PR **#585** aberta, branch `fix/titon-rename-lww-independent-20261002`, baseada na `main` `1ea55a4d7edfb963493aafefddec45139a13c146`. Checks precisam ser concluídos antes do merge.
+Estado final: PR **#585** integrada em `b5eef032e063713dc35024cc845baf96c6554732`. A primeira rodada de CI detectou duas asserções históricas incompatíveis com o novo contrato (retorno `contentConflict` e igualdade de objeto no start assíncrono); ambas foram atualizadas sem afrouxar a proteção de identidade. A rodada final da Central concluiu **690/690 testes aprovados**, e o navegador PDF.js concluiu **78 passed / 4 skipped / 0 failed**. GitHub Pages run `37031524676` success, Cloudflare Pages success e Worker Build de produção `b3022a2a-b0b6-41d6-aba5-33fa415d9e07` success.
 
 Alternativas descartadas:
 - serializar nome e conteúdo em uma única fila, pois recriaria a espera operacional relatada;
@@ -488,26 +488,26 @@ Alternativas descartadas:
 
 Riscos conhecidos: a API do Google Drive possui um único campo técnico `version` para mudanças de arquivo/metadata, portanto nome e conteúdo ainda podem incrementar a mesma versão remota. O cliente/backend deixam de usar esse contador compartilhado como trava entre os dois canais, mas mantêm a identidade do arquivo e a confirmação autoritativa.
 
-**Próxima ação exata:** concluir checks da PR #585; se os testes runtime/UI e checks documentais aplicáveis passarem, integrar e confirmar em produção que unir/editar PDF e renomear podem ocorrer sem espera mútua e que o nome final/content final correspondem às últimas gravações confirmadas de cada canal.
+**Próxima ação exata:** homologação humana em produção: unir/editar um PDF e, enquanto o conteúdo sincroniza, alterar o nome sem aguardar; confirmar que ambas as operações concluem de forma independente e que o nome final e o conteúdo final correspondem às últimas gravações confirmadas de cada canal.
 
 ### Handoff — renomeação independente
 
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua. |
-| Subfase / objetivo atual | Renomeação LWW independente do sync de conteúdo. |
-| Última ação concluída | Implementação e testes adicionados; PR #585 aberta. |
-| Branch atual | `fix/titon-rename-lww-independent-20261002`. |
-| PR atual | #585 — aberta, aguardando checks. |
-| Último commit relevante | `360e783a6619625bfad7e412896e8577c886899a` antes deste registro documental. |
-| Checks e testes | Ainda não antecipar resultado; CI da #585 deve ser conferido. |
-| Decisões tomadas | Dois canais LWW: nome e conteúdo; sem bloqueio mútuo; confirmação Drive obrigatória. |
-| Justificativas | Nome é metadata e replace_pdf envia metadata vazia; esperar um pelo outro não é necessário para integridade se a identidade do arquivo for estável. |
+| Subfase / objetivo atual | Renomeação LWW independente do sync de conteúdo — publicada; homologação humana pendente. |
+| Última ação concluída | PR #585 integrada em `b5eef032e063713dc35024cc845baf96c6554732`; backend e frontend publicados. |
+| Branch atual | Funcional `fix/titon-rename-lww-independent-20261002` integrada; este registro final está em `docs/titon-rename-lww-release-20261002`. |
+| PR atual | #585 merged; registro documental final desta unidade. |
+| Último commit relevante | Merge funcional `b5eef032e063713dc35024cc845baf96c6554732`. |
+| Checks e testes | Central Fases 1–6 success com 690/690; navegador PDF.js 78 passed/4 skipped; governança e bundle staging success; GitHub Pages, Cloudflare Pages e Worker Build do merge success. |
+| Decisões tomadas | Dois canais LWW: nome e conteúdo; sem bloqueio mútuo; confirmação Drive obrigatória; contador compartilhado de versão não é lock entre canais. |
+| Justificativas | Nome é metadata e replace_pdf envia metadata vazia; esperar um pelo outro não é necessário para integridade quando a identidade do arquivo é estável e cada operação exige confirmação autoritativa. |
 | Alternativas descartadas | Fila única; retry automático de mutações; upload de conteúdo regravando nome; remover confirmação Drive. |
-| Ações externas concluídas | Nenhuma credencial/OAuth/segredo alterado. |
-| Pendências e bloqueios | Checks #585 e homologação humana em produção após merge. |
-| Riscos conhecidos | O contador version do Drive é compartilhado, mas deixa de ser usado como lock entre canais. |
+| Ações externas concluídas | Frontend e Worker publicados; produção serve `documents.js?v=20261002-rename-lww-1` e `CACHE_VERSION = '20261002-documents-rename-lww-1'`. Nenhuma credencial/OAuth/segredo alterado. |
+| Pendências e bloqueios | Somente homologação humana do fluxo real nome × conteúdo em paralelo. |
+| Riscos conhecidos | O contador version do Drive é compartilhado, mas não bloqueia mais canais independentes; indisponibilidade externa ainda pode interromper qualquer mutação antes da confirmação. |
 | Métricas / observabilidade | Sem novas propriedades sensíveis; nenhum filename/fileId em telemetria. |
-| Próxima ação exata | Conferir checks #585, corrigir regressões se houver e integrar somente com evidência verde pertinente. |
-| Arquivos e fontes principais | `worker/document-drive.js`; `js/documents.js`; `worker/tests/documents-phase1.test.mjs`; `worker/tests/documents-ui.test.mjs`; `documentos/index.html`; `portal-sw.js`; PR #585; Guia Mestre 1.1. |
+| Próxima ação exata | Unir/editar PDF e renomeá-lo durante a sincronização; confirmar visualmente que ambos concluem sem espera mútua e que as últimas gravações confirmadas prevalecem. |
+| Arquivos e fontes principais | `worker/document-drive.js`; `js/documents.js`; `worker/tests/document-rename.test.mjs`; `worker/tests/documents-phase1.test.mjs`; `worker/tests/documents-ui.test.mjs`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; PR #585; merge `b5eef032`; Guia Mestre 1.1. |
 
