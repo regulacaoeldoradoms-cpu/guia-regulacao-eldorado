@@ -154,6 +154,51 @@ estado de recebimento durante as atualizações normais da lista. O remetente re
 estado consolidado da conversa nas consultas de mensagens e atualiza os indicadores
 sem recarregar o histórico completo.
 
+## Tempo real, indicador de digitação e novas mensagens
+
+Decisão permanente registrada em 02/10/2026: o chat passa a usar WebSocket como canal
+primário de atualização, mantendo as APIs autenticadas e o D1 como fonte de verdade.
+
+A infraestrutura em tempo real usa um Durable Object SQLite da Cloudflare por usuário.
+O objeto mantém conexões WebSocket hibernáveis e somente metadados mínimos de presença
+e a lista de contatos atualmente autorizados. **O conteúdo das mensagens não é
+persistido no Durable Object**: mensagens, recibos e histórico continuam no D1.
+
+O upgrade WebSocket não transporta o token principal da sessão na URL. Antes de
+conectar, o cliente autenticado solicita um ticket HMAC de curta duração em
+`POST /api/chat/realtime/ticket`. O ticket é enviado como subprotocolo WebSocket,
+validado pelo Worker e vinculado ao usuário antes de o pedido ser encaminhado ao
+Durable Object.
+
+Eventos em tempo real:
+
+- **mensagem**: depois da gravação no D1, o destinatário conectado recebe o registro
+  confirmado imediatamente; o envio otimista do remetente continua independente;
+- **recibo**: recebimento e visualização atualizam os risquinhos sem aguardar o próximo
+  polling;
+- **digitando…**: o remetente envia apenas estado efêmero, validado contra a mesma
+  autorização de contato do chat. O estado expira automaticamente e não é gravado no
+  histórico;
+- **presença**: conexão/desconexão atualiza o estado visual de online. Há uma pequena
+  tolerância durante troca de módulo para não piscar offline/online entre páginas;
+- **reconciliação**: a lista de contatos continua sendo consultada periodicamente no
+  backend para que mudanças de cargo, amizade, bloqueio ou ativação permaneçam
+  autoritativas.
+
+Se WebSocket não puder conectar, o chat continua funcional por fallback HTTP: a
+conversa ativa sincroniza a cada 4,5 segundos e os contatos mantêm o ciclo de
+atualização anterior. Quando o canal em tempo real retorna, o polling de mensagens é
+interrompido automaticamente.
+
+A conversa ativa também exibe um separador **Novas mensagens** antes da primeira
+mensagem ainda não lida. O backend fornece o ID exato da primeira pendência de leitura
+e o divisor continua correto mesmo quando o histórico anterior precisa ser carregado
+sob demanda.
+
+O estado **digitando…** aparece somente na conversa correspondente. Ele é encerrado
+ao enviar, esvaziar o campo, trocar de conversa ou após expiração defensiva, evitando
+indicador preso em caso de perda de rede.
+
 ## Integração com o perfil social
 
 O cabeçalho de uma conversa ativa apresenta `Ver perfil`. O cliente usa o username
@@ -180,7 +225,9 @@ Essa recusa não impede a conversa profissional.
 
 ## Implementação relacionada
 
-- `worker/portal-chat-v2.js` — autorização, contatos, presença e mensagens;
+- `worker/portal-chat-v2.js` — autorização, contatos, presença, mensagens, recibos e rotas realtime;
+- `worker/chat-realtime.js` — tickets efêmeros e ponte autenticada para o canal WebSocket;
+- `worker/chat-realtime-do.js` — Durable Object hibernável para eventos em tempo real, sem persistir conteúdo das conversas;
 - `worker/auth-management-flex.js` — sessão com perfil lógico de Telemedicina;
 - `worker/telemedicine-access.js` — decoração do papel-base `recepcao` como `telemedicina`;
 - `worker/social.js` e `worker/social-policy.js` — resolução e autorização do perfil,
