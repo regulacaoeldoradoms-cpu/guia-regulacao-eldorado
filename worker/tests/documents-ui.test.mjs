@@ -1000,7 +1000,7 @@ test('ciclo assíncrono do editor não fecha um visualizador mais novo nem aceit
   assert.match(client, /editorStartSeq:\s*0/);
   assert.match(client, /editorBusy:\s*false/);
   assert.match(client, /const openId = state\.pdfOpenId/);
-  assert.match(client, /startSeq === state\.editorStartSeq[\s\S]{0,180}openId === state\.pdfOpenId[\s\S]{0,180}item === state\.pdfItem/);
+  assert.match(client, /startSeq === state\.editorStartSeq[\s\S]{0,180}openId === state\.pdfOpenId[\s\S]{0,180}sameDriveDocumentIdentity\(item, state\.pdfItem\)/);
   assert.match(client, /if \(!isCurrentStart\(\)\) return;/);
   assert.match(client, /if \(session !== state\.editorSession \|\| seq !== state\.editorBuildSeq\) \{\s*return false;\s*\}/);
   assert.doesNotMatch(client, /if \(session !== state\.editorSession \|\| seq !== state\.editorBuildSeq\) \{\s*viewer\.close/);
