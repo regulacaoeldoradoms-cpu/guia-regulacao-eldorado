@@ -675,7 +675,19 @@
     if (portalWindow && event.source !== portalWindow) return;
 
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
-      bridgeReadyResolve?.();
+      updateKnownContactIds(event.data?.knownSourceIds);
+      if (bridgeReadyResolve) {
+        bridgeReadyResolve();
+        return;
+      }
+      if (!autoEnabled || syncInFlight) return;
+      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
+      const missing = Number(event.data?.contactsMissing || 0);
+      setButton(
+        `Automático ativo · ${available} contato(s) já salvos · ${missing} pendente(s)…`,
+        missing ? 'working' : 'success'
+      );
+      runAutomaticSync({ force: true });
       return;
     }
 
@@ -686,15 +698,13 @@
     syncInFlight = false;
 
     if (event.data.ok) {
+      updateKnownContactIds(event.data?.knownSourceIds);
       lastFingerprint = pendingFingerprint;
-      const created = Number(event.data.created || 0);
-      const changed = Number(event.data.changed || 0);
-      const suffix = created || changed ? `+${created} / ~${changed}` : 'sem mudanças';
+      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
+      const missing = Number(event.data?.contactsMissing || 0);
       setButton(
-        pendingContactFailures
-          ? `Automático ativo · ${suffix} · ${pendingContactFailures} contato(s) pendente(s) · ${clock()}`
-          : `Automático ativo · ${suffix} · ${clock()}`,
-        pendingContactFailures ? 'error' : 'success'
+        `Automático ativo · ${available} contato(s) disponíveis · ${missing} pendente(s) · ${clock()}`,
+        missing ? 'error' : 'success'
       );
     } else {
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
