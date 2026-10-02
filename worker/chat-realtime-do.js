@@ -144,6 +144,9 @@ export class PortalChatRealtime extends DurableObject {
 
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname === '/health' && request.method === 'GET') {
+      return Response.json({ ok: true, protocol: realtimeProtocol() });
+    }
     if (url.pathname === '/contacts' && request.method === 'POST') return this.configure(request);
     if (url.pathname === '/event' && request.method === 'POST') return this.receiveEvent(request);
     if (url.pathname === '/connect' && request.method === 'GET') return this.connect(request);
