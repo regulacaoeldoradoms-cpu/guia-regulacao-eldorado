@@ -573,14 +573,15 @@
       lastCheckAt = Date.now();
       const contactResult = await enrichSnapshotContacts(nextSnapshot);
       const nextFingerprint = fingerprint(nextSnapshot);
+      const hasContactUpdates = contactResult.found > 0;
 
-      if (!force && nextFingerprint === lastFingerprint) {
+      if (!force && nextFingerprint === lastFingerprint && !hasContactUpdates) {
         syncInFlight = false;
         try { portalWindow.location = BRIDGE_URL; } catch (_) {}
         setButton(
           contactResult.failed
             ? `Automático ativo · sem mudanças · ${contactResult.failed} contato(s) pendente(s) · ${clock()}`
-            : `Automático ativo · sem mudanças · ${clock()}`,
+            : `Automático ativo · sem mudanças · ${knownContactIds.size} contato(s) já salvos · ${clock()}`,
           contactResult.failed ? 'error' : 'success'
         );
         return;
@@ -591,9 +592,7 @@
       pendingContactFailures = contactResult.failed;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       setButton(
-        contactResult.failed
-          ? `Automático ativo · enviando agenda · ${contactResult.failed} contato(s) pendente(s)…`
-          : `Automático ativo · enviando ${nextSnapshot.records.length}…`,
+        `Automático ativo · ${contactResult.found} contato(s) novo(s) · enviando Agenda…`,
         'working'
       );
 
@@ -623,7 +622,7 @@
 
   function activateAutomaticSync() {
     portalWindow = window.open(
-      'about:blank',
+      BRIDGE_URL,
       'portal-agenda-contact-bridge',
       'popup=yes,width=560,height=420,resizable=yes,scrollbars=yes'
     );
@@ -635,19 +634,14 @@
       return;
     }
 
-    try {
-      portalWindow.document.title = 'Agenda · sincronização';
-      portalWindow.document.body.innerHTML = '<p style="font:600 14px system-ui;padding:20px">Preparando sincronização da Agenda…</p>';
-    } catch (_) {}
     try { window.focus(); } catch (_) {}
 
     everActivated = true;
     autoEnabled = true;
     detailPinned = false;
     hideDetails({ force: true });
-    setButton('Conectando sincronização automática…', 'working');
+    setButton('Consultando contatos já salvos no Portal…', 'working');
     startAutomaticTimers();
-    runAutomaticSync({ force: true });
   }
 
   function onButtonClick() {
