@@ -58,6 +58,21 @@ function jsonError(message, status, origin, allowed, code = '') {
   return new Response(JSON.stringify({ error: message, ...(code ? { code } : {}) }), { status, headers });
 }
 
+function isD1DailyReadLimitError(error) {
+  const text = String(error?.message || error || '');
+  return /exceeded D1(?:'s)? free tier daily row read limit|daily D1.*row read limit|\b7500\b/i.test(text);
+}
+
+function d1DailyReadLimitResponse(origin, allowed) {
+  return jsonError(
+    'O banco do Portal atingiu temporariamente o limite diário de leitura. As áreas dependentes serão retomadas após a renovação da cota.',
+    503,
+    origin,
+    allowed,
+    'D1_DAILY_READ_LIMIT_EXCEEDED'
+  );
+}
+
 const AUTH_RESPONSES_WITH_USER = new Set([
   '/api/auth/login',
   '/api/auth/me',
@@ -163,12 +178,16 @@ export default {
       try { return await handleSocialRoute(request, env, origin, originAllowed, ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: 'social_route_failed', path: url.pathname, kind: error?.name || 'Error' }));
+        if (isD1DailyReadLimitError(error)) return d1DailyReadLimitResponse(origin, originAllowed);
         return jsonError('Falha temporária na Camada Social. As Ferramentas continuam disponíveis.', 500, origin, originAllowed, 'SOCIAL_TEMPORARILY_UNAVAILABLE');
       }
     }
     if (isChatApi(url.pathname)) {
       try { return await handleChatRoute(request, env, origin, originAllowed, ctx); }
-      catch (error) { return jsonError(error?.message || 'Falha no chat interno.', 500, origin, originAllowed); }
+      catch (error) {
+        if (isD1DailyReadLimitError(error)) return d1DailyReadLimitResponse(origin, originAllowed);
+        return jsonError(error?.message || 'Falha no chat interno.', 500, origin, originAllowed);
+      }
     }
     if (isCitizenIdentityApi(url.pathname)) {
       try { return await handleCitizenIdentityRoute(request, env, origin, originAllowed); }
