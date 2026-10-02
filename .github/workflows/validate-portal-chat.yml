@@ -49,6 +49,7 @@ jobs:
           grep -q "/api/chat/users" worker/portal-chat-v2.js
           grep -q "/api/chat/messages" worker/portal-chat-v2.js
           grep -q "/api/chat/delivery" worker/portal-chat-v2.js
+          grep -q "/api/chat/realtime/health" worker/portal-chat-v2.js
           grep -q "/api/chat/realtime/ticket" worker/portal-chat-v2.js
           grep -q "/api/chat/typing" worker/portal-chat-v2.js
           grep -q "/api/chat/read" worker/portal-chat-v2.js
