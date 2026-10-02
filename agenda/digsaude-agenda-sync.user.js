@@ -331,16 +331,23 @@
 
   async function enrichSnapshotContacts(snapshot) {
     const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
+    const targets = records.filter((record) => record?.sourceId && !knownContactIds.has(record.sourceId));
     let cursor = 0;
+    let found = 0;
     let failed = 0;
 
     const runner = async () => {
-      while (cursor < records.length) {
+      while (cursor < targets.length) {
         const index = cursor++;
-        const record = records[index];
-        setButton(`Automático ativo · contatos ${index + 1}/${records.length}…`, 'working');
+        const record = targets[index];
+        setButton(
+          `Automático ativo · contatos ${index + 1}/${targets.length} · ${knownContactIds.size} já salvos…`,
+          'working'
+        );
         try {
           record.phone = await extractContact(record.sourceId);
+          if (record.phone) found += 1;
+          else failed += 1;
         } catch (_) {
           record.phone = '';
           failed += 1;
@@ -348,8 +355,14 @@
       }
     };
 
-    await Promise.all(Array.from({ length: Math.min(CONTACT_CONCURRENCY, records.length || 1) }, () => runner()));
-    return { total: records.length, failed };
+    await Promise.all(Array.from({ length: Math.min(CONTACT_CONCURRENCY, targets.length || 1) }, () => runner()));
+    return {
+      total: records.length,
+      requested: targets.length,
+      skipped: records.length - targets.length,
+      found,
+      failed
+    };
   }
 
   function agendadosUrl() {
