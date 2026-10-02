@@ -216,3 +216,19 @@ A V3.4 amplia a leitura sem relaxar a privacidade:
 
 Esse recorte é coerente com a finalidade do recurso: preparar lembretes de consultas atuais/futuras, não enriquecer retrospectivamente agendamentos antigos.
 
+### V3.4 — extração robusta e lembretes úteis — 02/10/2026
+
+A cobertura persistida revelou que o fluxo ainda não reconhecia de forma confiável todos os formatos do campo de telefone no DOM real do DigSaúde.
+
+A V3.4:
+- tenta os atributos técnicos conhecidos do campo;
+- usa também o wrapper associado ao rótulo visual **Telefone**;
+- aceita número formatado e mais de um número no mesmo campo, usando o primeiro telefone brasileiro válido;
+- evita interpretar campos numéricos vizinhos como telefone;
+- continua sem registrar telefone em logs ou telemetria;
+- contatos já persistidos não são consultados novamente;
+- somente consultas de hoje ou futuras entram no enriquecimento de contato;
+- cards antigos exibem **Data já passou** em vez de “Sincronizando contato…”.
+
+A finalidade é operacional: preparar lembretes para consultas atuais e futuras sem gastar tempo enriquecendo retrospectivamente agendamentos antigos.
+
