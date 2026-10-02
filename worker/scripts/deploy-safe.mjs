@@ -26,6 +26,7 @@ export const SAFE_DEPLOY = Object.freeze({
   wranglerVersion: '4.135.0',
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
   adminUsersApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/admin/users',
+  chatRealtimeHealthApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/chat/realtime/health',
   portalOrigin: 'https://regulacaoeldoradoms.com.br',
   candidateMessage: 'Portal: candidato validado pelo gate de deploy seguro',
   candidateTag: 'portal-safe-deploy',
@@ -476,6 +477,14 @@ export function classifyAdminUsersProbe(preflightStatus, getStatus, preflightOri
   };
 }
 
+export function classifyChatRealtimeProbe(status, payload = {}) {
+  const code = Number(status || 0);
+  return {
+    status: code,
+    healthy: code === 200 && payload?.ok === true
+  };
+}
+
 async function probeAdminUsers(fetcher = fetch) {
   let preflight;
   let response;
@@ -520,6 +529,33 @@ async function waitForAdminUsers(fetcher = fetch) {
     await new Promise((resolve) => setTimeout(resolve, SAFE_DEPLOY.postDeployDelayMs));
   }
   return last || { preflightStatus: 0, getStatus: 0, healthy: false };
+}
+
+async function probeChatRealtime(fetcher = fetch) {
+  let response;
+  try {
+    response = await fetcher(SAFE_DEPLOY.chatRealtimeHealthApi, {
+      method: 'GET',
+      redirect: 'manual',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch {
+    throw new SafeDeployError('CHAT_REALTIME_NAO_RESPONDE');
+  }
+  const payload = await response.json().catch(() => ({}));
+  return classifyChatRealtimeProbe(response.status, payload);
+}
+
+async function waitForChatRealtime(fetcher = fetch) {
+  let last = null;
+  for (let attempt = 0; attempt < SAFE_DEPLOY.postDeployAttempts; attempt += 1) {
+    last = await probeChatRealtime(fetcher);
+    if (last.healthy) return last;
+    await new Promise((resolve) => setTimeout(resolve, SAFE_DEPLOY.postDeployDelayMs));
+  }
+  return last || { status: 0, healthy: false };
 }
 
 async function probeAgenda(fetcher = fetch) {
@@ -689,7 +725,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     safeLine('versaoProducao', originalVersion);
     safeLine('segredosAtuais', activeValidation.preservedSecrets);
 
-    console.log('2/8 Preparando configuração efêmera e executando dry-run...');
+    console.log('2/9 Preparando configuração efêmera e executando dry-run...');
     fs.writeFileSync(
       deployConfig,
       injectRequiredSecrets(
@@ -708,7 +744,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
       // precisa passar por "deploy"; depois disso o fluxo volta ao version-first normal.
       safeLine('deployLifecycleDireto', 'CHAT_REALTIME');
       dryRunLifecycle(root, deployConfig);
-      console.log('3/8 Aplicando migração Durable Object allowlisted com rollback armado...');
+      console.log('3/9 Aplicando migração Durable Object allowlisted com rollback armado...');
       promotionStarted = true;
       deployLifecycle(root, deployConfig);
       candidateVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
@@ -718,11 +754,11 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
       safeLine('versaoCandidata', candidateVersion);
     } else {
       dryRun(root, deployConfig);
-      console.log('3/8 Enviando versão candidata sem tráfego...');
+      console.log('3/9 Enviando versão candidata sem tráfego...');
       candidateVersion = uploadCandidate(root, deployConfig);
       safeLine('versaoCandidata', candidateVersion);
 
-      console.log('4/8 Validando bindings críticos e preservação de segredos...');
+      console.log('4/9 Validando bindings críticos e preservação de segredos...');
       candidateView = versionView(candidateVersion, readConfig, tempRoot);
       validation = validateCandidateBindings(activeView, candidateView);
       must(
@@ -730,7 +766,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
         'PRODUCAO_MUDOU_DURANTE_VALIDACAO'
       );
 
-      console.log('5/8 Promovendo somente a versão validada...');
+      console.log('5/9 Promovendo somente a versão validada...');
       promotionStarted = true;
       promoteVersion(
         candidateVersion,
@@ -747,18 +783,23 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     const activeAfterPromotion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(activeAfterPromotion === candidateVersion, 'PROMOCAO_NAO_ATIVOU_CANDIDATA');
 
-    console.log('6/8 Confirmando Agenda após a promoção...');
+    console.log('6/9 Confirmando Agenda após a promoção...');
     const agenda = await waitForAgenda(fetcher);
     must(agenda.healthy, agenda.firebaseBroken ? 'AGENDA_FIREBASE_503_APOS_DEPLOY' : 'AGENDA_NAO_PASSOU_POS_DEPLOY');
     safeLine('agendaHttpAnonimo', agenda.status);
 
-    console.log('7/8 Confirmando preflight e barreira anônima de Usuários e acessos...');
+    console.log('7/9 Confirmando preflight e barreira anônima de Usuários e acessos...');
     const adminUsers = await waitForAdminUsers(fetcher);
     must(adminUsers.healthy, 'ADMIN_USERS_NAO_PASSOU_POS_DEPLOY');
     safeLine('adminUsersPreflightHttp', adminUsers.preflightStatus);
     safeLine('adminUsersGetAnonimoHttp', adminUsers.getStatus);
 
-    console.log('8/8 Reconfirmando versão e bindings em produção...');
+    console.log('8/9 Confirmando binding e Durable Object do chat em tempo real...');
+    const chatRealtime = await waitForChatRealtime(fetcher);
+    must(chatRealtime.healthy, 'CHAT_REALTIME_NAO_PASSOU_POS_DEPLOY');
+    safeLine('chatRealtimeHealthHttp', chatRealtime.status);
+
+    console.log('9/9 Reconfirmando versão e bindings em produção...');
     const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
     validateCandidateBindings(activeView, versionView(finalVersion, readConfig, tempRoot));
@@ -767,13 +808,14 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     console.log('');
     console.log('DEPLOY_SEGURO_CONCLUIDO');
     safeLine('workerVersion', finalVersion);
-    console.log('resultado=versao candidata validada; Agenda e Usuarios/acessos confirmados apos promocao');
+    console.log('resultado=versao candidata validada; Agenda, Usuarios/acessos e Chat realtime confirmados apos promocao');
     return {
       originalVersion,
       candidateVersion,
       status: agenda.status,
       adminUsersStatus: adminUsers.getStatus,
-      adminUsersPreflightStatus: adminUsers.preflightStatus
+      adminUsersPreflightStatus: adminUsers.preflightStatus,
+      chatRealtimeStatus: chatRealtime.status
     };
   } catch (error) {
     if (promotionStarted && !completed && UUID.test(originalVersion)) {
