@@ -46,6 +46,7 @@ test('Durable Object usa hibernação e não persiste conteúdo de mensagens', (
   assert.match(source, /webSocketMessage/);
   assert.match(source, /webSocketClose/);
   assert.match(source, /storage\.setAlarm/);
+  assert.match(source, /url\.pathname === '\/health'/);
   assert.doesNotMatch(source, /storage\.put\([^\n]*(?:message|body|content)/i);
   assert.match(wrangler, /name = "CHAT_REALTIME"/);
   assert.match(wrangler, /class_name = "PortalChatRealtime"/);
@@ -54,6 +55,7 @@ test('Durable Object usa hibernação e não persiste conteúdo de mensagens', (
 
 test('backend mantém autenticação REST e usa ticket separado no upgrade realtime', () => {
   const backend = read('worker/portal-chat-v2.js');
+  assert.match(backend, /\/api\/chat\/realtime\/health/);
   assert.match(backend, /\/api\/chat\/realtime\/ticket/);
   assert.match(backend, /realtimeTicketFromRequest/);
   assert.match(backend, /verifyChatRealtimeTicket/);
