@@ -23,6 +23,7 @@ import {
   injectRequiredSecrets,
   classifyAgendaProbe,
   classifyAdminUsersProbe,
+  classifyChatRealtimeProbe,
   wranglerArgs,
   wranglerCliPath
 } from '../scripts/deploy-safe.mjs';
@@ -363,6 +364,12 @@ test('probe pós-deploy de Usuários exige preflight CORS e GET anônimo protegi
   assert.equal(classifyAdminUsersProbe(204, 401, SAFE_DEPLOY.portalOrigin, '').healthy, false);
 });
 
+test('probe pós-deploy do chat realtime exige HTTP 200 e confirmação do Durable Object', () => {
+  assert.deepEqual(classifyChatRealtimeProbe(200, { ok: true }), { status: 200, healthy: true });
+  assert.equal(classifyChatRealtimeProbe(503, { ok: false }).healthy, false);
+  assert.equal(classifyChatRealtimeProbe(200, { ok: false }).healthy, false);
+});
+
 test('gate usa Wrangler local fixado pelo package.json sem passar por npx', () => {
   assert.deepEqual(wranglerArgs(['versions', 'list']), ['versions', 'list']);
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -409,6 +416,8 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.doesNotMatch(source, /path\.join\(tempRoot, 'wrangler\.safe-deploy\.toml'\)/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA=OK/);
   assert.match(source, /AGENDA_FIREBASE_503_APOS_DEPLOY/);
+  assert.match(source, /CHAT_REALTIME_NAO_PASSOU_POS_DEPLOY/);
+  assert.match(source, /chatRealtimeHealthApi/);
 });
 
 
