@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20260928-global-1') return;
+  if (window.PortalChat?.version === '20261002-receipts-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -17,6 +17,8 @@
   let mounted = false;
   let contactsInitialized = false;
   let notificationWorker = null;
+  let deliverySyncPending = null;
+  let lastDeliverySyncAt = 0;
   const unreadSnapshot = new Map();
   const messageCache = new Map();
   const messagePreloadRequests = new Map();
@@ -209,6 +211,65 @@
     const parsed = parseServerDate(value);
     if (!parsed) return '';
     return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function receiptLabel(message) {
+    if (message?.readAt) return { text: '✓✓', title: 'Visualizada', state: 'read' };
+    if (message?.deliveredAt) return { text: '✓', title: 'Recebida no chat', state: 'delivered' };
+    return null;
+  }
+
+  function updateMessageReceiptElement(element, message) {
+    if (!element) return;
+    let receipt = element.querySelector('.portal-chat-message-receipt');
+    const state = receiptLabel(message);
+    if (!state) {
+      receipt?.remove();
+      return;
+    }
+    if (!receipt) {
+      receipt = document.createElement('span');
+      receipt.className = 'portal-chat-message-receipt';
+      element.querySelector('.portal-chat-message-time')?.appendChild(receipt);
+    }
+    receipt.className = `portal-chat-message-receipt ${state.state}`;
+    receipt.textContent = state.text;
+    receipt.title = state.title;
+    receipt.setAttribute('aria-label', state.title);
+  }
+
+  function applyReceiptState(receiptState) {
+    if (!activeContact || !receiptState) return;
+    const deliveredThroughId = Number(receiptState.deliveredThroughId || 0);
+    const readThroughId = Number(receiptState.readThroughId || 0);
+    const cached = messageCache.get(messageCacheKey(activeContact.username));
+    if (!cached?.messages?.length) return;
+    cached.messages.forEach((message) => {
+      if (message.fromUser !== currentUser?.username) return;
+      const id = Number(message.id || 0);
+      if (id && id <= deliveredThroughId && !message.deliveredAt) message.deliveredAt = 'ack';
+      if (id && id <= readThroughId && !message.readAt) message.readAt = 'ack';
+      const element = document.querySelector(`#portalChatMessages [data-message-id="${id}"]`);
+      updateMessageReceiptElement(element, message);
+    });
+  }
+
+  async function markChatDelivered(force = false) {
+    const root = document.getElementById('portalChatRoot');
+    if (!root?.classList.contains('open')) return;
+    const now = Date.now();
+    if (!force && now - lastDeliverySyncAt < 2000) return;
+    if (deliverySyncPending) return deliverySyncPending;
+    deliverySyncPending = api('/api/chat/delivery', { method: 'POST', body: '{}' })
+      .then((payload) => {
+        lastDeliverySyncAt = Date.now();
+        return payload;
+      })
+      .catch(() => null)
+      .finally(() => {
+        deliverySyncPending = null;
+      });
+    return deliverySyncPending;
   }
 
   function formatLastSeen(value) {
@@ -438,6 +499,7 @@
       }
       renderContacts();
       preloadConversationsInBackground();
+      if (document.getElementById('portalChatRoot')?.classList.contains('open')) void markChatDelivered();
     } catch (error) {
       showStatus(error.message || 'Não foi possível atualizar o chat.');
     }
@@ -464,8 +526,9 @@
     text.textContent = message.body || '';
     const time = document.createElement('span');
     time.className = 'portal-chat-message-time';
-    time.textContent = formatTime(message.sentAt);
+    time.append(document.createTextNode(formatTime(message.sentAt)));
     element.append(text, time);
+    if (mine) updateMessageReceiptElement(element, message);
     return element;
   }
 
@@ -496,6 +559,7 @@
       if (initial) replaceCachedMessages(username, messages, contact?.lastMessageAt || '');
       else mergeCachedMessages(username, messages, contact?.lastMessageAt || '');
       appendMessages(messages, initial);
+      applyReceiptState(payload.receipt);
       if (contact) {
         contact.unread = 0;
         unreadSnapshot.set(username, 0);
@@ -522,6 +586,7 @@
     activeContact = contact;
     lastMessageId = 0;
     document.getElementById('portalChatRoot')?.classList.add('open');
+    void markChatDelivered(true);
     document.getElementById('portalChatContactsView')?.classList.remove('active');
     document.getElementById('portalChatConversationView')?.classList.add('active');
     document.getElementById('portalChatBack').hidden = false;
@@ -645,6 +710,7 @@
 
     document.getElementById('portalChatLauncher')?.addEventListener('click', () => {
       root.classList.add('open');
+      void markChatDelivered(true);
       updateNotificationUi();
       if (notificationSupported() && Notification.permission === 'default') requestNotificationPermission();
       loadContacts();
@@ -732,7 +798,7 @@
   window.addEventListener('portal:session-cleared', clearMessageMemory);
 
   window.PortalChat = Object.freeze({
-    version: '20260928-global-1',
+    version: '20261002-receipts-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts
