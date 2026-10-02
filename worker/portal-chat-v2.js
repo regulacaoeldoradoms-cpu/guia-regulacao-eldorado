@@ -406,7 +406,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (url.pathname === '/api/chat/users' && request.method === 'GET') {
     await touchPresence(env, username);
     const users = await contacts(env, { ...user, username });
-    runBackground(executionContext, configureChatRealtimeContacts(env, username, users.map((item) => item.username)));
+    await configureChatRealtimeContacts(env, username, users.map((item) => item.username)).catch(() => false);
     return json({ users }, 200, origin);
   }
 
