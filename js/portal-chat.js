@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-receipts-1') return;
+  if (window.PortalChat?.version === '20261002-fluid-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -1190,7 +1190,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-receipts-1',
+    version: '20261002-fluid-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts
