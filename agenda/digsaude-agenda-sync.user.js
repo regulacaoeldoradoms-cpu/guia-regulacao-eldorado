@@ -180,6 +180,58 @@
     return url.toString();
   }
 
+  function phoneCandidate(value) {
+    const source = String(value || '').trim();
+    if (!source) return '';
+
+    const direct = normalizePhone(source);
+    if (direct) return direct;
+
+    const pieces = source.split(/[\n|;,/]+/).map((item) => item.trim()).filter(Boolean);
+    for (const piece of pieces) {
+      const phone = normalizePhone(piece);
+      if (phone) return phone;
+    }
+
+    const pattern = /(?:\+?55[\s().-]*)?(?:\(?\d{2}\)?[\s().-]*)?(?:9[\s.-]?\d{4}|\d{4})[\s.-]?\d{4}/g;
+    for (const match of source.matchAll(pattern)) {
+      const phone = normalizePhone(match[0]);
+      if (phone) return phone;
+    }
+
+    return '';
+  }
+
+  function phoneFromNode(node) {
+    if (!node) return '';
+    const values = [
+      node.value,
+      node.getAttribute?.('value'),
+      node.textContent,
+      node.getAttribute?.('aria-label'),
+      node.getAttribute?.('placeholder')
+    ];
+    for (const value of values) {
+      const phone = phoneCandidate(value);
+      if (phone) return phone;
+    }
+    return '';
+  }
+
+  function phoneFieldWrapper(label) {
+    if (!label) return null;
+    const preferred = label.closest?.(
+      '.fi-fo-field-wrp, .fi-input-wrp, [data-field-wrapper], [data-state-path], .grid'
+    );
+    if (preferred) return preferred;
+
+    let current = label.parentElement;
+    for (let depth = 0; current && depth < 6; depth += 1, current = current.parentElement) {
+      if (current.querySelector?.('input, textarea, [role="textbox"], [contenteditable="true"]')) return current;
+    }
+    return label.parentElement;
+  }
+
   function phoneFromRoot(root) {
     const selectors = [
       'input[name*="telefonecel" i]',
@@ -195,26 +247,54 @@
       'input[type="tel"]',
       'input[inputmode="tel"]'
     ];
+
     for (const selector of selectors) {
       for (const node of root.querySelectorAll(selector)) {
-        const phone = normalizePhone(node.value || node.getAttribute('value') || node.textContent);
+        const phone = phoneFromNode(node);
         if (phone) return phone;
       }
     }
 
-    const labels = [...root.querySelectorAll('label, span, div')]
-      .filter((node) => node.children.length === 0 && normalizeSearch(node.textContent) === 'telefone');
+    const labels = [...root.querySelectorAll('label, span, div, p')]
+      .filter((node) => {
+        const text = normalizeSearch(node.textContent);
+        return text === 'telefone' || text.startsWith('telefone ');
+      });
+
     for (const label of labels) {
-      let container = label.parentElement;
-      for (let depth = 0; container && depth < 5; depth += 1, container = container.parentElement) {
-        const inputs = [...container.querySelectorAll('input')];
-        for (const input of inputs) {
-          const phone = normalizePhone(input.value || input.getAttribute('value'));
-          if (phone) return phone;
-        }
-        if (inputs.length) break;
+      const explicitTarget = label.getAttribute?.('for');
+      if (explicitTarget) {
+        const target = root.getElementById?.(explicitTarget);
+        const phone = phoneFromNode(target);
+        if (phone) return phone;
       }
+
+      const wrapper = phoneFieldWrapper(label);
+      if (!wrapper) continue;
+
+      const nodes = [
+        ...wrapper.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"], output, dd, p, span')
+      ];
+      for (const node of nodes) {
+        const phone = phoneFromNode(node);
+        if (phone) return phone;
+      }
+
+      const phone = phoneCandidate(wrapper.textContent);
+      if (phone) return phone;
     }
+
+    const genericInputs = [...root.querySelectorAll('input, textarea')];
+    for (const node of genericInputs) {
+      const phone = phoneFromNode(node);
+      if (!phone) continue;
+      const nearby = normalizeSearch(
+        node.closest?.('.fi-fo-field-wrp, .fi-input-wrp, [data-field-wrapper], .grid')?.textContent || ''
+      );
+      if (/cpf|cns|cep|número|numero/.test(nearby)) continue;
+      return phone;
+    }
+
     return '';
   }
 
