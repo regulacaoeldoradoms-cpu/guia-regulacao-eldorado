@@ -268,6 +268,7 @@
     if (conversationVisible) {
       appendMessages([message], false);
       contact.unread = 0;
+      contact.firstUnreadId = 0;
       unreadSnapshot.set(sender, 0);
       renderContacts();
       api('/api/chat/read', {
@@ -279,6 +280,7 @@
 
     const previousUnread = Number(contact.unread || 0);
     contact.unread = previousUnread + 1;
+    if (!Number(contact.firstUnreadId || 0)) contact.firstUnreadId = id;
     unreadSnapshot.set(sender, contact.unread);
     renderContacts();
     window.PortalInteractions?.emit?.('notification', { debounce: 900 });
@@ -1177,6 +1179,7 @@
       applyReceiptState(payload.receipt);
       if (contact) {
         contact.unread = 0;
+        contact.firstUnreadId = 0;
         unreadSnapshot.set(username, 0);
       }
       renderContacts();
@@ -1356,6 +1359,7 @@
   }
 
   function sendMessage() {
+    stopLocalTyping();
     const input = document.getElementById('portalChatInput');
     const body = String(input?.value || '').trim();
     const username = activeContact?.username || '';
@@ -1422,7 +1426,7 @@
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
-          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
+          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><span class="portal-chat-typing" id="portalChatTyping" hidden>digitando…</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
           <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">${ICONS.close}</button>
         </header>
         <div class="portal-chat-body">
@@ -1479,6 +1483,7 @@
     document.getElementById('portalChatSend')?.addEventListener('click', sendMessage);
     document.getElementById('portalChatInput')?.addEventListener('input', () => {
       saveActiveDraft();
+      noteLocalTyping();
       queueChatSessionPersist();
     });
     document.getElementById('portalChatInput')?.addEventListener('keydown', (event) => {
