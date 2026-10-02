@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-2
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261001-whatsapp-2
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-3
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-3
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -14,6 +14,7 @@
   'use strict';
 
   if (window.top !== window.self) return;
+  if (window.name === 'portal-agenda-contact-bridge' && window.opener) return;
 
   const PORTAL_ORIGIN = 'https://regulacaoeldoradoms.com.br';
   const BRIDGE_URL = PORTAL_ORIGIN + '/agenda/sync/';
@@ -27,7 +28,8 @@
   const BRIDGE_WATCH_MS = 15 * 1000;
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
   const CONTACT_CONCURRENCY = 1;
-  const CONTACT_FRAME_TIMEOUT_MS = 15 * 1000;
+  const CONTACT_WINDOW_TIMEOUT_MS = 18 * 1000;
+  const BRIDGE_READY_TIMEOUT_MS = 15 * 1000;
 
   let portalWindow = null;
   let autoEnabled = false;
@@ -46,6 +48,10 @@
   let detailHideTimer = null;
   let currentStatusText = 'Sincronização automática ainda não ativada.';
   let currentTone = '';
+  let pendingContactFailures = 0;
+  let bridgeReadyResolve = null;
+  let bridgeReadyReject = null;
+  let bridgeReadyTimer = null;
   const contactCache = new Map();
 
   function compact(value) {
@@ -198,83 +204,101 @@
       .find((node) => normalizeSearch(node.textContent).includes('ver dados do paciente')) || null;
   }
 
+  function clearBridgeReadyWait() {
+    if (bridgeReadyTimer) window.clearTimeout(bridgeReadyTimer);
+    bridgeReadyTimer = null;
+    bridgeReadyResolve = null;
+    bridgeReadyReject = null;
+  }
+
+  function waitForBridgeReady() {
+    clearBridgeReadyWait();
+    return new Promise((resolve, reject) => {
+      bridgeReadyResolve = () => {
+        clearBridgeReadyWait();
+        resolve();
+      };
+      bridgeReadyReject = (error) => {
+        clearBridgeReadyWait();
+        reject(error);
+      };
+      bridgeReadyTimer = window.setTimeout(() => {
+        bridgeReadyReject?.(new Error('A ponte do Portal não respondeu a tempo.'));
+      }, BRIDGE_READY_TIMEOUT_MS);
+    });
+  }
+
+  async function navigateContactWindow(targetUrl) {
+    if (!portalWindow || portalWindow.closed) throw new Error('A janela auxiliar foi fechada.');
+    try {
+      portalWindow.location = targetUrl;
+    } catch (_) {
+      throw new Error('Não foi possível abrir a consulta na janela auxiliar.');
+    }
+
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
+      if (!portalWindow || portalWindow.closed) throw new Error('A janela auxiliar foi fechada.');
+      try {
+        const currentUrl = new URL(portalWindow.location.href);
+        const root = portalWindow.document;
+        if (
+          currentUrl.origin === window.location.origin
+          && root
+          && (root.readyState === 'interactive' || root.readyState === 'complete')
+        ) {
+          return { root, frameWindow: portalWindow };
+        }
+      } catch (_) {}
+      await new Promise((resolve) => window.setTimeout(resolve, 160));
+    }
+    throw new Error('Tempo excedido ao abrir a consulta.');
+  }
+
   async function extractContact(sourceId) {
     const cached = contactCache.get(sourceId);
     if (cached && cached.phone && Date.now() - cached.checkedAt < CONTACT_CACHE_TTL_MS) return cached.phone;
 
-    const frame = document.createElement('iframe');
-    frame.setAttribute('aria-hidden', 'true');
-    frame.tabIndex = -1;
-    frame.style.cssText = [
-      'position:fixed',
-      'left:-10000px',
-      'top:-10000px',
-      'width:8px',
-      'height:8px',
-      'opacity:.01',
-      'pointer-events:none',
-      'border:0'
-    ].join(';');
+    const { root, frameWindow } = await navigateContactWindow(consultationUrl(sourceId));
+    if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
+      throw new Error('A sessão do DigSaúde expirou.');
+    }
 
-    const loaded = new Promise((resolve, reject) => {
-      const timer = window.setTimeout(() => reject(new Error('Tempo excedido ao abrir a consulta.')), CONTACT_FRAME_TIMEOUT_MS);
-      frame.addEventListener('load', () => {
-        window.clearTimeout(timer);
-        resolve();
-      }, { once: true });
-    });
+    let phone = phoneFromRoot(root);
+    if (phone) {
+      contactCache.set(sourceId, { phone, checkedAt: Date.now() });
+      return phone;
+    }
 
-    frame.src = consultationUrl(sourceId);
-    document.body.appendChild(frame);
-
-    try {
-      await loaded;
-      const frameWindow = frame.contentWindow;
-      const root = frame.contentDocument;
-      if (!frameWindow || !root) throw new Error('A consulta não ficou disponível para leitura.');
-
+    const startedAt = Date.now();
+    let clicked = false;
+    while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
       if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
         throw new Error('A sessão do DigSaúde expirou.');
       }
 
-      let phone = phoneFromRoot(root);
+      phone = phoneFromRoot(root);
       if (phone) {
         contactCache.set(sourceId, { phone, checkedAt: Date.now() });
         return phone;
       }
 
-      const startedAt = Date.now();
-      let clicked = false;
-      while (Date.now() - startedAt < CONTACT_FRAME_TIMEOUT_MS) {
-        if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
-          throw new Error('A sessão do DigSaúde expirou.');
+      if (!clicked) {
+        const action = patientAction(root);
+        if (action) {
+          action.click();
+          clicked = true;
         }
-
-        phone = phoneFromRoot(root);
-        if (phone) {
-          contactCache.set(sourceId, { phone, checkedAt: Date.now() });
-          return phone;
-        }
-
-        if (!clicked) {
-          const action = patientAction(root);
-          if (action) {
-            action.click();
-            clicked = true;
-          }
-        }
-
-        await new Promise((resolve) => window.setTimeout(resolve, 180));
       }
 
-      throw new Error(
-        clicked
-          ? 'O telefone não apareceu após abrir os dados do paciente.'
-          : 'A ação Ver Dados do Paciente não foi localizada.'
-      );
-    } finally {
-      frame.remove();
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
     }
+
+    throw new Error(
+      clicked
+        ? 'O telefone não apareceu após abrir os dados do paciente.'
+        : 'A ação Ver Dados do Paciente não foi localizada.'
+    );
   }
 
   async function enrichSnapshotContacts(snapshot) {
@@ -484,6 +508,7 @@
     autoEnabled = false;
     stopAutomaticTimers();
     stopDeliveryRetry();
+    clearBridgeReadyWait();
     syncInFlight = false;
     pendingSnapshot = null;
     pendingFingerprint = '';
@@ -510,6 +535,7 @@
 
       if (!force && nextFingerprint === lastFingerprint) {
         syncInFlight = false;
+        try { portalWindow.location = BRIDGE_URL; } catch (_) {}
         setButton(
           contactResult.failed
             ? `Automático ativo · sem mudanças · ${contactResult.failed} contato(s) pendente(s) · ${clock()}`
@@ -521,6 +547,7 @@
 
       pendingSnapshot = nextSnapshot;
       pendingFingerprint = nextFingerprint;
+      pendingContactFailures = contactResult.failed;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       setButton(
         contactResult.failed
@@ -528,10 +555,19 @@
           : `Automático ativo · enviando ${nextSnapshot.records.length}…`,
         'working'
       );
+
+      const ready = waitForBridgeReady();
+      portalWindow.location = BRIDGE_URL;
+      await ready;
       scheduleDeliveryRetry();
     } catch (error) {
+      clearBridgeReadyWait();
       syncInFlight = false;
       lastCheckAt = Date.now();
+      pendingSnapshot = null;
+      pendingFingerprint = '';
+      pendingSyncId = '';
+      pendingContactFailures = 0;
       setButton(`Automático ativo · ${compact(error?.message) || 'falha na verificação'}`, 'error');
     }
   }
@@ -546,17 +582,23 @@
 
   function activateAutomaticSync() {
     portalWindow = window.open(
-      BRIDGE_URL,
-      'portal-agenda-sync',
+      'about:blank',
+      'portal-agenda-contact-bridge',
       'popup=yes,width=560,height=420,resizable=yes,scrollbars=yes'
     );
 
     if (!portalWindow) {
-      setButton('Não foi possível abrir a ponte do Portal. Libere pop-ups e tente novamente.', 'error');
+      setButton('Não foi possível abrir a janela auxiliar. Libere pop-ups e tente novamente.', 'error');
       showDetails({ pin: true });
-      window.alert('O navegador bloqueou a janela do Portal. Libere pop-ups para este site e tente novamente.');
+      window.alert('O navegador bloqueou a janela auxiliar da Agenda. Libere pop-ups para este site e tente novamente.');
       return;
     }
+
+    try {
+      portalWindow.document.title = 'Agenda · sincronização';
+      portalWindow.document.body.innerHTML = '<p style="font:600 14px system-ui;padding:20px">Preparando sincronização da Agenda…</p>';
+    } catch (_) {}
+    try { window.focus(); } catch (_) {}
 
     everActivated = true;
     autoEnabled = true;
@@ -564,6 +606,7 @@
     hideDetails({ force: true });
     setButton('Conectando sincronização automática…', 'working');
     startAutomaticTimers();
+    runAutomaticSync({ force: true });
   }
 
   function onButtonClick() {
@@ -597,9 +640,7 @@
     if (portalWindow && event.source !== portalWindow) return;
 
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
-      if (!autoEnabled) return;
-      setButton('Automático ativo · primeira verificação…', 'working');
-      runAutomaticSync({ force: true });
+      bridgeReadyResolve?.();
       return;
     }
 
@@ -614,7 +655,12 @@
       const created = Number(event.data.created || 0);
       const changed = Number(event.data.changed || 0);
       const suffix = created || changed ? `+${created} / ~${changed}` : 'sem mudanças';
-      setButton(`Automático ativo · ${suffix} · ${clock()}`, 'success');
+      setButton(
+        pendingContactFailures
+          ? `Automático ativo · ${suffix} · ${pendingContactFailures} contato(s) pendente(s) · ${clock()}`
+          : `Automático ativo · ${suffix} · ${clock()}`,
+        pendingContactFailures ? 'error' : 'success'
+      );
     } else {
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
     }
@@ -622,6 +668,7 @@
     pendingSnapshot = null;
     pendingFingerprint = '';
     pendingSyncId = '';
+    pendingContactFailures = 0;
   });
 
   window.addEventListener('focus', () => {

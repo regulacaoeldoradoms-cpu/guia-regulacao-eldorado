@@ -68,10 +68,12 @@ test('sincronizador lê Agendados e consulta somente o contato necessário na se
   assert.match(source, /consultationUrl/);
   assert.match(source, /ver dados do paciente/);
   assert.match(source, /telefonecel/);
-  assert.match(source, /document\.createElement\('iframe'\)/);
+  assert.match(source, /window\.open\(/);
+  assert.match(source, /portal-agenda-contact-bridge/);
+  assert.match(source, /navigateContactWindow/);
   assert.match(source, /patientAction\(root\)/);
   assert.match(source, /action\.click\(\)/);
-  assert.match(source, /window\.top !== window\.self/);
+  assert.doesNotMatch(source, /document\.createElement\('iframe'\)/);
   assert.match(source, /CONTACT_CONCURRENCY = 1/);
   assert.doesNotMatch(source, /\/livewire\/update|csrf-token/);
   assert.match(source, /contactCache = new Map\(\)/);
@@ -110,7 +112,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.2\.1/);
+  assert.match(source, /@version\s+1\.2\.2/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -119,7 +121,17 @@ test('sincronizador automático consulta Agendados em segundo plano a cada 15 mi
   assert.match(source, /Ativar sincronização automática/);
   assert.match(source, /@updateURL\s+https:\/\/regulacaoeldoradoms\.com\.br\/agenda\/digsaude-agenda-sync\.user\.js/);
   assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|Authorization|Bearer|csrf-token/);
-  assert.match(source, /document\.createElement\('iframe'\)/);
+  assert.match(source, /window\.open\(\s*'about:blank'/);
+  assert.match(source, /waitForBridgeReady/);
+  assert.match(source, /portalWindow\.location = BRIDGE_URL/);
+});
+
+test('sincronizador mantém falhas de contato visíveis após a sincronização da Agenda', () => {
+  const source = read('agenda/digsaude-agenda-sync.user.js');
+  assert.match(source, /pendingContactFailures/);
+  assert.match(source, /contato\(s\) pendente\(s\)/);
+  assert.match(source, /bridgeReadyResolve/);
+  assert.doesNotMatch(source, /PORTAL_AGENDA_DIGSAUDE_READY'[\s\S]{0,300}runAutomaticSync/);
 });
 
 test('Agenda usa contato protegido para abrir lembrete diretamente no WhatsApp do paciente', () => {

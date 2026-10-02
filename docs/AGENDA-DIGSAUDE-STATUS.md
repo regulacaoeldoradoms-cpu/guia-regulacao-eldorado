@@ -260,3 +260,18 @@ Correção: usar a própria interface/componente do DigSaúde como executor. Par
 
 Isso elimina dependência do formato interno do payload Livewire e mantém a coleta dentro da sessão autenticada do DigSaúde, sem copiar cookies, token CSRF ou credenciais para o Portal.
 
+### V3.2 — correção para X-Frame-Options DENY — 02/10/2026
+
+Diagnóstico real do ambiente DigSaúde: as respostas do sistema incluem `X-Frame-Options: DENY`. Portanto, mesmo um iframe same-origin não pode renderizar a consulta; a V3.1 conseguia percorrer o fluxo lógico, mas o navegador bloqueava a página auxiliar antes de o telefone aparecer.
+
+Correção:
+- remover o iframe;
+- reutilizar uma única janela popup aberta por gesto explícito do usuário ao ativar a sincronização;
+- essa janela navega, uma consulta por vez, para a rota individual do DigSaúde, aciona **Ver Dados do Paciente** e lê somente o telefone;
+- concluída a coleta, a mesma janela navega para a ponte protegida do Portal e entrega o snapshot;
+- nas verificações seguintes, a mesma janela alterna entre DigSaúde e Portal, sem criar novos pop-ups;
+- a janela pode permanecer minimizada;
+- falhas de contato permanecem visíveis no status final como **N contato(s) pendente(s)** em vez de parecer que todos foram sincronizados.
+
+A arquitetura continua sem copiar cookie, senha, bearer token ou CSRF do DigSaúde para o Portal. A janela auxiliar é top-level, portanto não é afetada pelo bloqueio de frames do sistema estadual.
+
