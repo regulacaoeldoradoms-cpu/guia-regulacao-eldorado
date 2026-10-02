@@ -618,7 +618,7 @@ Regras vigentes:
 - recibo final incompleto continua inválido; versão do `files.get` ainda anterior ao recibo continua aguardando/repetindo na janela curta do 7F;
 - se outra gravação acontecer **depois** do upload deste usuário, ela é a mais recente e portanto passa a prevalecer; o Titon recebe `superseded=true`, não associa o Blob local antigo ao cache da versão remota e não bloqueia o editor por conflito;
 - `save_copy` permanece criação de novo arquivo;
-- renomeação mantém política própria de proteção contra renomeação concorrente; esta decisão trata do **conteúdo PDF**;
+- renomeação segue a regra independente de last-write-wins definida no 7G.1 abaixo; conteúdo e nome não usam o contador compartilhado de versão como lock entre si;
 - presença simultânea segue como aviso/borda visual, sem lock de escrita.
 
 Critérios de aceite:
@@ -628,4 +628,31 @@ Critérios de aceite:
 4. adulteração da referência, perda de permissão, mudança de MIME ou identidade de arquivo incompatível continuam bloqueadas;
 5. nenhum dado clínico, nome de arquivo ou fileId entra em observabilidade; somente o booleano técnico `superseded` pode ser registrado;
 6. cache local nunca deve rotular os bytes de uma gravação já superada como se fossem a versão atual do Drive.
+
+## 7G.1 — concorrência de nome e conteúdo: canais independentes — 02/10/2026
+
+Decisão permanente do responsável: a renomeação do PDF **não deve esperar** a sincronização do conteúdo e a sincronização do conteúdo **não deve esperar** a renomeação. Nome e bytes pertencem ao mesmo arquivo do Drive, mas são tratados como dois canais operacionais independentes.
+
+Esta decisão substitui, para renomeação, o bloqueio por `DRIVE_VERSION_CONFLICT` descrito historicamente no 7C. As evidências e correções de 7C permanecem como histórico, mas não são mais a política vigente.
+
+Regras vigentes:
+- **nome:** o último PATCH de `name` confirmado pelo Google Drive prevalece;
+- **conteúdo:** a última gravação `replace_pdf` confirmada pelo Google Drive prevalece conforme 7G;
+- `baseVersion` e `baseName` da renomeação são sinais diagnósticos; divergência não bloqueia;
+- `replace_pdf` envia metadata vazia e não restaura nome antigo;
+- renomeação envia apenas metadata `name` e não regrava o PDF;
+- resposta de renomeação é mesclada ao estado local pela identidade estável do arquivo, sem rebaixar versão/tamanho de conteúdo confirmados em paralelo;
+- se uma renomeação posterior já tiver vencido quando a confirmação chegar, o retorno técnico usa `superseded=true` e apresenta o nome vencedor;
+- referência opaca, identidade do arquivo, MIME PDF, capability de edição, conexão e write gate continuam obrigatórios;
+- mutações não recebem retry automático;
+- fechamento do Titon pode continuar aguardando uma renomeação em voo para não perder a confirmação, sem transformar isso em lock entre rename e sync de conteúdo.
+
+Critérios de aceite:
+1. unir/editar páginas e iniciar a sincronização de conteúdo não impede abrir/confirmar a edição do nome;
+2. uma renomeação em andamento não cancela, pausa ou reinicia o autosync de conteúdo;
+3. se conteúdo terminar primeiro, a confirmação posterior do nome não rebaixa versão/tamanho do conteúdo no cliente;
+4. se nome terminar primeiro, o upload posterior de conteúdo preserva esse nome porque `replace_pdf` não envia metadata de nome;
+5. duas renomeações concorrentes obedecem à última alteração confirmada no Drive;
+6. não existe `DRIVE_VERSION_CONFLICT` no runtime de `worker/document-drive.js` apenas por divergência de versão compartilhada;
+7. nenhuma confirmação é exibida antes do retorno autoritativo do Google Drive e nenhum dado sensível entra em observabilidade.
 
