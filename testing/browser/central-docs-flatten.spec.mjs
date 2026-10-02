@@ -71,6 +71,33 @@ test.describe('Central de Documentos — 3C.6 flatten/exportação local', () =>
     expect(Number(await page.locator('html').getAttribute('data-print-rendered-pages'))).toBe(3);
     expect(Number(await page.locator('html').getAttribute('data-print-prepare-ms'))).toBeLessThan(5000);
     await expect(page.locator('iframe.documents-print-frame[data-central-print-frame="true"]')).toHaveCount(1);
+    const printLayout = await page.locator('iframe.documents-print-frame[data-central-print-frame="true"]').evaluate((iframe) => {
+      const sheets = [...iframe.contentDocument.querySelectorAll('.print-sheet')];
+      return sheets.map((sheet) => {
+        const canvas = sheet.querySelector('canvas');
+        const sheetRect = sheet.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        return {
+          sheetWidth: sheetRect.width,
+          sheetHeight: sheetRect.height,
+          canvasWidth: canvasRect.width,
+          canvasHeight: canvasRect.height,
+          bitmapWidth: canvas.width,
+          bitmapHeight: canvas.height
+        };
+      });
+    });
+    expect(printLayout).toHaveLength(3);
+    expect(Math.max(...printLayout.map((item) => item.sheetWidth)) - Math.min(...printLayout.map((item) => item.sheetWidth))).toBeLessThan(1);
+    expect(Math.max(...printLayout.map((item) => item.sheetHeight)) - Math.min(...printLayout.map((item) => item.sheetHeight))).toBeLessThan(1);
+    expect(printLayout[0].sheetHeight / printLayout[0].sheetWidth).toBeCloseTo(297 / 210, 2);
+    for (const item of printLayout) {
+      expect(item.canvasWidth).toBeGreaterThan(0);
+      expect(item.canvasHeight).toBeGreaterThan(0);
+      expect(item.canvasWidth).toBeLessThanOrEqual(item.sheetWidth + 1);
+      expect(item.canvasHeight).toBeLessThanOrEqual(item.sheetHeight + 1);
+      expect((item.canvasWidth / item.canvasHeight) / (item.bitmapWidth / item.bitmapHeight)).toBeCloseTo(1, 2);
+    }
     expect(context.pages().length).toBe(pageCountBefore);
     await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
 
