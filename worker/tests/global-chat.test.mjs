@@ -123,7 +123,7 @@ test('chat realtime usa WebSocket como canal primário com fallback resiliente',
   assert.match(client, /realtimeConnected/);
   assert.match(client, /scheduleRealtimeReconnect/);
   assert.match(client, /CHAT_FALLBACK_POLL_MS = 4500/);
-  assert.match(client, /CHAT_CONTACTS_REALTIME_REFRESH_MS = 45000/);
+  assert.match(client, /CHAT_CONTACTS_REALTIME_REFRESH_MS = 30000/);
   assert.match(client, /\/api\/chat\/typing/);
   assert.match(client, /portalChatTyping/);
   assert.match(client, /Novas mensagens/);
