@@ -211,6 +211,24 @@ function publicRecord(record, username, readMemory) {
   };
 }
 
+function contactState(records = []) {
+  const active = [];
+  const knownSourceIds = [];
+  for (const record of records) {
+    if (record?.active === false) continue;
+    const sourceId = cleanSourceId(record?.sourceId);
+    if (!sourceId) continue;
+    active.push(sourceId);
+    if (normalizeBrazilPhone(record?.phone)) knownSourceIds.push(sourceId);
+  }
+  return {
+    active: active.length,
+    known: knownSourceIds.length,
+    missing: Math.max(0, active.length - knownSourceIds.length),
+    knownSourceIds
+  };
+}
+
 function agendaSort(a, b) {
   if (a.active !== b.active) return a.active ? -1 : 1;
   const left = `${a.appointmentDate || '9999-99-99'} ${a.appointmentTime || '99:99'}`;
@@ -329,6 +347,7 @@ async function syncRecords(env, input, user) {
 
   await commitWrites(env, writes);
 
+  const phoneReceived = normalized.filter((record) => normalizeBrazilPhone(record.phone)).length;
   return {
     synchronizedAt: now,
     received: normalized.length,
@@ -337,7 +356,8 @@ async function syncRecords(env, input, user) {
     created,
     changed,
     unchanged,
-    deactivated
+    deactivated,
+    phoneReceived
   };
 }
 
@@ -409,6 +429,11 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
 
   const user = await authorizedUser(request, env);
   if (user?.authorizationDenied) return json({ error: user.error }, user.status, origin, originAllowed);
+
+  if (url.pathname === '/api/agenda/contact-state' && request.method === 'GET') {
+    const sourceRecords = await listAll(env);
+    return json(contactState(sourceRecords), 200, origin, originAllowed);
+  }
 
   if (url.pathname === '/api/agenda' && request.method === 'GET') {
     const sourceRecords = await listAll(env);
