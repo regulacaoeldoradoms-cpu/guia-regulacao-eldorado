@@ -5,6 +5,14 @@ import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedic
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
 import { ensureSocialSchema } from './social-schema.js';
+import {
+  broadcastChatRealtime,
+  configureChatRealtimeContacts,
+  createChatRealtimeTicket,
+  realtimeTicketFromRequest,
+  upgradeChatRealtime,
+  verifyChatRealtimeTicket
+} from './chat-realtime.js';
 
 const MESSAGE_LIMIT = 2000;
 const MESSAGE_HISTORY_PAGE_SIZE = 120;
@@ -82,6 +90,21 @@ async function ensureSchema(env) {
 async function touchPresence(env, username) {
   await env.AUTH_DB.prepare(`INSERT INTO portal_chat_presence(username, last_seen) VALUES (?, CURRENT_TIMESTAMP)
     ON CONFLICT(username) DO UPDATE SET last_seen = CURRENT_TIMESTAMP`).bind(username).run();
+}
+
+async function activeChatUser(env, username) {
+  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active,
+      COALESCE(avatar_data, '') AS avatarDataUrl
+    FROM auth_users WHERE username = ? AND active = 1 LIMIT 1`).bind(username).first();
+  if (!row) return null;
+  const user = await decorateTelemedicineUser(env, row);
+  return CHAT_ROLES.has(user.role) ? user : null;
+}
+
+function runBackground(executionContext, promise) {
+  const task = Promise.resolve(promise).catch(() => false);
+  if (executionContext?.waitUntil) executionContext.waitUntil(task);
+  return task;
 }
 
 async function professionalContact(env, username) {
@@ -256,10 +279,42 @@ async function receiptState(env, current, other) {
 }
 
 async function markChatDelivered(env, username) {
+  const pending = await env.AUTH_DB.prepare(`SELECT from_user AS fromUser, MAX(id) AS deliveredThroughId
+    FROM portal_chat_messages
+    WHERE to_user = ? AND delivered_at IS NULL
+    GROUP BY from_user`).bind(username).all();
   const result = await env.AUTH_DB.prepare(`UPDATE portal_chat_messages
     SET delivered_at = CURRENT_TIMESTAMP
     WHERE to_user = ? AND delivered_at IS NULL`).bind(username).run();
-  return Number(result.meta?.changes || 0);
+  return {
+    changed: Number(result.meta?.changes || 0),
+    receipts: (pending.results || []).map((row) => ({
+      fromUser: normalizeUsername(row.fromUser),
+      deliveredThroughId: Number(row.deliveredThroughId || 0)
+    })).filter((row) => row.fromUser && row.deliveredThroughId > 0)
+  };
+}
+
+async function unreadThroughId(env, username, otherUsername, throughId = 0) {
+  const limitClause = throughId > 0 ? ' AND id <= ?' : '';
+  const statement = env.AUTH_DB.prepare(`SELECT COALESCE(MAX(id), 0) AS maxId
+    FROM portal_chat_messages
+    WHERE to_user = ? AND from_user = ? AND read_at IS NULL${limitClause}`);
+  const row = throughId > 0
+    ? await statement.bind(username, otherUsername, throughId).first()
+    : await statement.bind(username, otherUsername).first();
+  return Number(row?.maxId || 0);
+}
+
+async function markConversationRead(env, username, otherUsername, throughId = 0) {
+  const maxId = await unreadThroughId(env, username, otherUsername, throughId);
+  if (!maxId) return 0;
+  await env.AUTH_DB.prepare(`UPDATE portal_chat_messages
+    SET delivered_at = COALESCE(delivered_at, CURRENT_TIMESTAMP),
+        read_at = CURRENT_TIMESTAMP
+    WHERE to_user = ? AND from_user = ? AND id <= ? AND read_at IS NULL`)
+    .bind(username, otherUsername, maxId).run();
+  return maxId;
 }
 
 async function messages(env, current, other, afterId, beforeId = 0) {
@@ -294,6 +349,25 @@ export function isChatApi(pathname) {
 export async function handleChatRoute(request, env, origin, originAllowed = true, executionContext = null) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
+  const url = new URL(request.url);
+
+  if (url.pathname === '/api/chat/realtime' && request.method === 'GET') {
+    if (String(request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {
+      return json({ error: 'Conexão em tempo real requer WebSocket.' }, 426, origin);
+    }
+    const ticket = realtimeTicketFromRequest(request);
+    const verified = await verifyChatRealtimeTicket(env, ticket);
+    if (!verified) return json({ error: 'Sessão de tempo real inválida ou expirada.' }, 401, origin);
+    if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
+
+    const realtimeUser = await activeChatUser(env, verified.username);
+    if (!realtimeUser) return json({ error: 'O chat não está disponível para esta conta.' }, 403, origin);
+    const username = normalizeUsername(realtimeUser.username);
+    await touchPresence(env, username);
+    const realtimeContacts = await contacts(env, { ...realtimeUser, username });
+    return upgradeChatRealtime(request, env, username, realtimeContacts.map((item) => item.username));
+  }
+
   const sessionUser = await validatePortalSession(request, env, []);
   const user = sessionUser ? await decorateTelemedicineUser(env, sessionUser) : null;
   if (!user || !CHAT_ROLES.has(user.role)) {
@@ -303,7 +377,6 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
 
   const username = normalizeUsername(user.username);
   await touchPresence(env, username);
-  const url = new URL(request.url);
 
   if (url.pathname === '/api/chat/presence' && request.method === 'POST') {
     const body = await request.json().catch(() => ({}));
@@ -311,13 +384,63 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     return json({ ok: true }, 200, origin);
   }
 
+  if (url.pathname === '/api/chat/realtime/ticket' && request.method === 'POST') {
+    const issued = await createChatRealtimeTicket(env, username);
+    if (!issued) return json({ error: 'Tempo real temporariamente indisponível.' }, 503, origin);
+    return json(issued, 200, origin);
+  }
+
   if (url.pathname === '/api/chat/users' && request.method === 'GET') {
-    return json({ users: await contacts(env, { ...user, username }) }, 200, origin);
+    const users = await contacts(env, { ...user, username });
+    runBackground(executionContext, configureChatRealtimeContacts(env, username, users.map((item) => item.username)));
+    return json({ users }, 200, origin);
+  }
+
+  if (url.pathname === '/api/chat/typing' && request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    const otherUsername = normalizeUsername(body.with);
+    if (!otherUsername || otherUsername === username || !(await chatContact(env, { ...user, username }, otherUsername))) {
+      return json({ error: 'Contato não disponível para chat.' }, 404, origin);
+    }
+    const active = Boolean(body.active);
+    runBackground(executionContext, broadcastChatRealtime(env, otherUsername, {
+      type: 'typing',
+      username,
+      active,
+      expiresAt: active ? Date.now() + 4000 : Date.now()
+    }));
+    return json({ ok: true }, 200, origin);
   }
 
   if (url.pathname === '/api/chat/delivery' && request.method === 'POST') {
     const delivered = await markChatDelivered(env, username);
-    return json({ ok: true, delivered }, 200, origin);
+    for (const receipt of delivered.receipts) {
+      runBackground(executionContext, broadcastChatRealtime(env, receipt.fromUser, {
+        type: 'receipt',
+        with: username,
+        deliveredThroughId: receipt.deliveredThroughId
+      }));
+    }
+    return json({ ok: true, delivered: delivered.changed }, 200, origin);
+  }
+
+  if (url.pathname === '/api/chat/read' && request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    const otherUsername = normalizeUsername(body.with);
+    const throughId = Math.max(0, Number.parseInt(String(body.throughId || '0'), 10) || 0);
+    if (!otherUsername || otherUsername === username || !(await chatContact(env, { ...user, username }, otherUsername))) {
+      return json({ error: 'Contato não disponível para chat.' }, 404, origin);
+    }
+    const readThroughId = await markConversationRead(env, username, otherUsername, throughId);
+    if (readThroughId > 0) {
+      runBackground(executionContext, broadcastChatRealtime(env, otherUsername, {
+        type: 'receipt',
+        with: username,
+        deliveredThroughId: readThroughId,
+        readThroughId
+      }));
+    }
+    return json({ ok: true, readThroughId }, 200, origin);
   }
 
   if (url.pathname === '/api/chat/messages' && request.method === 'GET') {
@@ -329,10 +452,15 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const peekOnly = url.searchParams.get('peek') === '1';
     const rows = await messages(env, username, otherUsername, afterId, beforeId);
     if (!peekOnly) {
-      await env.AUTH_DB.prepare(`UPDATE portal_chat_messages
-        SET delivered_at = COALESCE(delivered_at, CURRENT_TIMESTAMP),
-            read_at = CURRENT_TIMESTAMP
-        WHERE to_user = ? AND from_user = ? AND read_at IS NULL`).bind(username, otherUsername).run();
+      const readThroughId = await markConversationRead(env, username, otherUsername);
+      if (readThroughId > 0) {
+        runBackground(executionContext, broadcastChatRealtime(env, otherUsername, {
+          type: 'receipt',
+          with: username,
+          deliveredThroughId: readThroughId,
+          readThroughId
+        }));
+      }
     }
     const receipt = await receiptState(env, username, otherUsername);
     return json({ messages: rows, pageSize: MESSAGE_HISTORY_PAGE_SIZE, receipt }, 200, origin);
@@ -378,10 +506,17 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
       }
     }
 
+    const confirmed = row || { id: 0, fromUser: username, toUser: to, body: message, clientId };
     const pushTask = created ? notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 })) : Promise.resolve({ attempted: 0, accepted: 0 });
-    if (executionContext?.waitUntil) executionContext.waitUntil(pushTask);
-    else await pushTask;
-    return json({ message: row || { id: 0, fromUser: username, toUser: to, body: message, clientId }, duplicate: !created }, created ? 201 : 200, origin);
+    const realtimeTask = confirmed.id
+      ? broadcastChatRealtime(env, to, { type: 'message', message: confirmed })
+      : Promise.resolve(false);
+    if (executionContext?.waitUntil) {
+      executionContext.waitUntil(Promise.allSettled([pushTask, realtimeTask]));
+    } else {
+      await Promise.allSettled([pushTask, realtimeTask]);
+    }
+    return json({ message: confirmed, duplicate: !created }, created ? 201 : 200, origin);
   }
 
   return json({ error: 'Rota do chat não encontrada.' }, 404, origin);
