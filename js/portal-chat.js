@@ -886,6 +886,7 @@
   }
 
   function closeConversation() {
+    saveActiveDraft();
     activeContact = null;
     lastMessageId = 0;
     stopMessagePolling();
@@ -898,33 +899,125 @@
     if (name) name.textContent = 'Chat interno';
     if (status) status.textContent = 'Comunicação entre usuários do portal';
     if (profile) profile.hidden = true;
+    queueChatSessionPersist();
     loadContacts();
   }
 
-  async function sendMessage() {
-    const input = document.getElementById('portalChatInput');
-    const send = document.getElementById('portalChatSend');
-    const body = String(input?.value || '').trim();
-    if (!body || !activeContact) return;
-    if (send) send.disabled = true;
+  function pendingElement(clientId) {
+    if (!clientId) return null;
+    return document.querySelector(`#portalChatMessages [data-client-id="${clientId}"]`);
+  }
+
+  function replacePendingMessage(clientId, confirmed, username) {
+    pendingMessages.delete(clientId);
+    const existing = pendingElement(clientId);
+    const confirmedId = Number(confirmed?.id || 0);
+    if (existing) {
+      const replacement = messageElement(confirmed);
+      replacement.dataset.messageId = String(confirmedId || '');
+      if (confirmed.clientId) replacement.dataset.clientId = String(confirmed.clientId);
+      existing.replaceWith(replacement);
+      lastMessageId = Math.max(lastMessageId, confirmedId);
+    } else if (activeContact?.username === username) {
+      appendMessages([confirmed], false);
+    }
+    const contact = contacts.find((item) => item.username === username);
+    mergeCachedMessages(
+      username,
+      [confirmed],
+      confirmed.sentAt || contact?.lastMessageAt || '',
+      { hasOlder: messageCache.get(messageCacheKey(username))?.hasOlder || false }
+    );
+  }
+
+  function updatePendingMessage(clientId, values = {}) {
+    const entry = pendingMessages.get(clientId);
+    if (!entry) return null;
+    Object.assign(entry.message, values);
+    const element = pendingElement(clientId);
+    if (element) updateMessageReceiptElement(element, entry.message);
+    return entry;
+  }
+
+  async function transmitPendingMessage(clientId) {
+    const entry = pendingMessages.get(clientId);
+    if (!entry) return false;
+    const { username, message } = entry;
+    updatePendingMessage(clientId, { pending: true, failed: false });
+
     try {
       const payload = await api('/api/chat/messages', {
         method: 'POST',
-        body: JSON.stringify({ to: activeContact.username, body })
+        keepalive: true,
+        body: JSON.stringify({
+          to: username,
+          body: message.body,
+          clientId
+        })
       });
-      if (input) input.value = '';
-      if (payload.message) {
-        appendMessages([payload.message], false);
-        mergeCachedMessages(activeContact.username, [payload.message], payload.message.sentAt || activeContact.lastMessageAt || '');
-      }
-      window.PortalInteractions?.notify?.('success', 'Mensagem enviada.', send);
+      if (!payload.message) throw new Error('O servidor não confirmou a mensagem.');
+      replacePendingMessage(clientId, payload.message, username);
+      queueChatSessionPersist();
       loadContacts();
+      return true;
     } catch (error) {
-      showStatus(error.message || 'Não foi possível enviar a mensagem.');
-    } finally {
-      if (send) send.disabled = false;
-      input?.focus();
+      updatePendingMessage(clientId, { pending: false, failed: true });
+      showStatus(error.message || 'Não foi possível enviar a mensagem. Você pode tentar novamente.');
+      return false;
     }
+  }
+
+  function retryPendingMessage(clientId) {
+    const normalized = String(clientId || '');
+    if (!pendingMessages.has(normalized)) return;
+    void transmitPendingMessage(normalized);
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('portalChatInput');
+    const body = String(input?.value || '').trim();
+    const username = activeContact?.username || '';
+    if (!body || !username) return;
+
+    pendingSequence += 1;
+    const clientId = createClientMessageId();
+    const message = {
+      id: -(Date.now() * 100 + pendingSequence),
+      clientId,
+      fromUser: currentUser?.username || '',
+      toUser: username,
+      body,
+      sentAt: localServerTimestamp(),
+      deliveredAt: null,
+      readAt: null,
+      pending: true,
+      failed: false
+    };
+
+    pendingMessages.set(clientId, { username, message });
+    if (input) input.value = '';
+    draftCache.delete(username);
+    appendMessages([message], false);
+    queueChatSessionPersist();
+    void transmitPendingMessage(clientId);
+    input?.focus();
+  }
+
+  function restoreChatUiFromSession(snapshot) {
+    if (!snapshot?.panelOpen) return;
+    const root = document.getElementById('portalChatRoot');
+    root?.classList.add('open');
+    void markChatDelivered(true);
+    const username = String(snapshot.activeUsername || '');
+    const contact = contacts.find((item) => item.username === username);
+    if (contact) {
+      openConversation(contact, { focus: false });
+      return;
+    }
+    document.getElementById('portalChatConversationView')?.classList.remove('active');
+    document.getElementById('portalChatContactsView')?.classList.add('active');
+    document.getElementById('portalChatBack').hidden = true;
+    queueChatSessionPersist();
   }
 
   function mount() {
@@ -974,6 +1067,7 @@
     document.getElementById('portalChatLauncher')?.addEventListener('click', () => {
       root.classList.add('open');
       void markChatDelivered(true);
+      queueChatSessionPersist();
       updateNotificationUi();
       if (notificationSupported() && Notification.permission === 'default') requestNotificationPermission();
       loadContacts();
@@ -981,6 +1075,7 @@
     document.getElementById('portalChatClose')?.addEventListener('click', () => {
       root.classList.remove('open');
       closeConversation();
+      queueChatSessionPersist(0);
     });
     document.getElementById('portalChatBack')?.addEventListener('click', closeConversation);
     document.getElementById('portalChatEnableNotifications')?.addEventListener('click', requestNotificationPermission);
@@ -992,7 +1087,18 @@
       const contact = contacts.find((item) => item.username === username);
       if (contact) openConversation(contact);
     });
+    document.getElementById('portalChatMessages')?.addEventListener('scroll', (event) => {
+      if (Number(event.currentTarget?.scrollTop || 0) < 120) void loadOlderMessages();
+    }, { passive: true });
+    document.getElementById('portalChatMessages')?.addEventListener('click', (event) => {
+      const retry = event.target.closest?.('[data-chat-retry]');
+      if (retry?.dataset.chatRetry) retryPendingMessage(retry.dataset.chatRetry);
+    });
     document.getElementById('portalChatSend')?.addEventListener('click', sendMessage);
+    document.getElementById('portalChatInput')?.addEventListener('input', () => {
+      saveActiveDraft();
+      queueChatSessionPersist();
+    });
     document.getElementById('portalChatInput')?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
@@ -1018,12 +1124,24 @@
     currentUser = await auth.me({ allowCached: true }).catch(() => auth.getCachedUser?.() || null);
     if (!currentUser || !CHAT_ROLES.has(currentUser.role)) return;
     mount();
+
+    const params = new URLSearchParams(location.search);
+    const chatFromUrl = params.get('chat');
+    const chatHandleFromUrl = params.get('chatHandle');
+    const snapshotPromise = getChatSessionSnapshot();
+    const heartbeatPromise = heartbeat(true);
+
     if (notificationSupported() && Notification.permission === 'granted') {
       await ensureNotificationWorker();
       window.PortalPWA?.syncPush?.({ createIfPermitted: true });
     }
-    await heartbeat(true);
+
+    const snapshot = await snapshotPromise;
+    hydrateChatSessionSnapshot(snapshot);
+    await heartbeatPromise;
     await loadContacts();
+
+    if (!chatFromUrl && !chatHandleFromUrl) restoreChatUiFromSession(snapshot);
 
     heartbeatTimer = window.setInterval(() => heartbeat(false), 25000);
     contactsTimer = window.setInterval(loadContacts, 12000);
@@ -1042,9 +1160,6 @@
       }
     });
 
-    const params = new URLSearchParams(location.search);
-    const chatFromUrl = params.get('chat');
-    const chatHandleFromUrl = params.get('chatHandle');
     if (chatFromUrl || chatHandleFromUrl) {
       if (chatHandleFromUrl) openChatByHandle(chatHandleFromUrl);
       else openChatByUsername(chatFromUrl);
@@ -1057,8 +1172,14 @@
     }
   }
 
-  window.addEventListener('pagehide', clearMessageMemory);
-  window.addEventListener('portal:session-cleared', clearMessageMemory);
+  window.addEventListener('pagehide', () => {
+    saveActiveDraft();
+    void persistChatSessionSnapshot();
+  });
+  window.addEventListener('portal:session-cleared', () => {
+    clearMessageMemory();
+    clearChatSessionSnapshot();
+  });
 
   window.PortalChat = Object.freeze({
     version: '20261002-receipts-1',
