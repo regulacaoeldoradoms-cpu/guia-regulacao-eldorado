@@ -125,7 +125,7 @@ export class PortalChatRealtime extends DurableObject {
     }));
 
     if (!hadOpenSockets) {
-      this.ctx.waitUntil?.(this.broadcastPresence(true));
+      await this.broadcastPresence(true);
     }
 
     return new Response(null, {
