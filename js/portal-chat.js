@@ -214,9 +214,24 @@
   }
 
   function receiptLabel(message) {
-    if (message?.readAt) return { text: '✓✓', title: 'Visualizada', state: 'read' };
-    if (message?.deliveredAt) return { text: '✓', title: 'Recebida no chat', state: 'delivered' };
+    if (message?.readAt) return { title: 'Visualizada', state: 'read', double: true };
+    if (message?.deliveredAt) return { title: 'Recebida no chat', state: 'delivered', double: false };
     return null;
+  }
+
+  function receiptSvg(double) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 18 12');
+    svg.setAttribute('aria-hidden', 'true');
+    const first = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    first.setAttribute('d', double ? 'M1.5 6.3 4.5 9.3 10.7 2.7' : 'M3.5 6.3 6.5 9.3 12.7 2.7');
+    svg.appendChild(first);
+    if (double) {
+      const second = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      second.setAttribute('d', 'M6.6 6.3 9.6 9.3 16.5 1.8');
+      svg.appendChild(second);
+    }
+    return svg;
   }
 
   function updateMessageReceiptElement(element, message) {
@@ -233,7 +248,7 @@
       element.querySelector('.portal-chat-message-time')?.appendChild(receipt);
     }
     receipt.className = `portal-chat-message-receipt ${state.state}`;
-    receipt.textContent = state.text;
+    receipt.replaceChildren(receiptSvg(state.double));
     receipt.title = state.title;
     receipt.setAttribute('aria-label', state.title);
   }
