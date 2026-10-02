@@ -142,12 +142,14 @@ async function professionalContacts(env, currentUsername) {
       COALESCE((SELECT MAX(m2.sent_at) FROM portal_chat_messages m2
         WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
-        WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread
+        WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread,
+      COALESCE((SELECT MIN(m3.id) FROM portal_chat_messages m3
+        WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
     FROM auth_users u
     LEFT JOIN portal_chat_presence p ON p.username = u.username
     WHERE u.active = 1 AND u.username <> ? AND u.role IN ('medico','recepcao','coordenacao','admin')
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername).all();
+    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
   const output = [];
   for (const item of users.filter((candidate) => PROFESSIONAL_ROLES.has(candidate.role))) {
@@ -161,7 +163,8 @@ async function professionalContacts(env, currentUsername) {
       online: Number(item.online) === 1,
       lastSeen: item.lastSeen || null,
       lastMessageAt: item.lastMessageAt || null,
-      unread: Number(item.unread || 0)
+      unread: Number(item.unread || 0),
+      firstUnreadId: Number(item.firstUnreadId || 0)
     });
   }
   return output;
@@ -178,7 +181,9 @@ async function socialFriendContacts(env, currentUsername) {
       COALESCE((SELECT MAX(m2.sent_at) FROM portal_chat_messages m2
         WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
-        WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread
+        WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread,
+      COALESCE((SELECT MIN(m3.id) FROM portal_chat_messages m3
+        WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
     FROM social_users viewer
     JOIN social_relationships relationship
       ON relationship.state = 'friends'
@@ -190,7 +195,7 @@ async function socialFriendContacts(env, currentUsername) {
     WHERE viewer.auth_username = ? AND viewer.suspended_at IS NULL
       AND friend.suspended_at IS NULL AND u.active = 1
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername).all();
+    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
   return users.filter((item) => CHAT_ROLES.has(item.role)).map((item) => ({
     username: item.username,
@@ -202,7 +207,8 @@ async function socialFriendContacts(env, currentUsername) {
     online: Number(item.online) === 1,
     lastSeen: item.lastSeen || null,
     lastMessageAt: item.lastMessageAt || null,
-    unread: Number(item.unread || 0)
+    unread: Number(item.unread || 0),
+    firstUnreadId: Number(item.firstUnreadId || 0)
   }));
 }
 
