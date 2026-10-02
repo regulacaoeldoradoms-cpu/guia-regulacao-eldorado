@@ -393,7 +393,7 @@
     return JSON.stringify({
       totalCount: snapshot.totalCount,
       complete: snapshot.complete,
-      records: snapshot.records
+      records: (snapshot.records || []).map(({ phone: _phone, ...record }) => record)
     });
   }
 
