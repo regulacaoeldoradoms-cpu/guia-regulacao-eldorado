@@ -116,6 +116,19 @@ function realtimeStub(env, username) {
   }
 }
 
+export async function probeChatRealtime(env) {
+  const stub = realtimeStub(env, '__portal_chat_health__');
+  if (!stub) return false;
+  try {
+    const response = await stub.fetch(INTERNAL_BASE + '/health', { method: 'GET' });
+    if (!response.ok) return false;
+    const payload = await response.json().catch(() => ({}));
+    return payload?.ok === true && payload?.protocol === REALTIME_PROTOCOL;
+  } catch (_) {
+    return false;
+  }
+}
+
 export async function configureChatRealtimeContacts(env, username, contactUsernames) {
   const stub = realtimeStub(env, username);
   if (!stub) return false;

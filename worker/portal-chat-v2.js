@@ -9,6 +9,7 @@ import {
   broadcastChatRealtime,
   configureChatRealtimeContacts,
   createChatRealtimeTicket,
+  probeChatRealtime,
   realtimeTicketFromRequest,
   upgradeChatRealtime,
   verifyChatRealtimeTicket
@@ -356,6 +357,11 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const url = new URL(request.url);
+
+  if (url.pathname === '/api/chat/realtime/health' && request.method === 'GET') {
+    const ok = await probeChatRealtime(env);
+    return json({ ok }, ok ? 200 : 503, origin);
+  }
 
   if (url.pathname === '/api/chat/realtime' && request.method === 'GET') {
     if (String(request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {

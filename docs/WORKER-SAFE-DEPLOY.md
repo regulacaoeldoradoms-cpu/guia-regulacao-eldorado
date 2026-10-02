@@ -218,6 +218,20 @@ A versão não produtiva:
 
 Se qualquer binding divergir, o gate permanece fail-closed com `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`.
 
+## Smoke pós-deploy do Chat em tempo real — 02/10/2026
+
+O gate produtivo também valida o binding `CHAT_REALTIME` e a classe
+`PortalChatRealtime` depois da promoção.
+
+A rota pública técnica `GET /api/chat/realtime/health` não usa sessão, não consulta
+mensagens e não expõe usuários. Ela somente obtém um stub do Durable Object técnico
+`__portal_chat_health__` e exige a resposta `{ "ok": true }` do próprio objeto.
+
+O gate exige HTTP 200. Qualquer 503, falha de binding, erro ao instanciar a classe ou
+resposta diferente aciona o mesmo rollback automático das demais verificações
+pós-deploy. Isso permite comprovar que o namespace Durable Object realmente ficou
+utilizável, sem acessar conteúdo do chat.
+
 ## Smoke pós-deploy de Usuários e acessos — 29/09/2026
 
 O gate produtivo também verifica a conectividade administrativa após a promoção da candidata.
