@@ -177,7 +177,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20261002-documents-print-1'/);
+  assert.match(source, /CACHE_VERSION = '20261002-documents-rename-lww-1'/);
 });
 
 test('Fase 7E mantém somente a raiz aquecida e pastas comuns seguem refresh autoritativo', () => {
@@ -203,7 +203,7 @@ test('Fase 7E pré-carrega somente a raiz após login e evita duplicar a chamada
   const client = read('js/documents.js');
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
   assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
@@ -268,7 +268,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -424,7 +424,7 @@ test('Fase 7E acelera navegação do Drive com raiz aquecida e sem preload de pa
   const server = read('worker/observability.js');
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -523,7 +523,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -582,7 +582,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(html, /documents\.css\?v=20260924-dark-final-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -925,7 +925,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(html, /documents\.css\?v=20260924-dark-final-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -1077,7 +1077,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1491,7 +1491,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260924-dark-final-1/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*var\(--documents-ui-danger,\s*#ff2800\);/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1521,7 +1521,7 @@ test('lista oferece salvar e imprimir PDF diretamente no hover sem abrir o Titon
   assert.match(css, /\.documents-item-quick-action\s*\{[\s\S]*width:\s*34px;[\s\S]*height:\s*34px/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-quick-actions\s*\{\s*display:\s*none/);
   assert.match(html, /documents\.css\?v=20260924-dark-final-1/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
 });
 
 test('lista renomeia PDF por segundo clique lento no nome sem substituir duplo clique de abertura', () => {
@@ -1611,6 +1611,8 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(client, /function selectViewerTitleText\(\)/);
   assert.match(client, /function beginPdfRename\(\)/);
   assert.match(client, /async function commitPdfRename\(\)/);
+  assert.match(client, /function sameDriveDocumentIdentity\(left, right\)/);
+  assert.match(client, /function mergeRenamedDriveMetadata\(current, result\)/);
   assert.ok(client.includes('/api/documents/drive/rename'));
   assert.match(client, /baseVersion:\s*previous\.version/);
   assert.match(client, /baseName:\s*oldName/);
@@ -1626,37 +1628,60 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(drive, /export async function renameDrivePdf/);
   assert.match(drive, /method:\s*'PATCH'/);
   assert.ok(drive.includes('body: JSON.stringify({ name })'));
+  assert.match(drive, /sourceChangedSinceOpen/);
+  assert.match(drive, /nameChangedSinceOpen/);
   assert.match(css, /#documentsViewerTitle\[hidden\][^}]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-viewer-rename-status\.success/);
   assert.match(css, /\.documents-viewer-rename-status\.warning/);
 });
 
-test('renomeação após sync aceita apenas drift técnico confirmado e preserva conflito real', () => {
+test('renomeação e conteúdo usam last-write-wins em canais independentes', () => {
   const client = read('js/documents.js');
   const drive = read('worker/document-drive.js');
 
-  const start = drive.indexOf('export async function renameDrivePdf');
-  const end = drive.indexOf('function driveSyncWriteEnabled', start);
-  assert.ok(start >= 0 && end > start, 'bloco de renomeação do Drive não localizado');
-  const rename = drive.slice(start, end);
+  const renameStart = drive.indexOf('export async function renameDrivePdf');
+  const renameEnd = drive.indexOf('function driveSyncWriteEnabled', renameStart);
+  assert.ok(renameStart >= 0 && renameEnd > renameStart, 'bloco de renomeação do Drive não localizado');
+  const rename = drive.slice(renameStart, renameEnd);
 
-  assert.match(client, /baseName:\s*oldName/);
-  assert.match(rename, /const baseName = safeName\(input\.baseName \|\| ''\)\.trim\(\)/);
-  assert.match(rename, /let versionConflict = before\.version !== baseVersion/);
-  assert.match(rename, /before\.name === baseName/);
-  assert.match(rename, /confirmedBaselineMatches\(env, file, before, baseVersion, username\)/);
-  assert.match(rename, /if \(versionConflict\) \{[\s\S]*DRIVE_VERSION_CONFLICT/);
-  assert.ok(
-    rename.indexOf('before.name === baseName') < rename.indexOf('confirmedBaselineMatches('),
-    'nome-base precisa ser validado antes de aceitar a prova confirmada'
-  );
-  assert.match(drive, /async function waitForConfirmedDriveRename\(env, ref, expectedName\)/);
-  assert.match(drive, /const delays = \[0, 120, 320, 700\]/);
-  assert.match(rename, /await waitForConfirmedDriveRename\(env, nextRef, name\)/);
-  assert.doesNotMatch(rename, /versionConflict = false;[\s\S]*before\.name !== baseName/);
-  assert.match(client, /Conflito: o arquivo mudou no Google Drive\. Reabra antes de renomear\./);
-  assert.match(client, /const failureMessage = String\([\s\S]*error\?\.message/);
-  assert.match(client, /Falha: \$\{failureMessage\}/);
+  assert.match(rename, /normalizeDriveVersion\(input\.baseVersion, \{ required: false \}\)/);
+  assert.match(rename, /sourceChangedSinceOpen/);
+  assert.match(rename, /nameChangedSinceOpen/);
+  assert.match(rename, /superseded/);
+  assert.doesNotMatch(rename, /DRIVE_VERSION_CONFLICT|confirmedBaselineMatches/);
+  assert.match(drive, /async function waitForConfirmedDriveRename\(env, ref, expectedName, minimumVersion = ''\)/);
+  assert.match(drive, /const delays = \[0, 120, 320, 700, 1500\]/);
+  assert.match(drive, /compareDriveVersions\(last\.version, minimumVersion\) > 0/);
+
+  const beginStart = client.indexOf('  function beginPdfRename()');
+  const applyStart = client.indexOf('  function applyRenamedPdfResult(', beginStart);
+  const beginBlock = client.slice(beginStart, applyStart);
+  assert.doesNotMatch(beginBlock, /driveSyncInFlight|editorBusy/);
+
+  const commitStart = client.indexOf('  async function commitPdfRename()');
+  const presenceStart = client.indexOf('  function clearDocumentPresenceVisual()', commitStart);
+  const commitBlock = client.slice(commitStart, presenceStart);
+  assert.doesNotMatch(commitBlock, /driveSyncInFlight|editorBusy|clearDriveSyncTimer/);
+  assert.match(commitBlock, /sameDriveDocumentIdentity\(state\.pdfItem, previous\)/);
+  assert.match(commitBlock, /applyRenamedPdfResult\(previous, result\)/);
+
+  const syncStart = client.indexOf('  async function syncEditedPdfToDrive(');
+  const syncEnd = client.indexOf('  async function exportEditedPdfLocal(', syncStart);
+  const syncBlock = client.slice(syncStart, syncEnd);
+  assert.doesNotMatch(syncBlock, /renameBusy/);
+
+  const editorStart = client.indexOf('  async function startEditor()');
+  const editorEnd = client.indexOf('  async function normalizeImageForPdf(', editorStart);
+  const editorBlock = client.slice(editorStart, editorEnd);
+  assert.doesNotMatch(editorBlock, /Aguarde a renomeação terminar/);
+  assert.match(editorBlock, /sameDriveDocumentIdentity\(item, state\.pdfItem\)/);
+
+  const uploadStart = drive.indexOf('async function initiateDriveResumableUpload(');
+  const uploadEnd = drive.indexOf('export async function startDriveSync(', uploadStart);
+  const uploadBlock = drive.slice(uploadStart, uploadEnd);
+  assert.match(uploadBlock, /if \(input\.operation === 'replace_pdf'\)[\s\S]*metadata = \{\};/);
+
+  assert.match(client, /A última gravação confirmada no Google Drive prevalece\./);
 });
 
 test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro', () => {
@@ -1809,7 +1834,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260924-dark-final-1/);
-  assert.match(html, /documents\.js\?v=20261002-print-1/);
+  assert.match(html, /documents\.js\?v=20261002-rename-lww-1/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
