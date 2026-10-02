@@ -784,11 +784,9 @@
         return;
       }
       if (!autoEnabled || syncInFlight) return;
-      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
-      const missing = Number(event.data?.contactsMissing || 0);
       setButton(
-        `Automático ativo · ${available} contato(s) já salvos · ${missing} pendente(s)…`,
-        missing ? 'working' : 'success'
+        `Automático ativo · ${knownContactIds.size} contato(s) já persistidos · conferindo agenda…`,
+        'working'
       );
       runAutomaticSync({ force: true });
       return;
@@ -803,11 +801,10 @@
     if (event.data.ok) {
       updateKnownContactIds(event.data?.knownSourceIds);
       lastFingerprint = pendingFingerprint;
-      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
-      const missing = Number(event.data?.contactsMissing || 0);
+      const coverage = contactCoverage(pendingSnapshot);
       setButton(
-        `Automático ativo · ${available} contato(s) disponíveis · ${missing} pendente(s) · ${clock()}`,
-        missing ? 'error' : 'success'
+        `Automático ativo · ${coverage.available}/${coverage.total} contato(s) úteis disponíveis · ${coverage.missing} pendente(s) · ${clock()}`,
+        coverage.missing ? 'error' : 'success'
       );
     } else {
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
