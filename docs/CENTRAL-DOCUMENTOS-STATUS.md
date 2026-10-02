@@ -444,3 +444,70 @@ O reparo está tecnicamente publicado. A homologação humana do caso real conti
 | Métricas / observabilidade | Nenhuma nova telemetria documental ou clínica; nenhuma informação sensível adicionada. |
 | Próxima ação exata | Abrir o mesmo PDF em produção e imprimir: confirmar 9→9 páginas, tamanho normal das páginas comuns e página anormal inteira em uma folha. Se falhar, registrar a prévia e não alterar o Drive; reabrir diagnóstico apenas com a evidência nova. |
 | Arquivos e fontes principais | `js/documents.js`; `testing/central-docs/editor-harness.js`; `testing/browser/central-docs-flatten.spec.mjs`; `worker/tests/documents-ui.test.mjs`; `documentos/index.html`; `portal-sw.js`; PR #583; merge `97d6147`; Pages run `37021058366`; Guia Mestre 1.1. |
+
+## Titon — renomeação e conteúdo independentes com last-write-wins — 02/10/2026
+
+Incidente real em produção: após alterações de conteúdo no PDF, a renomeação ainda podia exibir **“Conflito: o arquivo mudou no Google Drive. Reabra antes de renomear.”**. O contrato de conteúdo já havia sido migrado para last-write-wins na PR #575, porém a rota de renomeação continuava comparando `baseVersion` com a versão atual e bloqueando a operação. No cliente, a renomeação também era bloqueada por `driveSyncInFlight`/`editorBusy`, e `commitPdfRename` cancelava o timer do autosync de conteúdo.
+
+Decisão funcional aprovada nesta unidade: **nome e conteúdo são canais independentes de sincronização, ambos com semântica last-write-wins dentro do seu próprio domínio**.
+- o último PATCH de **nome** confirmado pelo Google Drive prevalece sobre nomes anteriores;
+- a última gravação de **conteúdo** confirmada pelo Google Drive prevalece sobre bytes anteriores, conforme #575;
+- `replace_pdf` continua iniciando upload com metadata `{}`, portanto não grava nem restaura nome;
+- a renomeação envia somente `{ name }`, portanto não grava bytes do PDF.
+
+Implementação na PR **#585**:
+1. `renameDrivePdf` não lança mais `DRIVE_VERSION_CONFLICT` apenas porque versão ou nome-base mudaram; `baseVersion`/`baseName` ficam como sinais diagnósticos de concorrência;
+2. referência opaca, identidade do arquivo e permissão de edição continuam obrigatórias;
+3. o recibo do PATCH de nome continua precisando de confirmação real do Drive; se uma renomeação posterior já venceu, o retorno marca `superseded=true` e apresenta o nome vencedor;
+4. o cliente deixa de bloquear renomeação quando upload de conteúdo ou rebuild local estão em andamento;
+5. renomear deixa de cancelar o timer de autosync do conteúdo;
+6. resposta de renomeação é mesclada ao estado atual pela identidade estável `cacheKey`, preservando a versão/tamanho mais novos caso o conteúdo tenha terminado de sincronizar em paralelo;
+7. início do editor durante uma renomeação também usa identidade estável, evitando abortar somente porque metadados/ref foram renovados;
+8. cache previsto para `documents.js?v=20261002-rename-lww-1` e `CACHE_VERSION = '20261002-documents-rename-lww-1'`.
+
+Proteções preservadas:
+- não foi adicionado retry automático a PATCH de nome nem a qualquer outra mutação;
+- nenhuma alteração é declarada sincronizada sem confirmação do Google Drive;
+- nenhuma permissão foi ampliada;
+- nenhuma informação clínica, nome real de arquivo ou ID do Drive foi adicionada à observabilidade.
+
+Cobertura adicionada:
+- renomeação com `baseVersion` e `baseName` obsoletos deve concluir em vez de bloquear;
+- uma renomeação posterior no Drive deve vencer e ser reconhecida como `superseded`;
+- cliente não deve acoplar `commitPdfRename` a `driveSyncInFlight`, `editorBusy` ou `clearDriveSyncTimer`;
+- fluxo de conteúdo não deve depender de `renameBusy`;
+- `replace_pdf` permanece com metadata vazia, impedindo que upload de conteúdo sobrescreva nome.
+
+Estado: PR **#585** aberta, branch `fix/titon-rename-lww-independent-20261002`, baseada na `main` `1ea55a4d7edfb963493aafefddec45139a13c146`. Checks precisam ser concluídos antes do merge.
+
+Alternativas descartadas:
+- serializar nome e conteúdo em uma única fila, pois recriaria a espera operacional relatada;
+- remover confirmação real do Drive, pois violaria a governança de sincronização;
+- fazer retry automático de renomeação, pois uma mutação repetida sem idempotency key não deve ser reenviada automaticamente;
+- fazer o upload de conteúdo carregar o nome atual como metadata, pois criaria uma disputa desnecessária entre os dois canais.
+
+Riscos conhecidos: a API do Google Drive possui um único campo técnico `version` para mudanças de arquivo/metadata, portanto nome e conteúdo ainda podem incrementar a mesma versão remota. O cliente/backend deixam de usar esse contador compartilhado como trava entre os dois canais, mas mantêm a identidade do arquivo e a confirmação autoritativa.
+
+**Próxima ação exata:** concluir checks da PR #585; se os testes runtime/UI e checks documentais aplicáveis passarem, integrar e confirmar em produção que unir/editar PDF e renomear podem ocorrer sem espera mútua e que o nome final/content final correspondem às últimas gravações confirmadas de cada canal.
+
+### Handoff — renomeação independente
+
+| Campo | Estado persistente |
+|---|---|
+| Fase atual | Fase 7 — Robustez e otimização contínua. |
+| Subfase / objetivo atual | Renomeação LWW independente do sync de conteúdo. |
+| Última ação concluída | Implementação e testes adicionados; PR #585 aberta. |
+| Branch atual | `fix/titon-rename-lww-independent-20261002`. |
+| PR atual | #585 — aberta, aguardando checks. |
+| Último commit relevante | `360e783a6619625bfad7e412896e8577c886899a` antes deste registro documental. |
+| Checks e testes | Ainda não antecipar resultado; CI da #585 deve ser conferido. |
+| Decisões tomadas | Dois canais LWW: nome e conteúdo; sem bloqueio mútuo; confirmação Drive obrigatória. |
+| Justificativas | Nome é metadata e replace_pdf envia metadata vazia; esperar um pelo outro não é necessário para integridade se a identidade do arquivo for estável. |
+| Alternativas descartadas | Fila única; retry automático de mutações; upload de conteúdo regravando nome; remover confirmação Drive. |
+| Ações externas concluídas | Nenhuma credencial/OAuth/segredo alterado. |
+| Pendências e bloqueios | Checks #585 e homologação humana em produção após merge. |
+| Riscos conhecidos | O contador version do Drive é compartilhado, mas deixa de ser usado como lock entre canais. |
+| Métricas / observabilidade | Sem novas propriedades sensíveis; nenhum filename/fileId em telemetria. |
+| Próxima ação exata | Conferir checks #585, corrigir regressões se houver e integrar somente com evidência verde pertinente. |
+| Arquivos e fontes principais | `worker/document-drive.js`; `js/documents.js`; `worker/tests/documents-phase1.test.mjs`; `worker/tests/documents-ui.test.mjs`; `documentos/index.html`; `portal-sw.js`; PR #585; Guia Mestre 1.1. |
+
