@@ -185,11 +185,15 @@
       'input[name*="telefonecel" i]',
       'input[id*="telefonecel" i]',
       '[wire\\:model*="telefonecel" i]',
+      '[data-state-path*="telefonecel" i] input',
       'input[name*="telefone" i]',
       'input[id*="telefone" i]',
       '[wire\\:model*="telefone" i]',
+      '[data-state-path*="telefone" i] input',
       'input[name*="celular" i]',
-      'input[id*="celular" i]'
+      'input[id*="celular" i]',
+      'input[type="tel"]',
+      'input[inputmode="tel"]'
     ];
     for (const selector of selectors) {
       for (const node of root.querySelectorAll(selector)) {
@@ -197,7 +201,30 @@
         if (phone) return phone;
       }
     }
+
+    const labels = [...root.querySelectorAll('label, span, div')]
+      .filter((node) => node.children.length === 0 && normalizeSearch(node.textContent) === 'telefone');
+    for (const label of labels) {
+      let container = label.parentElement;
+      for (let depth = 0; container && depth < 5; depth += 1, container = container.parentElement) {
+        const inputs = [...container.querySelectorAll('input')];
+        for (const input of inputs) {
+          const phone = normalizePhone(input.value || input.getAttribute('value'));
+          if (phone) return phone;
+        }
+        if (inputs.length) break;
+      }
+    }
     return '';
+  }
+
+  function updateKnownContactIds(values) {
+    if (!Array.isArray(values)) return;
+    knownContactIds.clear();
+    for (const value of values) {
+      const sourceId = compact(value);
+      if (/^[A-Za-z0-9_-]{1,80}$/.test(sourceId)) knownContactIds.add(sourceId);
+    }
   }
 
   function patientAction(root) {
