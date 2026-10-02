@@ -22,6 +22,22 @@
     } catch (_) {}
   }
 
+  async function loadContactState() {
+    try {
+      const state = await auth.api('/api/agenda/contact-state', { method: 'GET' });
+      return {
+        active: Number(state?.active || 0),
+        known: Number(state?.known || 0),
+        missing: Number(state?.missing || 0),
+        knownSourceIds: Array.isArray(state?.knownSourceIds)
+          ? state.knownSourceIds.map((value) => String(value || '')).filter(Boolean)
+          : []
+      };
+    } catch (_) {
+      return { active: 0, known: 0, missing: 0, knownSourceIds: [] };
+    }
+  }
+
   window.addEventListener('message', async (event) => {
     if (event.origin !== DIGSAUDE_ORIGIN) return;
     if (event.source !== window.opener) return;
@@ -63,6 +79,7 @@
         })
       });
 
+      const contactState = await loadContactState();
       const message = {
         type: 'PORTAL_AGENDA_DIGSAUDE_RESULT',
         syncId,
@@ -71,12 +88,16 @@
         changed: Number(result.changed || 0),
         unchanged: Number(result.unchanged || 0),
         deactivated: Number(result.deactivated || 0),
-        complete: result.complete === true
+        phoneReceived: Number(result.phoneReceived || 0),
+        complete: result.complete === true,
+        contactsAvailable: contactState.known,
+        contactsMissing: contactState.missing,
+        knownSourceIds: contactState.knownSourceIds
       };
 
       lastSyncId = syncId;
       lastResult = message;
-      status.textContent = `Automático ativo · última sincronização: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${message.created} novo(s), ${message.changed} alterado(s).`;
+      status.textContent = `Automático ativo · ${message.contactsAvailable}/${message.contactsAvailable + message.contactsMissing} contato(s) disponíveis · última sincronização: ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`;
       agendaLink.hidden = false;
       reply(message);
     } catch (error) {
@@ -97,5 +118,11 @@
     }
   });
 
-  reply({ type: 'PORTAL_AGENDA_DIGSAUDE_READY' });
+  const initialContactState = await loadContactState();
+  reply({
+    type: 'PORTAL_AGENDA_DIGSAUDE_READY',
+    contactsAvailable: initialContactState.known,
+    contactsMissing: initialContactState.missing,
+    knownSourceIds: initialContactState.knownSourceIds
+  });
 })();

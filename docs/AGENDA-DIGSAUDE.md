@@ -184,3 +184,19 @@ Correção:
 
 A arquitetura continua sem copiar cookie, senha, bearer token ou CSRF do DigSaúde para o Portal. A janela auxiliar é top-level, portanto não é afetada pelo bloqueio de frames do sistema estadual.
 
+### V3.3 — contato persistido, leitura somente dos faltantes e confirmação real — 02/10/2026
+
+Após a V3.2, a coleta visual conseguiu percorrer as consultas, porém a experiência continuava lenta e a interface não comprovava que os números tinham sido efetivamente persistidos. O contador anterior indicava tentativas de leitura, não confirmação no Firestore.
+
+A V3.3 muda o ciclo:
+- ao abrir a ponte, o Portal consulta uma rota autenticada mínima `/api/agenda/contact-state`;
+- a resposta contém somente contagens e os `sourceId` já associados a um telefone válido; nenhum número de telefone é devolvido à página do DigSaúde;
+- o sincronizador consulta no DigSaúde **somente** agendamentos ainda sem contato persistido;
+- o telefone é localizado também pela relação visual **Telefone → campo de entrada**, além dos seletores técnicos Filament, evitando esperar timeout quando o campo já está na tela;
+- o tempo máximo por consulta caiu de 18 s para 8 s; em sucesso normal a coleta termina assim que o campo aparece;
+- telefone fica fora da assinatura usada para detectar mudanças da Agenda, mas uma nova captura de contato força o envio mesmo quando os demais dados do agendamento não mudaram;
+- depois do commit, a ponte consulta novamente `contact-state` e informa ao sincronizador a cobertura real persistida;
+- o status final passa a mostrar **X contatos disponíveis · Y pendentes**, em vez de inferir sucesso a partir do número de tentativas.
+
+Consequência operacional: a primeira carga ainda precisa enriquecer os contatos faltantes; depois disso, sincronizações normais não percorrem novamente pacientes cujo telefone já está salvo.
+

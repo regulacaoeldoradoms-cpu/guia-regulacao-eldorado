@@ -275,3 +275,19 @@ Correção:
 
 A arquitetura continua sem copiar cookie, senha, bearer token ou CSRF do DigSaúde para o Portal. A janela auxiliar é top-level, portanto não é afetada pelo bloqueio de frames do sistema estadual.
 
+### V3.3 — correção de persistência verificável e desempenho — 02/10/2026
+
+Ocorrência real: após percorrer visualmente todos os pacientes, a Agenda ainda mostrava **Sincronizando contato…**. Isso demonstrou que o fluxo não podia considerar a passagem por 30 consultas como prova de persistência.
+
+Ajustes:
+- nova API autenticada `GET /api/agenda/contact-state`, retornando somente `active`, `known`, `missing` e `knownSourceIds`;
+- a ponte consulta esse estado antes da coleta e após cada sincronização;
+- contatos já persistidos são ignorados pelo sincronizador;
+- extração do telefone passa a localizar o campo também pelo rótulo visual **Telefone**, compatível com o formulário observado no DigSaúde;
+- timeout máximo reduzido para 8 segundos;
+- nova captura de telefone é enviada mesmo quando nenhum outro campo da Agenda mudou;
+- o resultado do Worker informa apenas a contagem técnica `phoneReceived`;
+- o status apresentado ao operador usa a cobertura reconsultada do backend, não uma estimativa local.
+
+Nenhum número de telefone, nome de paciente ou conteúdo clínico é incluído em logs, testes, documentação pública ou observabilidade.
+

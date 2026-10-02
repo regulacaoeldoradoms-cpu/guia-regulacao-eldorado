@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.2
+// @version      1.2.3
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-3
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-3
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-4
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-4
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -28,7 +28,7 @@
   const BRIDGE_WATCH_MS = 15 * 1000;
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
   const CONTACT_CONCURRENCY = 1;
-  const CONTACT_WINDOW_TIMEOUT_MS = 18 * 1000;
+  const CONTACT_WINDOW_TIMEOUT_MS = 8 * 1000;
   const BRIDGE_READY_TIMEOUT_MS = 15 * 1000;
 
   let portalWindow = null;
@@ -53,6 +53,7 @@
   let bridgeReadyReject = null;
   let bridgeReadyTimer = null;
   const contactCache = new Map();
+  const knownContactIds = new Set();
 
   function compact(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -184,11 +185,15 @@
       'input[name*="telefonecel" i]',
       'input[id*="telefonecel" i]',
       '[wire\\:model*="telefonecel" i]',
+      '[data-state-path*="telefonecel" i] input',
       'input[name*="telefone" i]',
       'input[id*="telefone" i]',
       '[wire\\:model*="telefone" i]',
+      '[data-state-path*="telefone" i] input',
       'input[name*="celular" i]',
-      'input[id*="celular" i]'
+      'input[id*="celular" i]',
+      'input[type="tel"]',
+      'input[inputmode="tel"]'
     ];
     for (const selector of selectors) {
       for (const node of root.querySelectorAll(selector)) {
@@ -196,7 +201,30 @@
         if (phone) return phone;
       }
     }
+
+    const labels = [...root.querySelectorAll('label, span, div')]
+      .filter((node) => node.children.length === 0 && normalizeSearch(node.textContent) === 'telefone');
+    for (const label of labels) {
+      let container = label.parentElement;
+      for (let depth = 0; container && depth < 5; depth += 1, container = container.parentElement) {
+        const inputs = [...container.querySelectorAll('input')];
+        for (const input of inputs) {
+          const phone = normalizePhone(input.value || input.getAttribute('value'));
+          if (phone) return phone;
+        }
+        if (inputs.length) break;
+      }
+    }
     return '';
+  }
+
+  function updateKnownContactIds(values) {
+    if (!Array.isArray(values)) return;
+    knownContactIds.clear();
+    for (const value of values) {
+      const sourceId = compact(value);
+      if (/^[A-Za-z0-9_-]{1,80}$/.test(sourceId)) knownContactIds.add(sourceId);
+    }
   }
 
   function patientAction(root) {
@@ -303,16 +331,23 @@
 
   async function enrichSnapshotContacts(snapshot) {
     const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
+    const targets = records.filter((record) => record?.sourceId && !knownContactIds.has(record.sourceId));
     let cursor = 0;
+    let found = 0;
     let failed = 0;
 
     const runner = async () => {
-      while (cursor < records.length) {
+      while (cursor < targets.length) {
         const index = cursor++;
-        const record = records[index];
-        setButton(`Automático ativo · contatos ${index + 1}/${records.length}…`, 'working');
+        const record = targets[index];
+        setButton(
+          `Automático ativo · contatos ${index + 1}/${targets.length} · ${knownContactIds.size} já salvos…`,
+          'working'
+        );
         try {
           record.phone = await extractContact(record.sourceId);
+          if (record.phone) found += 1;
+          else failed += 1;
         } catch (_) {
           record.phone = '';
           failed += 1;
@@ -320,8 +355,14 @@
       }
     };
 
-    await Promise.all(Array.from({ length: Math.min(CONTACT_CONCURRENCY, records.length || 1) }, () => runner()));
-    return { total: records.length, failed };
+    await Promise.all(Array.from({ length: Math.min(CONTACT_CONCURRENCY, targets.length || 1) }, () => runner()));
+    return {
+      total: records.length,
+      requested: targets.length,
+      skipped: records.length - targets.length,
+      found,
+      failed
+    };
   }
 
   function agendadosUrl() {
@@ -352,7 +393,7 @@
     return JSON.stringify({
       totalCount: snapshot.totalCount,
       complete: snapshot.complete,
-      records: snapshot.records
+      records: (snapshot.records || []).map(({ phone: _phone, ...record }) => record)
     });
   }
 
@@ -532,14 +573,15 @@
       lastCheckAt = Date.now();
       const contactResult = await enrichSnapshotContacts(nextSnapshot);
       const nextFingerprint = fingerprint(nextSnapshot);
+      const hasContactUpdates = contactResult.found > 0;
 
-      if (!force && nextFingerprint === lastFingerprint) {
+      if (!force && nextFingerprint === lastFingerprint && !hasContactUpdates) {
         syncInFlight = false;
         try { portalWindow.location = BRIDGE_URL; } catch (_) {}
         setButton(
           contactResult.failed
             ? `Automático ativo · sem mudanças · ${contactResult.failed} contato(s) pendente(s) · ${clock()}`
-            : `Automático ativo · sem mudanças · ${clock()}`,
+            : `Automático ativo · sem mudanças · ${knownContactIds.size} contato(s) já salvos · ${clock()}`,
           contactResult.failed ? 'error' : 'success'
         );
         return;
@@ -550,9 +592,7 @@
       pendingContactFailures = contactResult.failed;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       setButton(
-        contactResult.failed
-          ? `Automático ativo · enviando agenda · ${contactResult.failed} contato(s) pendente(s)…`
-          : `Automático ativo · enviando ${nextSnapshot.records.length}…`,
+        `Automático ativo · ${contactResult.found} contato(s) novo(s) · enviando Agenda…`,
         'working'
       );
 
@@ -582,7 +622,7 @@
 
   function activateAutomaticSync() {
     portalWindow = window.open(
-      'about:blank',
+      BRIDGE_URL,
       'portal-agenda-contact-bridge',
       'popup=yes,width=560,height=420,resizable=yes,scrollbars=yes'
     );
@@ -594,19 +634,14 @@
       return;
     }
 
-    try {
-      portalWindow.document.title = 'Agenda · sincronização';
-      portalWindow.document.body.innerHTML = '<p style="font:600 14px system-ui;padding:20px">Preparando sincronização da Agenda…</p>';
-    } catch (_) {}
     try { window.focus(); } catch (_) {}
 
     everActivated = true;
     autoEnabled = true;
     detailPinned = false;
     hideDetails({ force: true });
-    setButton('Conectando sincronização automática…', 'working');
+    setButton('Consultando contatos já salvos no Portal…', 'working');
     startAutomaticTimers();
-    runAutomaticSync({ force: true });
   }
 
   function onButtonClick() {
@@ -640,7 +675,19 @@
     if (portalWindow && event.source !== portalWindow) return;
 
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
-      bridgeReadyResolve?.();
+      updateKnownContactIds(event.data?.knownSourceIds);
+      if (bridgeReadyResolve) {
+        bridgeReadyResolve();
+        return;
+      }
+      if (!autoEnabled || syncInFlight) return;
+      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
+      const missing = Number(event.data?.contactsMissing || 0);
+      setButton(
+        `Automático ativo · ${available} contato(s) já salvos · ${missing} pendente(s)…`,
+        missing ? 'working' : 'success'
+      );
+      runAutomaticSync({ force: true });
       return;
     }
 
@@ -651,15 +698,13 @@
     syncInFlight = false;
 
     if (event.data.ok) {
+      updateKnownContactIds(event.data?.knownSourceIds);
       lastFingerprint = pendingFingerprint;
-      const created = Number(event.data.created || 0);
-      const changed = Number(event.data.changed || 0);
-      const suffix = created || changed ? `+${created} / ~${changed}` : 'sem mudanças';
+      const available = Number(event.data?.contactsAvailable || knownContactIds.size);
+      const missing = Number(event.data?.contactsMissing || 0);
       setButton(
-        pendingContactFailures
-          ? `Automático ativo · ${suffix} · ${pendingContactFailures} contato(s) pendente(s) · ${clock()}`
-          : `Automático ativo · ${suffix} · ${clock()}`,
-        pendingContactFailures ? 'error' : 'success'
+        `Automático ativo · ${available} contato(s) disponíveis · ${missing} pendente(s) · ${clock()}`,
+        missing ? 'error' : 'success'
       );
     } else {
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
