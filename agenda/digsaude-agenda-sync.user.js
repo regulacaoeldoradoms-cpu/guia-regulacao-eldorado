@@ -508,6 +508,7 @@
     autoEnabled = false;
     stopAutomaticTimers();
     stopDeliveryRetry();
+    clearBridgeReadyWait();
     syncInFlight = false;
     pendingSnapshot = null;
     pendingFingerprint = '';
@@ -534,6 +535,7 @@
 
       if (!force && nextFingerprint === lastFingerprint) {
         syncInFlight = false;
+        try { portalWindow.location = BRIDGE_URL; } catch (_) {}
         setButton(
           contactResult.failed
             ? `Automático ativo · sem mudanças · ${contactResult.failed} contato(s) pendente(s) · ${clock()}`
@@ -545,6 +547,7 @@
 
       pendingSnapshot = nextSnapshot;
       pendingFingerprint = nextFingerprint;
+      pendingContactFailures = contactResult.failed;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       setButton(
         contactResult.failed
@@ -552,10 +555,19 @@
           : `Automático ativo · enviando ${nextSnapshot.records.length}…`,
         'working'
       );
+
+      const ready = waitForBridgeReady();
+      portalWindow.location = BRIDGE_URL;
+      await ready;
       scheduleDeliveryRetry();
     } catch (error) {
+      clearBridgeReadyWait();
       syncInFlight = false;
       lastCheckAt = Date.now();
+      pendingSnapshot = null;
+      pendingFingerprint = '';
+      pendingSyncId = '';
+      pendingContactFailures = 0;
       setButton(`Automático ativo · ${compact(error?.message) || 'falha na verificação'}`, 'error');
     }
   }
@@ -570,17 +582,23 @@
 
   function activateAutomaticSync() {
     portalWindow = window.open(
-      BRIDGE_URL,
-      'portal-agenda-sync',
+      'about:blank',
+      'portal-agenda-contact-bridge',
       'popup=yes,width=560,height=420,resizable=yes,scrollbars=yes'
     );
 
     if (!portalWindow) {
-      setButton('Não foi possível abrir a ponte do Portal. Libere pop-ups e tente novamente.', 'error');
+      setButton('Não foi possível abrir a janela auxiliar. Libere pop-ups e tente novamente.', 'error');
       showDetails({ pin: true });
-      window.alert('O navegador bloqueou a janela do Portal. Libere pop-ups para este site e tente novamente.');
+      window.alert('O navegador bloqueou a janela auxiliar da Agenda. Libere pop-ups para este site e tente novamente.');
       return;
     }
+
+    try {
+      portalWindow.document.title = 'Agenda · sincronização';
+      portalWindow.document.body.innerHTML = '<p style="font:600 14px system-ui;padding:20px">Preparando sincronização da Agenda…</p>';
+    } catch (_) {}
+    try { window.focus(); } catch (_) {}
 
     everActivated = true;
     autoEnabled = true;
@@ -588,6 +606,7 @@
     hideDetails({ force: true });
     setButton('Conectando sincronização automática…', 'working');
     startAutomaticTimers();
+    runAutomaticSync({ force: true });
   }
 
   function onButtonClick() {
@@ -621,9 +640,7 @@
     if (portalWindow && event.source !== portalWindow) return;
 
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
-      if (!autoEnabled) return;
-      setButton('Automático ativo · primeira verificação…', 'working');
-      runAutomaticSync({ force: true });
+      bridgeReadyResolve?.();
       return;
     }
 
@@ -638,7 +655,12 @@
       const created = Number(event.data.created || 0);
       const changed = Number(event.data.changed || 0);
       const suffix = created || changed ? `+${created} / ~${changed}` : 'sem mudanças';
-      setButton(`Automático ativo · ${suffix} · ${clock()}`, 'success');
+      setButton(
+        pendingContactFailures
+          ? `Automático ativo · ${suffix} · ${pendingContactFailures} contato(s) pendente(s) · ${clock()}`
+          : `Automático ativo · ${suffix} · ${clock()}`,
+        pendingContactFailures ? 'error' : 'success'
+      );
     } else {
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
     }
@@ -646,6 +668,7 @@
     pendingSnapshot = null;
     pendingFingerprint = '';
     pendingSyncId = '';
+    pendingContactFailures = 0;
   });
 
   window.addEventListener('focus', () => {
