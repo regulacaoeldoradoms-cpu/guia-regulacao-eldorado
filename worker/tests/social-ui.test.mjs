@@ -182,7 +182,7 @@ test('chat profissional continua por cargo e chat social exige amizade aceita', 
   assert.match(client, /const messagePreloadRequests = new Map\(\)/);
   assert.match(client, /function preloadConversationsInBackground/);
   assert.match(client, /requestIdleCallback/);
-  assert.match(client, /MESSAGE_PRELOAD_CONCURRENCY = 3/);
+  assert.match(client, /MESSAGE_PRELOAD_CONCURRENCY = 2/);
   assert.match(client, /MESSAGE_HISTORY_PAGE_SIZE = 120/);
   assert.match(client, /MESSAGE_PRELOAD_PAGE_GUARD = 100/);
   assert.match(client, /&peek=1/);
