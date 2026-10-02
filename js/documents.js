@@ -828,6 +828,62 @@
     return descriptor ? `${descriptor.cacheKey}:${descriptor.version}` : '';
   }
 
+  function sameDriveDocumentIdentity(left, right) {
+    if (!left || !right) return false;
+    const leftKey = String(left.cacheKey || '');
+    const rightKey = String(right.cacheKey || '');
+    if (leftKey && rightKey) return leftKey === rightKey;
+    const leftRef = String(left.ref || '');
+    const rightRef = String(right.ref || '');
+    return Boolean(leftRef && rightRef && leftRef === rightRef);
+  }
+
+  function compareDriveVersions(left, right) {
+    try {
+      const a = BigInt(String(left || '0'));
+      const b = BigInt(String(right || '0'));
+      return a === b ? 0 : (a > b ? 1 : -1);
+    } catch (_) {
+      return String(left || '') === String(right || '') ? 0 : -1;
+    }
+  }
+
+  function newestDriveVersion(left, right) {
+    if (!left) return String(right || '');
+    if (!right) return String(left || '');
+    return compareDriveVersions(left, right) >= 0 ? String(left) : String(right);
+  }
+
+  function newestDriveModifiedTime(left, right) {
+    const a = Date.parse(String(left || ''));
+    const b = Date.parse(String(right || ''));
+    if (!Number.isFinite(a)) return String(right || left || '');
+    if (!Number.isFinite(b)) return String(left || right || '');
+    return a >= b ? String(left || '') : String(right || '');
+  }
+
+  function mergeRenamedDriveMetadata(current, result) {
+    const source = current || {};
+    const resultVersion = String(result?.currentVersion || '');
+    const sourceVersion = String(source.version || '');
+    const resultIsNewest = !sourceVersion || !resultVersion
+      ? Boolean(resultVersion)
+      : compareDriveVersions(resultVersion, sourceVersion) >= 0;
+    const nextName = String(result?.name || source.name || source.label || 'PDF');
+    return {
+      ...source,
+      ref: String(result?.ref || source.ref || ''),
+      cacheKey: String(result?.cacheKey || source.cacheKey || ''),
+      version: newestDriveVersion(sourceVersion, resultVersion),
+      modifiedTime: newestDriveModifiedTime(source.modifiedTime, result?.modifiedTime),
+      size: resultIsNewest && Number.isFinite(Number(result?.size))
+        ? Number(result.size)
+        : source.size,
+      name: nextName,
+      label: nextName
+    };
+  }
+
   function editorContainsItem(item) {
     const session = state.editorSession;
     const identity = itemCacheIdentity(item);
@@ -1919,7 +1975,7 @@
     if (els.editorSyncCopyNameField) els.editorSyncCopyNameField.hidden = operation !== 'save_copy';
     if (els.editorSyncWarning) {
       els.editorSyncWarning.textContent = operation === 'replace_pdf'
-        ? 'Antes de substituir, o Portal reconfere a versão no Google Drive. Se houver conflito, a operação é interrompida. A revisão anterior precisa ser preservada antes do upload.'
+        ? 'Antes de substituir, o Portal reconfere identidade e permissão, preserva a revisão atual e envia o conteúdo. A última gravação confirmada no Google Drive prevalece.'
         : 'Um novo PDF será criado no Google Drive e o arquivo original permanecerá intacto.';
     }
   }
@@ -2469,11 +2525,7 @@
       showStatus('Aguarde o salvamento ou a impressão terminar antes de entrar no editor.', 'warning');
       return;
     }
-    if (state.renameBusy) {
-      showStatus('Aguarde a renomeação terminar antes de entrar no editor.', 'warning');
-      return;
-    }
-    if (state.titleEditing) cancelPdfRename({ restoreFocus: false });
+    if (state.titleEditing && !state.renameBusy) cancelPdfRename({ restoreFocus: false });
     background?.cancelScope?.(state.backgroundScope, 'editor');
     state.backgroundPreparedImages.clear();
     state.backgroundPreparedAnalysis.clear();
@@ -2497,7 +2549,7 @@
     const isCurrentStart = () => (
       startSeq === state.editorStartSeq
       && openId === state.pdfOpenId
-      && item === state.pdfItem
+      && sameDriveDocumentIdentity(item, state.pdfItem)
     );
     els.editPdf.disabled = true;
     els.viewerState.className = 'documents-viewer-state';
