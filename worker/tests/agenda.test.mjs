@@ -56,7 +56,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20261001-whatsapp-1/);
+  assert.match(html, /js\/agenda\.js\?v=20261002-whatsapp-2/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -162,6 +162,8 @@ test('Agenda usa contato protegido para abrir lembrete diretamente no WhatsApp d
   assert.match(backend, /phone:\s*normalizeBrazilPhone\(record\.phone\)/);
   assert.match(backend, /phone:\s*record\.phone \|\| normalizeBrazilPhone\(existing\.phone\)/);
   assert.match(frontend, /Avisar por WhatsApp/);
+  assert.match(frontend, /Data já passou/);
+  assert.match(frontend, /function isPastAppointment/);
   assert.match(frontend, /Este é um lembrete da sua consulta agendada:/);
   assert.match(frontend, /Data:/);
   assert.match(frontend, /Horário:/);
