@@ -77,8 +77,8 @@ test('chat expõe recibos de recebimento e visualização sem antecipar leitura'
   assert.match(worker, /\/api\/chat\/delivery/);
   assert.match(worker, /SET delivered_at = COALESCE\(delivered_at, CURRENT_TIMESTAMP\),\s*read_at = CURRENT_TIMESTAMP/);
   assert.match(worker, /peekOnly/);
-  assert.match(client, /text: '✓'/);
-  assert.match(client, /text: '✓✓'/);
+  assert.match(client, /function receiptSvg\(double\)/);
+  assert.match(client, /createElementNS\('http:\/\/www\.w3\.org\/2000\/svg', 'svg'\)/);
   assert.match(client, /applyReceiptState\(payload\.receipt\)/);
   assert.match(css, /portal-chat-message-receipt\.read/);
 });
