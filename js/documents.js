@@ -2360,11 +2360,11 @@
 
       doc.open();
       doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir PDF final</title><style>'
-        + '@page{margin:0;}html,body{margin:0;padding:0;background:#fff;}'
+        + '@page{size:A4 portrait;margin:0;}html,body{margin:0;padding:0;background:#fff;}'
         + '.print-pages{margin:0;padding:0;}'
-        + '.print-sheet{display:flex;align-items:center;justify-content:center;margin:0 auto;background:#fff;break-after:page;page-break-after:always;overflow:hidden;}'
+        + '.print-sheet{display:flex;align-items:center;justify-content:center;width:210mm;height:297mm;box-sizing:border-box;margin:0 auto;background:#fff;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;overflow:hidden;}'
         + '.print-sheet:last-child{break-after:auto;page-break-after:auto;}'
-        + '.print-sheet canvas{display:block;width:100%;height:100%;}'
+        + '.print-sheet canvas{display:block;max-width:100%;max-height:100%;}'
         + '</style></head><body><main class="print-pages"></main></body></html>');
       doc.close();
 
@@ -2381,19 +2381,26 @@
           cursor += 1;
           const page = await documentPdf.getPage(pageNumber);
           const base = page.getViewport({ scale: 1 });
-          const basePixels = Math.max(1, base.width * base.height);
-          const renderScale = Math.max(1, Math.min(1.5, Math.sqrt(4_000_000 / basePixels)));
+          const baseWidth = Math.max(1, Number(base.width) || 1);
+          const baseHeight = Math.max(1, Number(base.height) || 1);
+          const fitScale = Math.min(595.28 / baseWidth, 841.89 / baseHeight);
+          const displayWidthPt = Math.max(1, baseWidth * fitScale);
+          const displayHeightPt = Math.max(1, baseHeight * fitScale);
+          const basePixels = Math.max(1, baseWidth * baseHeight);
+          const renderScale = Math.max(0.05, Math.min(fitScale * 2, Math.sqrt(4_000_000 / basePixels)));
           const viewport = page.getViewport({ scale: renderScale });
 
           const sheet = document.createElement('section');
           sheet.className = 'print-sheet';
           sheet.dataset.printPage = String(pageNumber);
-          sheet.style.width = base.width + 'pt';
-          sheet.style.height = base.height + 'pt';
+          sheet.dataset.printSourceWidth = String(Math.round(baseWidth * 100) / 100);
+          sheet.dataset.printSourceHeight = String(Math.round(baseHeight * 100) / 100);
 
           const canvas = document.createElement('canvas');
           canvas.width = Math.max(1, Math.round(viewport.width));
           canvas.height = Math.max(1, Math.round(viewport.height));
+          canvas.style.width = displayWidthPt + 'pt';
+          canvas.style.height = displayHeightPt + 'pt';
           sheet.appendChild(canvas);
 
           await page.render({
