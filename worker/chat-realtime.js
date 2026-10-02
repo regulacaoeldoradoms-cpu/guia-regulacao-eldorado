@@ -165,10 +165,9 @@ export async function broadcastChatRealtime(env, username, event) {
   }
 }
 
-export async function upgradeChatRealtime(request, env, username, contactUsernames) {
+export async function upgradeChatRealtime(request, env, username) {
   const stub = realtimeStub(env, username);
   if (!stub) return new Response('Tempo real indisponível.', { status: 503 });
-  await configureChatRealtimeContacts(env, username, contactUsernames).catch(() => false);
   const headers = new Headers();
   headers.set('Upgrade', 'websocket');
   headers.set('Sec-WebSocket-Protocol', REALTIME_PROTOCOL);
