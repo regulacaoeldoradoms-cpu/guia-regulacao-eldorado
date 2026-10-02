@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-fluid-1') return;
+  if (window.PortalChat?.version === '20261002-realtime-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -23,6 +23,18 @@
   let restoredChatSession = null;
   let historyLoadPending = null;
   let pendingSequence = 0;
+  let activeUnreadBoundaryId = 0;
+  let realtimeSocket = null;
+  let realtimeConnected = false;
+  let realtimeStopped = false;
+  let realtimeReconnectTimer = null;
+  let realtimePingTimer = null;
+  let realtimeRotateTimer = null;
+  let realtimeBackoffMs = 1000;
+  let typingLastSentAt = 0;
+  let typingStopTimer = null;
+  let remoteTypingTimer = null;
+  let remoteTypingUsername = '';
   const unreadSnapshot = new Map();
   const messageCache = new Map();
   const messagePreloadRequests = new Map();
@@ -33,8 +45,16 @@
   const MESSAGE_PRELOAD_CONCURRENCY = 3;
   const MESSAGE_HISTORY_PAGE_SIZE = 120;
   const MESSAGE_PRELOAD_PAGE_GUARD = 100;
-  const CHAT_ACTIVE_POLL_MS = 2500;
+  const CHAT_FALLBACK_POLL_MS = 4500;
+  const CHAT_CONTACTS_REALTIME_REFRESH_MS = 45000;
+  const CHAT_CONTACTS_FALLBACK_REFRESH_MS = 12000;
   const CHAT_SESSION_GET_TIMEOUT_MS = 550;
+  const CHAT_REALTIME_PROTOCOL = 'portal-chat-v1';
+  const CHAT_REALTIME_ROTATE_MS = 90000;
+  const CHAT_REALTIME_PING_MS = 25000;
+  const CHAT_TYPING_RESEND_MS = 1400;
+  const CHAT_TYPING_STOP_MS = 2200;
+  const CHAT_TYPING_REMOTE_TTL_MS = 4200;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
 
   const escapeText = (value) => String(value || '');
@@ -1216,7 +1236,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-fluid-1',
+    version: '20261002-realtime-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts
