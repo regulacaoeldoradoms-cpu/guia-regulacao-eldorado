@@ -170,3 +170,11 @@ test('chat reduz amplificação de leitura D1 no diretório e no preload', () =>
   assert.match(sw, /CHAT_SESSION_MAX_CONTACTS = 80/);
   assert.match(client, /restoredContactsFresh/);
 });
+
+
+test('Worker distingue esgotamento diário do D1 de falha própria da Camada Social', () => {
+  const workerIndex = read('worker/index.js');
+  assert.match(workerIndex, /function isD1DailyReadLimitError/);
+  assert.match(workerIndex, /D1_DAILY_READ_LIMIT_EXCEEDED/);
+  assert.match(workerIndex, /isD1DailyReadLimitError\(error\).*d1DailyReadLimitResponse/s);
+});
