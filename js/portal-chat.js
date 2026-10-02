@@ -421,6 +421,18 @@
       panelOpen: Boolean(root?.classList.contains('open')),
       activeUsername: activeContact?.username || '',
       activeScrollFromBottom,
+      contacts: contacts.map((contact) => ({
+        username: contact.username,
+        socialHandle: contact.socialHandle || '',
+        name: contact.name || contact.username,
+        jobTitle: contact.jobTitle || '',
+        role: contact.role || '',
+        online: Boolean(contact.online),
+        lastSeen: contact.lastSeen || null,
+        lastMessageAt: contact.lastMessageAt || null,
+        unread: Number(contact.unread || 0),
+        firstUnreadId: Number(contact.firstUnreadId || 0)
+      })),
       conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
         username,
         lastMessageAt: entry?.lastMessageAt || '',
@@ -515,6 +527,19 @@
   function hydrateChatSessionSnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== 'object') return;
     restoredChatSession = snapshot;
+    const restoredContacts = Array.isArray(snapshot.contacts) ? snapshot.contacts : [];
+    if (restoredContacts.length) {
+      contacts = restoredContacts.map((contact) => ({
+        ...contact,
+        username: messageCacheKey(contact?.username),
+        unread: Number(contact?.unread || 0),
+        firstUnreadId: Number(contact?.firstUnreadId || 0),
+        online: Boolean(contact?.online)
+      })).filter((contact) => contact.username);
+      lastContactsLoadedAt = Number(snapshot.savedAt || Date.now());
+      processUnreadChanges(contacts);
+      renderContacts();
+    }
     for (const conversation of Array.isArray(snapshot.conversations) ? snapshot.conversations : []) {
       const key = messageCacheKey(conversation?.username);
       if (!key) continue;
@@ -1573,7 +1598,16 @@
 
     const snapshot = await snapshotPromise;
     hydrateChatSessionSnapshot(snapshot);
-    await loadContacts();
+    const restoredContactsFresh = contacts.length > 0
+      && Number(snapshot?.savedAt || 0) > 0
+      && Date.now() - Number(snapshot.savedAt) < 30000;
+    if (!restoredContactsFresh) {
+      await loadContacts(true);
+    } else {
+      window.setTimeout(() => {
+        if (!document.hidden) void loadContacts(true);
+      }, 10000);
+    }
     void heartbeat(true);
 
     if (!chatFromUrl && !chatHandleFromUrl) restoreChatUiFromSession(snapshot);
