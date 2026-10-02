@@ -397,9 +397,14 @@
       if (draft) draftCache.set(activeContact.username, draft);
       else draftCache.delete(activeContact.username);
     }
+    const messagesBox = document.getElementById('portalChatMessages');
+    const activeScrollFromBottom = messagesBox
+      ? Math.max(0, messagesBox.scrollHeight - messagesBox.scrollTop - messagesBox.clientHeight)
+      : 0;
     return {
       panelOpen: Boolean(root?.classList.contains('open')),
       activeUsername: activeContact?.username || '',
+      activeScrollFromBottom,
       conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
         username,
         lastMessageAt: entry?.lastMessageAt || '',
@@ -1399,6 +1404,12 @@
     const contact = contacts.find((item) => item.username === username);
     if (contact) {
       openConversation(contact, { focus: false });
+      const offset = Math.max(0, Number(snapshot.activeScrollFromBottom || 0));
+      window.requestAnimationFrame(() => {
+        const box = document.getElementById('portalChatMessages');
+        if (!box || activeContact?.username !== contact.username) return;
+        box.scrollTop = Math.max(0, box.scrollHeight - box.clientHeight - offset);
+      });
       return;
     }
     document.getElementById('portalChatConversationView')?.classList.remove('active');
