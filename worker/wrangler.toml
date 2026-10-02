@@ -64,6 +64,16 @@ DOCUMENTS_HOMOLOGATION_ORIGIN = ""
 [ai]
 binding = "AI"
 
+# Chat em tempo real. O Durable Object mantém somente conexões e metadados mínimos
+# de presença/contatos autorizados; o conteúdo das mensagens continua no D1.
+[[durable_objects.bindings]]
+name = "CHAT_REALTIME"
+class_name = "PortalChatRealtime"
+
+[[migrations]]
+tag = "chat-realtime-v1"
+new_sqlite_classes = ["PortalChatRealtime"]
+
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
 # O comando de deploy da Cloudflare DEVE ser "npm run deploy:safe" com root /worker.
 # Não restaurar "npx wrangler deploy": o gate envia versão sem tráfego, valida bindings/secrets e só então promove.
