@@ -175,13 +175,29 @@ export class PortalChatRealtime extends DurableObject {
     const clientId = String(payload?.clientId || '').trim().slice(0, 96);
     const startedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 
-    const result = await persistAtomicChatMessage(this.env, {
-      fromUser,
-      toUser: payload?.to,
-      body: payload?.body,
-      clientId,
-      sessionVersion
-    });
+    let result;
+    try {
+      result = await persistAtomicChatMessage(this.env, {
+        fromUser,
+        toUser: payload?.to,
+        body: payload?.body,
+        clientId,
+        sessionVersion
+      });
+    } catch (_) {
+      const failedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+      this.sendSocket(socket, {
+        type: 'send-error',
+        clientId,
+        code: 'CHAT_SEND_RETRY_HTTP',
+        message: 'O canal em tempo real oscilou. Repetindo o envio pelo canal de contingência.'
+      });
+      console.warn(JSON.stringify({
+        event: 'chat_ws_send_transient_failure',
+        ackMs: Math.round(Math.max(0, failedAt - startedAt))
+      }));
+      return;
+    }
 
     const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     const ackMs = Math.max(0, finishedAt - startedAt);
