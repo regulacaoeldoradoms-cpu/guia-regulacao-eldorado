@@ -69,6 +69,18 @@ jobs:
           grep -q "type: 'send'" js/portal-chat.js
           grep -q "type === 'send-ack'" js/portal-chat.js
           grep -q "type === 'send-error'" js/portal-chat.js
+          grep -q "CHAT_EMOJIS = Object.freeze" js/portal-chat.js
+          grep -q "id=\"portalChatEmojiButton\"" js/portal-chat.js
+          grep -q "id=\"portalChatAttention\"" js/portal-chat.js
+          grep -q "Chamar atenção" js/portal-chat.js
+          grep -q "CHAT_ATTENTION_COOLDOWN_MS = 5000" js/portal-chat.js
+          grep -q "CHAT_ATTENTION_EFFECT_MS = 1800" js/portal-chat.js
+          grep -q "type: 'attention'" js/portal-chat.js
+          grep -q "attention-cooldown" worker/chat-realtime-do.js
+          grep -q "ATTENTION_COOLDOWN_MS = 5000" worker/chat-realtime-do.js
+          grep -q "prefers-reduced-motion: reduce" css/portal-chat.css
+          grep -q "portal-chat-emoji-grid" css/portal-chat.css
+          grep -q "portal-chat-launcher.attention-hit" css/portal-chat.css
           grep -q "persistAtomicChatMessage" worker/chat-realtime-do.js
           grep -q "INSERT OR IGNORE INTO portal_chat_messages" worker/chat-send-atomic.js
           grep -q "sender.session_version = ?" worker/chat-send-atomic.js
