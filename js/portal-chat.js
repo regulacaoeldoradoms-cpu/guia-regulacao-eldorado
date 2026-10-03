@@ -320,9 +320,15 @@
       if (!entry) return;
       window.clearTimeout(entry.fallbackTimer);
       entry.fallbackTimer = null;
+      const code = String(payload?.code || '');
+      if (code === 'CHAT_SEND_RETRY_HTTP') {
+        entry.transport = 'http';
+        void transmitPendingMessage(clientId, { forceHttp: true });
+        return;
+      }
       entry.transport = '';
       updatePendingMessage(clientId, { pending: false, failed: true });
-      if (String(payload?.code || '') === 'CHAT_SEND_NOT_ALLOWED') void loadContacts(true);
+      if (code === 'CHAT_SEND_NOT_ALLOWED') void loadContacts(true);
       showStatus(String(payload?.message || 'Não foi possível enviar a mensagem.'));
       return;
     }
