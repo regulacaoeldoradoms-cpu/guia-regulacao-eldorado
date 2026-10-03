@@ -154,7 +154,7 @@ test('chat reduz amplificação de leitura D1 no diretório e no preload', () =>
   assert.match(worker, /const chatSchemaPromises = new WeakMap\(\)/);
   assert.match(worker, /await configureChatRealtimeContacts\(env, username, users\.map/);
   assert.doesNotMatch(worker, /const realtimeContacts = await contacts/);
-  assert.match(realtime, /upgradeChatRealtime\(request, env, username\)/);
+  assert.match(realtime, /upgradeChatRealtime\(request, env, username, sessionVersion\)/);
   const upgradeBlock = realtime.slice(
     realtime.indexOf('export async function upgradeChatRealtime'),
     realtime.indexOf('export const CHAT_REALTIME_TEST')
@@ -213,4 +213,36 @@ test('ACK do envio evita decorators globais e confirma após uma única escrita 
   const transmitEnd = client.indexOf('function retryPendingMessage', transmitStart);
   assert.doesNotMatch(client.slice(transmitStart, transmitEnd), /loadContacts\(\)/,
     'ACK confirmado não deve disparar nova consulta de diretório');
+});
+
+
+test('envio principal usa WebSocket e conserva POST apenas como fallback idempotente', () => {
+  const client = read('js/portal-chat.js');
+  const durable = read('worker/chat-realtime-do.js');
+  const atomic = read('worker/chat-send-atomic.js');
+
+  assert.match(client, /CHAT_REALTIME_SEND_ACK_TIMEOUT_MS = 1800/);
+  assert.match(client, /type: 'send'/);
+  assert.match(client, /type === 'send-ack'/);
+  assert.match(client, /type === 'send-error'/);
+  assert.match(client, /transport: '', fallbackTimer: null/);
+  assert.match(client, /forceHttp: true/);
+
+  const transmitStart = client.indexOf('async function transmitPendingMessage');
+  const transmitEnd = client.indexOf('function retryPendingMessage', transmitStart);
+  const transmit = client.slice(transmitStart, transmitEnd);
+  const socketSendAt = transmit.indexOf("type: 'send'");
+  const httpFallbackAt = transmit.indexOf("api('/api/chat/messages'");
+  assert.ok(socketSendAt >= 0 && httpFallbackAt > socketSendAt,
+    'WebSocket deve ser tentado antes do POST fallback');
+  assert.match(transmit, /realtimeConnected/);
+  assert.match(transmit, /realtimeSocket\?\.readyState === WebSocket\.OPEN/);
+
+  assert.match(durable, /handleRealtimeSend/);
+  assert.match(durable, /persistAtomicChatMessage/);
+  assert.match(durable, /type: 'send-ack'/);
+  assert.match(atomic, /INSERT OR IGNORE INTO portal_chat_messages/);
+  assert.match(atomic, /sender\.session_version = \?/);
+  assert.match(atomic, /CASE\s+WHEN sender\.role IN/s);
+  assert.match(atomic, /duplicateMessage/);
 });
