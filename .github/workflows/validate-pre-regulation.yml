@@ -23,6 +23,7 @@ jobs:
           node --check js/ai-gemini-theme.js
           node --check worker/gemini-assistant.js
           node --check worker/index.js
+          node --check worker/ai-resilience.js
 
       - name: Testar resiliência dos provedores de IA
         run: npm --prefix worker test
@@ -82,10 +83,11 @@ jobs:
           grep -q 'max_completion_tokens: 1800' worker/gemini-assistant.js
           grep -q "reasoning_effort: 'low'" worker/gemini-assistant.js
           grep -q 'cloudflare_ai_model_succeeded' worker/gemini-assistant.js
-          grep -q 'GEMINI_TOTAL_TIMEOUT_MS' worker/index.js
-          grep -q 'gemini_resilience_exhausted' worker/index.js
-          grep -q 'cloudflare_ai_fallback_succeeded' worker/index.js
-          grep -q 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE' worker/index.js
+          node --test testing/ci/pre-regulation-resilience-contract.test.mjs
+          grep -q 'GEMINI_TOTAL_TIMEOUT_MS' worker/ai-resilience.js
+          grep -q 'gemini_resilience_exhausted' worker/ai-resilience.js
+          grep -q 'cloudflare_ai_fallback_succeeded' worker/ai-resilience.js
+          grep -q 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE' worker/ai-resilience.js
           grep -q 'GEMINI_REQUEST_TIMEOUT_MS = "5000"' worker/wrangler.toml
           grep -q 'GEMINI_TOTAL_TIMEOUT_MS = "11000"' worker/wrangler.toml
           grep -q 'CLOUDFLARE_AI_FALLBACK_ENABLED = "true"' worker/wrangler.toml
