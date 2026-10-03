@@ -210,7 +210,7 @@ export const LPR_DRAFT = {
       "prompt": "O texto diz que a organização não garante que todos participarão. Qual leitura mantém esse limite?",
       "options": [
         "A participação de todos não está garantida; não foi afirmado que ninguém participará.",
-        "Ninguém participará necessariamente.",
+        "Ninguém participará.",
         "Todos já participaram.",
         "Participação e ausência são sempre equivalentes."
       ],
@@ -218,7 +218,7 @@ export const LPR_DRAFT = {
       "explanation": "Ausência de garantia total não determina resultado universal oposto.",
       "optionRationales": [
         "Ausência de garantia total não determina resultado universal oposto.",
-        "Acrescenta garantia de ausência universal.",
+        "Afirma que não haverá participantes; isso não foi informado.",
         "Acrescenta participação concluída.",
         "São estados distintos, sem equivalência apresentada."
       ],

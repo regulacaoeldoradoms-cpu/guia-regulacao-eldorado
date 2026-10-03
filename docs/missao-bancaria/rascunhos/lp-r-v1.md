@@ -188,7 +188,7 @@ O texto diz que a organização não garante que todos participarão. Qual leitu
 
 A. A participação de todos não está garantida; não foi afirmado que ninguém participará.
 
-B. Ninguém participará necessariamente.
+B. Ninguém participará.
 
 C. Todos já participaram.
 
@@ -200,7 +200,7 @@ D. Participação e ausência são sempre equivalentes.
 **Resposta: A.** Ausência de garantia total não determina resultado universal oposto.
 
 - **A:** Ausência de garantia total não determina resultado universal oposto.
-- **B:** Acrescenta garantia de ausência universal.
+- **B:** Afirma que não haverá participantes; isso não foi informado.
 - **C:** Acrescenta participação concluída.
 - **D:** São estados distintos, sem equivalência apresentada.
 

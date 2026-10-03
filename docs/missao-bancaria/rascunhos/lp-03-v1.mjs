@@ -67,7 +67,7 @@ export const LP03_DRAFT = {
     {
       "id": "ex-comparacao",
       "heading": "8. Exemplo resolvido: comparar sem fundir as teses",
-      "body": "A e B tratam de melhorias na sala, mas A defende abertura aos sábados e B prioriza compra de livros antes da ampliação. Não são a mesma prioridade. B não diz que ampliar horário nunca será útil. Nenhum texto comprova concordância de todos ou execução de qualquer projeto. Comparar significa manter assunto comum e diferenças de posição.",
+      "body": "A e B tratam de melhorias na sala, mas A defende abertura aos sábados e B prioriza compra de livros antes da ampliação. As posições apresentadas têm enfoques diferentes. Esses enfoques podem ser compatíveis: A não estabelece prioridade da abertura sobre a compra de livros. B não diz que ampliar horário nunca será útil. Nenhum texto comprova concordância de todos ou execução de qualquer projeto. Comparar significa manter assunto comum e diferenças de posição.",
       "type": "worked-example",
       "sourceIds": []
     },
@@ -201,7 +201,7 @@ export const LP03_DRAFT = {
       "id": "lp03.q05",
       "prompt": "Textos A e B: Defendo que a sala de leitura abra também aos sábados. Durante a semana, muitos moradores trabalham no horário em que ela funciona. A abertura aos sábados criaria outra oportunidade de uso para essas pessoas.\n\nUma leitora propõe comprar livros antes de ampliar o horário. Segundo ela, o acervo atual oferece poucas opções para as atividades do grupo. A leitora considera essa renovação prioritária, mas reconhece que os dois projetos podem ser necessários.\n\nQual comparação é adequada?",
       "options": [
-        "Ambos tratam de melhorias, mas apresentam prioridades distintas.",
+        "Ambos tratam de melhorias: A defende abertura aos sábados e B prioriza comprar livros antes de ampliar o horário.",
         "Ambos comprovam que os projetos foram executados.",
         "B afirma que abrir aos sábados nunca será útil.",
         "As duas posições são exatamente a mesma proposta prioritária."
@@ -209,7 +209,7 @@ export const LP03_DRAFT = {
       "answer": 0,
       "explanation": "Mantém o assunto comum e a diferença de posições.",
       "optionRationales": [
-        "Mantém o assunto comum e a diferença de posições.",
+        "Conserva as propostas expressas, sem atribuir a A uma prioridade não informada.",
         "Não há dados de execução.",
         "B prioriza livros e admite necessidade de ambos.",
         "Fundir as teses apaga a prioridade de B."

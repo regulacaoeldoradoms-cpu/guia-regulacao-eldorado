@@ -153,7 +153,7 @@ export const LP02_DRAFT = {
       "id": "lp02.q03",
       "prompt": "Texto: Os interessados poderão enviar sugestões até sexta-feira. A comissão analisará as propostas recebidas, mas não garante que todas serão adotadas.\n\nQual conclusão decorre da ausência de garantia de adoção total?",
       "options": [
-        "Nenhuma proposta será necessariamente adotada.",
+        "Nenhuma proposta será adotada.",
         "Todas serão necessariamente adotadas.",
         "A análise não assegura adoção de todas, e o resultado de cada proposta não foi informado.",
         "A comissão não analisará propostas."
@@ -161,7 +161,7 @@ export const LP02_DRAFT = {
       "answer": 2,
       "explanation": "Preserva a distinção entre análise e adoção sem inventar resultado.",
       "optionRationales": [
-        "Sem garantia de todas não significa garantia de nenhuma.",
+        "Ausência de garantia de adoção total não permite concluir rejeição de todas.",
         "Contraria a ausência de garantia.",
         "Preserva a distinção entre análise e adoção sem inventar resultado.",
         "Contraria a análise anunciada."
