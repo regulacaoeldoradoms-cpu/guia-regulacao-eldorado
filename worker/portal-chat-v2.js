@@ -424,10 +424,16 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     return upgradeChatRealtime(request, env, username);
   }
 
-  const sessionUser = await validatePortalSession(request, env, []);
-  const user = sessionUser ? await decorateTelemedicineUser(env, sessionUser) : null;
-  if (!user || !CHAT_ROLES.has(user.role)) {
+  const user = await validateChatSession(request, env);
+  if (!user) {
     return json({ error: 'O chat não está disponível para esta conta.' }, 403, origin);
+  }
+  if (chatEmailVerificationBlocked(env, user)) {
+    return json({
+      error: 'Confirme o e-mail de segurança da sua conta para continuar.',
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      verificationPath: '/seguranca/?verificar-email=1'
+    }, 403, origin);
   }
   if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
@@ -456,7 +462,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (url.pathname === '/api/chat/typing' && request.method === 'POST') {
     const body = await request.json().catch(() => ({}));
     const otherUsername = normalizeUsername(body.with);
-    if (!otherUsername || otherUsername === username || !(await chatContact(env, { ...user, username }, otherUsername))) {
+    if (!otherUsername || otherUsername === username || !(await chatContactAllowed(env, { ...user, username }, otherUsername))) {
       return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     }
     const active = Boolean(body.active);
@@ -486,7 +492,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const body = await request.json().catch(() => ({}));
     const otherUsername = normalizeUsername(body.with);
     const throughId = Math.max(0, Number.parseInt(String(body.throughId || '0'), 10) || 0);
-    if (!otherUsername || otherUsername === username || !(await chatContact(env, { ...user, username }, otherUsername))) {
+    if (!otherUsername || otherUsername === username || !(await chatContactAllowed(env, { ...user, username }, otherUsername))) {
       return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     }
     const readThroughId = await markConversationRead(env, username, otherUsername, throughId);
@@ -503,8 +509,8 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
 
   if (url.pathname === '/api/chat/messages' && request.method === 'GET') {
     const otherUsername = normalizeUsername(url.searchParams.get('with'));
-    const other = await chatContact(env, { ...user, username }, otherUsername);
-    if (!other || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
+    const allowed = await chatContactAllowed(env, { ...user, username }, otherUsername);
+    if (!allowed || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     const afterId = Math.max(0, Number.parseInt(url.searchParams.get('after') || '0', 10) || 0);
     const beforeId = Math.max(0, Number.parseInt(url.searchParams.get('before') || '0', 10) || 0);
     const peekOnly = url.searchParams.get('peek') === '1';
@@ -533,7 +539,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     if (message.length > MESSAGE_LIMIT) return json({ error: `A mensagem pode ter no máximo ${MESSAGE_LIMIT} caracteres.` }, 400, origin);
     if (clientId && !/^chat-[a-z0-9-]{12,90}$/i.test(clientId)) return json({ error: 'Identificador de envio inválido.' }, 400, origin);
     if (to === username) return json({ error: 'Escolha outro usuário para conversar.' }, 400, origin);
-    if (!(await chatContact(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
+    if (!(await chatContactAllowed(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
 
     let row = null;
     let created = true;
