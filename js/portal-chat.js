@@ -74,7 +74,9 @@
     chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-4.5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"></path><path d="M7.5 9.5h9M7.5 13h6"></path></svg>',
     notification: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path><path d="M10 20h4"></path></svg>',
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path><path d="M9 12h10"></path></svg>',
-    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>'
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>',
+    smile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 14c.7.8 1.7 1.2 3 1.2s2.3-.4 3-1.2M9 9h.01M15 9h.01"></path></svg>',
+    attention: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-7 11h5l-1 9 8-12h-5V2Z"></path></svg>'
   });
 
   function initials(value) {
@@ -1724,8 +1726,8 @@
             <div class="portal-chat-messages" id="portalChatMessages"></div>
             <div class="portal-chat-composer">
               <div class="portal-chat-tools">
-                <button class="portal-chat-tool-button" id="portalChatEmojiButton" type="button" aria-expanded="false" aria-controls="portalChatEmojiPicker">😀 Emoticons</button>
-                <button class="portal-chat-tool-button attention" id="portalChatAttention" type="button" disabled aria-disabled="true">⚡ Chamar atenção</button>
+                <button class="portal-chat-tool-button" id="portalChatEmojiButton" type="button" aria-expanded="false" aria-controls="portalChatEmojiPicker">${ICONS.smile}<span>Emoticons</span></button>
+                <button class="portal-chat-tool-button attention" id="portalChatAttention" type="button" disabled aria-disabled="true">${ICONS.attention}<span>Chamar atenção</span></button>
               </div>
               <div class="portal-chat-emoji-picker" id="portalChatEmojiPicker" role="dialog" aria-label="Escolher emoticon" hidden>
                 <div class="portal-chat-emoji-grid">${CHAT_EMOJIS.map((emoji) => `<button class="portal-chat-emoji" type="button" data-chat-emoji="${encodeURIComponent(emoji)}" aria-label="Inserir ${emoji}">${emoji}</button>`).join('')}</div>
