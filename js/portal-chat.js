@@ -1718,10 +1718,20 @@
           </div>
           <div class="portal-chat-view portal-chat-conversation" id="portalChatConversationView">
             <div class="portal-chat-messages" id="portalChatMessages"></div>
-            <div><div class="portal-chat-compose"><textarea class="portal-chat-input" id="portalChatInput" maxlength="2000" rows="1" placeholder="Digite uma mensagem"></textarea><button class="portal-chat-send" id="portalChatSend" type="button">Enviar</button></div><div class="portal-chat-note">Uso interno do portal. Evite compartilhar dados sensíveis além do necessário.</div></div>
+            <div class="portal-chat-composer">
+              <div class="portal-chat-tools">
+                <button class="portal-chat-tool-button" id="portalChatEmojiButton" type="button" aria-expanded="false" aria-controls="portalChatEmojiPicker">😀 Emoticons</button>
+                <button class="portal-chat-tool-button attention" id="portalChatAttention" type="button" disabled aria-disabled="true">⚡ Chamar atenção</button>
+              </div>
+              <div class="portal-chat-emoji-picker" id="portalChatEmojiPicker" role="dialog" aria-label="Escolher emoticon" hidden>
+                <div class="portal-chat-emoji-grid">${CHAT_EMOJIS.map((emoji) => `<button class="portal-chat-emoji" type="button" data-chat-emoji="${encodeURIComponent(emoji)}" aria-label="Inserir ${emoji}">${emoji}</button>`).join('')}</div>
+              </div>
+              <div class="portal-chat-compose"><textarea class="portal-chat-input" id="portalChatInput" maxlength="2000" rows="1" placeholder="Digite uma mensagem"></textarea><button class="portal-chat-send" id="portalChatSend" type="button">Enviar</button></div>
+              <div class="portal-chat-note">Uso interno do portal. Evite compartilhar dados sensíveis além do necessário.</div>
+            </div>
           </div>
         </div>
-        <div class="portal-chat-status" id="portalChatStatus"></div>
+        <div class="portal-chat-status" id="portalChatStatus" role="status" aria-live="polite"></div>
       </section>`;
     document.body.appendChild(root);
 
