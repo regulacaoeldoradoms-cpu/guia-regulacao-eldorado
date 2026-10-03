@@ -178,3 +178,39 @@ test('Worker distingue esgotamento diário do D1 de falha própria da Camada Soc
   assert.match(workerIndex, /D1_DAILY_READ_LIMIT_EXCEEDED/);
   assert.match(workerIndex, /isD1DailyReadLimitError\(error\).*d1DailyReadLimitResponse/s);
 });
+
+
+test('ACK do envio evita decorators globais e confirma após uma única escrita D1 no caso comum', () => {
+  const backend = read('worker/portal-chat-v2.js');
+  const workerIndex = read('worker/index.js');
+  const client = read('js/portal-chat.js');
+
+  assert.match(backend, /verifyPortalSessionToken/);
+  assert.match(backend, /function validateChatSession/);
+  assert.doesNotMatch(backend, /validatePortalSession\(request/);
+  assert.match(backend, /function chatSchemaReady/);
+  assert.match(backend, /WHERE 0/);
+  assert.match(backend, /function chatContactAllowed/);
+  assert.match(backend, /INSERT OR IGNORE INTO portal_chat_messages/);
+  assert.match(backend, /X-Portal-Chat-Ack-Ms/);
+  assert.match(backend, /Server-Timing/);
+
+  const postStart = backend.indexOf("if (url.pathname === '/api/chat/messages' && request.method === 'POST')");
+  const postEnd = backend.indexOf("return json({ error: 'Rota do chat não encontrada.'", postStart);
+  const postBlock = backend.slice(postStart, postEnd);
+  const insertAt = postBlock.indexOf('INSERT OR IGNORE INTO portal_chat_messages');
+  const retrySelectAt = postBlock.indexOf('FROM portal_chat_messages WHERE from_user = ? AND client_id = ?');
+  assert.ok(insertAt >= 0);
+  assert.ok(retrySelectAt > insertAt, 'a leitura idempotente só acontece depois de tentativa de insert');
+  assert.doesNotMatch(postBlock.slice(0, insertAt), /FROM portal_chat_messages WHERE from_user = \? AND client_id = \?/);
+
+  const earlyChat = workerIndex.indexOf('if (isChatApi(url.pathname))');
+  const globalMigration = workerIndex.indexOf('await enforceDeveloperSeparation(env)');
+  assert.ok(earlyChat >= 0 && globalMigration >= 0 && earlyChat < globalMigration,
+    'chat precisa ser roteado antes das migrações/guards globais');
+
+  const transmitStart = client.indexOf('async function transmitPendingMessage');
+  const transmitEnd = client.indexOf('function retryPendingMessage', transmitStart);
+  assert.doesNotMatch(client.slice(transmitStart, transmitEnd), /loadContacts\(\)/,
+    'ACK confirmado não deve disparar nova consulta de diretório');
+});
