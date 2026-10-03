@@ -2,6 +2,8 @@
 
 Base verificada: `6c4fcd86198103ad6e1e8adc07901219c7957c92`. Pacote de implementação autorizado em 03/10/2026; entrega por PR draft, sem autorização de merge/publicação.
 
+Entrega: [PR #599 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/599), commit funcional `9c2467dfb994dff85cc70847142c1fc89512f45a`. Os 17 arquivos remotos foram conferidos por hashes Git contra a cópia local testada.
+
 ## Comportamento
 
 - A primeira lista pode aparecer após a validação atual de acesso. Preferências e configuração da IA carregam em segundo plano.
@@ -39,6 +41,8 @@ Artefatos: `testing/central-docs/navigation-benchmark.mjs`, `navigation-fixture.
 - Interface/preload e proteção de fechamento/sync reconciliados com a dependência nova; mantidas as asserções de autorização, retry e ausência de persistência/telemetria identificável.
 - Aggregate obrigatório do Worker: 737/737; sintaxe do Worker e dos clientes modificados; bundle de staging e quatro testes de recuperação 5E aprovados.
 - Código funcional do Worker permanece intacto. Nenhum paciente/documento real, D1 produtivo, credencial ou infraestrutura foi consultado/alterado.
+- CI do funcional: [Central Fases 1–6](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739384), [staging](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739486) e governança success. Chromium permanece em andamento neste registro.
+- [Pré-regulação](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739391) falhou no gate de Worker nativo: a primeira asserção ausente é `GEMINI_TOTAL_TIMEOUT_MS` em `worker/index.js`; três outras asserções de resiliência também estão ausentes. Tanto esse arquivo quanto o workflow têm os mesmos hashes da base `6c4fcd86`. Trata-se de divergência preexistente, fora do pacote; não foi corrigida nem o gate relaxado.
 
 ## Limites e próxima ação
 
