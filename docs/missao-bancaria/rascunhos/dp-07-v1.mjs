@@ -6,6 +6,14 @@ export const SOURCES = [
     "locator": "Escolha de dados/destinatário/prazo, cancelamento e benefícios possíveis",
     "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
+  },
+  {
+    "id": "lei.dp.conservacao",
+    "label": "Lei 13.709/2018 — LGPD",
+    "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm",
+    "locator": "Arts. 16, I, e 18, VI/IX: conservação para obrigação legal ou regulatória, ressalvas à eliminação e revogação do consentimento.",
+    "version": "Texto compilado consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
   }
 ];
 
@@ -22,7 +30,8 @@ export const DP07_DRAFT = {
   },
   "objective": "Explicar compartilhamento autorizado no Open Finance.",
   "sourceIds": [
-    "bcb.dp.openfinance"
+    "bcb.dp.openfinance",
+    "lei.dp.conservacao"
   ],
   "sections": [
     {
@@ -47,7 +56,8 @@ export const DP07_DRAFT = {
       "heading": "3. O que conferir na autorização",
       "body": "A apresentação do BCB destaca a escolha dos dados, da instituição destinatária e do período. A autorização pode ser cancelada. Não ensinamos prazo máximo fixo, porque o recorte é entender o controle e não decorar uma condição que pode mudar. Cancelar o compartilhamento não significa apagar automaticamente toda informação cuja conservação tenha fundamento legal.",
       "sourceIds": [
-        "bcb.dp.openfinance"
+        "bcb.dp.openfinance",
+        "lei.dp.conservacao"
       ]
     },
     {

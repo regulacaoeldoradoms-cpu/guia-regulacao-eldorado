@@ -36,8 +36,8 @@ export const SOURCES = [
     "id": "bcb.dp.fintechs",
     "label": "BCB — Fintechs",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/fintechs",
-    "version": "Página institucional; consulta em 01/10/2026, 01:43 UTC",
-    "locator": "Definição introdutória e benefícios possíveis; não reutilizar limites ou referências normativas de outras seções",
+    "locator": "Definição introdutória; não utilizados limites ou normas antigos da página",
+    "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
   },
   {
@@ -81,6 +81,14 @@ export const SOURCES = [
     "checkedAt": "2026-10-01"
   },
   {
+    "id": "bis.dp.liquidacao",
+    "label": "CPSS-IOSCO — Principles for financial market infrastructures",
+    "url": "https://www.bis.org/publications/principles-financial-market-infrastructures.pdf",
+    "locator": "Abril de 2012, princípio 8, §3.8.1 e anexo H: liquidação final como transferência de ativo ou cumprimento de obrigação; recorte de pagamentos.",
+    "version": "Documento de abril de 2012; conceito consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
+  },
+  {
     "id": "bcb.dp.pix",
     "label": "BCB — Pix",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix",
@@ -95,6 +103,14 @@ export const SOURCES = [
     "locator": "Escolha de dados/destinatário/prazo, cancelamento e benefícios possíveis",
     "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
+  },
+  {
+    "id": "lei.dp.conservacao",
+    "label": "Lei 13.709/2018 — LGPD",
+    "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm",
+    "locator": "Arts. 16, I, e 18, VI/IX: conservação para obrigação legal ou regulatória, ressalvas à eliminação e revogação do consentimento.",
+    "version": "Texto compilado consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "nist.dp.blockchain",
@@ -177,8 +193,10 @@ export const DPCHEFE_DRAFT = {
     "fsb.dp.nbfi",
     "bcb.dp.spb",
     "bcb.dp.arranjos",
+    "bis.dp.liquidacao",
     "bcb.dp.pix",
     "bcb.dp.openfinance",
+    "lei.dp.conservacao",
     "nist.dp.blockchain",
     "lei.dp.ativos",
     "bcb.dp.drex",

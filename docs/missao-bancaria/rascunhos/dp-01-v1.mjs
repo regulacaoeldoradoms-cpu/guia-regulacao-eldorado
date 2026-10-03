@@ -117,7 +117,7 @@ export const DP01_DRAFT = {
     {
       "id": "responsavel",
       "heading": "8. Quem responde pela atividade descrita?",
-      "body": "Uma marca, um aplicativo e a instituição responsável não são automaticamente a mesma informação. Leia quem presta cada serviço no caso. Uma tela pode permitir consultar diferentes produtos; isso não transfere, por si só, todas as obrigações para um único participante. Retome a distinção entre canal e responsável vista em CE-07 e entre plataforma e emissor vista em CE-05.",
+      "body": "Uma marca, um aplicativo e a instituição responsável não são automaticamente a mesma informação. Leia quem presta cada serviço no caso. Uma tela pode permitir consultar diferentes produtos; isso não transfere, por si só, todas as obrigações para um único participante. Retome as cinco perguntas da primeira seção desta aula: instituição, produto, operação, canal e dispositivo.",
       "type": "explanation",
       "sourceIds": []
     },

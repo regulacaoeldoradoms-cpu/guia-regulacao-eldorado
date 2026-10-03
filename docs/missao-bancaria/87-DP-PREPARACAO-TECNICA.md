@@ -1,6 +1,6 @@
 # Pagamentos Digitais — preparação desativada
 
-03/10/2026. [Lote editorial](85-DP-CONJUNTO-RASCUNHOS.md) e [Chefe](86-DP-REVISAO-E-PROPOSTA-CHEFE.md): 12 aulas, revisão e Chefe; 116 questões/464 justificativas. Conteúdo ainda sujeito à revisão pedagógica independente.
+03/10/2026. [Lote editorial](85-DP-CONJUNTO-RASCUNHOS.md) e [Chefe](86-DP-REVISAO-E-PROPOSTA-CHEFE.md): 12 aulas, revisão e Chefe; 116 questões/464 justificativas. Leitura pedagógica agrupada pelo agente concluída, com correções documentadas em 85; parecer independente ainda pendente.
 
 O gerador [studies-dp-candidate.mjs](../../worker/scripts/studies-dp-candidate.mjs) reutiliza o padrão MP/PC/CE e o conversor de apresentação existente. O artefato [banking-digital-payments-v1.js](../../worker/studies-content/banking-digital-payments-v1.js) contém 14 missões **draft**, não importadas pelo manifesto ativo. `parametersApproved` e `publicationReady` permanecem falsos. Não há opção CLI de ativação.
 
@@ -17,4 +17,13 @@ O catálogo ativo continua com SFN/MP/PC/CE. Preparação offline não é homolo
 
 ## Gates restantes
 
-Revisão pedagógica do lote/Chefe; revalidação oficial do estágio Drex antes de ativação; integração técnica final com testes afetados e CI requerida; autorização específica de merge/deploy e fluxo protegido. Marketplace/segmentação são recortes nominais BB; PC-07 continua excluído. Fase 2 sem aceite humano observado.
+Parecer pedagógico independente do lote/Chefe (leitura pelo agente já concluída); revalidação oficial do estágio Drex antes de ativação; integração técnica final com testes afetados e CI requerida; autorização específica de merge/deploy e fluxo protegido. Marketplace/segmentação são recortes nominais BB; PC-07 continua excluído. Fase 2 sem aceite humano observado.
+
+## Estado de CI e limite de escopo
+
+No SHA-base da revisão **5475aec8**, os 23 checks terminaram: **21 verdes**, incluindo estudos, Chromium sintético e Pages; dois falharam. A atualização editorial requer CI própria; os resultados anteriores não são aprovação antecipada do novo commit.
+
+- [Pré-regulação, job 111260834034](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37142901222/job/111260834034): 731 testes Worker passaram. O job testa a árvore combinada **91eef0bdc059e39ff07d35a0381ed7cd27603cbf**, unindo DP 5475aec8 à main **6c4fcd86198103ad6e1e8adc07901219c7957c92**. Falha no passo “Conferir Worker nativo atualizado”: primeira exigência ausente nessa base é `GEMINI_TOTAL_TIMEOUT_MS` em `worker/index.js`, depois de alterações concorrentes da IA. O checkout DP isolado contém a expressão; não reproduz essa falha. Conferidos pontualmente log e três arquivos do passo no SHA da base, sem repetir suíte ou alterar IA/clínica. A conclusão anterior sobre versão de script ausente foi descartada: o helper confundia regex JS e grep BRE; o script está presente e o passo dele passou. Alinhar o gate ao cancelamento da integração Gemini requer responsável/escopo autorizado separado; não restaurar funcionalidade cancelada para satisfazer grep. Nenhum módulo ou gate foi alterado. Não se afirma que corrigir esta primeira exigência fará todas as restantes passarem.
+- Preview Worker legado falho: problema externo já registrado, separado do deploy produtivo protegido; este pacote não muda comando, nome, bindings ou acesso. Não representa prova de incidente produtivo.
+
+A publicação DP ainda exige autorização específica para ativação após Chefe CE (100 XP/aula/revisão, Chefe 220 XP/75%), integração do #572 e deploy protegido, após concluir UI/roteador, fontes mutáveis e gates. Não há exceção de CI implícita.

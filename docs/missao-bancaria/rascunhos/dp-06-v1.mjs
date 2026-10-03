@@ -38,7 +38,7 @@ export const DP06_DRAFT = {
       "id": "ex-conta",
       "type": "worked-example",
       "heading": "2. Exemplo resolvido: saldo e transferência",
-      "body": "No cenário fictício, Joana tem R$180 disponíveis e conclui um Pix de R$50, sem tarifa ou outro lançamento. Seu saldo passa a R$130. O Pix movimentou recursos; não criou R$50 adicionais e não demonstra concessão de empréstimo.",
+      "body": "No cenário fictício, Joana tem R$180 disponíveis e envia um Pix de R$50, concluído com débito desse valor no saldo, sem tarifa ou outro lançamento. Seu saldo passa a R$130. O Pix movimentou recursos; não criou R$50 adicionais e não demonstra concessão de empréstimo.",
       "sourceIds": []
     },
     {
@@ -131,7 +131,7 @@ export const DP06_DRAFT = {
       "id": "dp06.q01"
     },
     {
-      "prompt": "Saldo de R$180, Pix concluído de R$50 e nenhum outro lançamento: qual saldo resulta?",
+      "prompt": "Saldo de R$180, envio de Pix concluído com débito de R$50 no saldo e nenhum outro lançamento ou tarifa: qual saldo resulta?",
       "options": [
         "R$130.",
         "R$230.",

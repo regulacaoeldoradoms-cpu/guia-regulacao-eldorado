@@ -33,7 +33,8 @@ for (const source of SOURCES) {
   assert(['www.gov.br', 'www.bcb.gov.br', 'normativos.bcb.gov.br', 'www.caixa.gov.br', 'www.ecb.europa.eu', 'www.planalto.gov.br', 'www.bankofengland.co.uk', ...(isCE ? ['conteudo.cvm.gov.br', 'www.imf.org'] : []), ...(isDP ? ['www.bis.org', 'www.fsb.org', 'csrc.nist.gov'] : [])].includes(new URL(source.url).hostname));
   const reusedTransmission = isCE && source.id === 'bcb.ce.transmissao' && source.checkedAt === '2026-09-30';
   const reusedAccount = ['dp01', 'dpchefe'].includes(unit) && ['bcb.conta.deposito', 'bcb.conta.digital', 'bcb.conta.pagamento'].includes(source.id) && source.checkedAt === '2026-09-30';
-  assert((source.checkedAt === sourceDate || reusedTransmission || reusedAccount) && source.version && source.locator);
+  const reviewedDpSource = source.checkedAt === '2026-10-03' && ((['dp05', 'dpchefe'].includes(unit) && source.id === 'bis.dp.liquidacao') || (['dp07', 'dpchefe'].includes(unit) && source.id === 'lei.dp.conservacao'));
+  assert((source.checkedAt === sourceDate || reusedTransmission || reusedAccount || reviewedDpSource) && source.version && source.locator);
 }
 for (const sourceId of draft.sourceIds) assert(sources.has(sourceId));
 const sections = new Map(draft.sections.map(section => [section.id, section]));

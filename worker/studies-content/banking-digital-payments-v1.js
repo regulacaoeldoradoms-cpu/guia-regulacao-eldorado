@@ -90,7 +90,7 @@ export const DP_MISSIONS = Object.freeze([
       {
         "id": "responsavel",
         "heading": "8. Quem responde pela atividade descrita?",
-        "body": "Uma marca, um aplicativo e a instituição responsável não são automaticamente a mesma informação. Leia quem presta cada serviço no caso. Uma tela pode permitir consultar diferentes produtos; isso não transfere, por si só, todas as obrigações para um único participante. Retome a distinção entre canal e responsável vista em CE-07 e entre plataforma e emissor vista em CE-05.",
+        "body": "Uma marca, um aplicativo e a instituição responsável não são automaticamente a mesma informação. Leia quem presta cada serviço no caso. Uma tela pode permitir consultar diferentes produtos; isso não transfere, por si só, todas as obrigações para um único participante. Retome as cinco perguntas da primeira seção desta aula: instituição, produto, operação, canal e dispositivo.",
         "type": "explanation",
         "sourceIds": []
       },
@@ -831,7 +831,7 @@ export const DP_MISSIONS = Object.freeze([
         "id": "glossario",
         "type": "glossary",
         "heading": "Vocabulário essencial",
-        "body": "Fintech: inovação tecnológica financeira. Startup: empreendimento inovador novo/recente, com requisitos próprios para o regime legal. Bigtech: grande empresa tecnológica de atuação ampla. Efeito de rede: utilidade de participar relacionada à presença de outros participantes.",
+        "body": "Fintech: empresa que inova em serviços financeiros com uso intensivo de tecnologia. Startup: empreendimento inovador novo/recente, com requisitos próprios para o regime legal. Bigtech: grande empresa tecnológica de atuação ampla. Efeito de rede: utilidade de participar relacionada à presença de outros participantes.",
         "sourceIds": []
       },
       {
@@ -945,20 +945,20 @@ export const DP_MISSIONS = Object.freeze([
       {
         "id": "q.dp03.q06",
         "topicId": "banking.dp.empresas",
-        "prompt": "Qual dado, isoladamente, é insuficiente para comprovar enquadramento de startup nos termos da LC 182?",
+        "prompt": "Uma empresa afirma ser startup nos termos da LC 182, mas o caso informa apenas que ela possui aplicativo. Qual conclusão é sustentada por esse dado?",
         "options": [
-          "Demonstração de todos os requisitos legais aplicáveis.",
-          "O simples fato de possuir aplicativo.",
-          "Verificação dos requisitos do regime no caso concreto.",
-          "Análise das condições legais relevantes."
+          "O aplicativo comprova todos os requisitos legais do regime.",
+          "O aplicativo, sozinho, não comprova o enquadramento legal.",
+          "Somente empresas financeiras podem se enquadrar no regime.",
+          "A autodenominação dispensa os requisitos legais."
         ],
         "answer": 1,
-        "explanation": "Ter aplicativo não prova inovação nem as demais condições.",
+        "explanation": "É necessário comprovar os requisitos aplicáveis; ter aplicativo não basta.",
         "optionRationales": [
-          "Essa alternativa fala em comprovar os requisitos, não apenas uma aparência.",
-          "Ter aplicativo não prova inovação nem as demais condições.",
-          "A verificação é justamente o que falta ao rótulo isolado.",
-          "A análise não se confunde com a presença do aplicativo."
+          "A presença de aplicativo não demonstra, por si só, inovação e os demais requisitos legais.",
+          "É necessário comprovar os requisitos aplicáveis; ter aplicativo não basta.",
+          "O regime não se restringe a empresas financeiras.",
+          "O nome adotado pela empresa não afasta os requisitos legais."
         ]
       },
       {
@@ -1121,7 +1121,7 @@ export const DP_MISSIONS = Object.freeze([
         "id": "ex-canal",
         "type": "worked-example",
         "heading": "2. Exemplo resolvido: financiamento por outro canal",
-        "body": "Um fundo fictício reúne recursos de investidores e aplica em títulos de dívida de empresas. O financiamento alcança empresas por um canal não bancário. O exemplo não informa infração; o nome do canal não permite concluir ilegalidade ou falta de regulação.",
+        "body": "Um fundo fictício reúne recursos de investidores e subscreve novos títulos de dívida emitidos por empresas, no mercado primário. Os recursos dessa emissão vão para as empresas emissoras. O financiamento alcança empresas por um canal não bancário. O exemplo não informa infração; o nome do canal não permite concluir ilegalidade ou falta de regulação.",
         "sourceIds": []
       },
       {
@@ -1196,7 +1196,7 @@ export const DP_MISSIONS = Object.freeze([
       {
         "id": "q.dp04.q01",
         "topicId": "banking.dp.intermediacao",
-        "prompt": "Um fundo reúne recursos e compra títulos de dívida de empresas. Qual leitura respeita o caso?",
+        "prompt": "Um fundo reúne recursos e subscreve novos títulos de dívida emitidos por empresas no mercado primário, entregando recursos às emissoras. Qual leitura respeita o caso?",
         "options": [
           "A operação é criminosa só porque não é feita por banco.",
           "O nome fundo prova ausência de qualquer regra.",
@@ -1209,7 +1209,7 @@ export const DP_MISSIONS = Object.freeze([
           "A conclusão jurídica não decorre do canal.",
           "Modelos não bancários também podem ser regulados.",
           "Descreve a atividade e preserva o limite da informação.",
-          "A compra de dívida canaliza financiamento no exemplo."
+          "A subscrição da nova emissão entrega recursos às empresas no exemplo."
         ]
       },
       {
@@ -1444,7 +1444,8 @@ export const DP_MISSIONS = Object.freeze([
     },
     "sourceIds": [
       "dp.dp05.bcb.dp.spb",
-      "dp.dp05.bcb.dp.arranjos"
+      "dp.dp05.bcb.dp.arranjos",
+      "dp.dp05.bis.dp.liquidacao"
     ],
     "sections": [
       {
@@ -1501,9 +1502,10 @@ export const DP_MISSIONS = Object.freeze([
         "id": "etapas",
         "type": "explanation",
         "heading": "7. Solicitar não é concluir",
-        "body": "Para acompanhar uma operação, distinga a ordem do usuário, o processamento e a liquidação, entendida aqui como conclusão da transferência das obrigações ou recursos segundo as regras do sistema. Uma mensagem “solicitação recebida” não comprova por si só a liquidação. O significado do estado exibido deve ser lido no caso, sem inventar sucesso.",
+        "body": "Para acompanhar uma operação, distinga a ordem do usuário, o processamento e a liquidação, entendida aqui como cumprimento das obrigações de pagamento por meio da transferência de recursos, conforme as regras do sistema. Uma mensagem “solicitação recebida” não comprova por si só a liquidação. O significado do estado exibido deve ser lido no caso, sem inventar sucesso.",
         "sourceIds": [
-          "dp.dp05.bcb.dp.spb"
+          "dp.dp05.bcb.dp.spb",
+          "dp.dp05.bis.dp.liquidacao"
         ]
       },
       {
@@ -1799,7 +1801,7 @@ export const DP_MISSIONS = Object.freeze([
         "id": "ex-conta",
         "type": "worked-example",
         "heading": "2. Exemplo resolvido: saldo e transferência",
-        "body": "No cenário fictício, Joana tem R$180 disponíveis e conclui um Pix de R$50, sem tarifa ou outro lançamento. Seu saldo passa a R$130. O Pix movimentou recursos; não criou R$50 adicionais e não demonstra concessão de empréstimo.",
+        "body": "No cenário fictício, Joana tem R$180 disponíveis e envia um Pix de R$50, concluído com débito desse valor no saldo, sem tarifa ou outro lançamento. Seu saldo passa a R$130. O Pix movimentou recursos; não criou R$50 adicionais e não demonstra concessão de empréstimo.",
         "sourceIds": []
       },
       {
@@ -1892,7 +1894,7 @@ export const DP_MISSIONS = Object.freeze([
       {
         "id": "q.dp06.q02",
         "topicId": "banking.dp.pix",
-        "prompt": "Saldo de R$180, Pix concluído de R$50 e nenhum outro lançamento: qual saldo resulta?",
+        "prompt": "Saldo de R$180, envio de Pix concluído com débito de R$50 no saldo e nenhum outro lançamento ou tarifa: qual saldo resulta?",
         "options": [
           "R$130.",
           "R$230.",
@@ -2124,7 +2126,8 @@ export const DP_MISSIONS = Object.freeze([
       "changeImpact": "new"
     },
     "sourceIds": [
-      "dp.dp07.bcb.dp.openfinance"
+      "dp.dp07.bcb.dp.openfinance",
+      "dp.dp07.lei.dp.conservacao"
     ],
     "sections": [
       {
@@ -2149,7 +2152,8 @@ export const DP_MISSIONS = Object.freeze([
         "heading": "3. O que conferir na autorização",
         "body": "A apresentação do BCB destaca a escolha dos dados, da instituição destinatária e do período. A autorização pode ser cancelada. Não ensinamos prazo máximo fixo, porque o recorte é entender o controle e não decorar uma condição que pode mudar. Cancelar o compartilhamento não significa apagar automaticamente toda informação cuja conservação tenha fundamento legal.",
         "sourceIds": [
-          "dp.dp07.bcb.dp.openfinance"
+          "dp.dp07.bcb.dp.openfinance",
+          "dp.dp07.lei.dp.conservacao"
         ]
       },
       {
@@ -4631,8 +4635,10 @@ export const DP_MISSIONS = Object.freeze([
       "dp.dpchefe.fsb.dp.nbfi",
       "dp.dpchefe.bcb.dp.spb",
       "dp.dpchefe.bcb.dp.arranjos",
+      "dp.dpchefe.bis.dp.liquidacao",
       "dp.dpchefe.bcb.dp.pix",
       "dp.dpchefe.bcb.dp.openfinance",
+      "dp.dpchefe.lei.dp.conservacao",
       "dp.dpchefe.nist.dp.blockchain",
       "dp.dpchefe.lei.dp.ativos",
       "dp.dpchefe.bcb.dp.drex",
@@ -5425,6 +5431,14 @@ export const DP_SOURCES = Object.freeze([
     "checkedAt": "2026-10-01"
   },
   {
+    "id": "dp.dp05.bis.dp.liquidacao",
+    "label": "CPSS-IOSCO — Principles for financial market infrastructures",
+    "url": "https://www.bis.org/publications/principles-financial-market-infrastructures.pdf",
+    "locator": "Abril de 2012, princípio 8, §3.8.1 e anexo H: liquidação final como transferência de ativo ou cumprimento de obrigação; recorte de pagamentos.",
+    "version": "Documento de abril de 2012; conceito consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
+  },
+  {
     "id": "dp.dp06.bcb.dp.pix",
     "label": "BCB — Pix",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix",
@@ -5439,6 +5453,14 @@ export const DP_SOURCES = Object.freeze([
     "locator": "Escolha de dados/destinatário/prazo, cancelamento e benefícios possíveis",
     "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
+  },
+  {
+    "id": "dp.dp07.lei.dp.conservacao",
+    "label": "Lei 13.709/2018 — LGPD",
+    "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm",
+    "locator": "Arts. 16, I, e 18, VI/IX: conservação para obrigação legal ou regulatória, ressalvas à eliminação e revogação do consentimento.",
+    "version": "Texto compilado consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "dp.dp08.nist.dp.blockchain",
@@ -5652,8 +5674,8 @@ export const DP_SOURCES = Object.freeze([
     "id": "dp.dpchefe.bcb.dp.fintechs",
     "label": "BCB — Fintechs",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/fintechs",
-    "version": "Página institucional; consulta em 01/10/2026, 01:43 UTC",
-    "locator": "Definição introdutória e benefícios possíveis; não reutilizar limites ou referências normativas de outras seções",
+    "locator": "Definição introdutória; não utilizados limites ou normas antigos da página",
+    "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
   },
   {
@@ -5697,6 +5719,14 @@ export const DP_SOURCES = Object.freeze([
     "checkedAt": "2026-10-01"
   },
   {
+    "id": "dp.dpchefe.bis.dp.liquidacao",
+    "label": "CPSS-IOSCO — Principles for financial market infrastructures",
+    "url": "https://www.bis.org/publications/principles-financial-market-infrastructures.pdf",
+    "locator": "Abril de 2012, princípio 8, §3.8.1 e anexo H: liquidação final como transferência de ativo ou cumprimento de obrigação; recorte de pagamentos.",
+    "version": "Documento de abril de 2012; conceito consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
+  },
+  {
     "id": "dp.dpchefe.bcb.dp.pix",
     "label": "BCB — Pix",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix",
@@ -5711,6 +5741,14 @@ export const DP_SOURCES = Object.freeze([
     "locator": "Escolha de dados/destinatário/prazo, cancelamento e benefícios possíveis",
     "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
+  },
+  {
+    "id": "dp.dpchefe.lei.dp.conservacao",
+    "label": "Lei 13.709/2018 — LGPD",
+    "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm",
+    "locator": "Arts. 16, I, e 18, VI/IX: conservação para obrigação legal ou regulatória, ressalvas à eliminação e revogação do consentimento.",
+    "version": "Texto compilado consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "dp.dpchefe.nist.dp.blockchain",

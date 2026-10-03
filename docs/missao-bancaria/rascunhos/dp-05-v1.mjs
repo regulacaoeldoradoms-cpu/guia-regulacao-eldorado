@@ -14,6 +14,14 @@ export const SOURCES = [
     "locator": "Conceito e distinção entre arranjo, participantes e instituições",
     "version": "Página oficial consultada em 01/10/2026",
     "checkedAt": "2026-10-01"
+  },
+  {
+    "id": "bis.dp.liquidacao",
+    "label": "CPSS-IOSCO — Principles for financial market infrastructures",
+    "url": "https://www.bis.org/publications/principles-financial-market-infrastructures.pdf",
+    "locator": "Abril de 2012, princípio 8, §3.8.1 e anexo H: liquidação final como transferência de ativo ou cumprimento de obrigação; recorte de pagamentos.",
+    "version": "Documento de abril de 2012; conceito consultado em 03/10/2026",
+    "checkedAt": "2026-10-03"
   }
 ];
 
@@ -31,7 +39,8 @@ export const DP05_DRAFT = {
   "objective": "Separar sistema, regras de um arranjo e participantes.",
   "sourceIds": [
     "bcb.dp.spb",
-    "bcb.dp.arranjos"
+    "bcb.dp.arranjos",
+    "bis.dp.liquidacao"
   ],
   "sections": [
     {
@@ -88,9 +97,10 @@ export const DP05_DRAFT = {
       "id": "etapas",
       "type": "explanation",
       "heading": "7. Solicitar não é concluir",
-      "body": "Para acompanhar uma operação, distinga a ordem do usuário, o processamento e a liquidação, entendida aqui como conclusão da transferência das obrigações ou recursos segundo as regras do sistema. Uma mensagem “solicitação recebida” não comprova por si só a liquidação. O significado do estado exibido deve ser lido no caso, sem inventar sucesso.",
+      "body": "Para acompanhar uma operação, distinga a ordem do usuário, o processamento e a liquidação, entendida aqui como cumprimento das obrigações de pagamento por meio da transferência de recursos, conforme as regras do sistema. Uma mensagem “solicitação recebida” não comprova por si só a liquidação. O significado do estado exibido deve ser lido no caso, sem inventar sucesso.",
       "sourceIds": [
-        "bcb.dp.spb"
+        "bcb.dp.spb",
+        "bis.dp.liquidacao"
       ]
     },
     {

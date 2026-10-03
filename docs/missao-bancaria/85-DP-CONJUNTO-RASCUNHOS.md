@@ -41,6 +41,23 @@ Resultado local em Node 24: **13 unidades aprovadas, 132 trechos, 52 exemplos, 1
 
 O validador editorial existente foi estendido somente para os rascunhos DP: oito itens/unidade, fontes delimitadas, objetivos, recuperação, origens de DP-R e sincronia MD/MJS. O detector de isolamento e os workflows não foram alterados. DP-01/02 receberam glossário e passaram ao mesmo renderizador; textos anteriores, opções, gabaritos e justificativas foram preservados.
 
-Comando por unidade: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=dp03 --render` (substituir por `dp01`–`dp12` ou `dpr`). As verificações estruturais e aritméticas não substituem leitura pedagógica. **Revisão independente agrupada pendente**, incluindo precisão conceitual, ambiguidade, pré-requisitos e adequação dos recortes; Chefe redigido em 03/10, também sujeito à revisão própria; preparação desativada em [87](87-DP-PREPARACAO-TECNICA.md).
+Comando por unidade: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=dp03 --render` (substituir por `dp01`–`dp12` ou `dpr`). As verificações estruturais e aritméticas não substituem leitura pedagógica. **Leitura pedagógica agrupada pelo agente concluída em 03/10**, incluindo as doze aulas, DP-R e os doze itens do Chefe; não é parecer independente nem aceite humano; preparação desativada em [87](87-DP-PREPARACAO-TECNICA.md).
+
+### Correções da revisão agrupada de 03/10
+
+Leitura de todos os enunciados e justificativas no pacote-base **5475aec87e58e0da808bf36ab02cbd2dd8bef884**. Não foram encontrados outros bloqueios pedagógicos no recorte introdutório. Revisão feita pelo agente responsável pelas correções, sem novo revisor externo; o parecer independente permanece pendente.
+
+| Unidade | Correção e motivo |
+| --- | --- |
+| DP-01 | Retomada aponta às cinco perguntas da própria aula; removida atribuição conceitual incorreta a CE-05. |
+| DP-03 | Questão 6 usa caso concreto: aplicativo sozinho não comprova enquadramento legal. Analisar requisitos já não aparece como se fosse comprová-los. Glossário define fintech como empresa. |
+| DP-04 | Exemplo e questão 1 explicitam subscrição de nova emissão no mercado primário, entregando recursos às emissoras; compra secundária não era prova de financiamento direto. |
+| DP-05 | Liquidação descrita como cumprimento das obrigações de pagamento por transferência de recursos; removida expressão que sugeria transferência de obrigações. |
+| DP-06 | Exemplo e questão 2 informam envio e débito do Pix; recebimento já não pode sustentar a alternativa de R$230. |
+| DP-07 | Acrescentada fonte expressa LGPD arts. 16, I, e 18, VI/IX para a conservação legal após cancelamento; conclusão didática preservada. |
+
+IDs, posições dos gabaritos, objetivos e valores dos cálculos preservados. Os doze itens do Chefe não exigiram mudança de texto; sua lista de fontes incorporou as novas bases do ensino. Fontes primárias verificadas pontualmente em 03/10: [LC 182, art. 4º](https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp182.htm), [LGPD](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) e [CPSS-IOSCO 2012, princípio 8, §3.8.1](https://www.bis.org/publications/principles-financial-market-infrastructures.pdf). Sem nova auditoria normativa geral ou mudança sobre o estágio do Drex.
+
+Somente DP-01/03/04/05/06/07 e Chefe foram regenerados e validados: sincronia MD/MJS, fontes, cobertura, retomada, UTF-8 e cálculos existentes passaram. Candidato regenerado (14 drafts/116 questões/464 justificativas/58 referências por unidade), sete testes offline e detector de isolamento passaram. Validadores das unidades inalteradas de 01/10 reaproveitados.
 
 Nenhuma alteração de runtime, autorização, dados, progresso ou catálogo ativo. Não há XP, ordem ou liberação efetiva nestes artefatos. Não foram executados testes contra produção/D1 nem repetidas suítes MP/PC/CE por esta autoria.

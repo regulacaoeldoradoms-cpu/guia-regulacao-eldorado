@@ -116,7 +116,7 @@ export const DP03_DRAFT = {
       "id": "glossario",
       "type": "glossary",
       "heading": "Vocabulário essencial",
-      "body": "Fintech: inovação tecnológica financeira. Startup: empreendimento inovador novo/recente, com requisitos próprios para o regime legal. Bigtech: grande empresa tecnológica de atuação ampla. Efeito de rede: utilidade de participar relacionada à presença de outros participantes.",
+      "body": "Fintech: empresa que inova em serviços financeiros com uso intensivo de tecnologia. Startup: empreendimento inovador novo/recente, com requisitos próprios para o regime legal. Bigtech: grande empresa tecnológica de atuação ampla. Efeito de rede: utilidade de participar relacionada à presença de outros participantes.",
       "sourceIds": []
     },
     {
@@ -256,20 +256,20 @@ export const DP03_DRAFT = {
       "id": "dp03.q05"
     },
     {
-      "prompt": "Qual dado, isoladamente, é insuficiente para comprovar enquadramento de startup nos termos da LC 182?",
+      "prompt": "Uma empresa afirma ser startup nos termos da LC 182, mas o caso informa apenas que ela possui aplicativo. Qual conclusão é sustentada por esse dado?",
       "options": [
-        "Demonstração de todos os requisitos legais aplicáveis.",
-        "O simples fato de possuir aplicativo.",
-        "Verificação dos requisitos do regime no caso concreto.",
-        "Análise das condições legais relevantes."
+        "O aplicativo comprova todos os requisitos legais do regime.",
+        "O aplicativo, sozinho, não comprova o enquadramento legal.",
+        "Somente empresas financeiras podem se enquadrar no regime.",
+        "A autodenominação dispensa os requisitos legais."
       ],
       "answer": 1,
-      "explanation": "Ter aplicativo não prova inovação nem as demais condições.",
+      "explanation": "É necessário comprovar os requisitos aplicáveis; ter aplicativo não basta.",
       "optionRationales": [
-        "Essa alternativa fala em comprovar os requisitos, não apenas uma aparência.",
-        "Ter aplicativo não prova inovação nem as demais condições.",
-        "A verificação é justamente o que falta ao rótulo isolado.",
-        "A análise não se confunde com a presença do aplicativo."
+        "A presença de aplicativo não demonstra, por si só, inovação e os demais requisitos legais.",
+        "É necessário comprovar os requisitos aplicáveis; ter aplicativo não basta.",
+        "O regime não se restringe a empresas financeiras.",
+        "O nome adotado pela empresa não afasta os requisitos legais."
       ],
       "recoverySectionIds": [
         "startup"

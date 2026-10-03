@@ -10,7 +10,7 @@ Atualizado em 03/10/2026. [Lote DP](85-DP-CONJUNTO-RASCUNHOS.md), fora do catál
 
 Manter o padrão editorial MP/PC/CE: seis grupos, dois itens por grupo, quatro alternativas justificadas e retorno à aula/seção. Não repetir os 104 enunciados expostos; criar situações novas nos mesmos limites e hipóteses. O alvo é integração introdutória, não amostragem integral de edital.
 
-[DP-CHEFE legível](rascunhos/dp-chefe-v1.md) e [fonte estruturada](rascunhos/dp-chefe-v1.mjs): 12 questões/48 justificativas, cinco trechos de preparação/recuperação e seis cálculos novos conferidos. Os enunciados são distintos das 104 questões do lote e das questões ativas. Origens explícitas cobrem as doze aulas; todos os links e a sincronia MD/MJS foram validados. Fontes de ensino de 01/10 reaproveitadas, sem nova afirmação sobre estágio atual do Drex. Revisão pedagógica independente ainda pendente.
+[DP-CHEFE legível](rascunhos/dp-chefe-v1.md) e [fonte estruturada](rascunhos/dp-chefe-v1.mjs): 12 questões/48 justificativas, cinco trechos de preparação/recuperação e seis cálculos novos conferidos. Os enunciados são distintos das 104 questões do lote e das questões ativas. Origens explícitas cobrem as doze aulas; todos os links e a sincronia MD/MJS foram validados. Fontes de ensino de 01/10 reaproveitadas, sem nova afirmação sobre estágio atual do Drex. Leitura pedagógica dos doze itens e 48 justificativas concluída pelo agente em 03/10, sem correção necessária; fontes do ensino atualizadas no Chefe. Parecer independente ainda pendente; não equivale a aceite humano.
 
 | Grupo | Itens | Origem | Competência e erro a recuperar |
 | --- | --- | --- | --- |
@@ -23,4 +23,4 @@ Manter o padrão editorial MP/PC/CE: seis grupos, dois itens por grupo, quatro a
 
 Na futura preparação técnica, preservar sequência após CE, IDs/progresso existentes e padrão de 100 XP por aula/revisão, 220 XP e mínimo de 75% no Chefe, sujeito aos gates de revisão/integração. **Estes parâmetros não estão ativados.** Marketplace e segmentação permanecem recortes nominais BB; não contar como cobertura nominal CAIXA.
 
-Próxima ação: revisão pedagógica agrupada de DP-01–12/DP-R e revisão própria dos doze itens do Chefe. A [preparação técnica 87](87-DP-PREPARACAO-TECNICA.md) está desativada e usa o pipeline existente. Antes de ativar, revalidar estágio oficial do Drex e obter autorização específica de integração/publicação. A retomada de 03/10 não renova a autonomia noturna de merge/deploy.
+Próxima ação: concluir preparação dos fluxos de UI/roteador afetados, preservando o estado desativado e registrando os gates restantes. A [preparação técnica 87](87-DP-PREPARACAO-TECNICA.md) está desativada e usa o pipeline existente. Antes de ativar, revalidar estágio oficial do Drex e obter autorização específica de integração/publicação. A retomada de 03/10 não renova a autonomia noturna de merge/deploy.

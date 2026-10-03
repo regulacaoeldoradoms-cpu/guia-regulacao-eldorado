@@ -38,7 +38,7 @@ export const DP04_DRAFT = {
       "id": "ex-canal",
       "type": "worked-example",
       "heading": "2. Exemplo resolvido: financiamento por outro canal",
-      "body": "Um fundo fictício reúne recursos de investidores e aplica em títulos de dívida de empresas. O financiamento alcança empresas por um canal não bancário. O exemplo não informa infração; o nome do canal não permite concluir ilegalidade ou falta de regulação.",
+      "body": "Um fundo fictício reúne recursos de investidores e subscreve novos títulos de dívida emitidos por empresas, no mercado primário. Os recursos dessa emissão vão para as empresas emissoras. O financiamento alcança empresas por um canal não bancário. O exemplo não informa infração; o nome do canal não permite concluir ilegalidade ou falta de regulação.",
       "sourceIds": []
     },
     {
@@ -106,7 +106,7 @@ export const DP04_DRAFT = {
   ],
   "questions": [
     {
-      "prompt": "Um fundo reúne recursos e compra títulos de dívida de empresas. Qual leitura respeita o caso?",
+      "prompt": "Um fundo reúne recursos e subscreve novos títulos de dívida emitidos por empresas no mercado primário, entregando recursos às emissoras. Qual leitura respeita o caso?",
       "options": [
         "A operação é criminosa só porque não é feita por banco.",
         "O nome fundo prova ausência de qualquer regra.",
@@ -119,7 +119,7 @@ export const DP04_DRAFT = {
         "A conclusão jurídica não decorre do canal.",
         "Modelos não bancários também podem ser regulados.",
         "Descreve a atividade e preserva o limite da informação.",
-        "A compra de dívida canaliza financiamento no exemplo."
+        "A subscrição da nova emissão entrega recursos às empresas no exemplo."
       ],
       "recoverySectionIds": [
         "conceito",
