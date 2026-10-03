@@ -190,7 +190,7 @@ html[data-portal-theme="dark"] .portal-chat-emoji:focus-visible {
   outline-color: #5786a3 !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .portal-chat-launcher.attention-hit {
+  .portal-chat .portal-chat-launcher.attention-hit {
     animation: none !important;
     box-shadow: 0 0 0 5px rgba(255,193,7,.42),0 14px 34px rgba(12,72,126,.28) !important;
   }

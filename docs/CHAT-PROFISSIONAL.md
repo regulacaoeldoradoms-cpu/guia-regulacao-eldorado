@@ -188,6 +188,39 @@ ações acima do campo de mensagem.
 - “Chamar atenção” não gera Web Push por padrão. Em aba invisível ou minimizada, não há
   tentativa de chamar atenção fora da interface do Portal.
 
+### Correção de entrega e visibilidade — 02/10/2026
+
+O teste entre dois clientes identificou que o remetente recebia `attention-ack` mesmo
+quando o Durable Object destinatário informava zero sockets abertos. A confirmação
+agora exige uma resposta válida com `sent > 0`. O cliente distingue contato sem
+conexão, falha de transporte e contato indisponível, sem anunciar sucesso nesses
+casos. A confirmação indica entrega ao canal conectado, não leitura pela pessoa.
+
+Cada tentativa pode incluir um `requestId` efêmero, devolvido pelo servidor somente
+ao remetente. O navegador ignora confirmações atrasadas de outra tentativa e deixa
+de aguardar após quatro segundos sem resposta. Não há reenvio automático, fallback
+HTTP, consulta D1, gravação de mensagem ou Web Push para essa ação. O intervalo de
+cinco segundos por destinatário permanece inclusive após falha de entrega.
+
+O fechamento de um socket antigo não pode desativar a conexão atual nem o botão.
+Esse cenário foi reproduzido com duas conexões sobrepostas durante a obtenção do
+ticket e agora o handler de fechamento verifica a identidade do socket antes de
+alterar o estado. O destaque de movimento reduzido também recebe especificidade
+suficiente para prevalecer sobre a sombra do botão na Home mobile.
+
+Se o evento chegar enquanto a aba estiver oculta, somente a última chamada fica em
+memória nessa página, com validade de quinze segundos. Ao voltar à aba dentro desse
+prazo, o efeito aparece no botão Chat ou no cabeçalho conforme o estado atual do
+painel. Chamadas antigas são descartadas e o encerramento da sessão limpa esse
+estado. Não há armazenamento durável nem alerta externo ao Portal.
+
+Regressões específicas: `worker/tests/chat-attention-delivery.test.mjs` verifica
+encaminhamento, retorno offline, falhas, autorização e cooldown com a classe real do
+Durable Object e conexões sintéticas; `worker/tests/chat-attention-client.test.mjs`
+executa o cliente real em VM com DOM/conexões sintéticos para verificar apresentação,
+tempo de espera, correlação e fechamento de socket antigo. Não usa contas ou
+conversas reais e não substitui uma conferência visual em navegador.
+
 ## Confirmação rápida de envio no servidor
 
 Decisão permanente atualizada em 02/10/2026: o balão otimista aparece no instante do
