@@ -56,6 +56,14 @@ HTTP permanece como fallback. Histórico antigo é carregado sob demanda e leitu
 protegida `peek=1` não altera o estado de não lida. A autorização continua sendo
 revalidada no backend em toda operação protegida.
 
+As páginas autenticadas com CSP devem permitir em `connect-src` tanto a origem HTTPS
+configurada do Worker quanto sua origem WSS exata. Permitir somente HTTPS deixa o
+fallback de mensagens funcionando, mas bloqueia o canal realtime e mantém **Chamar
+atenção** desativado. Alterações dessa política exigem renovar o cache de HTML do
+Service Worker e recarregar o documento; o bootstrap após login importa a CSP da Home.
+O gate de chat verifica a política de todos os módulos com CSP, sem liberar curingas
+ou outros hosts.
+
 Eventos puramente de interface, como **Chamar atenção**, também usam o WebSocket e não
 criam registros no D1. O Durable Object valida o alvo contra a lista de contatos
 autorizados já sincronizada e mantém o cooldown em attachment hibernável do socket.

@@ -221,6 +221,33 @@ executa o cliente real em VM com DOM/conexões sintéticos para verificar aprese
 tempo de espera, correlação e fechamento de socket antigo. Não usa contas ou
 conversas reais e não substitui uma conferência visual em navegador.
 
+### Correção do botão bloqueado por CSP — 02/10/2026
+
+Depois da correção de entrega, o usuário ainda encontrou **Chamar atenção** desativado,
+com o tooltip “A conexão em tempo real está reconectando”. A inspeção do HTML publicado
+confirmou que a Home autorizava somente a origem HTTPS do Worker em `connect-src`.
+O cliente abre o socket na mesma origem por `wss://`, que precisa de permissão própria
+na política. Assim, as APIs e o fallback HTTP funcionavam, mas a CSP bloqueava a
+conexão necessária para habilitar o botão. O healthcheck do Worker e os testes com
+sockets sintéticos não verificam essa política do documento.
+
+As treze páginas autenticadas que já possuem CSP passam a incluir, em `connect-src`,
+somente a origem adicional
+`wss://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
+A origem HTTPS e as demais diretivas são preservadas. A mesma correção alcança a
+transição após o login, que importa a meta CSP da Home. Não há liberação genérica de
+`wss:`, curingas ou mudança de autenticação, contatos ou transporte de eventos.
+
+O cache do Service Worker muda para `20261003-chat-websocket-csp-1` para renovar o HTML.
+Uma página já aberta precisa ser recarregada para receber a política nova; substituir
+somente o JavaScript não altera a CSP que o navegador já aplicou.
+
+O teste em `worker/tests/global-chat.test.mjs` compara as políticas dos módulos com as
+origens HTTPS/WSS do endpoint configurado, incluindo restrição ao host exato. Ele
+integra o gate de chat existente e cobre a lacuna do teste anterior. A regra de
+correspondência de esquemas está no
+[CSP3, seção 6.7.2.9](https://www.w3.org/TR/CSP3/#match-schemes).
+
 ## Confirmação rápida de envio no servidor
 
 Decisão permanente atualizada em 02/10/2026: o balão otimista aparece no instante do
