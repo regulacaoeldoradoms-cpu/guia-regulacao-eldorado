@@ -63,12 +63,19 @@ WebSocket e não deve pré-carregar o histórico de todos os contatos. Reconcili
 periódicas são espaçadas e coalescidas; trocas rápidas de módulo reutilizam snapshot
 efêmero do Service Worker sem transformar esse snapshot em fonte de autorização.
 
-O ACK de envio também possui caminho crítico próprio: validação criptográfica da sessão,
-confirmação mínima da conta no D1, autorização server-side do contato e escrita
-idempotente da mensagem. Migrações, capabilities de outros módulos, push, atualização
-de diretório e emissão WebSocket não podem bloquear essa confirmação. Em envio novo
-com `client_id`, a rota não faz SELECT da mensagem antes nem depois da escrita; a
-leitura idempotente fica reservada ao retry em que `INSERT OR IGNORE` não cria linha.
+O ACK de envio também possui caminho crítico próprio. Com realtime saudável, a
+mensagem sai pelo WebSocket já aberto e o Durable Object executa uma única instrução
+`INSERT OR IGNORE ... SELECT` no D1, combinando validação de conta ativa,
+`session_version`, gate de e-mail, destinatário e autorização institucional/amizade
+com a própria gravação. O ACK retorna pelo mesmo socket antes de push e da entrega ao
+outro Durable Object. O ticket HMAC realtime carrega a versão da sessão e o socket a
+mantém somente em attachment hibernável.
+
+O POST autenticado permanece como fallback idempotente usando o mesmo `client_id`.
+Se WebSocket e HTTP correrem simultaneamente, a constraint única decide a gravação sem
+duplicação. Migrações, capabilities de outros módulos, push e atualização de diretório
+não bloqueiam a confirmação. A leitura por `client_id` fica reservada a retries em que
+`INSERT OR IGNORE` não cria linha.
 
 A política completa, os limites e a validação estão em
 `docs/PORTAL-DESEMPENHO-CACHE-V1.md`.
