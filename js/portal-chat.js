@@ -1449,6 +1449,7 @@
     saveActiveDraft();
     stopLocalTyping();
     clearRemoteTyping();
+    toggleEmojiPicker(false);
     activeContact = contact;
     const cachedForBoundary = messageCache.get(messageCacheKey(contact?.username));
     activeUnreadBoundaryId = unreadBoundaryFor(contact, cachedForBoundary?.messages || []);
@@ -1465,6 +1466,7 @@
     const input = document.getElementById('portalChatInput');
     if (input) input.value = draftCache.get(contact.username) || '';
     queueChatSessionPersist();
+    updateAttentionButton();
     if (options.focus !== false) input?.focus();
   }
 
@@ -1497,6 +1499,7 @@
     saveActiveDraft();
     stopLocalTyping();
     clearRemoteTyping();
+    toggleEmojiPicker(false);
     activeContact = null;
     activeUnreadBoundaryId = 0;
     lastMessageId = 0;
@@ -1510,6 +1513,7 @@
     if (name) name.textContent = 'Chat interno';
     if (status) status.textContent = 'Comunicação entre usuários do portal';
     if (profile) profile.hidden = true;
+    updateAttentionButton();
     queueChatSessionPersist();
     loadContacts();
   }
@@ -1624,6 +1628,7 @@
 
   function sendMessage() {
     stopLocalTyping();
+    toggleEmojiPicker(false);
     const input = document.getElementById('portalChatInput');
     const body = String(input?.value || '').trim();
     const username = activeContact?.username || '';
