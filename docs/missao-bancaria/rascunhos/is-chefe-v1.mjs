@@ -175,6 +175,13 @@ export const ISCHEFE_DRAFT = {
       "sourceIds": []
     },
     {
+      "id": "retomadas",
+      "heading": "Aulas para consulta e retomada",
+      "body": "[Consultar IS-01](is-01-v1.md)\n\n[Consultar IS-02](is-02-v1.md)\n\n[Consultar IS-03](is-03-v1.md)\n\n[Consultar IS-04](is-04-v1.md)\n\n[Consultar IS-05](is-05-v1.md)\n\n[Consultar IS-06](is-06-v1.md)\n\n[Consultar IS-07](is-07-v1.md)\n\n[Consultar IS-08](is-08-v1.md)\n\n[Consultar IS-R](is-r-v1.md)",
+      "type": "explanation",
+      "sourceIds": []
+    },
+    {
       "id": "glossario",
       "heading": "Glossário",
       "body": "**Programa:** estrutura de objetivos e regras. **Benefício:** prestação prevista para quem satisfaz condições. **Ano-base:** período usado para verificar dados. **Operador/pagador:** entidade que executa funções atribuídas; não elimina requisitos legais. **Hipótese didática:** dado fixado para resolver um exercício, sem prometer resultado de um pedido real.",

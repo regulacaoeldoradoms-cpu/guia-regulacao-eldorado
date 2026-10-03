@@ -48,6 +48,28 @@ O mapa preserva o item do edital histórico CAIXA que cita Lei 10.836/2004. Os c
 
 PIS/abono: separar cadastro e benefício, refazer a proporção. FGTS/saque: separar cálculo, pagamento e modalidade. CRF/guia: conferir identidade, escopo e competência. Seguro: identificar ordem da solicitação e condições não informadas. Bolsa: nomear renda per capita e distinguir seleção/crédito. Integração: identificar período e objeto de cada documento. Releia a seção original apontada no item; este Chefe não é avaliação independente nem aceite humano.
 
+<a id="retomadas"></a>
+
+## Aulas para consulta e retomada
+
+[Consultar IS-01](is-01-v1.md)
+
+[Consultar IS-02](is-02-v1.md)
+
+[Consultar IS-03](is-03-v1.md)
+
+[Consultar IS-04](is-04-v1.md)
+
+[Consultar IS-05](is-05-v1.md)
+
+[Consultar IS-06](is-06-v1.md)
+
+[Consultar IS-07](is-07-v1.md)
+
+[Consultar IS-08](is-08-v1.md)
+
+[Consultar IS-R](is-r-v1.md)
+
 <a id="glossario"></a>
 
 ## Glossário

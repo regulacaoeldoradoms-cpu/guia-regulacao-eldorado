@@ -27,8 +27,8 @@ export async function loadIsEditorial() {
 }
 
 export function compileIsCandidate(editorial) {
-  const baselineMissions = [...PUBLISHED_MISSIONS, ...DP_MISSIONS].filter(mission => mission.order < IS_PLAN[0].order);
-  const baselineSources = [...STUDY_SOURCES, ...DP_SOURCES];
+  const baselineMissions = [...new Map([...PUBLISHED_MISSIONS, ...DP_MISSIONS].map(mission => [mission.id, mission])).values()].filter(mission => mission.order < IS_PLAN[0].order);
+  const baselineSources = [...new Map([...STUDY_SOURCES, ...DP_SOURCES].map(source => [source.id, source])).values()];
   const byUnit = new Map(editorial.map(entry => [entry.unit, entry]));
   if (byUnit.size !== IS_PLAN.length || editorial.length !== IS_PLAN.length) {
     throw new Error('O pacote IS requer as dez unidades, sem duplicatas.');
@@ -78,7 +78,7 @@ export function compileIsCandidate(editorial) {
       ];
       questionCoverage[id] = [...new Map(refs.map(ref => [`${ref.missionId}:${ref.sectionId}`, ref])).values()];
       feedback.push({ questionId: id, optionReasons: [...question.optionRationales] });
-      // Somente o enisoint pós-resposta usa estes campos; publicMission mantém sua projeção explícita.
+      // Somente o endpoint pós-resposta usa estes campos; publicMission mantém sua projeção explícita.
       return {
         id, topicId: plan.id, prompt: question.prompt, options: question.options,
         answer: question.answer, explanation: question.explanation,

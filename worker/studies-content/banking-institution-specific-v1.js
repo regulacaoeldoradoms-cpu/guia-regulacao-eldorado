@@ -3256,6 +3256,114 @@ export const IS_MISSIONS = Object.freeze([
         "sourceIds": []
       },
       {
+        "id": "retomadas",
+        "heading": "Aulas para consulta e retomada",
+        "body": "[Consultar IS-01](is-01-v1.md)\n\n[Consultar IS-02](is-02-v1.md)\n\n[Consultar IS-03](is-03-v1.md)\n\n[Consultar IS-04](is-04-v1.md)\n\n[Consultar IS-05](is-05-v1.md)\n\n[Consultar IS-06](is-06-v1.md)\n\n[Consultar IS-07](is-07-v1.md)\n\n[Consultar IS-08](is-08-v1.md)\n\n[Consultar IS-R](is-r-v1.md)",
+        "type": "explanation",
+        "sourceIds": [],
+        "presentation": [
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-01",
+                "missionId": "banking.is.pis",
+                "sectionId": "programa",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-02",
+                "missionId": "banking.is.abono",
+                "sectionId": "periodos",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-03",
+                "missionId": "banking.is.fgts",
+                "sectionId": "fundo",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-04",
+                "missionId": "banking.is.saque",
+                "sectionId": "hipoteses",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-05",
+                "missionId": "banking.is.crf",
+                "sectionId": "documentos",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-06",
+                "missionId": "banking.is.grf",
+                "sectionId": "guia",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-07",
+                "missionId": "banking.is.seguro",
+                "sectionId": "finalidade",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-08",
+                "missionId": "banking.is.bolsa",
+                "sectionId": "corte",
+                "wholeLesson": true
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "runs": [
+              {
+                "text": "Consultar IS-R",
+                "missionId": "banking.is.revisao",
+                "sectionId": "comparacao",
+                "wholeLesson": true
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "glossario",
         "heading": "Glossário",
         "body": "**Programa:** estrutura de objetivos e regras. **Benefício:** prestação prevista para quem satisfaz condições. **Ano-base:** período usado para verificar dados. **Operador/pagador:** entidade que executa funções atribuídas; não elimina requisitos legais. **Hipótese didática:** dado fixado para resolver um exercício, sem prometer resultado de um pedido real.",
