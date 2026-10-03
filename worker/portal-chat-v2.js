@@ -122,7 +122,8 @@ async function touchPresence(env, username) {
 }
 
 async function activeChatUser(env, username) {
-  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active
+  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role,
+      active, session_version AS sessionVersion
     FROM auth_users WHERE username = ? AND active = 1 LIMIT 1`).bind(username).first();
   if (!row || !CHAT_ROLES.has(String(row.role || ''))) return null;
   return row;
@@ -420,9 +421,12 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
 
     const realtimeUser = await activeChatUser(env, verified.username);
     if (!realtimeUser) return json({ error: 'O chat não está disponível para esta conta.' }, 403, origin);
+    if (Number(realtimeUser.sessionVersion || 0) !== Number(verified.sessionVersion || 0)) {
+      return json({ error: 'Sessão de tempo real inválida ou expirada.' }, 401, origin);
+    }
     const username = normalizeUsername(realtimeUser.username);
     await touchPresence(env, username);
-    return upgradeChatRealtime(request, env, username);
+    return upgradeChatRealtime(request, env, username, verified.sessionVersion);
   }
 
   const user = await validateChatSession(request, env);
@@ -448,7 +452,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   }
 
   if (url.pathname === '/api/chat/realtime/ticket' && request.method === 'POST') {
-    const issued = await createChatRealtimeTicket(env, username);
+    const issued = await createChatRealtimeTicket(env, username, user.sessionVersion);
     if (!issued) return json({ error: 'Tempo real temporariamente indisponível.' }, 503, origin);
     return json(issued, 200, origin);
   }
