@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-realtime-1') return;
+  if (window.PortalChat?.version === '20261002-d1guard-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -35,6 +35,8 @@
   let typingStopTimer = null;
   let remoteTypingTimer = null;
   let remoteTypingUsername = '';
+  let contactsLoadPending = null;
+  let lastContactsLoadedAt = 0;
   const unreadSnapshot = new Map();
   const messageCache = new Map();
   const messagePreloadRequests = new Map();
@@ -42,12 +44,15 @@
   const draftCache = new Map();
   let messageCacheGeneration = 0;
   let messagePreloadSweep = null;
-  const MESSAGE_PRELOAD_CONCURRENCY = 3;
+  const MESSAGE_PRELOAD_CONCURRENCY = 2;
+  const MESSAGE_PRELOAD_CONTACT_LIMIT = 2;
   const MESSAGE_HISTORY_PAGE_SIZE = 120;
   const MESSAGE_PRELOAD_PAGE_GUARD = 100;
   const CHAT_FALLBACK_POLL_MS = 4500;
-  const CHAT_CONTACTS_REALTIME_REFRESH_MS = 30000;
-  const CHAT_CONTACTS_FALLBACK_REFRESH_MS = 12000;
+  const CHAT_CONTACTS_REALTIME_REFRESH_MS = 120000;
+  const CHAT_CONTACTS_FALLBACK_REFRESH_MS = 30000;
+  const CHAT_CONTACTS_MIN_REFRESH_MS = 15000;
+  const CHAT_HEARTBEAT_MS = 60000;
   const CHAT_SESSION_GET_TIMEOUT_MS = 550;
   const CHAT_REALTIME_PROTOCOL = 'portal-chat-v1';
   const CHAT_REALTIME_ROTATE_MS = 300000;
@@ -184,7 +189,6 @@
           try { socket.close(1000, 'revalidate'); } catch (_) {}
         }
       }, CHAT_REALTIME_ROTATE_MS);
-      void loadContacts();
       if (activeContact) void loadMessages(false);
     });
 
@@ -252,7 +256,7 @@
 
     const contact = contacts.find((item) => item.username === sender);
     if (!contact) {
-      void loadContacts();
+      void loadContacts(true);
       return;
     }
 
@@ -309,17 +313,29 @@
     if (type === 'presence') {
       const username = messageCacheKey(payload.username);
       if (username && !updateContactPresence(username, Boolean(payload.online), String(payload.lastSeen || ''))) {
-        void loadContacts();
+        void loadContacts(true);
       }
       return;
     }
-    if (type === 'contact-refresh') void loadContacts();
+    if (type === 'contact-refresh') void loadContacts(true);
   }
 
   function sendTypingState(active) {
     if (!activeContact) return;
     const username = activeContact.username;
     if (!username) return;
+
+    if (realtimeConnected && realtimeSocket?.readyState === WebSocket.OPEN) {
+      try {
+        realtimeSocket.send(JSON.stringify({
+          type: 'typing',
+          with: username,
+          active: Boolean(active)
+        }));
+        return;
+      } catch (_) {}
+    }
+
     api('/api/chat/typing', {
       method: 'POST',
       body: JSON.stringify({ with: username, active: Boolean(active) })
@@ -405,6 +421,18 @@
       panelOpen: Boolean(root?.classList.contains('open')),
       activeUsername: activeContact?.username || '',
       activeScrollFromBottom,
+      contacts: contacts.map((contact) => ({
+        username: contact.username,
+        socialHandle: contact.socialHandle || '',
+        name: contact.name || contact.username,
+        jobTitle: contact.jobTitle || '',
+        role: contact.role || '',
+        online: Boolean(contact.online),
+        lastSeen: contact.lastSeen || null,
+        lastMessageAt: contact.lastMessageAt || null,
+        unread: Number(contact.unread || 0),
+        firstUnreadId: Number(contact.firstUnreadId || 0)
+      })),
       conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
         username,
         lastMessageAt: entry?.lastMessageAt || '',
@@ -499,6 +527,19 @@
   function hydrateChatSessionSnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== 'object') return;
     restoredChatSession = snapshot;
+    const restoredContacts = Array.isArray(snapshot.contacts) ? snapshot.contacts : [];
+    if (restoredContacts.length) {
+      contacts = restoredContacts.map((contact) => ({
+        ...contact,
+        username: messageCacheKey(contact?.username),
+        unread: Number(contact?.unread || 0),
+        firstUnreadId: Number(contact?.firstUnreadId || 0),
+        online: Boolean(contact?.online)
+      })).filter((contact) => contact.username);
+      lastContactsLoadedAt = Number(snapshot.savedAt || Date.now());
+      processUnreadChanges(contacts);
+      renderContacts();
+    }
     for (const conversation of Array.isArray(snapshot.conversations) ? snapshot.conversations : []) {
       const key = messageCacheKey(conversation?.username);
       if (!key) continue;
@@ -596,7 +637,14 @@
   function preloadConversationsInBackground() {
     if (messagePreloadSweep) return;
     const run = async () => {
-      const queue = contacts.slice();
+      const queue = contacts
+        .filter((contact) => contact?.lastMessageAt)
+        .sort((first, second) => {
+          const unreadDiff = Number(second?.unread || 0) - Number(first?.unread || 0);
+          if (unreadDiff) return unreadDiff;
+          return String(second?.lastMessageAt || '').localeCompare(String(first?.lastMessageAt || ''));
+        })
+        .slice(0, MESSAGE_PRELOAD_CONTACT_LIMIT);
       const workers = Array.from(
         { length: Math.min(MESSAGE_PRELOAD_CONCURRENCY, Math.max(1, queue.length)) },
         async () => {
@@ -991,25 +1039,37 @@
     updateNotificationUi();
   }
 
-  async function loadContacts() {
-    try {
-      const payload = await api('/api/chat/users', { method: 'GET' });
-      const nextContacts = Array.isArray(payload.users) ? payload.users : [];
-      processUnreadChanges(nextContacts);
-      contacts = nextContacts;
-      if (activeContact) {
-        const refreshed = contacts.find((item) => item.username === activeContact.username);
-        if (refreshed) {
-          activeContact = refreshed;
-          updateConversationHeader();
+  async function loadContacts(force = false) {
+    const now = Date.now();
+    if (!force && contacts.length && now - lastContactsLoadedAt < CHAT_CONTACTS_MIN_REFRESH_MS) return contacts;
+    if (contactsLoadPending) return contactsLoadPending;
+
+    contactsLoadPending = (async () => {
+      try {
+        const payload = await api('/api/chat/users', { method: 'GET' });
+        const nextContacts = Array.isArray(payload.users) ? payload.users : [];
+        processUnreadChanges(nextContacts);
+        contacts = nextContacts;
+        lastContactsLoadedAt = Date.now();
+        if (activeContact) {
+          const refreshed = contacts.find((item) => item.username === activeContact.username);
+          if (refreshed) {
+            activeContact = refreshed;
+            updateConversationHeader();
+          }
         }
+        renderContacts();
+        preloadConversationsInBackground();
+        queueChatSessionPersist();
+        return contacts;
+      } catch (error) {
+        showStatus(error.message || 'Não foi possível atualizar o chat.');
+        return contacts;
+      } finally {
+        contactsLoadPending = null;
       }
-      renderContacts();
-      preloadConversationsInBackground();
-      if (document.getElementById('portalChatRoot')?.classList.contains('open')) void markChatDelivered();
-    } catch (error) {
-      showStatus(error.message || 'Não foi possível atualizar o chat.');
-    }
+    })();
+    return contactsLoadPending;
   }
 
   function updateConversationHeader() {
@@ -1530,7 +1590,6 @@
     const chatFromUrl = params.get('chat');
     const chatHandleFromUrl = params.get('chatHandle');
     const snapshotPromise = getChatSessionSnapshot();
-    const heartbeatPromise = heartbeat(true);
 
     if (notificationSupported() && Notification.permission === 'granted') {
       await ensureNotificationWorker();
@@ -1539,14 +1598,23 @@
 
     const snapshot = await snapshotPromise;
     hydrateChatSessionSnapshot(snapshot);
-    await heartbeatPromise;
-    await loadContacts();
+    const restoredContactsFresh = contacts.length > 0
+      && Number(snapshot?.savedAt || 0) > 0
+      && Date.now() - Number(snapshot.savedAt) < 30000;
+    if (!restoredContactsFresh) {
+      await loadContacts(true);
+    } else {
+      window.setTimeout(() => {
+        if (!document.hidden) void loadContacts(true);
+      }, 10000);
+    }
+    void heartbeat(true);
 
     if (!chatFromUrl && !chatHandleFromUrl) restoreChatUiFromSession(snapshot);
 
     realtimeStopped = false;
     void connectRealtime();
-    heartbeatTimer = window.setInterval(() => heartbeat(false), 25000);
+    heartbeatTimer = window.setInterval(() => heartbeat(false), CHAT_HEARTBEAT_MS);
     restartContactsTimer();
 
     document.addEventListener('visibilitychange', () => {
@@ -1601,7 +1669,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-realtime-1',
+    version: '20261002-d1guard-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

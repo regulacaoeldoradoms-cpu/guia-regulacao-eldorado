@@ -1,7 +1,7 @@
 'use strict';
 
 // 20261002-documents-rename-lww-1 invalida páginas para entregar rename e conteúdo como canais independentes.
-const CACHE_VERSION = '20261002-documents-rename-lww-chat-realtime-1';
+const CACHE_VERSION = '20261002-documents-rename-lww-chat-d1guard-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -36,6 +36,7 @@ let documentWarmGeneration = 0;
 const CHAT_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 const CHAT_SESSION_MAX_CONVERSATIONS = 16;
 const CHAT_SESSION_MAX_MESSAGES_PER_CONVERSATION = 360;
+const CHAT_SESSION_MAX_CONTACTS = 80;
 const chatSessionSnapshots = new Map();
 let chatSessionGeneration = 0;
 
@@ -74,10 +75,10 @@ const CORE_RESOURCES = Object.freeze([
   '/js/social-api.js?v=20260910-4',
   '/css/social-notification-panel.css?v=20260910-1',
   '/js/portal-interactions.js?v=20260923-2',
-  '/js/portal-global-chat.js?v=20261002-realtime-1',
-  '/js/portal-chat.js?v=20261002-realtime-1',
+  '/js/portal-global-chat.js?v=20261002-d1guard-1',
+  '/js/portal-chat.js?v=20261002-d1guard-1',
   '/js/portal-chat-switch-optimizer.js?v=20260928-global-1',
-  '/css/portal-chat.css?v=20261002-realtime-1',
+  '/css/portal-chat.css?v=20261002-d1guard-1',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-header.png?v=20260910-1',
   '/portal.webmanifest?v=20260911-1',
@@ -368,6 +369,23 @@ function safeChatUsername(value) {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 40);
 }
 
+function safeChatContact(contact) {
+  const username = safeChatUsername(contact?.username);
+  if (!username) return null;
+  return {
+    username,
+    socialHandle: String(contact?.socialHandle || '').replace(/^@/, '').slice(0, 40),
+    name: String(contact?.name || username).slice(0, 120),
+    jobTitle: String(contact?.jobTitle || '').slice(0, 120),
+    role: String(contact?.role || '').slice(0, 32),
+    online: Boolean(contact?.online),
+    lastSeen: contact?.lastSeen ? String(contact.lastSeen).slice(0, 40) : null,
+    lastMessageAt: contact?.lastMessageAt ? String(contact.lastMessageAt).slice(0, 40) : null,
+    unread: Math.max(0, Math.min(9999, Number(contact?.unread || 0))),
+    firstUnreadId: Math.max(0, Number(contact?.firstUnreadId || 0))
+  };
+}
+
 function safeChatMessage(message) {
   const id = Number(message?.id || 0);
   if (!Number.isInteger(id) || id <= 0) return null;
@@ -416,11 +434,17 @@ function normalizeChatSessionSnapshot(snapshot) {
     if (username && body) drafts.push({ username, body });
   }
 
+  const contacts = (Array.isArray(snapshot?.contacts) ? snapshot.contacts : [])
+    .map(safeChatContact)
+    .filter(Boolean)
+    .slice(0, CHAT_SESSION_MAX_CONTACTS);
+
   return {
     savedAt: Date.now(),
     panelOpen: Boolean(snapshot?.panelOpen),
     activeUsername: safeChatUsername(snapshot?.activeUsername),
     activeScrollFromBottom: Math.max(0, Math.min(1000000, Number(snapshot?.activeScrollFromBottom || 0))),
+    contacts,
     conversations: conversations.slice(0, CHAT_SESSION_MAX_CONVERSATIONS),
     drafts: drafts.slice(0, CHAT_SESSION_MAX_CONVERSATIONS)
   };

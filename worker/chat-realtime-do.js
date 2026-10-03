@@ -154,8 +154,21 @@ export class PortalChatRealtime extends DurableObject {
   }
 
   async webSocketMessage(_socket, message) {
-    if (message === 'ping') return;
-    // O canal é servidor -> cliente. Mensagens funcionais continuam nas APIs autenticadas.
+    if (message === 'ping' || typeof message !== 'string') return;
+    let payload;
+    try { payload = JSON.parse(message); } catch (_) { return; }
+    if (payload?.type !== 'typing') return;
+
+    const target = normalizeUsername(payload.with);
+    const { username, contacts } = await this.configuration();
+    if (!username || !target || target === username || !contacts.includes(target)) return;
+
+    await this.sendToUser(target, {
+      type: 'typing',
+      username,
+      active: Boolean(payload.active),
+      expiresAt: payload.active ? Date.now() + 4000 : Date.now()
+    });
   }
 
   async scheduleOfflineIfEmpty() {

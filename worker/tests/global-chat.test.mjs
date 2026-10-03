@@ -32,7 +32,7 @@ const authenticatedModules = [
 test('chat global aparece em todos os módulos autenticados sem carga manual duplicada', () => {
   for (const path of authenticatedModules) {
     const html = read(path);
-    assert.match(html, /portal-global-chat\.js\?v=20261002-realtime-1/, path);
+    assert.match(html, /portal-global-chat\.js\?v=20261002-d1guard-1/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat\.js\?v=/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat-switch-optimizer\.js\?v=/, path);
   }
@@ -49,8 +49,8 @@ test('bootstrap global exige sessão e preserva primeiro acesso', () => {
   assert.match(source, /regulacao\.portal\.session/);
   assert.match(source, /if \(!storedToken\(\)\) return null/);
   assert.match(source, /user\.mustChangePassword/);
-  assert.match(source, /portal-chat\.css\?v=20261002-realtime-1/);
-  assert.match(source, /portal-chat\.js\?v=20261002-realtime-1/);
+  assert.match(source, /portal-chat\.css\?v=20261002-d1guard-1/);
+  assert.match(source, /portal-chat\.js\?v=20261002-d1guard-1/);
   assert.match(source, /portal-chat-switch-optimizer\.js\?v=20260928-global-1/);
 });
 
@@ -63,8 +63,8 @@ test('componente global mantém autorização atual por cargo e amizade', () => 
 });
 
 test('chat e otimizador têm guarda de versão global', () => {
-  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261002-realtime-1'/);
-  assert.match(read('js/portal-chat.js'), /version: '20261002-realtime-1'/);
+  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261002-d1guard-1'/);
+  assert.match(read('js/portal-chat.js'), /version: '20261002-d1guard-1'/);
   assert.match(read('js/portal-chat-switch-optimizer.js'), /PortalChatSwitchOptimizer\?\.version === '20260928-global-1'/);
 });
 
@@ -123,7 +123,7 @@ test('chat realtime usa WebSocket como canal primário com fallback resiliente',
   assert.match(client, /realtimeConnected/);
   assert.match(client, /scheduleRealtimeReconnect/);
   assert.match(client, /CHAT_FALLBACK_POLL_MS = 4500/);
-  assert.match(client, /CHAT_CONTACTS_REALTIME_REFRESH_MS = 30000/);
+  assert.match(client, /CHAT_CONTACTS_REALTIME_REFRESH_MS = 120000/);
   assert.match(client, /\/api\/chat\/typing/);
   assert.match(client, /portalChatTyping/);
   assert.match(client, /Novas mensagens/);
@@ -137,4 +137,44 @@ test('chat realtime usa WebSocket como canal primário com fallback resiliente',
   assert.match(durable, /setWebSocketAutoResponse/);
   assert.match(css, /portal-chat-unread-divider/);
   assert.match(css, /portal-chat-typing/);
+});
+
+
+test('chat reduz amplificação de leitura D1 no diretório e no preload', () => {
+  const client = read('js/portal-chat.js');
+  const worker = read('worker/portal-chat-v2.js');
+  const realtime = read('worker/chat-realtime.js');
+  const durable = read('worker/chat-realtime-do.js');
+  const sw = read('portal-sw.js');
+
+  assert.match(worker, /LEFT JOIN social_users social ON social\.auth_username = u\.username/);
+  assert.doesNotMatch(worker, /function socialHandleForUsername/);
+  assert.match(worker, /citizenOnlyClause/);
+  assert.match(worker, /socialFriendContacts\(env, currentUser\.username, \{ citizenOnly: true \}\)/);
+  assert.match(worker, /const chatSchemaPromises = new WeakMap\(\)/);
+  assert.match(worker, /await configureChatRealtimeContacts\(env, username, users\.map/);
+  assert.doesNotMatch(worker, /const realtimeContacts = await contacts/);
+  assert.match(realtime, /upgradeChatRealtime\(request, env, username\)/);
+  const upgradeBlock = realtime.slice(
+    realtime.indexOf('export async function upgradeChatRealtime'),
+    realtime.indexOf('export const CHAT_REALTIME_TEST')
+  );
+  assert.doesNotMatch(upgradeBlock, /configureChatRealtimeContacts/);
+  assert.match(client, /MESSAGE_PRELOAD_CONTACT_LIMIT = 2/);
+  assert.match(client, /CHAT_CONTACTS_REALTIME_REFRESH_MS = 120000/);
+  assert.match(client, /CHAT_CONTACTS_FALLBACK_REFRESH_MS = 30000/);
+  assert.match(client, /CHAT_HEARTBEAT_MS = 60000/);
+  assert.match(client, /CHAT_CONTACTS_MIN_REFRESH_MS = 15000/);
+  assert.match(client, /realtimeSocket\.send\(JSON\.stringify/);
+  assert.match(durable, /payload\?\.type !== 'typing'/);
+  assert.match(sw, /CHAT_SESSION_MAX_CONTACTS = 80/);
+  assert.match(client, /restoredContactsFresh/);
+});
+
+
+test('Worker distingue esgotamento diário do D1 de falha própria da Camada Social', () => {
+  const workerIndex = read('worker/index.js');
+  assert.match(workerIndex, /function isD1DailyReadLimitError/);
+  assert.match(workerIndex, /D1_DAILY_READ_LIMIT_EXCEEDED/);
+  assert.match(workerIndex, /isD1DailyReadLimitError\(error\).*d1DailyReadLimitResponse/s);
 });
