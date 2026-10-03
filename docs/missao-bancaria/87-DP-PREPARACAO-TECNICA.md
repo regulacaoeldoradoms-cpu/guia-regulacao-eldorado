@@ -36,3 +36,13 @@ A publicação DP ainda exige autorização específica para ativação após Ch
 - CI de **dd4b33cd** terminal:21/23 verdes, incluindo estudos, Chromium sintético e Pages; pré-regulação e preview legado falhos. Testes do novo commit terão resultado próprio. Nenhuma suíte manual geral, API real ou D1.
 
 Autorizações mínimas futuras: **(1)** ativar DP após Chefe CE, sequência por conclusão anterior, 100 XP/aula/revisão e Chefe 220 XP/75%, integrar #572 e executar deploy:safe após gates; **(2)** se pré-regulação seguir bloqueando, atribuir alinhamento do workflow ao responsável da IA em escopo separado ou decidir explicitamente o tratamento desse gate com evidência. Não é necessário corrigir funcionalidade clínica em DP nem restaurar Gemini. Preview legado não será migrado/alterado neste pacote. Nenhuma dessas ações foi executada nesta preparação.
+
+## CI terminal do código — 11243d1c
+
+Às 19:11 UTC de 03/10, **27 checks concluídos: 24 verdes/três falhos**. Estudos, Chromium de estudos, Pages e PDF.js passaram. Nenhum check executando.
+
+- [Pré-regulação, job 111267522158](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37145179525/job/111267522158): **732 testes passaram**, depois a conferência textual Worker falhou. Árvore de teste 2cabf4d une 11243d1c à main 6c4fcd86; diagnóstico anterior do contrato Gemini aplicável, sem mudança neste módulo.
+- [Auditoria geral, job 111267522264](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37145179511/job/111267522264): **194 casos falhos/22 aprovados em 28,1 min**. Exemplos de falha em preservação/social incluem “Unknown fixture endpoints”/“No unmodeled API”, com **POST /api/chat/realtime/ticket** não modelado. Registro limitado dos logs, sem auditoria dos 194 casos: não se presume que todos tenham a mesma causa, que sejam falsos positivos ou que inexista regressão. Exige responsável de fixtures/chat/portal em escopo separado; nenhum baseline/threshold/check foi dispensado.
+- [Preview Worker legado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/runs/111267558308): falho, independente da confirmação produtiva CE. Sem migração ou alteração de nomes/bindings/acesso.
+
+A atualização seguinte é documental: testes de código 11243d1c continuam válidos por escopo, sem repetição manual. Ausência de nova execução da auditoria geral no commit documental não apaga sua falha. Publicação continua bloqueada por gates externos e falta de autorização específica.
