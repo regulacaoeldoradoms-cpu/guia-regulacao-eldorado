@@ -200,10 +200,10 @@ test('chat profissional continua por cargo e chat social exige amizade aceita', 
   assert.match(backend, /if \(!peekOnly\) \{/);
   assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
   assert.match(backend, /socialFriendContacts/);
-  assert.match(backend, /socialFriendContact/);
+  assert.match(backend, /socialFriendAllowed/);
   assert.match(backend, /relationship\.state = 'friends'/);
-  assert.match(backend, /const institutional = await professionalContact/);
-  assert.match(backend, /return socialFriendContact\(env, currentUser\.username, targetUsername\)/);
+  assert.match(backend, /professionalContactAllowed/);
+  assert.match(backend, /chatContactAllowed/);
   assert.match(policy, /target\.profile_visibility === 'portal'/);
   assert.doesNotMatch(policy, /isSocialProfessional\(viewer\) === isSocialProfessional\(target\)/);
 });
