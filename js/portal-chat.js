@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-wssend-1') return;
+  if (window.PortalChat?.version === '20261002-emotes-attention-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -35,6 +35,8 @@
   let typingStopTimer = null;
   let remoteTypingTimer = null;
   let remoteTypingUsername = '';
+  let attentionEffectTimer = null;
+  let attentionButtonTimer = null;
   let contactsLoadPending = null;
   let lastContactsLoadedAt = 0;
   const unreadSnapshot = new Map();
@@ -58,10 +60,14 @@
   const CHAT_REALTIME_ROTATE_MS = 300000;
   const CHAT_REALTIME_PING_MS = 25000;
   const CHAT_REALTIME_SEND_ACK_TIMEOUT_MS = 1800;
+  const CHAT_ATTENTION_COOLDOWN_MS = 5000;
+  const CHAT_ATTENTION_EFFECT_MS = 1800;
   const CHAT_TYPING_RESEND_MS = 1400;
   const CHAT_TYPING_STOP_MS = 2200;
   const CHAT_TYPING_REMOTE_TTL_MS = 4200;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
+  const CHAT_EMOJIS = Object.freeze(['😀','😃','😄','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳','🤗','🤔','😅','😢','😭','😡','😴','👍','👎','👏','🙌','🙏','💪','👌','✌️','🤝','❤️','💙','💚','💛','✨','🎉','🔥','⚡','✅','📌','👀']);
+  const attentionCooldowns = new Map();
 
   const escapeText = (value) => String(value || '');
   const ICONS = Object.freeze({
@@ -118,6 +124,7 @@
     realtimeConnected = Boolean(connected);
     if (realtimeConnected) stopMessagePolling();
     else if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
+    updateAttentionButton();
     if (!realtimeStopped) restartContactsTimer();
   }
 
@@ -1744,7 +1751,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-wssend-1',
+    version: '20261002-emotes-attention-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts
