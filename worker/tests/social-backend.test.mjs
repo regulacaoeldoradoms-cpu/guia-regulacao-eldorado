@@ -116,6 +116,21 @@ async function callChat(env, path, token, options = {}) {
   return handleChatRoute(socialRequest(path, token, options), env, '', true);
 }
 
+async function ensureAtomicChatTestSchema(env) {
+  await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS portal_chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_user TEXT NOT NULL,
+    to_user TEXT NOT NULL,
+    body TEXT NOT NULL,
+    client_id TEXT,
+    sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    delivered_at TEXT,
+    read_at TEXT
+  )`).run();
+  await env.AUTH_DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_chat_client_message
+    ON portal_chat_messages(from_user, client_id) WHERE client_id IS NOT NULL`).run();
+}
+
 test('política libera a camada social para toda conta ativa e mantém permissões e estados separados', () => {
   const bronze = { active: true, emailVerified: false };
   assert.equal(socialGate(bronze, {}).allowed, true);
@@ -635,6 +650,7 @@ sqliteTest('chat fast path preserva a exigência de e-mail profissional quando o
 sqliteTest('envio websocket atômico valida sessão, autorização institucional e retry sem duplicar', async () => {
   const env = environment();
   await ensureAuthSchema(env);
+  await ensureAtomicChatTestSchema(env);
 
   const insert = env.AUTH_DB.prepare(`INSERT INTO auth_users
     (username, name, job_title, role, password_hash, password_salt, active,
@@ -716,6 +732,7 @@ sqliteTest('envio websocket atômico valida sessão, autorização institucional
 sqliteTest('envio websocket atômico respeita amizade social e suspensão', async () => {
   const env = environment();
   const sender = await register(env, 'ws.amigo.a', '127.0.0.91');
+  await ensureAtomicChatTestSchema(env);
   await register(env, 'ws.amigo.b', '127.0.0.92');
   await ensureSocialSchema(env);
   const first = await syncSocialUser(env, 'ws.amigo.a');
