@@ -106,6 +106,17 @@ export default {
       return handleDocumentsRoute(request, env, origin, originAllowed);
     }
 
+    // Chat tem validação própria de sessão, e-mail e autorização de contato.
+    // Mantemos o caminho fora das migrações/guards globais para que o ACK
+    // da mensagem não espere verificações alheias ao envio.
+    if (isChatApi(url.pathname)) {
+      try { return await handleChatRoute(request, env, origin, originAllowed, ctx); }
+      catch (error) {
+        if (isD1DailyReadLimitError(error)) return d1DailyReadLimitResponse(origin, originAllowed);
+        return jsonError(error?.message || 'Falha no chat interno.', 500, origin, originAllowed);
+      }
+    }
+
     await enforceDeveloperSeparation(env);
 
     if (isGmailJudicialBridgeApi(url.pathname)) {
@@ -180,13 +191,6 @@ export default {
         console.error(JSON.stringify({ event: 'social_route_failed', path: url.pathname, kind: error?.name || 'Error' }));
         if (isD1DailyReadLimitError(error)) return d1DailyReadLimitResponse(origin, originAllowed);
         return jsonError('Falha temporária na Camada Social. As Ferramentas continuam disponíveis.', 500, origin, originAllowed, 'SOCIAL_TEMPORARILY_UNAVAILABLE');
-      }
-    }
-    if (isChatApi(url.pathname)) {
-      try { return await handleChatRoute(request, env, origin, originAllowed, ctx); }
-      catch (error) {
-        if (isD1DailyReadLimitError(error)) return d1DailyReadLimitResponse(origin, originAllowed);
-        return jsonError(error?.message || 'Falha no chat interno.', 500, origin, originAllowed);
       }
     }
     if (isCitizenIdentityApi(url.pathname)) {
