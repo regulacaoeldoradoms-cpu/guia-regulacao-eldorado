@@ -129,6 +129,13 @@ export const DP01_DRAFT = {
       "sourceIds": []
     },
     {
+      "id": "glossario",
+      "type": "glossary",
+      "heading": "Vocabulário essencial",
+      "body": "Canal: forma de acesso ao serviço. Dispositivo: equipamento utilizado. Operação: ação solicitada ou executada. Produto: conta ou serviço com natureza e condições próprias. Instituição: participante responsável pela atividade descrita.",
+      "sourceIds": []
+    },
+    {
       "id": "resumo",
       "heading": "10. Recuperação e resumo",
       "body": "Escreva cinco campos: instituição, produto, operação, canal e dispositivo. Marque “não informado” onde faltarem dados. Depois registre o estado da operação. Se errou, nomeie a troca: “confundi canal com produto”, “confundi aparelho com aplicativo” ou “confundi agendamento com execução”. Retome a seção correspondente e refaça o exemplo antes de tentar novamente. Esta prática é exposta; acerto repetido não comprova retenção duradoura.",

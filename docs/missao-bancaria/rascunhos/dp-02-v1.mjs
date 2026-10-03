@@ -94,6 +94,13 @@ export const DP02_DRAFT = {
       "sourceIds": []
     },
     {
+      "id": "glossario",
+      "type": "glossary",
+      "heading": "Vocabulário essencial",
+      "body": "Canal: forma de interação. Processo: conjunto de etapas e decisões. Modelo de negócio: organização de participantes, valor oferecido e remuneração. Evidência: informação efetivamente apresentada. Benefício possível: resultado esperado que ainda exige confirmação.",
+      "sourceIds": []
+    },
+    {
       "id": "resumo",
       "heading": "10. Recuperação",
       "body": "Monte três linhas: canal, processo e modelo. Preencha cada uma com uma evidência do enunciado ou escreva “não informado”. Depois separe benefício esperado de resultado observado. Se errou, nomeie o salto: “deduzi automação pela tela”, “confundi remuneração com aparência” ou “transformei benefício possível em garantia”. Refaça o exemplo correspondente. A prática exposta não mede retenção independente.",

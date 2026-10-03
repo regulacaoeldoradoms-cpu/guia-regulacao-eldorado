@@ -19,8 +19,6 @@ Após DP-01: transformação digital e modelos de negócio (BB Atualidades 1/5/1
 
 Não adicionar investimentos, procedimentos reais de conta, limites/tarifas ou detalhes regulatórios sem fonte e competência correspondentes. Reaproveitar moeda e produtos de MP/PC; não duplicar esses blocos. Para Pix/Open Finance/criptoativos/Drex, conferir normas e estágio atuais antes de redigir afirmações mutáveis.
 
-## Estado inicial
+## Marco atual
 
-DP-01 local: ensino iniciante, quatro exemplos, oito questões com quatro justificativas e recuperação por seção. MD/MJS estruturados; oito gabaritos, 32 justificativas, quatro exemplos, recuperação e UTF-8 conferidos localmente. Revisão pedagógica pendente. Fontes BCB de PC-01 reaproveitadas com data original. Página oficial App CAIXA/Internet Banking localizada pelo menu institucional e conferida em 01/10 às 01:50 UTC; fonte registrada em DP-01 sem incorporar procedimentos ou limites. Sem mudança de aplicativo, pipeline, acesso ou dados.
-
-[DP-02 — Transformação digital](rascunhos/dp-02-v1.md) e artefato estruturado também redigidos localmente: canal/processo/modelo, participantes/remuneração, benefício possível e resultado observado. Fonte BCB Fintechs consultada pontualmente em 01/10 às 01:43 UTC; sem copiar limites/normas de outras seções. O conjunto DP-01/02 tem 20 trechos, oito exemplos e 16 questões/64 justificativas; sincronia de textos, opções, justificativas e recuperação conferida. Sem revisão independente, cálculos ou importação no runtime.
+O recorte foi detalhado e redigido em **DP-01–12 e DP-R**: 104 questões/416 justificativas, 52 exemplos e recuperação ligada ao ensino. Sequência, fontes, limites e verificações em [85 — conjunto de rascunhos](85-DP-CONJUNTO-RASCUNHOS.md); doze itens do Chefe redigidos em [86](86-DP-REVISAO-E-PROPOSTA-CHEFE.md). Tudo fora do catálogo, sem revisão pedagógica independente ainda. Marketplace e segmentação continuam identificados como recortes nominais BB. Estágio do Drex deve ser revalidado antes de publicação.
