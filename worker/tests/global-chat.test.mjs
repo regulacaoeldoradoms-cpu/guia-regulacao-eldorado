@@ -268,6 +268,8 @@ test('chat oferece emoticons e chamar atenção sem persistência no D1', () => 
   assert.match(client, /type === 'attention-cooldown'/);
   assert.match(client, /CHAT_ATTENTION_COOLDOWN_MS = 5000/);
   assert.match(client, /CHAT_ATTENTION_EFFECT_MS = 1800/);
+  assert.match(client, /id="portalChatAttentionLive"/);
+  assert.match(client, /aria-live="assertive"/);
 
   assert.match(css, /portal-chat-launcher\.attention-hit/);
   assert.match(css, /portal-chat-panel\.attention-hit/);
