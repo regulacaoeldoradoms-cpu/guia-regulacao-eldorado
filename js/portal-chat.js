@@ -290,7 +290,10 @@
     clearAttentionEffect();
     if (open) retriggerClass(document.querySelector('.portal-chat-panel'), 'attention-hit');
     else retriggerClass(document.getElementById('portalChatLauncher'), 'attention-hit');
-    showStatus(attentionName(sender) + ' chamou sua atenção.');
+    const message = attentionName(sender) + ' chamou sua atenção.';
+    const live = document.getElementById('portalChatAttentionLive');
+    if (live) live.textContent = message;
+    if (open) showStatus(message);
     attentionEffectTimer = window.setTimeout(clearAttentionEffect, CHAT_ATTENTION_EFFECT_MS);
   }
 
@@ -1698,6 +1701,7 @@
       <button class="portal-chat-launcher" id="portalChatLauncher" type="button" aria-label="Abrir chat interno">
         <span class="portal-chat-launcher-icon">${ICONS.chat}</span><span class="chat-launcher-text">Chat</span><span class="chat-online-dot" aria-hidden="true"></span><span class="portal-chat-count" id="portalChatUnread">0</span>
       </button>
+      <span class="portal-chat-sr-only" id="portalChatAttentionLive" aria-live="assertive" aria-atomic="true"></span>
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
