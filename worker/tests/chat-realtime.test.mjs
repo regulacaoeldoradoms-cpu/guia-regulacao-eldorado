@@ -60,7 +60,9 @@ test('backend mantém autenticação REST e usa ticket separado no upgrade realt
   assert.match(backend, /realtimeTicketFromRequest/);
   assert.match(backend, /verifyChatRealtimeTicket/);
   assert.match(backend, /activeChatUser/);
-  assert.match(backend, /chatContact\(env/);
+  assert.match(backend, /verifyPortalSessionToken/);
+  assert.match(backend, /validateChatSession/);
+  assert.match(backend, /chatContactAllowed\(env/);
   assert.match(backend, /\/api\/chat\/typing/);
   assert.match(backend, /\/api\/chat\/read/);
   assert.match(backend, /broadcastChatRealtime/);

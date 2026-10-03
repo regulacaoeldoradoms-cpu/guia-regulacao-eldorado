@@ -1,7 +1,7 @@
 'use strict';
 
-import { validatePortalSession } from './auth-management-flex.js';
-import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedicine-access.js';
+import { verifyPortalSessionToken } from './auth-management-v2.js';
+import { decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
 import { ensureSocialSchema } from './social-schema.js';
@@ -89,10 +89,25 @@ async function createChatSchema(env) {
   return true;
 }
 
+async function chatSchemaReady(env) {
+  try {
+    await env.AUTH_DB.prepare(`SELECT m.client_id, m.delivered_at, p.username
+      FROM portal_chat_messages m
+      LEFT JOIN portal_chat_presence p ON 1 = 0
+      WHERE 0`).all();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 async function ensureSchema(env) {
   if (!env.AUTH_DB || (typeof env.AUTH_DB !== 'object' && typeof env.AUTH_DB !== 'function')) return false;
   if (!chatSchemaPromises.has(env.AUTH_DB)) {
-    const operation = createChatSchema(env).catch((error) => {
+    const operation = (async () => {
+      if (await chatSchemaReady(env)) return true;
+      return createChatSchema(env);
+    })().catch((error) => {
       chatSchemaPromises.delete(env.AUTH_DB);
       throw error;
     });
@@ -100,18 +115,46 @@ async function ensureSchema(env) {
   }
   return chatSchemaPromises.get(env.AUTH_DB);
 }
+
 async function touchPresence(env, username) {
   await env.AUTH_DB.prepare(`INSERT INTO portal_chat_presence(username, last_seen) VALUES (?, CURRENT_TIMESTAMP)
     ON CONFLICT(username) DO UPDATE SET last_seen = CURRENT_TIMESTAMP`).bind(username).run();
 }
 
 async function activeChatUser(env, username) {
-  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active,
-      COALESCE(avatar_data, '') AS avatarDataUrl
+  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active
     FROM auth_users WHERE username = ? AND active = 1 LIMIT 1`).bind(username).first();
-  if (!row) return null;
-  const user = await decorateTelemedicineUser(env, row);
-  return CHAT_ROLES.has(user.role) ? user : null;
+  if (!row || !CHAT_ROLES.has(String(row.role || ''))) return null;
+  return row;
+}
+
+async function validateChatSession(request, env) {
+  const tokenUser = await verifyPortalSessionToken(request, env);
+  if (!tokenUser || !env.AUTH_DB) return null;
+  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role,
+      council_role AS councilRole, email_verified AS emailVerified,
+      active, session_version AS sessionVersion
+    FROM auth_users WHERE username = ? LIMIT 1`).bind(tokenUser.username).first();
+  if (!row || Number(row.active || 0) !== 1) return null;
+  if (Number(row.sessionVersion || 0) !== Number(tokenUser.sessionVersion || 0)) return null;
+  if (!CHAT_ROLES.has(String(row.role || ''))) return null;
+  return {
+    username: normalizeUsername(row.username),
+    name: row.name || row.username,
+    jobTitle: row.jobTitle || '',
+    role: String(row.role || ''),
+    councilRole: String(row.councilRole || ''),
+    emailVerified: Number(row.emailVerified || 0) === 1,
+    active: true,
+    sessionVersion: Number(row.sessionVersion || 0)
+  };
+}
+
+function chatEmailVerificationBlocked(env, user) {
+  if (String(env.AUTH_REQUIRE_EMAIL_VERIFICATION || '').toLowerCase() !== 'true') return false;
+  const professional = PROFESSIONAL_ROLES.has(user?.role);
+  const council = ['membro', 'presidente'].includes(user?.councilRole);
+  return Boolean((professional || council) && !user?.emailVerified);
 }
 
 function runBackground(executionContext, promise) {
@@ -120,14 +163,13 @@ function runBackground(executionContext, promise) {
   return task;
 }
 
-async function professionalContact(env, username) {
-  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active,
-      COALESCE(avatar_data, '') AS avatarDataUrl
-    FROM auth_users WHERE username = ?`).bind(username).first();
-  if (!row || Number(row.active) !== 1) return null;
-  const user = await decorateTelemedicineUser(env, row);
-  if (!PROFESSIONAL_ROLES.has(user.role)) return null;
-  return user;
+async function professionalContactAllowed(env, username) {
+  const row = await env.AUTH_DB.prepare(`SELECT 1 AS allowed
+    FROM auth_users
+    WHERE username = ? AND active = 1
+      AND role IN ('medico','recepcao','coordenacao','telemedicina','admin')
+    LIMIT 1`).bind(username).first();
+  return Boolean(row?.allowed);
 }
 
 function socialBackendEnabled(env) {
@@ -218,26 +260,29 @@ async function socialFriendContacts(env, currentUsername, options = {}) {
   }));
 }
 
-async function socialFriendContact(env, currentUsername, targetUsername) {
-  if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return null;
-  const row = await env.AUTH_DB.prepare(`SELECT
-      u.username, u.name, u.job_title AS jobTitle, u.role, u.active,
-      COALESCE(u.avatar_data, '') AS avatarDataUrl,
-      friend.handle AS socialHandle
+async function socialFriendAllowed(env, currentUsername, targetUsername) {
+  if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return false;
+  const row = await env.AUTH_DB.prepare(`SELECT 1 AS allowed
     FROM social_users viewer
     JOIN social_relationships relationship
       ON relationship.state = 'friends'
       AND (relationship.pair_low = viewer.social_user_id OR relationship.pair_high = viewer.social_user_id)
     JOIN social_users friend ON friend.social_user_id = CASE
       WHEN relationship.pair_low = viewer.social_user_id THEN relationship.pair_high ELSE relationship.pair_low END
-    JOIN auth_users u ON u.username = friend.auth_username
-    WHERE viewer.auth_username = ? AND u.username = ?
+    JOIN auth_users target ON target.username = friend.auth_username
+    WHERE viewer.auth_username = ? AND friend.auth_username = ?
       AND viewer.suspended_at IS NULL AND friend.suspended_at IS NULL
-      AND u.active = 1
+      AND target.active = 1
     LIMIT 1`).bind(currentUsername, targetUsername).first();
-  if (!row) return null;
-  const decorated = await decorateTelemedicineUser(env, row);
-  return CHAT_ROLES.has(decorated.role) ? { ...decorated, socialHandle: row.socialHandle || '' } : null;
+  return Boolean(row?.allowed);
+}
+
+async function chatContactAllowed(env, currentUser, targetUsername) {
+  const target = normalizeUsername(targetUsername);
+  if (!target || target === normalizeUsername(currentUser?.username)) return false;
+  if (PROFESSIONAL_ROLES.has(currentUser?.role) && await professionalContactAllowed(env, target)) return true;
+  if (CHAT_ROLES.has(currentUser?.role)) return socialFriendAllowed(env, currentUser.username, target);
+  return false;
 }
 
 function mergeContacts(...groups) {
@@ -273,14 +318,6 @@ async function contacts(env, currentUser) {
   return [];
 }
 
-async function chatContact(env, currentUser, targetUsername) {
-  if (PROFESSIONAL_ROLES.has(currentUser.role)) {
-    const institutional = await professionalContact(env, targetUsername);
-    if (institutional) return institutional;
-  }
-  if (CHAT_ROLES.has(currentUser.role)) return socialFriendContact(env, currentUser.username, targetUsername);
-  return null;
-}
 
 async function receiptState(env, current, other) {
   const row = await env.AUTH_DB.prepare(`SELECT
@@ -365,6 +402,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const url = new URL(request.url);
+  const requestStartedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 
   if (url.pathname === '/api/chat/realtime/health' && request.method === 'GET') {
     const ok = await probeChatRealtime(env);
@@ -387,10 +425,16 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     return upgradeChatRealtime(request, env, username);
   }
 
-  const sessionUser = await validatePortalSession(request, env, []);
-  const user = sessionUser ? await decorateTelemedicineUser(env, sessionUser) : null;
-  if (!user || !CHAT_ROLES.has(user.role)) {
+  const user = await validateChatSession(request, env);
+  if (!user) {
     return json({ error: 'O chat não está disponível para esta conta.' }, 403, origin);
+  }
+  if (chatEmailVerificationBlocked(env, user)) {
+    return json({
+      error: 'Confirme o e-mail de segurança da sua conta para continuar.',
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      verificationPath: '/seguranca/?verificar-email=1'
+    }, 403, origin);
   }
   if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
@@ -419,7 +463,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (url.pathname === '/api/chat/typing' && request.method === 'POST') {
     const body = await request.json().catch(() => ({}));
     const otherUsername = normalizeUsername(body.with);
-    if (!otherUsername || otherUsername === username || !(await chatContact(env, { ...user, username }, otherUsername))) {
+    if (!otherUsername || otherUsername === username || !(await chatContactAllowed(env, { ...user, username }, otherUsername))) {
       return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     }
     const active = Boolean(body.active);
@@ -449,7 +493,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const body = await request.json().catch(() => ({}));
     const otherUsername = normalizeUsername(body.with);
     const throughId = Math.max(0, Number.parseInt(String(body.throughId || '0'), 10) || 0);
-    if (!otherUsername || otherUsername === username || !(await chatContact(env, { ...user, username }, otherUsername))) {
+    if (!otherUsername || otherUsername === username || !(await chatContactAllowed(env, { ...user, username }, otherUsername))) {
       return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     }
     const readThroughId = await markConversationRead(env, username, otherUsername, throughId);
@@ -466,8 +510,8 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
 
   if (url.pathname === '/api/chat/messages' && request.method === 'GET') {
     const otherUsername = normalizeUsername(url.searchParams.get('with'));
-    const other = await chatContact(env, { ...user, username }, otherUsername);
-    if (!other || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
+    const allowed = await chatContactAllowed(env, { ...user, username }, otherUsername);
+    if (!allowed || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     const afterId = Math.max(0, Number.parseInt(url.searchParams.get('after') || '0', 10) || 0);
     const beforeId = Math.max(0, Number.parseInt(url.searchParams.get('before') || '0', 10) || 0);
     const peekOnly = url.searchParams.get('peek') === '1';
@@ -496,38 +540,55 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     if (message.length > MESSAGE_LIMIT) return json({ error: `A mensagem pode ter no máximo ${MESSAGE_LIMIT} caracteres.` }, 400, origin);
     if (clientId && !/^chat-[a-z0-9-]{12,90}$/i.test(clientId)) return json({ error: 'Identificador de envio inválido.' }, 400, origin);
     if (to === username) return json({ error: 'Escolha outro usuário para conversar.' }, 400, origin);
-    if (!(await chatContact(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
+    if (!(await chatContactAllowed(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
 
+    const sentAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const writeStartedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     let row = null;
     let created = true;
-    if (clientId) {
-      row = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-        client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
-        FROM portal_chat_messages WHERE from_user = ? AND client_id = ? LIMIT 1`).bind(username, clientId).first();
-      if (row) created = false;
-    }
 
-    if (!row) {
-      try {
-        const inserted = clientId
-          ? await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body, client_id) VALUES (?, ?, ?, ?)')
-            .bind(username, to, message, clientId).run()
-          : await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body) VALUES (?, ?, ?)')
-            .bind(username, to, message).run();
-        const id = Number(inserted.meta?.last_row_id || 0);
-        row = id ? await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-          client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
-          FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
-      } catch (error) {
-        if (!clientId || !/unique|constraint/i.test(String(error?.message || error))) throw error;
+    if (clientId) {
+      const inserted = await env.AUTH_DB.prepare(`INSERT OR IGNORE INTO portal_chat_messages
+        (from_user, to_user, body, client_id, sent_at)
+        VALUES (?, ?, ?, ?, ?)`).bind(username, to, message, clientId, sentAt).run();
+      const changed = Number(inserted.meta?.changes || 0);
+      const id = Number(inserted.meta?.last_row_id || 0);
+      if (changed > 0 && id > 0) {
+        row = {
+          id,
+          fromUser: username,
+          toUser: to,
+          body: message,
+          clientId,
+          sentAt,
+          deliveredAt: null,
+          readAt: null
+        };
+      } else {
         row = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
           client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
           FROM portal_chat_messages WHERE from_user = ? AND client_id = ? LIMIT 1`).bind(username, clientId).first();
         created = false;
       }
+    } else {
+      const inserted = await env.AUTH_DB.prepare(`INSERT INTO portal_chat_messages
+        (from_user, to_user, body, sent_at) VALUES (?, ?, ?, ?)`)
+        .bind(username, to, message, sentAt).run();
+      const id = Number(inserted.meta?.last_row_id || 0);
+      row = id ? {
+        id,
+        fromUser: username,
+        toUser: to,
+        body: message,
+        clientId: '',
+        sentAt,
+        deliveredAt: null,
+        readAt: null
+      } : null;
     }
 
-    const confirmed = row || { id: 0, fromUser: username, toUser: to, body: message, clientId };
+    const confirmed = row || { id: 0, fromUser: username, toUser: to, body: message, clientId, sentAt, deliveredAt: null, readAt: null };
+    const writeFinishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     const pushTask = created ? notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 })) : Promise.resolve({ attempted: 0, accepted: 0 });
     const realtimeTask = confirmed.id
       ? broadcastChatRealtime(env, to, { type: 'message', message: confirmed })
@@ -537,7 +598,20 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     } else {
       await Promise.allSettled([pushTask, realtimeTask]);
     }
-    return json({ message: confirmed, duplicate: !created }, created ? 201 : 200, origin);
+
+    const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    const ackMs = Math.max(0, finishedAt - requestStartedAt);
+    const writeMs = Math.max(0, writeFinishedAt - writeStartedAt);
+    console.log(JSON.stringify({
+      event: 'chat_send_ack',
+      created,
+      ackMs: Math.round(ackMs),
+      writeMs: Math.round(writeMs)
+    }));
+    const response = json({ message: confirmed, duplicate: !created }, created ? 201 : 200, origin);
+    response.headers.set('Server-Timing', `chat_ack;dur=${ackMs.toFixed(1)}, d1_write;dur=${writeMs.toFixed(1)}`);
+    response.headers.set('X-Portal-Chat-Ack-Ms', String(Math.round(ackMs)));
+    return response;
   }
 
   return json({ error: 'Rota do chat não encontrada.' }, 404, origin);

@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-d1guard-1') return;
+  if (window.PortalChat?.version === '20261002-ackfast-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -1375,6 +1375,10 @@
       appendMessages([confirmed], false);
     }
     const contact = contacts.find((item) => item.username === username);
+    if (contact && confirmed?.sentAt) {
+      contact.lastMessageAt = confirmed.sentAt;
+      renderContacts();
+    }
     mergeCachedMessages(
       username,
       [confirmed],
@@ -1411,7 +1415,6 @@
       if (!payload.message) throw new Error('O servidor não confirmou a mensagem.');
       replacePendingMessage(clientId, payload.message, username);
       queueChatSessionPersist();
-      loadContacts();
       return true;
     } catch (error) {
       updatePendingMessage(clientId, { pending: false, failed: true });
@@ -1669,7 +1672,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-d1guard-1',
+    version: '20261002-ackfast-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

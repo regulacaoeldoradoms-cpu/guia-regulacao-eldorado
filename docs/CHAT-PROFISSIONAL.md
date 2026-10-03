@@ -154,6 +154,45 @@ estado de recebimento durante as atualizações normais da lista. O remetente re
 estado consolidado da conversa nas consultas de mensagens e atualiza os indicadores
 sem recarregar o histórico completo.
 
+## Confirmação rápida de envio no servidor
+
+Decisão permanente atualizada em 02/10/2026: o balão otimista continua aparecendo no
+mesmo instante do clique, mas o estado **enviando** deve desaparecer assim que a
+mensagem estiver gravada de forma idempotente no D1. Notificação push, publicação do
+evento WebSocket e atualização do diretório não pertencem ao caminho crítico do ACK.
+
+Para isso, a rota `POST /api/chat/messages` usa um caminho de autenticação específico
+do Chat: valida a assinatura da sessão, confirma no D1 que a conta continua ativa e
+que a versão da sessão ainda é válida, preserva o gate de e-mail profissional quando
+habilitado e verifica a autorização do destinatário sem carregar capabilities de
+Telemedicina, Conselho, papéis adicionais ou Central de Documentos.
+
+A autorização continua server-side. Para conversa profissional, o alvo ativo é
+validado diretamente pelo cargo institucional; quando a autorização depende de
+amizade, a relação `friends` continua sendo conferida no D1. Nenhum cache local
+substitui essa decisão.
+
+No envio com `client_id`, o caso normal faz `INSERT OR IGNORE` e constrói a
+confirmação a partir do próprio resultado da escrita. A consulta pelo `client_id`
+ocorre somente quando a inserção foi ignorada, isto é, no retry idempotente. Isso
+remove as leituras anterior e posterior que existiam em todo envio novo.
+
+O roteador principal também encaminha `/api/chat/*` antes das migrações e guards
+globais que não pertencem ao Chat. O preflight CORS do Chat passa pelo mesmo caminho
+curto. A própria rota continua responsável por origem, sessão, gate de e-mail e
+permissão de contato.
+
+A resposta de envio inclui telemetria técnica sem conteúdo da mensagem:
+
+- `Server-Timing: chat_ack;dur=..., d1_write;dur=...`;
+- `X-Portal-Chat-Ack-Ms`;
+- log estruturado `chat_send_ack` com duração total, duração da escrita e indicação
+  de criação/retry, sem nome de usuário e sem texto da conversa.
+
+Depois do ACK, push e entrega WebSocket são executados por `waitUntil` quando o
+runtime fornece `ExecutionContext`. O cliente atualiza localmente a data da conversa
+e não força uma nova carga do diretório apenas porque acabou de enviar uma mensagem.
+
 ## Tempo real, indicador de digitação e novas mensagens
 
 Decisão permanente registrada em 02/10/2026: o chat passa a usar WebSocket como canal

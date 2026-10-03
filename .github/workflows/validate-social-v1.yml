@@ -71,8 +71,9 @@ jobs:
           grep -q 'portalChatProfileLink' js/portal-chat.js
           grep -q 'socialFriendContacts' worker/portal-chat-v2.js
           grep -q "relationship.state = 'friends'" worker/portal-chat-v2.js
-          grep -q "const institutional = await professionalContact" worker/portal-chat-v2.js
-          grep -q "return socialFriendContact(env, currentUser.username, targetUsername)" worker/portal-chat-v2.js
+          grep -q "professionalContactAllowed" worker/portal-chat-v2.js
+          grep -q "socialFriendAllowed" worker/portal-chat-v2.js
+          grep -q "chatContactAllowed" worker/portal-chat-v2.js
           grep -q "target.profile_visibility === 'portal'" worker/social-policy.js
           grep -q "ensureCouncilSocialProfiles" worker/social.js
           grep -q "u.council_role IN ('membro','presidente')" worker/social-schema.js

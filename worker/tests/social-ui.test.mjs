@@ -200,10 +200,10 @@ test('chat profissional continua por cargo e chat social exige amizade aceita', 
   assert.match(backend, /if \(!peekOnly\) \{/);
   assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
   assert.match(backend, /socialFriendContacts/);
-  assert.match(backend, /socialFriendContact/);
+  assert.match(backend, /socialFriendAllowed/);
   assert.match(backend, /relationship\.state = 'friends'/);
-  assert.match(backend, /const institutional = await professionalContact/);
-  assert.match(backend, /return socialFriendContact\(env, currentUser\.username, targetUsername\)/);
+  assert.match(backend, /professionalContactAllowed/);
+  assert.match(backend, /chatContactAllowed/);
   assert.match(policy, /target\.profile_visibility === 'portal'/);
   assert.doesNotMatch(policy, /isSocialProfessional\(viewer\) === isSocialProfessional\(target\)/);
 });
@@ -224,10 +224,10 @@ test('chat interno acompanha o modo escuro sem superfícies claras residuais', (
   assert.match(css, /html\[data-portal-theme="dark"\] \.portal-chat-notification-card/);
   assert.match(css, /scrollbar-color:/);
 
-  assert.match(globalChat, /CHAT_CSS = '\/css\/portal-chat\.css\?v=20261002-d1guard-1'/);
+  assert.match(globalChat, /CHAT_CSS = '\/css\/portal-chat\.css\?v=20261002-ackfast-1'/);
   assert.match(globalChat, /stylesheet\(CHAT_CSS/);
-  assert.match(read('medico/index.html'), /portal-global-chat\.js\?v=20261002-d1guard-1/);
-  assert.match(read('recepcao/index.html'), /portal-global-chat\.js\?v=20261002-d1guard-1/);
+  assert.match(read('medico/index.html'), /portal-global-chat\.js\?v=20261002-ackfast-1/);
+  assert.match(read('recepcao/index.html'), /portal-global-chat\.js\?v=20261002-ackfast-1/);
 });
 
 test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {
