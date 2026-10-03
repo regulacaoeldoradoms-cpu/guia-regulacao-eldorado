@@ -402,6 +402,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const url = new URL(request.url);
+  const requestStartedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 
   if (url.pathname === '/api/chat/realtime/health' && request.method === 'GET') {
     const ok = await probeChatRealtime(env);
@@ -541,36 +542,53 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     if (to === username) return json({ error: 'Escolha outro usuário para conversar.' }, 400, origin);
     if (!(await chatContactAllowed(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
 
+    const sentAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const writeStartedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     let row = null;
     let created = true;
-    if (clientId) {
-      row = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-        client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
-        FROM portal_chat_messages WHERE from_user = ? AND client_id = ? LIMIT 1`).bind(username, clientId).first();
-      if (row) created = false;
-    }
 
-    if (!row) {
-      try {
-        const inserted = clientId
-          ? await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body, client_id) VALUES (?, ?, ?, ?)')
-            .bind(username, to, message, clientId).run()
-          : await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body) VALUES (?, ?, ?)')
-            .bind(username, to, message).run();
-        const id = Number(inserted.meta?.last_row_id || 0);
-        row = id ? await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
-          client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
-          FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
-      } catch (error) {
-        if (!clientId || !/unique|constraint/i.test(String(error?.message || error))) throw error;
+    if (clientId) {
+      const inserted = await env.AUTH_DB.prepare(`INSERT OR IGNORE INTO portal_chat_messages
+        (from_user, to_user, body, client_id, sent_at)
+        VALUES (?, ?, ?, ?, ?)`).bind(username, to, message, clientId, sentAt).run();
+      const changed = Number(inserted.meta?.changes || 0);
+      const id = Number(inserted.meta?.last_row_id || 0);
+      if (changed > 0 && id > 0) {
+        row = {
+          id,
+          fromUser: username,
+          toUser: to,
+          body: message,
+          clientId,
+          sentAt,
+          deliveredAt: null,
+          readAt: null
+        };
+      } else {
         row = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
           client_id AS clientId, sent_at AS sentAt, delivered_at AS deliveredAt, read_at AS readAt
           FROM portal_chat_messages WHERE from_user = ? AND client_id = ? LIMIT 1`).bind(username, clientId).first();
         created = false;
       }
+    } else {
+      const inserted = await env.AUTH_DB.prepare(`INSERT INTO portal_chat_messages
+        (from_user, to_user, body, sent_at) VALUES (?, ?, ?, ?)`)
+        .bind(username, to, message, sentAt).run();
+      const id = Number(inserted.meta?.last_row_id || 0);
+      row = id ? {
+        id,
+        fromUser: username,
+        toUser: to,
+        body: message,
+        clientId: '',
+        sentAt,
+        deliveredAt: null,
+        readAt: null
+      } : null;
     }
 
-    const confirmed = row || { id: 0, fromUser: username, toUser: to, body: message, clientId };
+    const confirmed = row || { id: 0, fromUser: username, toUser: to, body: message, clientId, sentAt, deliveredAt: null, readAt: null };
+    const writeFinishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     const pushTask = created ? notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 })) : Promise.resolve({ attempted: 0, accepted: 0 });
     const realtimeTask = confirmed.id
       ? broadcastChatRealtime(env, to, { type: 'message', message: confirmed })
@@ -580,7 +598,20 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     } else {
       await Promise.allSettled([pushTask, realtimeTask]);
     }
-    return json({ message: confirmed, duplicate: !created }, created ? 201 : 200, origin);
+
+    const finishedAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    const ackMs = Math.max(0, finishedAt - requestStartedAt);
+    const writeMs = Math.max(0, writeFinishedAt - writeStartedAt);
+    console.log(JSON.stringify({
+      event: 'chat_send_ack',
+      created,
+      ackMs: Math.round(ackMs),
+      writeMs: Math.round(writeMs)
+    }));
+    const response = json({ message: confirmed, duplicate: !created }, created ? 201 : 200, origin);
+    response.headers.set('Server-Timing', `chat_ack;dur=${ackMs.toFixed(1)}, d1_write;dur=${writeMs.toFixed(1)}`);
+    response.headers.set('X-Portal-Chat-Ack-Ms', String(Math.round(ackMs)));
+    return response;
   }
 
   return json({ error: 'Rota do chat não encontrada.' }, 404, origin);
