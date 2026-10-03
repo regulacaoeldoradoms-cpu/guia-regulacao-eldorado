@@ -1,6 +1,6 @@
 'use strict';
 
-import { validatePortalSession } from './auth-management-flex.js';
+import { verifyPortalSessionToken } from './auth-management-v2.js';
 import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
@@ -89,10 +89,25 @@ async function createChatSchema(env) {
   return true;
 }
 
+async function chatSchemaReady(env) {
+  try {
+    await env.AUTH_DB.prepare(`SELECT m.client_id, m.delivered_at, p.username
+      FROM portal_chat_messages m
+      LEFT JOIN portal_chat_presence p ON 1 = 0
+      WHERE 0`).all();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 async function ensureSchema(env) {
   if (!env.AUTH_DB || (typeof env.AUTH_DB !== 'object' && typeof env.AUTH_DB !== 'function')) return false;
   if (!chatSchemaPromises.has(env.AUTH_DB)) {
-    const operation = createChatSchema(env).catch((error) => {
+    const operation = (async () => {
+      if (await chatSchemaReady(env)) return true;
+      return createChatSchema(env);
+    })().catch((error) => {
       chatSchemaPromises.delete(env.AUTH_DB);
       throw error;
     });
@@ -100,18 +115,46 @@ async function ensureSchema(env) {
   }
   return chatSchemaPromises.get(env.AUTH_DB);
 }
+
 async function touchPresence(env, username) {
   await env.AUTH_DB.prepare(`INSERT INTO portal_chat_presence(username, last_seen) VALUES (?, CURRENT_TIMESTAMP)
     ON CONFLICT(username) DO UPDATE SET last_seen = CURRENT_TIMESTAMP`).bind(username).run();
 }
 
 async function activeChatUser(env, username) {
-  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active,
-      COALESCE(avatar_data, '') AS avatarDataUrl
+  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active
     FROM auth_users WHERE username = ? AND active = 1 LIMIT 1`).bind(username).first();
-  if (!row) return null;
-  const user = await decorateTelemedicineUser(env, row);
-  return CHAT_ROLES.has(user.role) ? user : null;
+  if (!row || !CHAT_ROLES.has(String(row.role || ''))) return null;
+  return row;
+}
+
+async function validateChatSession(request, env) {
+  const tokenUser = await verifyPortalSessionToken(request, env);
+  if (!tokenUser || !env.AUTH_DB) return null;
+  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role,
+      council_role AS councilRole, email_verified AS emailVerified,
+      active, session_version AS sessionVersion
+    FROM auth_users WHERE username = ? LIMIT 1`).bind(tokenUser.username).first();
+  if (!row || Number(row.active || 0) !== 1) return null;
+  if (Number(row.sessionVersion || 0) !== Number(tokenUser.sessionVersion || 0)) return null;
+  if (!CHAT_ROLES.has(String(row.role || ''))) return null;
+  return {
+    username: normalizeUsername(row.username),
+    name: row.name || row.username,
+    jobTitle: row.jobTitle || '',
+    role: String(row.role || ''),
+    councilRole: String(row.councilRole || ''),
+    emailVerified: Number(row.emailVerified || 0) === 1,
+    active: true,
+    sessionVersion: Number(row.sessionVersion || 0)
+  };
+}
+
+function chatEmailVerificationBlocked(env, user) {
+  if (String(env.AUTH_REQUIRE_EMAIL_VERIFICATION || '').toLowerCase() !== 'true') return false;
+  const professional = PROFESSIONAL_ROLES.has(user?.role);
+  const council = ['membro', 'presidente'].includes(user?.councilRole);
+  return Boolean((professional || council) && !user?.emailVerified);
 }
 
 function runBackground(executionContext, promise) {
@@ -120,14 +163,13 @@ function runBackground(executionContext, promise) {
   return task;
 }
 
-async function professionalContact(env, username) {
-  const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active,
-      COALESCE(avatar_data, '') AS avatarDataUrl
-    FROM auth_users WHERE username = ?`).bind(username).first();
-  if (!row || Number(row.active) !== 1) return null;
-  const user = await decorateTelemedicineUser(env, row);
-  if (!PROFESSIONAL_ROLES.has(user.role)) return null;
-  return user;
+async function professionalContactAllowed(env, username) {
+  const row = await env.AUTH_DB.prepare(`SELECT 1 AS allowed
+    FROM auth_users
+    WHERE username = ? AND active = 1
+      AND role IN ('medico','recepcao','coordenacao','telemedicina','admin')
+    LIMIT 1`).bind(username).first();
+  return Boolean(row?.allowed);
 }
 
 function socialBackendEnabled(env) {
