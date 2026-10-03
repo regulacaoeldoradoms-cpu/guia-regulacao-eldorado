@@ -159,6 +159,35 @@ estado de recebimento durante as atualizações normais da lista. O remetente re
 estado consolidado da conversa nas consultas de mensagens e atualiza os indicadores
 sem recarregar o histórico completo.
 
+## Emoticons e “Chamar atenção”
+
+Decisão permanente registrada em 02/10/2026: a conversa possui uma pequena barra de
+ações acima do campo de mensagem.
+
+- **😀 Emoticons** abre um painel flutuante com uma seleção curta de emojis. O emoji
+  escolhido é inserido na posição atual do cursor do campo de mensagem; não é enviado
+  automaticamente e participa da mesma mensagem normal, com os mesmos limites,
+  persistência, recibos e autorização.
+- **⚡ Chamar atenção** reproduz de forma moderada a ideia do antigo MSN. A ação é um
+  evento efêmero do WebSocket: não cria mensagem, não grava linha no D1 e não entra no
+  histórico.
+- Se o destinatário estiver com o Chat recolhido, somente o botão flutuante **Chat**
+  treme por aproximadamente 1,8 segundo.
+- Se o Chat estiver aberto, a página não é sacudida: o cabeçalho do painel recebe um
+  pulso visual discreto e o status informa quem chamou a atenção.
+- `prefers-reduced-motion: reduce` desativa a tremedeira e substitui a animação por
+  destaque estático de borda/sombra.
+- O botão possui cooldown de 5 segundos por destinatário no cliente e no servidor. O
+  cooldown do servidor fica no attachment hibernável do próprio WebSocket, limitado a
+  metadados pequenos; não usa D1 nem o armazenamento de mensagens.
+- O Durable Object só encaminha a ação para usernames presentes na lista de contatos
+  que o backend já autorizou e sincronizou para aquele usuário.
+- O recurso exige o canal realtime conectado. Se o WebSocket estiver reconectando, o
+  botão fica temporariamente indisponível; não há fallback D1/HTTP para “Chamar
+  atenção”, justamente para manter a ação efêmera e barata.
+- “Chamar atenção” não gera Web Push por padrão. Em aba invisível ou minimizada, não há
+  tentativa de chamar atenção fora da interface do Portal.
+
 ## Confirmação rápida de envio no servidor
 
 Decisão permanente atualizada em 02/10/2026: o balão otimista aparece no instante do
