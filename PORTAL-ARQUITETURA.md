@@ -63,6 +63,12 @@ No cliente, o launcher do Chat pode tremer quando recolhido; com o painel aberto
 somente o cabeçalho recebe feedback visual. Usuários com `prefers-reduced-motion`
 recebem destaque estático em vez de movimento.
 
+A confirmação de **Chamar atenção** exige que pelo menos uma conexão do destinatário
+receba o evento. Contato offline e falha de entrega geram erro explícito; o cliente
+limita a espera a quatro segundos e correlaciona a resposta com a tentativa atual.
+Em aba oculta, a última chamada tem validade de quinze segundos somente na memória
+da página e pode produzir o efeito ao voltar à aba. Não há fila persistida nem push.
+
 Após o incidente de cota D1 de 02/10/2026, o Chat passou a tratar orçamento de leitura
 como requisito arquitetural: não pode refazer a malha profissional pela consulta
 social, não pode resolver handles em N+1, não pode reconstruir contatos no upgrade
@@ -417,4 +423,3 @@ O perfil lógico `telemedicina` continua usando `recepcao` como papel-base por c
 - revogações legítimas permanecem fail-closed e não são reconstruídas por nome, cargo, cache ou inferência.
 
 Esse mecanismo protege todas as contas de Telemedicina sem cadastrar identificadores específicos no código.
-

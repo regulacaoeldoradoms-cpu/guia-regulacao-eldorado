@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-emotes-attention-1') return;
+  if (window.PortalChat?.version === '20261002-attention-fix-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -37,6 +37,8 @@
   let remoteTypingUsername = '';
   let attentionEffectTimer = null;
   let attentionButtonTimer = null;
+  let deferredAttention = null;
+  let attentionSequence = 0;
   let contactsLoadPending = null;
   let lastContactsLoadedAt = 0;
   const unreadSnapshot = new Map();
@@ -62,12 +64,15 @@
   const CHAT_REALTIME_SEND_ACK_TIMEOUT_MS = 1800;
   const CHAT_ATTENTION_COOLDOWN_MS = 5000;
   const CHAT_ATTENTION_EFFECT_MS = 1800;
+  const CHAT_ATTENTION_ACK_TIMEOUT_MS = 4000;
+  const CHAT_ATTENTION_VISIBLE_TTL_MS = 15000;
   const CHAT_TYPING_RESEND_MS = 1400;
   const CHAT_TYPING_STOP_MS = 2200;
   const CHAT_TYPING_REMOTE_TTL_MS = 4200;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
   const CHAT_EMOJIS = Object.freeze(['😀','😃','😄','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳','🤗','🤔','😅','😢','😭','😡','😴','👍','👎','👏','🙌','🙏','💪','👌','✌️','🤝','❤️','💙','💚','💛','✨','🎉','🔥','⚡','✅','📌','👀']);
   const attentionCooldowns = new Map();
+  const pendingAttention = new Map();
 
   const escapeText = (value) => String(value || '');
   const ICONS = Object.freeze({
@@ -215,9 +220,11 @@
     });
 
     socket.addEventListener('close', () => {
-      if (realtimeSocket === socket) realtimeSocket = null;
+      if (realtimeSocket !== socket) return;
+      realtimeSocket = null;
       clearRealtimeTimers();
       updateRealtimeMode(false);
+      clearPendingAttention('A conexão oscilou. Não foi possível confirmar a chamada de atenção.');
       for (const [clientId, entry] of pendingMessages.entries()) {
         if (entry?.transport !== 'realtime') continue;
         window.clearTimeout(entry.fallbackTimer);
@@ -284,9 +291,15 @@
     element.classList.add(className);
   }
 
-  function handleIncomingAttention(username) {
+  function handleIncomingAttention(username, receivedAt = Date.now()) {
     const sender = messageCacheKey(username);
     if (!sender || sender === currentUser?.username) return;
+    if (Date.now() - receivedAt > CHAT_ATTENTION_VISIBLE_TTL_MS) return;
+    if (document.hidden) {
+      deferredAttention = { username: sender, receivedAt };
+      return;
+    }
+    deferredAttention = null;
     const root = document.getElementById('portalChatRoot');
     const open = Boolean(root?.classList.contains('open'));
     clearAttentionEffect();
@@ -297,6 +310,25 @@
     if (live) live.textContent = message;
     if (open) showStatus(message);
     attentionEffectTimer = window.setTimeout(clearAttentionEffect, CHAT_ATTENTION_EFFECT_MS);
+  }
+
+  function showAttentionStatus(username, message) {
+    if (activeContact?.username === username) showStatus(message);
+  }
+
+  function settleAttention(username, requestId = '') {
+    const pending = pendingAttention.get(username);
+    if (!pending || (requestId && pending.requestId !== requestId)) return false;
+    window.clearTimeout(pending.timer);
+    pendingAttention.delete(username);
+    return true;
+  }
+
+  function clearPendingAttention(message = '') {
+    for (const username of pendingAttention.keys()) {
+      settleAttention(username);
+      if (message) showAttentionStatus(username, message);
+    }
   }
 
   function attentionCooldownRemaining(username) {
@@ -336,12 +368,21 @@
       return;
     }
     try {
-      realtimeSocket.send(JSON.stringify({ type: 'attention', with: username }));
+      const requestId = 'attention-' + Date.now().toString(36) + '-' + (++attentionSequence).toString(36);
+      const timer = window.setTimeout(() => {
+        if (!settleAttention(username, requestId)) return;
+        showAttentionStatus(username, 'Não foi possível confirmar a chamada de atenção. Tente novamente em instantes.');
+        updateAttentionButton();
+      }, CHAT_ATTENTION_ACK_TIMEOUT_MS);
+      pendingAttention.set(username, { requestId, timer });
       attentionCooldowns.set(username, Date.now() + CHAT_ATTENTION_COOLDOWN_MS);
       showStatus('Chamando atenção de ' + (activeContact?.name || username) + '…');
+      realtimeSocket.send(JSON.stringify({ type: 'attention', with: username, requestId }));
       updateAttentionButton();
     } catch (_) {
+      settleAttention(username);
       showStatus('Não foi possível chamar atenção agora.');
+      updateAttentionButton();
     }
   }
 
@@ -459,16 +500,32 @@
     }
     if (type === 'attention-ack') {
       const username = messageCacheKey(payload.with);
+      if (!settleAttention(username, String(payload.requestId || ''))) return;
       if (username) attentionCooldowns.set(username, Date.now() + Math.max(1000, Number(payload.cooldownMs || CHAT_ATTENTION_COOLDOWN_MS)));
-      showStatus('Atenção enviada.');
+      showAttentionStatus(username, 'Atenção enviada.');
+      updateAttentionButton();
+      return;
+    }
+    if (type === 'attention-error') {
+      const username = messageCacheKey(payload.with);
+      if (!settleAttention(username, String(payload.requestId || ''))) return;
+      const cooldownMs = Math.max(0, Math.min(CHAT_ATTENTION_COOLDOWN_MS, Number(payload.cooldownMs || 0)));
+      if (cooldownMs) attentionCooldowns.set(username, Date.now() + cooldownMs);
+      const messages = {
+        CHAT_ATTENTION_OFFLINE: 'O contato está sem conexão com o chat no momento. Tente quando ele estiver conectado.',
+        CHAT_ATTENTION_NOT_ALLOWED: 'Este contato não está disponível para chamar atenção agora.',
+        CHAT_ATTENTION_DELIVERY_FAILED: 'Não foi possível entregar a chamada de atenção. Tente novamente em instantes.'
+      };
+      showAttentionStatus(username, messages[payload.code] || 'Não foi possível chamar atenção agora.');
       updateAttentionButton();
       return;
     }
     if (type === 'attention-cooldown') {
       const username = messageCacheKey(payload.with);
+      if (!settleAttention(username, String(payload.requestId || ''))) return;
       const retryAfterMs = Math.max(500, Number(payload.retryAfterMs || CHAT_ATTENTION_COOLDOWN_MS));
       if (username) attentionCooldowns.set(username, Date.now() + retryAfterMs);
-      showStatus('Aguarde ' + Math.ceil(retryAfterMs / 1000) + ' s para chamar atenção novamente.');
+      showAttentionStatus(username, 'Aguarde ' + Math.ceil(retryAfterMs / 1000) + ' s para chamar atenção novamente.');
       updateAttentionButton();
       return;
     }
@@ -1852,6 +1909,9 @@
 
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
+        const attention = deferredAttention;
+        deferredAttention = null;
+        if (attention) handleIncomingAttention(attention.username, attention.receivedAt);
         realtimeStopped = false;
         void connectRealtime();
         heartbeat(false);
@@ -1889,6 +1949,11 @@
   });
   window.addEventListener('portal:session-cleared', () => {
     realtimeStopped = true;
+    deferredAttention = null;
+    clearPendingAttention();
+    clearAttentionEffect();
+    window.clearTimeout(attentionButtonTimer);
+    attentionCooldowns.clear();
     closeRealtime({ permanent: true });
     stopLocalTyping();
     clearRemoteTyping();
@@ -1902,7 +1967,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-emotes-attention-1',
+    version: '20261002-attention-fix-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

@@ -60,9 +60,10 @@ export class PortalChatRealtime extends DurableObject {
     return sent;
   }
 
-  async sendToUser(username, event) {
+  async sendToUser(username, event, { deliveryResult = false } = {}) {
     const normalized = normalizeUsername(username);
-    if (!normalized || !this.env?.CHAT_REALTIME?.getByName) return false;
+    const failed = deliveryResult ? { ok: false, sent: 0 } : false;
+    if (!normalized || !this.env?.CHAT_REALTIME?.getByName) return failed;
     try {
       const stub = this.env.CHAT_REALTIME.getByName(normalized);
       const response = await stub.fetch(INTERNAL_BASE + '/event', {
@@ -70,9 +71,14 @@ export class PortalChatRealtime extends DurableObject {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(event)
       });
-      return response.ok;
+      if (!deliveryResult) return response.ok;
+      if (!response.ok) return failed;
+      const result = await response.json().catch(() => null);
+      const sent = Number(result?.sent);
+      if (result?.ok !== true || !Number.isInteger(sent) || sent < 0) return failed;
+      return { ok: true, sent };
     } catch (_) {
-      return false;
+      return failed;
     }
   }
 
@@ -248,9 +254,24 @@ export class PortalChatRealtime extends DurableObject {
       await this.handleRealtimeSend(socket, payload);
       return;
     }
+    const requestId = typeof payload?.requestId === 'string'
+      ? payload.requestId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80)
+      : '';
     const target = normalizeUsername(payload.with);
     const { username, contacts } = await this.configuration();
-    if (!username || !target || target === username || !contacts.includes(target)) return;
+    if (!username || !target || target === username || !contacts.includes(target)) {
+      if (payload?.type === 'attention') {
+        this.sendSocket(socket, {
+          type: 'attention-error',
+          with: target,
+          ...(requestId ? { requestId } : {}),
+          code: 'CHAT_ATTENTION_NOT_ALLOWED',
+          cooldownMs: ATTENTION_COOLDOWN_MS,
+          message: 'Este contato não está disponível para chamar atenção.'
+        });
+      }
+      return;
+    }
 
     if (payload?.type === 'attention') {
       const now = Date.now();
@@ -268,20 +289,35 @@ export class PortalChatRealtime extends DurableObject {
         this.sendSocket(socket, {
           type: 'attention-cooldown',
           with: target,
+          ...(requestId ? { requestId } : {}),
           retryAfterMs: Math.max(0, until - now)
         });
         return;
       }
       cooldowns[target] = now + ATTENTION_COOLDOWN_MS;
       socket.serializeAttachment({ ...attachment, attentionCooldowns: cooldowns });
-      await this.sendToUser(target, {
+      const delivery = await this.sendToUser(target, {
         type: 'attention',
         username,
         at: now
-      });
+      }, { deliveryResult: true });
+      if (!delivery.ok || delivery.sent < 1) {
+        this.sendSocket(socket, {
+          type: 'attention-error',
+          with: target,
+          ...(requestId ? { requestId } : {}),
+          code: delivery.ok ? 'CHAT_ATTENTION_OFFLINE' : 'CHAT_ATTENTION_DELIVERY_FAILED',
+          cooldownMs: ATTENTION_COOLDOWN_MS,
+          message: delivery.ok
+            ? 'Este contato não está conectado ao Chat no momento.'
+            : 'Não foi possível entregar a chamada de atenção. Tente novamente em instantes.'
+        });
+        return;
+      }
       this.sendSocket(socket, {
         type: 'attention-ack',
         with: target,
+        ...(requestId ? { requestId } : {}),
         cooldownMs: ATTENTION_COOLDOWN_MS
       });
       return;
