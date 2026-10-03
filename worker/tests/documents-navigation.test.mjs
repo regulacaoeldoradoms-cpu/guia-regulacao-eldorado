@@ -150,6 +150,9 @@ test('real navigation caches return to folder and repeated search but clears UI 
   assert.equal(f.els.workspace.hidden, true);
   assert.equal(f.state.items.length, 0);
   assert.equal(f.state.loading, false);
+  assert.equal(f.state.searchQuery, '');
+  assert.equal(f.state.searchFilters, null);
+  assert.equal(f.state.warmedDocumentPayload, null);
 });
 
 test('real UI cannot paint a delayed response after account switch or access error', async () => {

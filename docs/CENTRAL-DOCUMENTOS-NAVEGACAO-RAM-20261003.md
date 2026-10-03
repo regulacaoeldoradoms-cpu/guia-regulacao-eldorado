@@ -2,7 +2,7 @@
 
 Base verificada: `6c4fcd86198103ad6e1e8adc07901219c7957c92`. Pacote de implementação autorizado em 03/10/2026; entrega por PR draft, sem autorização de merge/publicação.
 
-Entrega: [PR #599 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/599), commit funcional `9c2467dfb994dff85cc70847142c1fc89512f45a`. Os 17 arquivos remotos foram conferidos por hashes Git contra a cópia local testada.
+Entrega: [PR #599 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/599), commit funcional inicial `9c2467dfb994dff85cc70847142c1fc89512f45a`. Os 17 arquivos remotos foram conferidos por hashes Git contra a cópia local testada.
 
 ## Comportamento
 
@@ -41,7 +41,7 @@ Artefatos: `testing/central-docs/navigation-benchmark.mjs`, `navigation-fixture.
 - Interface/preload e proteção de fechamento/sync reconciliados com a dependência nova; mantidas as asserções de autorização, retry e ausência de persistência/telemetria identificável.
 - Aggregate obrigatório do Worker: 737/737; sintaxe do Worker e dos clientes modificados; bundle de staging e quatro testes de recuperação 5E aprovados.
 - Código funcional do Worker permanece intacto. Nenhum paciente/documento real, D1 produtivo, credencial ou infraestrutura foi consultado/alterado.
-- CI do funcional: [Central Fases 1–6](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739384), [staging](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739486) e governança success. Chromium permanece em andamento neste registro.
+- CI do funcional: [Central Fases 1–6](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739384), [staging](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739486) e governança success. Chromium da Central também concluiu com success nesse candidato.
 - [Pré-regulação](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37161739391) falhou no gate de Worker nativo: a primeira asserção ausente é `GEMINI_TOTAL_TIMEOUT_MS` em `worker/index.js`; três outras asserções de resiliência também estão ausentes. Tanto esse arquivo quanto o workflow têm os mesmos hashes da base `6c4fcd86`. Trata-se de divergência preexistente, fora do pacote; não foi corrigida nem o gate relaxado.
 
 ## Limites e próxima ação
@@ -49,3 +49,5 @@ Artefatos: `testing/central-docs/navigation-benchmark.mjs`, `navigation-fixture.
 O cache expira rapidamente e é descartado ao navegar para outra página; o Service Worker continua conservando apenas a raiz. Alterações feitas diretamente no Drive ou por outro dispositivo podem aparecer após até 20 segundos; mutações desta aplicação invalidam imediatamente. Invalidação entre abas depende da entrega da mensagem do Service Worker.
 
 A execução local usa Node VM; o gate Chromium existente deve concluir no CI da PR antes de considerar publicação. Não houve instalação de dependências. Após aprovação de publicação, medir primeiro-lista visível com o mesmo ponto inicial para hit/miss, mais p50/p95, chamadas por ação, retries e `drive_token_ms/api_ms/map_ms`. Cache hit devolve timings Drive vazios, evitando atribuir a uma reutilização a duração antiga da rede. Registrar somente durações/categorias, sem nomes, consultas ou referências.
+
+CI adicional: o run de abertura pós-login `37161739497` teve quatro timeouts de 35 s em `opening-home-ready.spec.mjs`, ao avaliar o vídeo da Home. Causa não determinada neste escopo; preservar como pendência antes de publicação. A revisão final também zera termos/filtros e snapshots residuais da interface na invalidação de sessão; aggregate 737/737 e benchmark idêntico reaprovados.
