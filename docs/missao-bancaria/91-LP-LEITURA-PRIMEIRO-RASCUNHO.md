@@ -8,4 +8,4 @@ Recortes seguintes dentro da prioridade já definida no plano 05: **LP-02**, par
 
 Verificação direcionada de LP-01: estrutura, oito gabaritos/quatro justificativas por item, objetivos e recuperação, sincronia/UTF-8, links e draft excluído do catálogo pelo validador reaproveitado. Precisão pedagógica conferida pelo autor; parecer independente pendente. Nenhum teste aplicativo, D1 ou produção por esse rascunho. Institucional está preparado desativado conforme [90](90-IS-PREPARACAO-TECNICA.md); sua autorização remota pendente não impede esta autoria.
 
-Próxima ação independente: escrever LP-02 e LP-03 em lote local, com textos próprios, exemplos e questões, validando somente os novos artefatos. Agrupar posterior parecer de conteúdo; publicação não está autorizada por este plano.
+LP-02/03, revisão e Chefe concluídos e validados no [lote 92](92-LP-LEITURA-LOTE-REVISAO-CHEFE.md): três aulas + revisão + Chefe, 44 questões. Próxima ação: parecer independente agrupado, sem repetir verificações mecânicas; publicação não está autorizada por este plano.
