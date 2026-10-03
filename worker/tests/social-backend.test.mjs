@@ -12,6 +12,7 @@ const sqliteTest = DatabaseSync ? test : test.skip;
 
 import { ensureAuthSchema, handlePortalRoute } from '../auth-management-v2.js';
 import { handleChatRoute } from '../portal-chat-v2.js';
+import { persistAtomicChatMessage } from '../chat-send-atomic.js';
 import { handleProfileRoute } from '../profile-photo.js';
 import { handleSocialRoute } from '../social.js';
 import {
@@ -629,6 +630,105 @@ sqliteTest('chat fast path preserva a exigência de e-mail profissional quando o
   const allowedPayload = await payload(allowed);
   assert.equal(allowedPayload.message.body, 'Mensagem liberada com e-mail');
   assert.ok(Number(allowedPayload.message.id || 0) > 0);
+});
+
+sqliteTest('envio websocket atômico valida sessão, autorização institucional e retry sem duplicar', async () => {
+  const env = environment();
+  await ensureAuthSchema(env);
+
+  const insert = env.AUTH_DB.prepare(`INSERT INTO auth_users
+    (username, name, job_title, role, password_hash, password_salt, active,
+      must_change_password, session_version, created_by, self_registered, email_verified)
+    VALUES (?, ?, ?, ?, 'hash', 'salt', 1, 0, ?, 'test', 0, ?)`);
+  await insert.bind('ws.sender', 'Remetente', 'Recepção', 'recepcao', 4, 1).run();
+  await insert.bind('ws.target', 'Destinatário', 'Médico', 'medico', 1, 1).run();
+  await insert.bind('ws.citizen', 'Cidadão', 'Cidadão', 'cidadao', 1, 1).run();
+
+  const first = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.sender',
+    toUser: 'ws.target',
+    body: 'Mensagem atômica',
+    clientId: 'chat-websocket-atomic-001',
+    sessionVersion: 4
+  });
+  assert.equal(first.ok, true);
+  assert.equal(first.created, true);
+  assert.equal(first.message.body, 'Mensagem atômica');
+  assert.ok(Number(first.message.id || 0) > 0);
+
+  const retry = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.sender',
+    toUser: 'ws.target',
+    body: 'Mensagem atômica',
+    clientId: 'chat-websocket-atomic-001',
+    sessionVersion: 4
+  });
+  assert.equal(retry.ok, true);
+  assert.equal(retry.duplicate, true);
+  assert.equal(Number(retry.message.id), Number(first.message.id));
+
+  const stale = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.sender',
+    toUser: 'ws.target',
+    body: 'Sessão antiga',
+    clientId: 'chat-websocket-atomic-002',
+    sessionVersion: 3
+  });
+  assert.equal(stale.ok, false);
+  assert.equal(stale.code, 'CHAT_SEND_NOT_ALLOWED');
+
+  const citizenWithoutFriendship = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.sender',
+    toUser: 'ws.citizen',
+    body: 'Sem amizade',
+    clientId: 'chat-websocket-atomic-003',
+    sessionVersion: 4
+  });
+  assert.equal(citizenWithoutFriendship.ok, false);
+
+  const total = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total
+    FROM portal_chat_messages
+    WHERE from_user = 'ws.sender' AND client_id = 'chat-websocket-atomic-001'`).first();
+  assert.equal(Number(total.total || 0), 1);
+});
+
+sqliteTest('envio websocket atômico respeita amizade social e suspensão', async () => {
+  const env = environment();
+  const sender = await register(env, 'ws.amigo.a', '127.0.0.91');
+  await register(env, 'ws.amigo.b', '127.0.0.92');
+  await ensureSocialSchema(env);
+  const first = await syncSocialUser(env, 'ws.amigo.a');
+  const second = await syncSocialUser(env, 'ws.amigo.b');
+  const [low, high] = [first.social_user_id, second.social_user_id].sort();
+
+  await env.AUTH_DB.prepare(`INSERT INTO social_relationships
+    (pair_low, pair_high, state, initiated_by, origin)
+    VALUES (?, ?, 'friends', ?, 'manual')`).bind(low, high, first.social_user_id).run();
+
+  const allowed = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.amigo.a',
+    toUser: 'ws.amigo.b',
+    body: 'Amizade confirmada',
+    clientId: 'chat-websocket-social-001',
+    sessionVersion: 1
+  });
+  assert.equal(allowed.ok, true);
+  assert.equal(allowed.created, true);
+
+  await env.AUTH_DB.prepare(`UPDATE social_users
+    SET suspended_at = CURRENT_TIMESTAMP
+    WHERE auth_username = 'ws.amigo.a'`).run();
+
+  const suspended = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.amigo.a',
+    toUser: 'ws.amigo.b',
+    body: 'Suspenso não envia social',
+    clientId: 'chat-websocket-social-002',
+    sessionVersion: 1
+  });
+  assert.equal(suspended.ok, false);
+
+  assert.ok(sender.token, 'registro de suporte mantém a sessão original válida para o cenário');
 });
 
 sqliteTest('feed usa cursor cronológico sem duplicar nem perder itens', async () => {
