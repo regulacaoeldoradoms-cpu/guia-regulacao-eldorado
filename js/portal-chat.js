@@ -1375,6 +1375,10 @@
       appendMessages([confirmed], false);
     }
     const contact = contacts.find((item) => item.username === username);
+    if (contact && confirmed?.sentAt) {
+      contact.lastMessageAt = confirmed.sentAt;
+      renderContacts();
+    }
     mergeCachedMessages(
       username,
       [confirmed],
@@ -1411,7 +1415,6 @@
       if (!payload.message) throw new Error('O servidor não confirmou a mensagem.');
       replacePendingMessage(clientId, payload.message, username);
       queueChatSessionPersist();
-      loadContacts();
       return true;
     } catch (error) {
       updatePendingMessage(clientId, { pending: false, failed: true });
