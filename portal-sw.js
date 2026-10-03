@@ -1,7 +1,7 @@
 'use strict';
 
-// 20261002-documents-rename-lww-1 invalida páginas para entregar rename e conteúdo como canais independentes.
-const CACHE_VERSION = '20261002-documents-rename-lww-chat-attention-fix-1';
+// Renova o HTML para que a CSP autorize o WebSocket do chat em todos os módulos.
+const CACHE_VERSION = '20261003-chat-websocket-csp-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];

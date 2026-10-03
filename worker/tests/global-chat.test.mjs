@@ -38,6 +38,45 @@ test('chat global aparece em todos os módulos autenticados sem carga manual dup
   }
 });
 
+test('CSP dos módulos permite HTTPS e WebSocket do Worker sem fontes amplas', () => {
+  const configured = read('js/auth-config.js').match(/\bendpoint\s*:\s*(['"])([^'"]+)\1/);
+  assert.ok(configured, 'O endpoint deve ser obtido da configuração real da autenticação.');
+  const endpoint = new URL(configured[2]);
+  assert.equal(endpoint.protocol, 'https:', 'A API de produção deve permanecer em HTTPS.');
+  const httpOrigin = endpoint.origin;
+  endpoint.protocol = 'wss:';
+  const websocketOrigin = endpoint.origin;
+  const failures = [];
+  let checkedPolicies = 0;
+
+  for (const filename of authenticatedModules) {
+    const html = read(filename);
+    for (const [tag] of html.matchAll(/<meta\b[^>]*>/gi)) {
+      const attributes = new Map(
+        [...tag.matchAll(/([\w-]+)\s*=\s*(["'])(.*?)\2/gs)]
+          .map(([, name, , value]) => [name.toLowerCase(), value])
+      );
+      if (attributes.get('http-equiv')?.toLowerCase() !== 'content-security-policy') continue;
+      checkedPolicies += 1;
+      // Assert the narrow policy contract; this is not a substitute CSP engine.
+      // Every enforced meta policy must allow both transports explicitly.
+      const directives = (attributes.get('content') || '').split(';').map(value => value.trim().split(/\s+/));
+      const connect = directives.find(([name]) => name.toLowerCase() === 'connect-src')?.slice(1) || [];
+      for (const origin of [httpOrigin, websocketOrigin]) {
+        if (!connect.includes(origin)) failures.push(filename + ': connect-src não permite ' + origin);
+      }
+      for (const source of connect) {
+        if (source.includes('*') || /^[a-z][a-z0-9+.-]*:$/i.test(source)) {
+          failures.push(filename + ': connect-src contém fonte ampla ' + source);
+        }
+      }
+    }
+  }
+
+  assert.ok(checkedPolicies > 0, 'As políticas reais dos módulos devem ser verificadas.');
+  assert.deepEqual(failures, [], 'Toda CSP deve permitir as origens exatas do chat, sem ampliar os destinos.');
+});
+
 test('superfícies públicas permanecem sem chat global', () => {
   for (const path of ['login/index.html', 'cadastro/index.html', 'conselho/index.html']) {
     assert.doesNotMatch(read(path), /portal-global-chat\.js/, path);
