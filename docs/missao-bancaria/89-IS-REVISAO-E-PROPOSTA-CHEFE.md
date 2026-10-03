@@ -1,6 +1,6 @@
 # Institucional CAIXA - revisão e proposta do Chefe
 
-03/10/2026. Continuação do [plano 88](88-IS-PLANO-E-PRIMEIRO-LOTE.md), somente perfil histórico CAIXA 2024/NM. Oito aulas e [IS-R](rascunhos/is-r-v1.md) em draft: **72 questões/288 justificativas**, 32 exemplos resolvidos e 11 cálculos conferidos no conjunto. Não equivale a cobertura integral das leis citadas nem a edital vigente. Sem catálogo, XP, desbloqueio, produção/D1 ou aceite humano de fase.
+03/10/2026. Continuação do [plano 88](88-IS-PLANO-E-PRIMEIRO-LOTE.md), somente perfil histórico CAIXA 2024/NM. Oito aulas, [IS-R](rascunhos/is-r-v1.md) e [Chefe](rascunhos/is-chefe-v1.md) em draft: **84 questões/336 justificativas**, 33 seções de exemplos resolvidos e 15 operações conferidas no conjunto. Não equivale a cobertura integral das leis citadas nem a edital vigente. Sem catálogo, XP, desbloqueio, produção/D1 ou aceite humano de fase.
 
 ## Revisão cumulativa
 
@@ -10,7 +10,7 @@ IS-07 delimita o trabalhador formal do art. 3º da Lei 7.998, diferenciando as t
 
 ## Proposta de 12 itens próprios do Chefe
 
-Especificação editorial, ainda sem perguntas/gabaritos publicados. Os seis grupos reutilizam o padrão de dois itens; não constituem regra nova de produto. Toda questão deverá declarar hipóteses e mapear ensino/recuperação antes de validação.
+Especificação executada em rascunho, sem publicação. Os seis grupos reutilizam o padrão de dois itens; não constituem regra nova de produto. Cada questão declara hipóteses e mapeia ensino/recuperação nas seções originais e na retomada local. IDs estáveis `draft.ischefe` e `ischefe.q01` a `ischefe.q12`.
 
 | Grupo | Item planejado | Ensino/origem | Erro a recuperar |
 | --- | --- | --- | --- |
@@ -33,4 +33,6 @@ Não incluir novos programas, valores atuais desnecessários, procedimentos reai
 
 IS-07, IS-08 e IS-R passaram o validador existente: oito itens por unidade, quatro justificativas por item, objetivos O1-O4, recuperação, fontes, UTF-8, sincronia Markdown/artefato e exclusão do catálogo publicado. IS-R exige origem em cada questão e cobre as oito aulas; quatro operações novas foram conferidas, além de uma em IS-08. Não houve suíte do aplicativo, consulta ao aluno ou D1. Resultados anteriores de IS-01-06 foram reaproveitados, sem nova revisão geral.
 
-Próxima ação local: escrever os 12 itens do Chefe conforme a tabela e verificar somente hipóteses, contas novas, esquema e mapeamento de recuperação. Revisão independente de conteúdo permanece pendente. A branch institucional não foi enviada: revisão automática rejeitou o push por exigir autorização específica para nova publicação remota. Não repetir essa ação até encaminhamento da aprovação.
+Chefe validado com 12 itens, 48 justificativas, seis grupos, origens cobrindo as oito aulas, recuperação local/externa e quatro operações. A revisão direcionada pelo autor verificou hipóteses, resposta única e justificativas; sem correção relevante após essa leitura. Gabaritos A/B/C/D têm três ocorrências cada. Sem nova pesquisa normativa: reaproveitados somente conceitos/fontes já consultados em 03/10. Essa conferência não é parecer independente, avaliação independente ou aceite humano.
+
+Próxima ação: revisão pedagógica independente do pacote; depois preparo técnico local desativado no padrão existente, mantendo IDs e catálogo/progresso ativo. A branch institucional não foi enviada: revisão automática rejeitou o push por exigir autorização específica para nova publicação remota. Não repetir essa ação até encaminhamento da aprovação.

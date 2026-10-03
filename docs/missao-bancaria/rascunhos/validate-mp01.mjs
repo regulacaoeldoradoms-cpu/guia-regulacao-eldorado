@@ -5,12 +5,12 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe'].includes(unit), 'Unidade editorial desconhecida');
 const isCE = unit.startsWith('ce');
 const isDP = unit.startsWith('dp');
 const isIS = unit.startsWith('is');
 const sourceDate = isIS ? '2026-10-03' : isCE || isDP ? '2026-10-01' : '2026-09-30';
-const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe'].includes(unit);
+const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe', 'ischefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -80,7 +80,7 @@ if (isIS) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objecti
 if (isDP) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
 if ((isCE || isDP || isIS) && !isBoss) assert.equal(draft.questions.length, 8);
-if (unit === 'isr') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`));
+if (['isr', 'ischefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`));
 if (unit === 'dpr') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`));
 if (unit === 'cer') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 11 }, (_, i) => `ce${String(i + 1).padStart(2, '0')}`));
 if (isBoss) {
