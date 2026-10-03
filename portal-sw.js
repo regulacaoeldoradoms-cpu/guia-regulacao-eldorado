@@ -1,7 +1,7 @@
 'use strict';
 
 // 20261002-documents-rename-lww-1 invalida páginas para entregar rename e conteúdo como canais independentes.
-const CACHE_VERSION = '20261002-documents-rename-lww-chat-wssend-1';
+const CACHE_VERSION = '20261002-documents-rename-lww-chat-emotes-attention-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -75,10 +75,10 @@ const CORE_RESOURCES = Object.freeze([
   '/js/social-api.js?v=20260910-4',
   '/css/social-notification-panel.css?v=20260910-1',
   '/js/portal-interactions.js?v=20260923-2',
-  '/js/portal-global-chat.js?v=20261002-wssend-1',
-  '/js/portal-chat.js?v=20261002-wssend-1',
+  '/js/portal-global-chat.js?v=20261002-emotes-attention-1',
+  '/js/portal-chat.js?v=20261002-emotes-attention-1',
   '/js/portal-chat-switch-optimizer.js?v=20260928-global-1',
-  '/css/portal-chat.css?v=20261002-wssend-1',
+  '/css/portal-chat.css?v=20261002-emotes-attention-1',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-header.png?v=20260910-1',
   '/portal.webmanifest?v=20260911-1',
