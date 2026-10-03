@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-ackfast-1') return;
+  if (window.PortalChat?.version === '20261002-wssend-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -57,6 +57,7 @@
   const CHAT_REALTIME_PROTOCOL = 'portal-chat-v1';
   const CHAT_REALTIME_ROTATE_MS = 300000;
   const CHAT_REALTIME_PING_MS = 25000;
+  const CHAT_REALTIME_SEND_ACK_TIMEOUT_MS = 1800;
   const CHAT_TYPING_RESEND_MS = 1400;
   const CHAT_TYPING_STOP_MS = 2200;
   const CHAT_TYPING_REMOTE_TTL_MS = 4200;
@@ -208,6 +209,13 @@
       if (realtimeSocket === socket) realtimeSocket = null;
       clearRealtimeTimers();
       updateRealtimeMode(false);
+      for (const [clientId, entry] of pendingMessages.entries()) {
+        if (entry?.transport !== 'realtime') continue;
+        window.clearTimeout(entry.fallbackTimer);
+        entry.fallbackTimer = null;
+        entry.transport = 'http';
+        void transmitPendingMessage(clientId, { forceHttp: true });
+      }
       scheduleRealtimeReconnect();
     });
 
@@ -296,6 +304,28 @@
   function handleRealtimeEvent(payload) {
     const type = String(payload?.type || '');
     if (type === 'ready' || type === 'pong') return;
+    if (type === 'send-ack') {
+      const clientId = String(payload?.clientId || '');
+      const entry = pendingMessages.get(clientId);
+      if (!entry || !payload?.message) return;
+      window.clearTimeout(entry.fallbackTimer);
+      entry.fallbackTimer = null;
+      replacePendingMessage(clientId, payload.message, entry.username);
+      queueChatSessionPersist();
+      return;
+    }
+    if (type === 'send-error') {
+      const clientId = String(payload?.clientId || '');
+      const entry = pendingMessages.get(clientId);
+      if (!entry) return;
+      window.clearTimeout(entry.fallbackTimer);
+      entry.fallbackTimer = null;
+      entry.transport = '';
+      updatePendingMessage(clientId, { pending: false, failed: true });
+      if (String(payload?.code || '') === 'CHAT_SEND_NOT_ALLOWED') void loadContacts(true);
+      showStatus(String(payload?.message || 'Não foi possível enviar a mensagem.'));
+      return;
+    }
     if (type === 'message') {
       handleRealtimeMessage(payload.message);
       return;
@@ -377,6 +407,7 @@
     messageCacheGeneration += 1;
     messageCache.clear();
     messagePreloadRequests.clear();
+    for (const entry of pendingMessages.values()) window.clearTimeout(entry?.fallbackTimer);
     pendingMessages.clear();
     draftCache.clear();
     restoredChatSession = null;
@@ -1362,6 +1393,8 @@
   }
 
   function replacePendingMessage(clientId, confirmed, username) {
+    const pending = pendingMessages.get(clientId);
+    window.clearTimeout(pending?.fallbackTimer);
     pendingMessages.delete(clientId);
     const existing = pendingElement(clientId);
     const confirmedId = Number(confirmed?.id || 0);
@@ -1396,12 +1429,42 @@
     return entry;
   }
 
-  async function transmitPendingMessage(clientId) {
+  async function transmitPendingMessage(clientId, options = {}) {
     const entry = pendingMessages.get(clientId);
     if (!entry) return false;
     const { username, message } = entry;
     updatePendingMessage(clientId, { pending: true, failed: false });
 
+    const realtimeAvailable = !options.forceHttp
+      && realtimeConnected
+      && realtimeSocket?.readyState === WebSocket.OPEN;
+
+    if (realtimeAvailable) {
+      try {
+        window.clearTimeout(entry.fallbackTimer);
+        entry.transport = 'realtime';
+        realtimeSocket.send(JSON.stringify({
+          type: 'send',
+          to: username,
+          body: message.body,
+          clientId
+        }));
+        entry.fallbackTimer = window.setTimeout(() => {
+          const current = pendingMessages.get(clientId);
+          if (!current || current.transport !== 'realtime') return;
+          current.transport = 'http';
+          current.fallbackTimer = null;
+          void transmitPendingMessage(clientId, { forceHttp: true });
+        }, CHAT_REALTIME_SEND_ACK_TIMEOUT_MS);
+        return true;
+      } catch (_) {
+        entry.transport = 'http';
+      }
+    }
+
+    entry.transport = 'http';
+    window.clearTimeout(entry.fallbackTimer);
+    entry.fallbackTimer = null;
     try {
       const payload = await api('/api/chat/messages', {
         method: 'POST',
@@ -1413,10 +1476,13 @@
         })
       });
       if (!payload.message) throw new Error('O servidor não confirmou a mensagem.');
+      if (!pendingMessages.has(clientId)) return true;
       replacePendingMessage(clientId, payload.message, username);
       queueChatSessionPersist();
       return true;
     } catch (error) {
+      if (!pendingMessages.has(clientId)) return false;
+      entry.transport = '';
       updatePendingMessage(clientId, { pending: false, failed: true });
       showStatus(error.message || 'Não foi possível enviar a mensagem. Você pode tentar novamente.');
       return false;
@@ -1451,7 +1517,7 @@
       failed: false
     };
 
-    pendingMessages.set(clientId, { username, message });
+    pendingMessages.set(clientId, { username, message, transport: '', fallbackTimer: null });
     if (input) input.value = '';
     draftCache.delete(username);
     appendMessages([message], false);
@@ -1672,7 +1738,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-ackfast-1',
+    version: '20261002-wssend-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts
