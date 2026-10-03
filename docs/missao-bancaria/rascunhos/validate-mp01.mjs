@@ -5,7 +5,7 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`)].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr'].includes(unit), 'Unidade editorial desconhecida');
 const isCE = unit.startsWith('ce');
 const isDP = unit.startsWith('dp');
 const isIS = unit.startsWith('is');
@@ -64,9 +64,9 @@ for (const question of draft.questions) {
   }
   for (const id of question.recoverySectionIds) assert(sections.has(id));
   for (const objective of question.objectiveIds) objectives.add(objective);
-  if (isBoss || ['mpr', 'pcr', 'cer', 'dpr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
+  if (isBoss || ['mpr', 'pcr', 'cer', 'dpr', 'isr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
   for (const ref of question.originRefs || []) {
-    assert(isDP ? /^dp(0[1-9]|1[0-2])$/.test(ref.unit) : isCE ? /^ce(0[1-9]|1[01])$/.test(ref.unit) : unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
+    assert(isIS ? /^is0[1-8]$/.test(ref.unit) : isDP ? /^dp(0[1-9]|1[0-2])$/.test(ref.unit) : isCE ? /^ce(0[1-9]|1[01])$/.test(ref.unit) : unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
     const origin = await import(`./${ref.unit.slice(0, 2)}-${ref.unit.slice(2)}-v1.mjs`);
     const originDraft = origin[`${ref.unit.toUpperCase()}_DRAFT`];
     const originSection = originDraft.sections.find(section => section.id === ref.sectionId);
@@ -80,6 +80,7 @@ if (isIS) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objecti
 if (isDP) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
 if ((isCE || isDP || isIS) && !isBoss) assert.equal(draft.questions.length, 8);
+if (unit === 'isr') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`));
 if (unit === 'dpr') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`));
 if (unit === 'cer') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 11 }, (_, i) => `ce${String(i + 1).padStart(2, '0')}`));
 if (isBoss) {
