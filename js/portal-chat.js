@@ -1765,6 +1765,13 @@
       const retry = event.target.closest?.('[data-chat-retry]');
       if (retry?.dataset.chatRetry) retryPendingMessage(retry.dataset.chatRetry);
     });
+    document.getElementById('portalChatEmojiButton')?.addEventListener('click', () => toggleEmojiPicker());
+    document.getElementById('portalChatEmojiPicker')?.addEventListener('click', (event) => {
+      const button = event.target.closest?.('[data-chat-emoji]');
+      if (!button) return;
+      insertEmoji(decodeURIComponent(button.dataset.chatEmoji || ''));
+    });
+    document.getElementById('portalChatAttention')?.addEventListener('click', sendAttention);
     document.getElementById('portalChatSend')?.addEventListener('click', sendMessage);
     document.getElementById('portalChatInput')?.addEventListener('input', () => {
       saveActiveDraft();
@@ -1776,6 +1783,15 @@
         event.preventDefault();
         sendMessage();
       }
+    });
+    root.addEventListener('click', (event) => {
+      const picker = document.getElementById('portalChatEmojiPicker');
+      if (picker?.hidden) return;
+      if (event.target.closest?.('#portalChatEmojiPicker, #portalChatEmojiButton')) return;
+      toggleEmojiPicker(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') toggleEmojiPicker(false);
     });
   }
 
