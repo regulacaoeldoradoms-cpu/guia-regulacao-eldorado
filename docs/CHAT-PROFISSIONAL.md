@@ -36,7 +36,12 @@ O perfil lógico `telemedicina` passa a ter o mesmo direito de usar o chat inter
 
 A identidade de Telemedicina continua seguindo a arquitetura definida em `docs/TELEMEDICINA.md`: a conta possui papel-base `recepcao` no registro principal do D1 e a tabela `auth_telemedicine_access` determina a capacidade lógica `telemedicina`.
 
-Por isso, o chat deve sempre usar a camada de autenticação flexível e a decoração de identidade de Telemedicina antes de decidir autorização ou apresentar contatos. Isso evita que o Técnico em Telemedicina seja bloqueado indevidamente ou exibido como simples Recepção.
+Por isso, a **listagem e apresentação dos contatos** continua usando a decoração de
+identidade de Telemedicina para exibir corretamente a função lógica. No caminho rápido
+de envio não é necessário carregar essa decoração: o papel-base `recepcao` já pertence
+à matriz profissional e a autorização atômica no D1 aceita esse papel. Essa separação
+evita bloquear o Técnico em Telemedicina sem obrigar cada mensagem a consultar
+capabilities que não alteram a permissão de conversa.
 
 ## Disponibilidade global nos módulos
 
@@ -326,6 +331,7 @@ Essa recusa não impede a conversa profissional.
 - `worker/portal-chat-v2.js` — autorização, contatos, presença, mensagens, recibos e rotas realtime;
 - `worker/chat-realtime.js` — tickets efêmeros e ponte autenticada para o canal WebSocket;
 - `worker/chat-realtime-do.js` — Durable Object hibernável para eventos em tempo real, sem persistir conteúdo das conversas;
+- `worker/chat-send-atomic.js` — autorização e gravação atômicas das mensagens enviadas pelo WebSocket;
 - `worker/auth-management-flex.js` — sessão com perfil lógico de Telemedicina;
 - `worker/telemedicine-access.js` — decoração do papel-base `recepcao` como `telemedicina`;
 - `worker/social.js` e `worker/social-policy.js` — resolução e autorização do perfil,
