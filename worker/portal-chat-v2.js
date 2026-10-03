@@ -260,26 +260,29 @@ async function socialFriendContacts(env, currentUsername, options = {}) {
   }));
 }
 
-async function socialFriendContact(env, currentUsername, targetUsername) {
-  if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return null;
-  const row = await env.AUTH_DB.prepare(`SELECT
-      u.username, u.name, u.job_title AS jobTitle, u.role, u.active,
-      COALESCE(u.avatar_data, '') AS avatarDataUrl,
-      friend.handle AS socialHandle
+async function socialFriendAllowed(env, currentUsername, targetUsername) {
+  if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return false;
+  const row = await env.AUTH_DB.prepare(`SELECT 1 AS allowed
     FROM social_users viewer
     JOIN social_relationships relationship
       ON relationship.state = 'friends'
       AND (relationship.pair_low = viewer.social_user_id OR relationship.pair_high = viewer.social_user_id)
     JOIN social_users friend ON friend.social_user_id = CASE
       WHEN relationship.pair_low = viewer.social_user_id THEN relationship.pair_high ELSE relationship.pair_low END
-    JOIN auth_users u ON u.username = friend.auth_username
-    WHERE viewer.auth_username = ? AND u.username = ?
+    JOIN auth_users target ON target.username = friend.auth_username
+    WHERE viewer.auth_username = ? AND friend.auth_username = ?
       AND viewer.suspended_at IS NULL AND friend.suspended_at IS NULL
-      AND u.active = 1
+      AND target.active = 1
     LIMIT 1`).bind(currentUsername, targetUsername).first();
-  if (!row) return null;
-  const decorated = await decorateTelemedicineUser(env, row);
-  return CHAT_ROLES.has(decorated.role) ? { ...decorated, socialHandle: row.socialHandle || '' } : null;
+  return Boolean(row?.allowed);
+}
+
+async function chatContactAllowed(env, currentUser, targetUsername) {
+  const target = normalizeUsername(targetUsername);
+  if (!target || target === normalizeUsername(currentUser?.username)) return false;
+  if (PROFESSIONAL_ROLES.has(currentUser?.role) && await professionalContactAllowed(env, target)) return true;
+  if (CHAT_ROLES.has(currentUser?.role)) return socialFriendAllowed(env, currentUser.username, target);
+  return false;
 }
 
 function mergeContacts(...groups) {
@@ -315,14 +318,6 @@ async function contacts(env, currentUser) {
   return [];
 }
 
-async function chatContact(env, currentUser, targetUsername) {
-  if (PROFESSIONAL_ROLES.has(currentUser.role)) {
-    const institutional = await professionalContact(env, targetUsername);
-    if (institutional) return institutional;
-  }
-  if (CHAT_ROLES.has(currentUser.role)) return socialFriendContact(env, currentUser.username, targetUsername);
-  return null;
-}
 
 async function receiptState(env, current, other) {
   const row = await env.AUTH_DB.prepare(`SELECT
