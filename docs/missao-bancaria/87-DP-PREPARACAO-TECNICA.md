@@ -1,8 +1,8 @@
 # Pagamentos Digitais — preparação desativada
 
-03/10/2026. [Lote editorial](85-DP-CONJUNTO-RASCUNHOS.md) e [Chefe](86-DP-REVISAO-E-PROPOSTA-CHEFE.md): 12 aulas, revisão e Chefe; 116 questões/464 justificativas. Leitura pedagógica agrupada pelo agente concluída, com correções documentadas em 85; parecer independente ainda pendente.
+03/10/2026. [Lote editorial](85-DP-CONJUNTO-RASCUNHOS.md) e [Chefe](86-DP-REVISAO-E-PROPOSTA-CHEFE.md): 12 aulas, revisão e Chefe; 116 questões/464 justificativas. Leitura pedagógica agrupada pelo agente concluída, com correções documentadas em 85; parecer independente do lote alterado aprovado, com alcance limitado registrado em 85.
 
-O gerador [studies-dp-candidate.mjs](../../worker/scripts/studies-dp-candidate.mjs) reutiliza o padrão MP/PC/CE e o conversor de apresentação existente. O artefato [banking-digital-payments-v1.js](../../worker/studies-content/banking-digital-payments-v1.js) contém 14 missões **draft**, não importadas pelo manifesto ativo. `parametersApproved` e `publicationReady` permanecem falsos. Não há opção CLI de ativação.
+O gerador [studies-dp-candidate.mjs](../../worker/scripts/studies-dp-candidate.mjs) reutiliza o padrão MP/PC/CE e o conversor de apresentação existente. O artefato [banking-digital-payments-v1.js](../../worker/studies-content/banking-digital-payments-v1.js) contém 14 missões **draft**, ligadas ao manifesto/mapa pelo filtro de publicação existente, porém excluídas do catálogo, fontes e mapa disponíveis enquanto draft. `parametersApproved` e `publicationReady` permanecem falsos. Não há opção CLI de ativação.
 
 Proposta preservada: começar após Chefe CE, ordens 51–64 e dependência da unidade anterior; 100 XP/aula/revisão e Chefe 220 XP/75%. IDs `banking.dp.*`, questões `q.dp*`, fontes prefixadas por unidade; recuperação e links do Chefe são convertidos para missões/seções existentes. Valores são preparação, sem alteração do histórico ou parâmetros publicados.
 
@@ -13,11 +13,11 @@ Proposta preservada: começar após Chefe CE, ordens 51–64 e dependência da u
 - `node worker/scripts/studies-dp-candidate.mjs --check-generated`: artefato conferido. Detector textual de isolamento aprovado; nenhum ajuste ao detector ou workflow. Nenhuma suíte geral, API real ou D1 usada nesta preparação.
 - O detector identificou seis usos genéricos de “encaminhamento” no novo material de crédito. DP-10, DP-R e uma justificativa do Chefe passaram a identificar “envio da proposta”, com o mesmo sentido, IDs e gabaritos. Somente esses três artefatos foram regenerados e validados novamente; candidato/testes/isolamento passaram após a alteração. Nenhuma exceção foi acrescentada ao detector.
 
-O catálogo ativo continua com SFN/MP/PC/CE. Preparação offline não é homologação da UI nem publicação. Chromium e fluxos de roteador realmente afetados serão verificados na integração, após revisão e autorização aplicável; resultados inalterados de MP/PC/CE continuam válidos.
+O catálogo ativo continua com SFN/MP/PC/CE. Preparação offline não é homologação da UI nem publicação. Seis cenários Chromium DP passaram: consultas às doze aulas/revisão em 320px claro e 390px escuro com fonte ampliada; rede/repetição e resposta única; resposta pendente durante consulta/saída; retomada sem nova rodada; usuário não autorizado. Após mudar apenas o registro temporal de DP-09, os dois cenários de leitura foram repetidos e passaram; os quatro fluxos inalterados reaproveitados. O payload contém drafts exclusivamente como fixture para testar apresentação futura; não habilita o runtime.
 
 ## Gates restantes
 
-Parecer pedagógico independente do lote/Chefe (leitura pelo agente já concluída); revalidação oficial do estágio Drex antes de ativação; integração técnica final com testes afetados e CI requerida; autorização específica de merge/deploy e fluxo protegido. Marketplace/segmentação são recortes nominais BB; PC-07 continua excluído. Fase 2 sem aceite humano observado.
+Parecer independente solicitado para o diff concluído; leitura restante pelo agente registrada com limite. Revalidação Drex e testes direcionados concluídos. Restam CI terminal do novo commit, resolução/decisão explícita dos gates externos e autorização específica de ativação/merge/deploy pelo fluxo protegido. Revalidar fatos mutáveis se a publicação ocorrer depois de intervalo relevante. Marketplace/segmentação são recortes nominais BB; PC-07 continua excluído. Fase 2 sem aceite humano observado.
 
 ## Estado de CI e limite de escopo
 
@@ -27,3 +27,12 @@ No SHA-base da revisão **5475aec8**, os 23 checks terminaram: **21 verdes**, in
 - Preview Worker legado falho: problema externo já registrado, separado do deploy produtivo protegido; este pacote não muda comando, nome, bindings ou acesso. Não representa prova de incidente produtivo.
 
 A publicação DP ainda exige autorização específica para ativação após Chefe CE (100 XP/aula/revisão, Chefe 220 XP/75%), integração do #572 e deploy protegido, após concluir UI/roteador, fontes mutáveis e gates. Não há exceção de CI implícita.
+
+## Validação final desativada — 03/10
+
+- Oito testes do candidato passaram, incluindo um runner com **seis cenários** de roteador real em SQLite local: manifesto/mapa; draft inacessível e autorização; pré-requisito/feedback/duplicação/retomada; preservação de todas as tabelas study_*, XP, tentativas, conquistas, revisão, avaliação A e sessão interrompida; recuperação DP-R; Chefe75%/220XP único sem conquista indevida. A projeção publicada existe apenas na VM da fixture. No módulo real, statusdraft e parâmetros não aprovados continuam; 50 missões/quatro blocos e fontes anteriores permanecem disponíveis.
+- A ligação de mapa usa o mesmo filtro publishedCatalog de MP/PC/CE. O primeiro teste revelou falta dessa preparação; ela foi completada sem ativar conteúdo. O teste valida tanto quatro blocos reais quanto cinco na projeção de VM. Não houve mudança de fluxo clínico, autorização, algoritmo de progresso ou gate.
+- DP-09/DP-R/Chefe regenerados e validados por alteração das referências Drex; artefato e isolamento passaram. A renderização consultou [página geral BCB](https://www.bcb.gov.br/estabilidadefinanceira/drex), [conceito](https://www.bcb.gov.br/meubc/faqs/p/drex) e [lançamento](https://www.bcb.gov.br/meubc/faqs/p/lancamento-do-drex), todas HTTP 200 em 03/10. A página geral mantém proposta futura e acesso por intermediário autorizado; FAQ de conceito exibe 16/10/2023, lançamento 20/02/2024 sem data específica. Isso confirma as afirmações limitadas da aula, sem extrapolar estágio global/arquitetura/disponibilidade.
+- CI de **dd4b33cd** terminal:21/23 verdes, incluindo estudos, Chromium sintético e Pages; pré-regulação e preview legado falhos. Testes do novo commit terão resultado próprio. Nenhuma suíte manual geral, API real ou D1.
+
+Autorizações mínimas futuras: **(1)** ativar DP após Chefe CE, sequência por conclusão anterior, 100 XP/aula/revisão e Chefe 220 XP/75%, integrar #572 e executar deploy:safe após gates; **(2)** se pré-regulação seguir bloqueando, atribuir alinhamento do workflow ao responsável da IA em escopo separado ou decidir explicitamente o tratamento desse gate com evidência. Não é necessário corrigir funcionalidade clínica em DP nem restaurar Gemini. Preview legado não será migrado/alterado neste pacote. Nenhuma dessas ações foi executada nesta preparação.

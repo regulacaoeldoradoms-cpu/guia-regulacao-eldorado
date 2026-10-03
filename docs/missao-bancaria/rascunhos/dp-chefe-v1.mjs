@@ -133,24 +133,24 @@ export const SOURCES = [
     "label": "BCB — Drex",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/drex",
     "locator": "Proposta de plataforma integrada e intermediação; sem data de lançamento ou acesso público presumido",
-    "version": "Página oficial consultada em 01/10/2026",
-    "checkedAt": "2026-10-01"
+    "version": "Página oficial; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "bcb.dp.drex.conceito",
     "label": "BCB — FAQ Drex",
     "url": "https://www.bcb.gov.br/meubc/faqs/p/drex",
     "locator": "CBDC; distinção entre emissão de atacado pelo BC e representações de varejo por instituições autorizadas",
-    "version": "FAQ com atualização exibida de 16/10/2023",
-    "checkedAt": "2026-10-01"
+    "version": "FAQ com atualização exibida de 16/10/2023; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "bcb.dp.drex.lancamento",
     "label": "BCB — FAQ Lançamento do Drex",
     "url": "https://www.bcb.gov.br/meubc/faqs/p/lancamento-do-drex",
     "locator": "Página mantém ausência de data específica; não é confirmação independente do estágio de todas as etapas",
-    "version": "FAQ com atualização exibida de 20/02/2024; consultada em 01/10/2026",
-    "checkedAt": "2026-10-01"
+    "version": "FAQ com atualização exibida de 20/02/2024; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "cmn.dp.correspondentes",

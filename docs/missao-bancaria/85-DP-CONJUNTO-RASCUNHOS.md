@@ -45,7 +45,7 @@ Comando por unidade: `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --un
 
 ### Correções da revisão agrupada de 03/10
 
-Leitura de todos os enunciados e justificativas no pacote-base **5475aec87e58e0da808bf36ab02cbd2dd8bef884**. Não foram encontrados outros bloqueios pedagógicos no recorte introdutório. Revisão feita pelo agente responsável pelas correções, sem novo revisor externo; o parecer independente permanece pendente.
+Leitura de todos os enunciados e justificativas no pacote-base **5475aec87e58e0da808bf36ab02cbd2dd8bef884**. Não foram encontrados outros bloqueios pedagógicos no recorte introdutório. Revisão feita pelo agente responsável pelas correções, sem novo revisor externo; um único parecer independente do diff alterado foi aprovado em dd4b33cd, sem correções adicionais. Ele não reaudita as 116 questões.
 
 | Unidade | Correção e motivo |
 | --- | --- |
@@ -61,3 +61,5 @@ IDs, posições dos gabaritos, objetivos e valores dos cálculos preservados. Os
 Somente DP-01/03/04/05/06/07 e Chefe foram regenerados e validados: sincronia MD/MJS, fontes, cobertura, retomada, UTF-8 e cálculos existentes passaram. Candidato regenerado (14 drafts/116 questões/464 justificativas/58 referências por unidade), sete testes offline e detector de isolamento passaram. Validadores das unidades inalteradas de 01/10 reaproveitados.
 
 Nenhuma alteração de runtime, autorização, dados, progresso ou catálogo ativo. Não há XP, ordem ou liberação efetiva nestes artefatos. Não foram executados testes contra produção/D1 nem repetidas suítes MP/PC/CE por esta autoria.
+
+Parecer complementar do mesmo revisor: precisão temporal de DP-09 aprovada após reconsulta das três páginas BCB em 03/10. Datas exibidas de 2023/2024 mantidas; confirmação restrita ao teor das páginas, sem atestar todas as etapas atuais. Nenhuma questão ou gabarito alterado nessa revalidação. Evidência técnica atual em [87](87-DP-PREPARACAO-TECNICA.md).

@@ -34,7 +34,8 @@ for (const source of SOURCES) {
   const reusedTransmission = isCE && source.id === 'bcb.ce.transmissao' && source.checkedAt === '2026-09-30';
   const reusedAccount = ['dp01', 'dpchefe'].includes(unit) && ['bcb.conta.deposito', 'bcb.conta.digital', 'bcb.conta.pagamento'].includes(source.id) && source.checkedAt === '2026-09-30';
   const reviewedDpSource = source.checkedAt === '2026-10-03' && ((['dp05', 'dpchefe'].includes(unit) && source.id === 'bis.dp.liquidacao') || (['dp07', 'dpchefe'].includes(unit) && source.id === 'lei.dp.conservacao'));
-  assert((source.checkedAt === sourceDate || reusedTransmission || reusedAccount || reviewedDpSource) && source.version && source.locator);
+  const revalidatedDrex = ['dp09', 'dpr', 'dpchefe'].includes(unit) && ['bcb.dp.drex', 'bcb.dp.drex.conceito', 'bcb.dp.drex.lancamento'].includes(source.id) && source.checkedAt === '2026-10-03';
+  assert((source.checkedAt === sourceDate || reusedTransmission || reusedAccount || reviewedDpSource || revalidatedDrex) && source.version && source.locator);
 }
 for (const sourceId of draft.sourceIds) assert(sources.has(sourceId));
 const sections = new Map(draft.sections.map(section => [section.id, section]));

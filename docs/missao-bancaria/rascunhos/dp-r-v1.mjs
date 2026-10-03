@@ -60,8 +60,8 @@ export const SOURCES = [
     "label": "BCB — Drex",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/drex",
     "locator": "Proposta de plataforma integrada e intermediação; sem data de lançamento ou acesso público presumido",
-    "version": "Página oficial consultada em 01/10/2026",
-    "checkedAt": "2026-10-01"
+    "version": "Página oficial; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "cmn.dp.correspondentes",

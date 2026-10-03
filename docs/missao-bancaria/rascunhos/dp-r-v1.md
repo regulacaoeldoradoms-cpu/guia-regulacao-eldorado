@@ -40,7 +40,7 @@ Um aplicativo confirma um agendamento para o dia seguinte. No mesmo cenário, um
 
 No Open Finance, a autorização de dados é delimitada; ela não torna toda transferência autorizada. Blockchain é tecnologia de registro, enquanto o ativo representado possui natureza e direitos próprios. CBDC e ativo privado não se igualam pela forma digital. Proposta de funcionalidade não comprova disponibilidade pública.
 
-Base conceitual: [BCB — Open Finance](https://www.bcb.gov.br/estabilidadefinanceira/openfinance); [NIST — Blockchain Technology Overview](https://csrc.nist.gov/pubs/ir/8202/final); [Lei 14.478/2022 — Ativos virtuais](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2022/lei/l14478.htm); [BCB — Drex](https://www.bcb.gov.br/estabilidadefinanceira/drex). Consulta: 01/10/2026.
+Base conceitual: [BCB — Open Finance](https://www.bcb.gov.br/estabilidadefinanceira/openfinance); [NIST — Blockchain Technology Overview](https://csrc.nist.gov/pubs/ir/8202/final); [Lei 14.478/2022 — Ativos virtuais](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2022/lei/l14478.htm); [BCB — Drex](https://www.bcb.gov.br/estabilidadefinanceira/drex). Consulta: 01/10/2026; 03/10/2026.
 
 <a id="ex-digital"></a>
 
@@ -316,7 +316,7 @@ Aula de origem: [DP-12: 1. Agrupar para compreender necessidades](dp-12-v1.md#se
 - [BCB — Open Finance](https://www.bcb.gov.br/estabilidadefinanceira/openfinance): Página oficial consultada em 01/10/2026; Escolha de dados/destinatário/prazo, cancelamento e benefícios possíveis; consulta 2026-10-01.
 - [NIST — Blockchain Technology Overview](https://csrc.nist.gov/pubs/ir/8202/final): NIST IR 8202, versão final de outubro de 2018; Resumo executivo e seção 2: registro, consenso e redes permissionadas/abertas; consulta 2026-10-01.
 - [Lei 14.478/2022 — Ativos virtuais](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2022/lei/l14478.htm): Texto oficial consultado em 01/10/2026; Art. 3º e exclusões; art. 1º parágrafo único; sem regime atual de autorização das prestadoras; consulta 2026-10-01.
-- [BCB — Drex](https://www.bcb.gov.br/estabilidadefinanceira/drex): Página oficial consultada em 01/10/2026; Proposta de plataforma integrada e intermediação; sem data de lançamento ou acesso público presumido; consulta 2026-10-01.
+- [BCB — Drex](https://www.bcb.gov.br/estabilidadefinanceira/drex): Página oficial; revalidada em 03/10/2026; Proposta de plataforma integrada e intermediação; sem data de lançamento ou acesso público presumido; consulta 2026-10-03.
 - [CMN — Resolução 4.935/2021](https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20CMN&numero=4935): Versão vigente exibida pelo BCB, atualizada em 01/12/2025; Arts. 2º, 3º, 12 e 14: atuação contratada, responsabilidade e identificação; art. 8º revogado não utilizado; consulta 2026-10-01.
 - [BIS — Big tech in finance](https://www.bis.org/publications/aer-2019/big-tech-finance-opportunities-risks): Annual Economic Report 2019, capítulo III; Conceitos de plataforma, dados, rede e entrada em finanças; não estatísticas atuais; consulta 2026-10-01.
 - [Lei 13.709/2018 — LGPD](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm): Texto oficial consultado em 01/10/2026; Art. 6º: finalidade, adequação, necessidade e não discriminação; art. 7º: bases legais; consulta 2026-10-01.

@@ -4,24 +4,24 @@ export const SOURCES = [
     "label": "BCB — Drex",
     "url": "https://www.bcb.gov.br/estabilidadefinanceira/drex",
     "locator": "Proposta de plataforma integrada e intermediação; sem data de lançamento ou acesso público presumido",
-    "version": "Página oficial consultada em 01/10/2026",
-    "checkedAt": "2026-10-01"
+    "version": "Página oficial; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "bcb.dp.drex.conceito",
     "label": "BCB — FAQ Drex",
     "url": "https://www.bcb.gov.br/meubc/faqs/p/drex",
     "locator": "CBDC; distinção entre emissão de atacado pelo BC e representações de varejo por instituições autorizadas",
-    "version": "FAQ com atualização exibida de 16/10/2023",
-    "checkedAt": "2026-10-01"
+    "version": "FAQ com atualização exibida de 16/10/2023; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "bcb.dp.drex.lancamento",
     "label": "BCB — FAQ Lançamento do Drex",
     "url": "https://www.bcb.gov.br/meubc/faqs/p/lancamento-do-drex",
     "locator": "Página mantém ausência de data específica; não é confirmação independente do estágio de todas as etapas",
-    "version": "FAQ com atualização exibida de 20/02/2024; consultada em 01/10/2026",
-    "checkedAt": "2026-10-01"
+    "version": "FAQ com atualização exibida de 20/02/2024; revalidada em 03/10/2026",
+    "checkedAt": "2026-10-03"
   },
   {
     "id": "bcb.dp.pix",
@@ -116,7 +116,7 @@ export const DP09_DRAFT = {
       "id": "estagio",
       "type": "explanation",
       "heading": "7. Proposta não é serviço público já disponível",
-      "body": "A página geral consultada em 01/10/2026 descreve funcionalidades futuras. A FAQ de lançamento, cuja atualização exibida é 20/02/2024, continua sem indicar data específica. Esse registro de fonte não permite prometer acesso, calendário ou funcionalidades de produção. Antes de eventual publicação desta aula, o estágio deve ser revalidado no BCB. Não incorporamos cronograma de notícia antiga.",
+      "body": "As três páginas do BCB foram reconsultadas em 03/10/2026. A página geral continua descrevendo funcionalidades futuras; a FAQ de conceito conserva atualização exibida de 16/10/2023 e a de lançamento, de 20/02/2024, não indica data específica. A consulta confirma o teor dessas páginas, sem comprovar todas as etapas atuais do projeto. Não permite prometer acesso público, calendário ou funcionalidades de produção. Os exemplos desta aula descrevem a proposta, sem incorporarem cronograma de notícia antiga.",
       "sourceIds": [
         "bcb.dp.drex",
         "bcb.dp.drex.lancamento"

@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -85,4 +87,12 @@ test('recuperação rejeita referência a aula futura', () => {
   const question = changed[0].draft.questions[0];
   question.originRefs = [{ unit: 'dp12', sectionId: 'indicadores' }];
   assert.throws(() => compileDpCandidate(changed), /future-prerequisite/);
+});
+
+test('DP: seis cenários do roteador real em SQLite offline, sem ativação', () => {
+  const env = {...process.env}; delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(process.execPath, ['--experimental-vm-modules', '--test', '--test-reporter=tap', fileURLToPath(new URL('./helpers/studies-dp-route-runner.mjs', import.meta.url))], {env, encoding:'utf8', timeout:15000, maxBuffer:1024*1024});
+  assert.equal(result.status,0,result.stdout+'\n'+result.stderr);
+  assert.match(result.stdout,/# pass 6\b/); assert.match(result.stdout,/# fail 0\b/);
+  assert(candidate.missions.every(m => m.publication.status === 'draft' && m.candidate.parametersApproved === false));
 });

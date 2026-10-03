@@ -3,6 +3,7 @@
 import { MP_MISSIONS } from './banking-markets-policy-v1.js';
 import { PC_MISSIONS } from './banking-products-credit-v1.js';
 import { CE_MISSIONS } from './banking-capital-exchange-v1.js';
+import { DP_MISSIONS } from './banking-digital-payments-v1.js';
 import { publishedCatalog } from './publication-registry.js';
 
 const freezeList = (items) => Object.freeze(items.map((item) => Object.freeze(item)));
@@ -83,7 +84,7 @@ export const COURSE_AREAS = Object.freeze([
     block('banking.markets-policy', 'Mercados, moeda, política monetária, juros e dívida pública', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(MP_MISSIONS).map(mission => mission.id)),
     block('banking.products-credit', 'Produtos bancários, crédito, contas e garantias', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(PC_MISSIONS).map(mission => mission.id)),
     block('banking.capital-exchange', 'Mercado de capitais, investimentos e câmbio', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(CE_MISSIONS).map(mission => mission.id)),
-    block('banking.digital-payments', 'Pagamentos, bancos digitais, fintechs e transformação financeira', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
+    block('banking.digital-payments', 'Pagamentos, bancos digitais, fintechs e transformação financeira', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(DP_MISSIONS).map(mission => mission.id)),
     block('banking.institution-specific', 'Tópicos institucionais e programas específicos do edital', ['caixa.tbn.2024-nm'])
   ]),
   area('portuguese', 'Língua Portuguesa', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], [
