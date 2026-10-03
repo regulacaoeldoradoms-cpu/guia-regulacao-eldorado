@@ -601,6 +601,36 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
   assert.equal(inactiveAction.status, 404, 'conta inativa não recebe nova interação social');
 });
 
+sqliteTest('chat fast path preserva a exigência de e-mail profissional quando o gate estiver ativo', async () => {
+  const env = environment();
+  const sender = await register(env, 'envio.rapido', '127.0.0.81');
+  await register(env, 'destino.rapido', '127.0.0.82');
+  await env.AUTH_DB.prepare(`UPDATE auth_users
+    SET role = 'recepcao'
+    WHERE username IN ('envio.rapido','destino.rapido')`).run();
+  env.AUTH_REQUIRE_EMAIL_VERIFICATION = 'true';
+
+  const blocked = await callChat(env, '/api/chat/messages', sender.token, {
+    method: 'POST',
+    body: { to: 'destino.rapido', body: 'Mensagem bloqueada sem e-mail', clientId: 'chat-fast-email-gate-001' }
+  });
+  assert.equal(blocked.status, 403);
+  assert.equal((await payload(blocked)).code, 'EMAIL_VERIFICATION_REQUIRED');
+
+  await env.AUTH_DB.prepare(`UPDATE auth_users
+    SET email_verified = 1
+    WHERE username = 'envio.rapido'`).run();
+
+  const allowed = await callChat(env, '/api/chat/messages', sender.token, {
+    method: 'POST',
+    body: { to: 'destino.rapido', body: 'Mensagem liberada com e-mail', clientId: 'chat-fast-email-gate-002' }
+  });
+  assert.equal(allowed.status, 201);
+  const allowedPayload = await payload(allowed);
+  assert.equal(allowedPayload.message.body, 'Mensagem liberada com e-mail');
+  assert.ok(Number(allowedPayload.message.id || 0) > 0);
+});
+
 sqliteTest('feed usa cursor cronológico sem duplicar nem perder itens', async () => {
   const env = environment();
   const session = await register(env, 'pagina.social', '127.0.0.25');
