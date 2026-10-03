@@ -30,7 +30,6 @@ function safeEvent(value) {
 export class PortalChatRealtime extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.attentionCooldowns = new Map();
     this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
   }
 
@@ -255,7 +254,16 @@ export class PortalChatRealtime extends DurableObject {
 
     if (payload?.type === 'attention') {
       const now = Date.now();
-      const until = Number(this.attentionCooldowns.get(target) || 0);
+      const attachment = socket.deserializeAttachment?.() || {};
+      const sourceCooldowns = attachment.attentionCooldowns && typeof attachment.attentionCooldowns === 'object'
+        ? attachment.attentionCooldowns
+        : {};
+      const cooldowns = Object.fromEntries(
+        Object.entries(sourceCooldowns)
+          .filter(([, value]) => Number(value || 0) > now)
+          .slice(-32)
+      );
+      const until = Number(cooldowns[target] || 0);
       if (until > now) {
         this.sendSocket(socket, {
           type: 'attention-cooldown',
@@ -264,7 +272,8 @@ export class PortalChatRealtime extends DurableObject {
         });
         return;
       }
-      this.attentionCooldowns.set(target, now + ATTENTION_COOLDOWN_MS);
+      cooldowns[target] = now + ATTENTION_COOLDOWN_MS;
+      socket.serializeAttachment({ ...attachment, attentionCooldowns: cooldowns });
       await this.sendToUser(target, {
         type: 'attention',
         username,
