@@ -83,12 +83,11 @@ function socialAwareInsertSql() {
           AND COALESCE(sender.council_role, '') NOT IN ('membro','presidente')
         )
       )
-      AND (
-        (
-          sender.role IN (${PROFESSIONAL_ROLE_SQL})
+      AND CASE
+        WHEN sender.role IN (${PROFESSIONAL_ROLE_SQL})
           AND target.role IN (${PROFESSIONAL_ROLE_SQL})
-        )
-        OR EXISTS (
+          THEN 1
+        ELSE EXISTS (
           SELECT 1
           FROM social_users viewer
           JOIN social_relationships relationship
@@ -108,7 +107,7 @@ function socialAwareInsertSql() {
             AND viewer.suspended_at IS NULL
             AND friend.suspended_at IS NULL
         )
-      )`;
+      END = 1`;
 }
 
 async function runAuthorizedInsert(env, validated, sentAt, allowSocial) {
