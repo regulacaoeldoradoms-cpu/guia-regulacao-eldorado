@@ -448,6 +448,25 @@
       if (username) setRemoteTyping(username, Boolean(payload.active), Number(payload.expiresAt || 0));
       return;
     }
+    if (type === 'attention') {
+      handleIncomingAttention(payload.username);
+      return;
+    }
+    if (type === 'attention-ack') {
+      const username = messageCacheKey(payload.with);
+      if (username) attentionCooldowns.set(username, Date.now() + Math.max(1000, Number(payload.cooldownMs || CHAT_ATTENTION_COOLDOWN_MS)));
+      showStatus('Atenção enviada.');
+      updateAttentionButton();
+      return;
+    }
+    if (type === 'attention-cooldown') {
+      const username = messageCacheKey(payload.with);
+      const retryAfterMs = Math.max(500, Number(payload.retryAfterMs || CHAT_ATTENTION_COOLDOWN_MS));
+      if (username) attentionCooldowns.set(username, Date.now() + retryAfterMs);
+      showStatus('Aguarde ' + Math.ceil(retryAfterMs / 1000) + ' s para chamar atenção novamente.');
+      updateAttentionButton();
+      return;
+    }
     if (type === 'presence') {
       const username = messageCacheKey(payload.username);
       if (username && !updateContactPresence(username, Boolean(payload.online), String(payload.lastSeen || ''))) {
