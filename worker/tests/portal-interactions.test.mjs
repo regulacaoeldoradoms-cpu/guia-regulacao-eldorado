@@ -265,6 +265,12 @@ test('preferências persistem no backend sem mudar permissões', () => {
 test('interfaces ativas não usam emojis como pictogramas', () => {
   const emoji = /[\u2600-\u27BF\u{1F000}-\u{1FAFF}]/u;
   for (const filename of RUNTIME_TEXT_FILES) {
-    assert.doesNotMatch(read(filename), emoji, `${filename}: use SVG vetorial`);
+    let source = read(filename);
+    if (filename === 'js/portal-chat.js') {
+      source = source.replace(/const CHAT_EMOJIS = Object\.freeze\(\[[^\n]+\]\);/, '');
+      assert.match(read(filename), /ICONS\.smile/);
+      assert.match(read(filename), /ICONS\.attention/);
+    }
+    assert.doesNotMatch(source, emoji, `${filename}: use SVG vetorial fora do catálogo explícito de emoticons`);
   }
 });
