@@ -56,6 +56,13 @@ HTTP permanece como fallback. Histórico antigo é carregado sob demanda e leitu
 protegida `peek=1` não altera o estado de não lida. A autorização continua sendo
 revalidada no backend em toda operação protegida.
 
+Eventos puramente de interface, como **Chamar atenção**, também usam o WebSocket e não
+criam registros no D1. O Durable Object valida o alvo contra a lista de contatos
+autorizados já sincronizada e mantém o cooldown em attachment hibernável do socket.
+No cliente, o launcher do Chat pode tremer quando recolhido; com o painel aberto,
+somente o cabeçalho recebe feedback visual. Usuários com `prefers-reduced-motion`
+recebem destaque estático em vez de movimento.
+
 Após o incidente de cota D1 de 02/10/2026, o Chat passou a tratar orçamento de leitura
 como requisito arquitetural: não pode refazer a malha profissional pela consulta
 social, não pode resolver handles em N+1, não pode reconstruir contatos no upgrade
