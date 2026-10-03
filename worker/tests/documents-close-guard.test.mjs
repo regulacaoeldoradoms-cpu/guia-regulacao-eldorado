@@ -49,7 +49,7 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
   let nextTimer = 0;
   let finishUpload;
   const uploadWait = holdUpload ? new Promise((resolve) => { finishUpload = resolve; }) : null;
-  const user = { role: 'admin', documentCapabilities: { edit: true } };
+  const user = { username: 'synthetic-operator', role: 'admin', documentCapabilities: { edit: true } };
   const access = {
     capabilities: { edit: true, view: false, manage: false },
     drive: { connected: true, writeEnabled: initialWriteEnabled }
@@ -67,6 +67,7 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
     RegulationAuth: {
       requireRole: async () => user,
       getCachedUser: () => user,
+      getToken: () => 'synthetic-session-token',
       authorizationHeader: () => ({ Authorization: 'Bearer test-only' }),
       api: async (url, options) => {
         calls.api.push({ url, options });
@@ -147,6 +148,7 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
   const source = fs.readFileSync(clientPath, 'utf8');
   const anchor = '  const oauthState = new URLSearchParams(location.search).get(\'oauth\');';
   assert.equal(source.split(anchor).length, 2, 'State exposure must have exactly one insertion point.');
+  vm.runInNewContext(fs.readFileSync(path.join(path.dirname(clientPath), 'document-navigation.js'), 'utf8'), sandbox);
   await vm.runInNewContext(source.replace(anchor, `  window.__closeGuardTest = { state };\n${anchor}`), sandbox, { filename: clientPath });
   const { state } = window.__closeGuardTest;
   const item = { ref: 'original-ref', cacheKey: 'original-cache', version: '1', name: 'Synthetic.pdf', isPdf: true };

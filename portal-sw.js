@@ -1,7 +1,7 @@
 'use strict';
 
-// Renova o HTML para que a CSP autorize o WebSocket do chat em todos os módulos.
-const CACHE_VERSION = '20261003-chat-websocket-csp-1';
+// Renova a Central para carregar a navegação privada em RAM.
+const CACHE_VERSION = '20261003-documents-navigation-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -31,6 +31,7 @@ const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
 const documentStreams = new Map();
 const documentWarmSnapshots = new Map();
 const documentWarmInFlight = new Map();
+const documentWarmReadyWaiters = new Map();
 let documentWarmGeneration = 0;
 
 const CHAT_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
@@ -223,6 +224,9 @@ function publishDocumentWarmSnapshot(key, endpoint, generation, result) {
     expiresAt: createdAt + DOCUMENTS_WARM_TTL_MS,
     payload
   }));
+  if (payload.folder && Array.isArray(payload.folder.items)) {
+    for (const resolve of documentWarmReadyWaiters.get(key) || []) resolve();
+  }
   return true;
 }
 
@@ -310,7 +314,7 @@ async function warmDocumentsPrivate(data) {
     publishDocumentWarmSnapshot(key, endpoint, generation, result);
     return true;
   })().finally(() => {
-    documentWarmInFlight.delete(key);
+    if (documentWarmInFlight.get(key) === operation) documentWarmInFlight.delete(key);
   });
 
   documentWarmInFlight.set(key, operation);
@@ -339,7 +343,18 @@ async function getDocumentsWarmPayload(data) {
   if (ready) return ready;
 
   const pending = documentWarmInFlight.get(key);
-  if (pending) await pending.catch(() => false);
+  if (pending) {
+    let resolveReady;
+    const readyPromise = new Promise((resolve) => { resolveReady = resolve; });
+    const waiters = documentWarmReadyWaiters.get(key) || new Set();
+    waiters.add(resolveReady);
+    documentWarmReadyWaiters.set(key, waiters);
+    try { await Promise.race([readyPromise, pending.catch(() => false)]); }
+    finally {
+      waiters.delete(resolveReady);
+      if (!waiters.size && documentWarmReadyWaiters.get(key) === waiters) documentWarmReadyWaiters.delete(key);
+    }
+  }
   return usableEntry();
 }
 
@@ -347,6 +362,10 @@ function clearDocumentsWarm() {
   documentWarmGeneration += 1;
   documentWarmSnapshots.clear();
   documentWarmInFlight.clear();
+  for (const waiters of documentWarmReadyWaiters.values()) {
+    for (const resolve of waiters) resolve();
+  }
+  documentWarmReadyWaiters.clear();
 }
 
 function cleanChatSessionSnapshots(now = Date.now()) {
@@ -862,7 +881,12 @@ self.addEventListener('message', (event) => {
   }
 
   if (event.data?.type === 'PORTAL_DOCUMENTS_WARM_CLEAR') {
-    if (sameOriginClient(event)) clearDocumentsWarm();
+    if (sameOriginClient(event)) {
+      clearDocumentsWarm();
+      event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        for (const client of clients) client.postMessage({ type: 'PORTAL_DOCUMENTS_INVALIDATED' });
+      }));
+    }
     return;
   }
 

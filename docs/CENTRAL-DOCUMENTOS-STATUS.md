@@ -1,6 +1,16 @@
 # Central de Documentos — Status
 
-Última atualização: 02/10/2026.
+Última atualização: 03/10/2026.
+
+## Checkpoint atual — desempenho da navegação — 03/10/2026
+
+- Pacote autorizado e implementado na branch isolada `perf/central-navigation-ram-20261003`, base `6c4fcd86`, [PR #599 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/599), funcional inicial `9c2467df`. Merge/publicação dependem de aprovação posterior.
+- Lista após acesso atual, preferências/IA em segundo plano; warmup libera ao receber a raiz; refresh recente e leituras equivalentes deduplicados. Cache de pasta/pesquisa somente RAM: 20 s, 12 entradas/200 itens, isolado por sessão/usuário; invalidação em mutações/logout/acesso negado e descarte de respostas atrasadas.
+- Verificado: aggregate Worker **737/737**, 13 regressões funcionais novas, sintaxe e bundle de staging, quatro testes de recuperação 5E. CI do funcional: Central Fases 1–6, staging e governança success; Chromium da Central success no primeiro candidato; gates do head final pendentes. Check pré-regulação falhou por asserções antigas sobre `worker/index.js`, idêntico à base; não expandir escopo para repará-lo. Nenhuma instalação ou consulta a pacientes.
+- Medição sintética: abrir frio 505 → 325 ms; entrar/voltar pasta 600 → 350 ms; pesquisar/repetir 600 → 350 ms. Primeira pasta sem cache 300 → 325 ms pelo acesso ao vivo. Não são latências produtivas.
+- Evidências e limites: [relatório de navegação em RAM](CENTRAL-DOCUMENTOS-NAVEGACAO-RAM-20261003.md). Próxima ação: concluir CI da draft, revisar segurança/medição e obter aprovação de publicação; depois medir primeiro-lista visível, p50/p95 e chamadas por ação no mesmo marco temporal.
+
+Registros de entregas publicadas anteriores abaixo preservados como histórico.
 
 ## Central de Documentos — recuperação de falhas transitórias de conexão — PUBLICADA — 29/09/2026
 
@@ -511,3 +521,4 @@ Riscos conhecidos: a API do Google Drive possui um único campo técnico `versio
 | Próxima ação exata | Unir/editar PDF e renomeá-lo durante a sincronização; confirmar visualmente que ambos concluem sem espera mútua e que as últimas gravações confirmadas prevalecem. |
 | Arquivos e fontes principais | `worker/document-drive.js`; `js/documents.js`; `worker/tests/document-rename.test.mjs`; `worker/tests/documents-phase1.test.mjs`; `worker/tests/documents-ui.test.mjs`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; PR #585; merge `b5eef032`; Guia Mestre 1.1. |
 
+CI adicional: o run de abertura pós-login `37161739497` teve quatro timeouts de 35 s em `opening-home-ready.spec.mjs`, ao avaliar o vídeo da Home. Causa não determinada neste escopo; preservar como pendência antes de publicação. A revisão final também zera termos/filtros e snapshots residuais da interface na invalidação de sessão; aggregate 737/737 e benchmark idêntico reaprovados.

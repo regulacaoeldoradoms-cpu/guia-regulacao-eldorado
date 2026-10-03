@@ -238,8 +238,8 @@
     });
   }
 
-  function clearDocumentsWarm() {
-    clearDocumentsWarmTimer();
+  function clearDocumentsWarm({ keepRefresh = false } = {}) {
+    if (!keepRefresh) clearDocumentsWarmTimer();
     register().then((registration) => {
       const worker = activeWorker(registration);
       worker?.postMessage?.({ type: 'PORTAL_DOCUMENTS_WARM_CLEAR' });
@@ -338,6 +338,7 @@
     warmForUser,
     warmDocumentsForUser,
     getDocumentWarmPayload,
+    clearDocumentsWarm,
     warmRoute(value) {
       return warmRoutes([value], { immediate: true, force: true });
     },
