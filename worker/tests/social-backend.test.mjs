@@ -686,6 +686,27 @@ sqliteTest('envio websocket atômico valida sessão, autorização institucional
   });
   assert.equal(citizenWithoutFriendship.ok, false);
 
+  env.AUTH_REQUIRE_EMAIL_VERIFICATION = 'true';
+  await env.AUTH_DB.prepare("UPDATE auth_users SET email_verified = 0 WHERE username = 'ws.sender'").run();
+  const emailBlocked = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.sender',
+    toUser: 'ws.target',
+    body: 'Gate de e-mail',
+    clientId: 'chat-websocket-atomic-004',
+    sessionVersion: 4
+  });
+  assert.equal(emailBlocked.ok, false);
+
+  await env.AUTH_DB.prepare("UPDATE auth_users SET email_verified = 1 WHERE username = 'ws.sender'").run();
+  const emailAllowed = await persistAtomicChatMessage(env, {
+    fromUser: 'ws.sender',
+    toUser: 'ws.target',
+    body: 'Gate de e-mail liberado',
+    clientId: 'chat-websocket-atomic-005',
+    sessionVersion: 4
+  });
+  assert.equal(emailAllowed.ok, true);
+
   const total = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total
     FROM portal_chat_messages
     WHERE from_user = 'ws.sender' AND client_id = 'chat-websocket-atomic-001'`).first();
