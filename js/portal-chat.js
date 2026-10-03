@@ -264,6 +264,101 @@
     remoteTypingTimer = window.setTimeout(clearRemoteTyping, ttl);
   }
 
+  function attentionName(username) {
+    return contacts.find((item) => item.username === username)?.name || username || 'Alguém';
+  }
+
+  function clearAttentionEffect() {
+    window.clearTimeout(attentionEffectTimer);
+    attentionEffectTimer = null;
+    document.getElementById('portalChatLauncher')?.classList.remove('attention-hit');
+    document.querySelector('.portal-chat-panel')?.classList.remove('attention-hit');
+  }
+
+  function retriggerClass(element, className) {
+    if (!element) return;
+    element.classList.remove(className);
+    void element.offsetWidth;
+    element.classList.add(className);
+  }
+
+  function handleIncomingAttention(username) {
+    const sender = messageCacheKey(username);
+    if (!sender || sender === currentUser?.username) return;
+    const root = document.getElementById('portalChatRoot');
+    const open = Boolean(root?.classList.contains('open'));
+    clearAttentionEffect();
+    if (open) retriggerClass(document.querySelector('.portal-chat-panel'), 'attention-hit');
+    else retriggerClass(document.getElementById('portalChatLauncher'), 'attention-hit');
+    showStatus(attentionName(sender) + ' chamou sua atenção.');
+    attentionEffectTimer = window.setTimeout(clearAttentionEffect, CHAT_ATTENTION_EFFECT_MS);
+  }
+
+  function attentionCooldownRemaining(username) {
+    return Math.max(0, Number(attentionCooldowns.get(username) || 0) - Date.now());
+  }
+
+  function updateAttentionButton() {
+    const button = document.getElementById('portalChatAttention');
+    if (!button) return;
+    window.clearTimeout(attentionButtonTimer);
+    attentionButtonTimer = null;
+    const username = activeContact?.username || '';
+    const remaining = username ? attentionCooldownRemaining(username) : 0;
+    const ready = Boolean(username && realtimeConnected && realtimeSocket?.readyState === WebSocket.OPEN && remaining <= 0);
+    button.disabled = !ready;
+    button.setAttribute('aria-disabled', ready ? 'false' : 'true');
+    if (!username) button.title = 'Abra uma conversa para chamar atenção.';
+    else if (!realtimeConnected) button.title = 'A conexão em tempo real está reconectando.';
+    else if (remaining > 0) {
+      button.title = 'Disponível novamente em ' + Math.ceil(remaining / 1000) + ' s.';
+      attentionButtonTimer = window.setTimeout(updateAttentionButton, remaining + 30);
+    } else button.title = 'Fazer o botão de Chat do destinatário chamar atenção.';
+  }
+
+  function sendAttention() {
+    const username = activeContact?.username || '';
+    if (!username) return;
+    const remaining = attentionCooldownRemaining(username);
+    if (remaining > 0) {
+      showStatus('Aguarde ' + Math.ceil(remaining / 1000) + ' s para chamar atenção novamente.');
+      updateAttentionButton();
+      return;
+    }
+    if (!realtimeConnected || realtimeSocket?.readyState !== WebSocket.OPEN) {
+      showStatus('A conexão em tempo real está reconectando. Tente novamente em instantes.');
+      updateAttentionButton();
+      return;
+    }
+    try {
+      realtimeSocket.send(JSON.stringify({ type: 'attention', with: username }));
+      attentionCooldowns.set(username, Date.now() + CHAT_ATTENTION_COOLDOWN_MS);
+      showStatus('Chamando atenção de ' + (activeContact?.name || username) + '…');
+      updateAttentionButton();
+    } catch (_) {
+      showStatus('Não foi possível chamar atenção agora.');
+    }
+  }
+
+  function toggleEmojiPicker(force) {
+    const picker = document.getElementById('portalChatEmojiPicker');
+    const button = document.getElementById('portalChatEmojiButton');
+    if (!picker || !button) return;
+    const open = typeof force === 'boolean' ? force : picker.hidden;
+    picker.hidden = !open;
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function insertEmoji(emoji) {
+    const input = document.getElementById('portalChatInput');
+    if (!input || !emoji) return;
+    const start = Number.isInteger(input.selectionStart) ? input.selectionStart : input.value.length;
+    const end = Number.isInteger(input.selectionEnd) ? input.selectionEnd : start;
+    input.setRangeText(emoji, start, end, 'end');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  }
+
   function handleRealtimeMessage(message) {
     const id = Number(message?.id || 0);
     const sender = messageCacheKey(message?.fromUser);
