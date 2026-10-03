@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-wssend-1') return;
+  if (window.PortalChat?.version === '20261002-emotes-attention-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -35,6 +35,8 @@
   let typingStopTimer = null;
   let remoteTypingTimer = null;
   let remoteTypingUsername = '';
+  let attentionEffectTimer = null;
+  let attentionButtonTimer = null;
   let contactsLoadPending = null;
   let lastContactsLoadedAt = 0;
   const unreadSnapshot = new Map();
@@ -58,17 +60,23 @@
   const CHAT_REALTIME_ROTATE_MS = 300000;
   const CHAT_REALTIME_PING_MS = 25000;
   const CHAT_REALTIME_SEND_ACK_TIMEOUT_MS = 1800;
+  const CHAT_ATTENTION_COOLDOWN_MS = 5000;
+  const CHAT_ATTENTION_EFFECT_MS = 1800;
   const CHAT_TYPING_RESEND_MS = 1400;
   const CHAT_TYPING_STOP_MS = 2200;
   const CHAT_TYPING_REMOTE_TTL_MS = 4200;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
+  const CHAT_EMOJIS = Object.freeze(['😀','😃','😄','😁','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳','🤗','🤔','😅','😢','😭','😡','😴','👍','👎','👏','🙌','🙏','💪','👌','✌️','🤝','❤️','💙','💚','💛','✨','🎉','🔥','⚡','✅','📌','👀']);
+  const attentionCooldowns = new Map();
 
   const escapeText = (value) => String(value || '');
   const ICONS = Object.freeze({
     chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-4.5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"></path><path d="M7.5 9.5h9M7.5 13h6"></path></svg>',
     notification: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path><path d="M10 20h4"></path></svg>',
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path><path d="M9 12h10"></path></svg>',
-    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>'
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>',
+    smile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 14c.7.8 1.7 1.2 3 1.2s2.3-.4 3-1.2M9 9h.01M15 9h.01"></path></svg>',
+    attention: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-7 11h5l-1 9 8-12h-5V2Z"></path></svg>'
   });
 
   function initials(value) {
@@ -118,6 +126,7 @@
     realtimeConnected = Boolean(connected);
     if (realtimeConnected) stopMessagePolling();
     else if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
+    updateAttentionButton();
     if (!realtimeStopped) restartContactsTimer();
   }
 
@@ -257,6 +266,104 @@
     remoteTypingTimer = window.setTimeout(clearRemoteTyping, ttl);
   }
 
+  function attentionName(username) {
+    return contacts.find((item) => item.username === username)?.name || username || 'Alguém';
+  }
+
+  function clearAttentionEffect() {
+    window.clearTimeout(attentionEffectTimer);
+    attentionEffectTimer = null;
+    document.getElementById('portalChatLauncher')?.classList.remove('attention-hit');
+    document.querySelector('.portal-chat-panel')?.classList.remove('attention-hit');
+  }
+
+  function retriggerClass(element, className) {
+    if (!element) return;
+    element.classList.remove(className);
+    void element.offsetWidth;
+    element.classList.add(className);
+  }
+
+  function handleIncomingAttention(username) {
+    const sender = messageCacheKey(username);
+    if (!sender || sender === currentUser?.username) return;
+    const root = document.getElementById('portalChatRoot');
+    const open = Boolean(root?.classList.contains('open'));
+    clearAttentionEffect();
+    if (open) retriggerClass(document.querySelector('.portal-chat-panel'), 'attention-hit');
+    else retriggerClass(document.getElementById('portalChatLauncher'), 'attention-hit');
+    const message = attentionName(sender) + ' chamou sua atenção.';
+    const live = document.getElementById('portalChatAttentionLive');
+    if (live) live.textContent = message;
+    if (open) showStatus(message);
+    attentionEffectTimer = window.setTimeout(clearAttentionEffect, CHAT_ATTENTION_EFFECT_MS);
+  }
+
+  function attentionCooldownRemaining(username) {
+    return Math.max(0, Number(attentionCooldowns.get(username) || 0) - Date.now());
+  }
+
+  function updateAttentionButton() {
+    const button = document.getElementById('portalChatAttention');
+    if (!button) return;
+    window.clearTimeout(attentionButtonTimer);
+    attentionButtonTimer = null;
+    const username = activeContact?.username || '';
+    const remaining = username ? attentionCooldownRemaining(username) : 0;
+    const ready = Boolean(username && realtimeConnected && realtimeSocket?.readyState === WebSocket.OPEN && remaining <= 0);
+    button.disabled = !ready;
+    button.setAttribute('aria-disabled', ready ? 'false' : 'true');
+    if (!username) button.title = 'Abra uma conversa para chamar atenção.';
+    else if (!realtimeConnected) button.title = 'A conexão em tempo real está reconectando.';
+    else if (remaining > 0) {
+      button.title = 'Disponível novamente em ' + Math.ceil(remaining / 1000) + ' s.';
+      attentionButtonTimer = window.setTimeout(updateAttentionButton, remaining + 30);
+    } else button.title = 'Fazer o botão de Chat do destinatário chamar atenção.';
+  }
+
+  function sendAttention() {
+    const username = activeContact?.username || '';
+    if (!username) return;
+    const remaining = attentionCooldownRemaining(username);
+    if (remaining > 0) {
+      showStatus('Aguarde ' + Math.ceil(remaining / 1000) + ' s para chamar atenção novamente.');
+      updateAttentionButton();
+      return;
+    }
+    if (!realtimeConnected || realtimeSocket?.readyState !== WebSocket.OPEN) {
+      showStatus('A conexão em tempo real está reconectando. Tente novamente em instantes.');
+      updateAttentionButton();
+      return;
+    }
+    try {
+      realtimeSocket.send(JSON.stringify({ type: 'attention', with: username }));
+      attentionCooldowns.set(username, Date.now() + CHAT_ATTENTION_COOLDOWN_MS);
+      showStatus('Chamando atenção de ' + (activeContact?.name || username) + '…');
+      updateAttentionButton();
+    } catch (_) {
+      showStatus('Não foi possível chamar atenção agora.');
+    }
+  }
+
+  function toggleEmojiPicker(force) {
+    const picker = document.getElementById('portalChatEmojiPicker');
+    const button = document.getElementById('portalChatEmojiButton');
+    if (!picker || !button) return;
+    const open = typeof force === 'boolean' ? force : picker.hidden;
+    picker.hidden = !open;
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function insertEmoji(emoji) {
+    const input = document.getElementById('portalChatInput');
+    if (!input || !emoji) return;
+    const start = Number.isInteger(input.selectionStart) ? input.selectionStart : input.value.length;
+    const end = Number.isInteger(input.selectionEnd) ? input.selectionEnd : start;
+    input.setRangeText(emoji, start, end, 'end');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  }
+
   function handleRealtimeMessage(message) {
     const id = Number(message?.id || 0);
     const sender = messageCacheKey(message?.fromUser);
@@ -344,6 +451,25 @@
     if (type === 'typing') {
       const username = messageCacheKey(payload.username);
       if (username) setRemoteTyping(username, Boolean(payload.active), Number(payload.expiresAt || 0));
+      return;
+    }
+    if (type === 'attention') {
+      handleIncomingAttention(payload.username);
+      return;
+    }
+    if (type === 'attention-ack') {
+      const username = messageCacheKey(payload.with);
+      if (username) attentionCooldowns.set(username, Date.now() + Math.max(1000, Number(payload.cooldownMs || CHAT_ATTENTION_COOLDOWN_MS)));
+      showStatus('Atenção enviada.');
+      updateAttentionButton();
+      return;
+    }
+    if (type === 'attention-cooldown') {
+      const username = messageCacheKey(payload.with);
+      const retryAfterMs = Math.max(500, Number(payload.retryAfterMs || CHAT_ATTENTION_COOLDOWN_MS));
+      if (username) attentionCooldowns.set(username, Date.now() + retryAfterMs);
+      showStatus('Aguarde ' + Math.ceil(retryAfterMs / 1000) + ' s para chamar atenção novamente.');
+      updateAttentionButton();
       return;
     }
     if (type === 'presence') {
@@ -1328,6 +1454,7 @@
     saveActiveDraft();
     stopLocalTyping();
     clearRemoteTyping();
+    toggleEmojiPicker(false);
     activeContact = contact;
     const cachedForBoundary = messageCache.get(messageCacheKey(contact?.username));
     activeUnreadBoundaryId = unreadBoundaryFor(contact, cachedForBoundary?.messages || []);
@@ -1344,6 +1471,7 @@
     const input = document.getElementById('portalChatInput');
     if (input) input.value = draftCache.get(contact.username) || '';
     queueChatSessionPersist();
+    updateAttentionButton();
     if (options.focus !== false) input?.focus();
   }
 
@@ -1376,6 +1504,7 @@
     saveActiveDraft();
     stopLocalTyping();
     clearRemoteTyping();
+    toggleEmojiPicker(false);
     activeContact = null;
     activeUnreadBoundaryId = 0;
     lastMessageId = 0;
@@ -1389,6 +1518,7 @@
     if (name) name.textContent = 'Chat interno';
     if (status) status.textContent = 'Comunicação entre usuários do portal';
     if (profile) profile.hidden = true;
+    updateAttentionButton();
     queueChatSessionPersist();
     loadContacts();
   }
@@ -1503,6 +1633,7 @@
 
   function sendMessage() {
     stopLocalTyping();
+    toggleEmojiPicker(false);
     const input = document.getElementById('portalChatInput');
     const body = String(input?.value || '').trim();
     const username = activeContact?.username || '';
@@ -1572,6 +1703,7 @@
       <button class="portal-chat-launcher" id="portalChatLauncher" type="button" aria-label="Abrir chat interno">
         <span class="portal-chat-launcher-icon">${ICONS.chat}</span><span class="chat-launcher-text">Chat</span><span class="chat-online-dot" aria-hidden="true"></span><span class="portal-chat-count" id="portalChatUnread">0</span>
       </button>
+      <span class="portal-chat-sr-only" id="portalChatAttentionLive" aria-live="assertive" aria-atomic="true"></span>
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
@@ -1592,10 +1724,20 @@
           </div>
           <div class="portal-chat-view portal-chat-conversation" id="portalChatConversationView">
             <div class="portal-chat-messages" id="portalChatMessages"></div>
-            <div><div class="portal-chat-compose"><textarea class="portal-chat-input" id="portalChatInput" maxlength="2000" rows="1" placeholder="Digite uma mensagem"></textarea><button class="portal-chat-send" id="portalChatSend" type="button">Enviar</button></div><div class="portal-chat-note">Uso interno do portal. Evite compartilhar dados sensíveis além do necessário.</div></div>
+            <div class="portal-chat-composer">
+              <div class="portal-chat-tools">
+                <button class="portal-chat-tool-button" id="portalChatEmojiButton" type="button" aria-expanded="false" aria-controls="portalChatEmojiPicker">${ICONS.smile}<span>Emoticons</span></button>
+                <button class="portal-chat-tool-button attention" id="portalChatAttention" type="button" disabled aria-disabled="true">${ICONS.attention}<span>Chamar atenção</span></button>
+              </div>
+              <div class="portal-chat-emoji-picker" id="portalChatEmojiPicker" role="dialog" aria-label="Escolher emoticon" hidden>
+                <div class="portal-chat-emoji-grid">${CHAT_EMOJIS.map((emoji) => `<button class="portal-chat-emoji" type="button" data-chat-emoji="${encodeURIComponent(emoji)}" aria-label="Inserir ${emoji}">${emoji}</button>`).join('')}</div>
+              </div>
+              <div class="portal-chat-compose"><textarea class="portal-chat-input" id="portalChatInput" maxlength="2000" rows="1" placeholder="Digite uma mensagem"></textarea><button class="portal-chat-send" id="portalChatSend" type="button">Enviar</button></div>
+              <div class="portal-chat-note">Uso interno do portal. Evite compartilhar dados sensíveis além do necessário.</div>
+            </div>
           </div>
         </div>
-        <div class="portal-chat-status" id="portalChatStatus"></div>
+        <div class="portal-chat-status" id="portalChatStatus" role="status" aria-live="polite"></div>
       </section>`;
     document.body.appendChild(root);
 
@@ -1629,6 +1771,13 @@
       const retry = event.target.closest?.('[data-chat-retry]');
       if (retry?.dataset.chatRetry) retryPendingMessage(retry.dataset.chatRetry);
     });
+    document.getElementById('portalChatEmojiButton')?.addEventListener('click', () => toggleEmojiPicker());
+    document.getElementById('portalChatEmojiPicker')?.addEventListener('click', (event) => {
+      const button = event.target.closest?.('[data-chat-emoji]');
+      if (!button) return;
+      insertEmoji(decodeURIComponent(button.dataset.chatEmoji || ''));
+    });
+    document.getElementById('portalChatAttention')?.addEventListener('click', sendAttention);
     document.getElementById('portalChatSend')?.addEventListener('click', sendMessage);
     document.getElementById('portalChatInput')?.addEventListener('input', () => {
       saveActiveDraft();
@@ -1640,6 +1789,15 @@
         event.preventDefault();
         sendMessage();
       }
+    });
+    root.addEventListener('click', (event) => {
+      const picker = document.getElementById('portalChatEmojiPicker');
+      if (picker?.hidden) return;
+      if (event.target.closest?.('#portalChatEmojiPicker, #portalChatEmojiButton')) return;
+      toggleEmojiPicker(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') toggleEmojiPicker(false);
     });
   }
 
@@ -1744,7 +1902,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-wssend-1',
+    version: '20261002-emotes-attention-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

@@ -6,6 +6,7 @@ import { persistAtomicChatMessage } from './chat-send-atomic.js';
 import { notifyUserPush } from './push-notifications.js';
 
 const PRESENCE_GRACE_MS = 4000;
+const ATTENTION_COOLDOWN_MS = 5000;
 const MAX_CONTACTS = 300;
 const INTERNAL_BASE = 'https://portal-chat-realtime.internal';
 
@@ -22,7 +23,7 @@ function serverTimestamp() {
 function safeEvent(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const type = String(value.type || '').slice(0, 32);
-  if (!['message', 'receipt', 'typing', 'presence', 'contact-refresh'].includes(type)) return null;
+  if (!['message', 'receipt', 'typing', 'presence', 'contact-refresh', 'attention'].includes(type)) return null;
   return { ...value, type };
 }
 
@@ -247,11 +248,46 @@ export class PortalChatRealtime extends DurableObject {
       await this.handleRealtimeSend(socket, payload);
       return;
     }
-    if (payload?.type !== 'typing') return;
-
     const target = normalizeUsername(payload.with);
     const { username, contacts } = await this.configuration();
     if (!username || !target || target === username || !contacts.includes(target)) return;
+
+    if (payload?.type === 'attention') {
+      const now = Date.now();
+      const attachment = socket.deserializeAttachment?.() || {};
+      const sourceCooldowns = attachment.attentionCooldowns && typeof attachment.attentionCooldowns === 'object'
+        ? attachment.attentionCooldowns
+        : {};
+      const cooldowns = Object.fromEntries(
+        Object.entries(sourceCooldowns)
+          .filter(([, value]) => Number(value || 0) > now)
+          .slice(-32)
+      );
+      const until = Number(cooldowns[target] || 0);
+      if (until > now) {
+        this.sendSocket(socket, {
+          type: 'attention-cooldown',
+          with: target,
+          retryAfterMs: Math.max(0, until - now)
+        });
+        return;
+      }
+      cooldowns[target] = now + ATTENTION_COOLDOWN_MS;
+      socket.serializeAttachment({ ...attachment, attentionCooldowns: cooldowns });
+      await this.sendToUser(target, {
+        type: 'attention',
+        username,
+        at: now
+      });
+      this.sendSocket(socket, {
+        type: 'attention-ack',
+        with: target,
+        cooldownMs: ATTENTION_COOLDOWN_MS
+      });
+      return;
+    }
+
+    if (payload?.type !== 'typing') return;
 
     await this.sendToUser(target, {
       type: 'typing',

@@ -32,7 +32,7 @@ const authenticatedModules = [
 test('chat global aparece em todos os módulos autenticados sem carga manual duplicada', () => {
   for (const path of authenticatedModules) {
     const html = read(path);
-    assert.match(html, /portal-global-chat\.js\?v=20261002-wssend-1/, path);
+    assert.match(html, /portal-global-chat\.js\?v=20261002-emotes-attention-1/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat\.js\?v=/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat-switch-optimizer\.js\?v=/, path);
   }
@@ -49,8 +49,8 @@ test('bootstrap global exige sessão e preserva primeiro acesso', () => {
   assert.match(source, /regulacao\.portal\.session/);
   assert.match(source, /if \(!storedToken\(\)\) return null/);
   assert.match(source, /user\.mustChangePassword/);
-  assert.match(source, /portal-chat\.css\?v=20261002-wssend-1/);
-  assert.match(source, /portal-chat\.js\?v=20261002-wssend-1/);
+  assert.match(source, /portal-chat\.css\?v=20261002-emotes-attention-1/);
+  assert.match(source, /portal-chat\.js\?v=20261002-emotes-attention-1/);
   assert.match(source, /portal-chat-switch-optimizer\.js\?v=20260928-global-1/);
 });
 
@@ -63,8 +63,8 @@ test('componente global mantém autorização atual por cargo e amizade', () => 
 });
 
 test('chat e otimizador têm guarda de versão global', () => {
-  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261002-wssend-1'/);
-  assert.match(read('js/portal-chat.js'), /version: '20261002-wssend-1'/);
+  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261002-emotes-attention-1'/);
+  assert.match(read('js/portal-chat.js'), /version: '20261002-emotes-attention-1'/);
   assert.match(read('js/portal-chat-switch-optimizer.js'), /PortalChatSwitchOptimizer\?\.version === '20260928-global-1'/);
 });
 
@@ -245,4 +245,39 @@ test('envio principal usa WebSocket e conserva POST apenas como fallback idempot
   assert.match(atomic, /sender\.session_version = \?/);
   assert.match(atomic, /CASE\s+WHEN sender\.role IN/s);
   assert.match(atomic, /duplicateMessage/);
+});
+
+
+test('chat oferece emoticons e chamar atenção sem persistência no D1', () => {
+  const client = read('js/portal-chat.js');
+  const css = read('css/portal-chat.css');
+  const durable = read('worker/chat-realtime-do.js');
+
+  assert.match(client, /CHAT_EMOJIS = Object\.freeze/);
+  assert.match(client, /id="portalChatEmojiButton"/);
+  assert.match(client, /id="portalChatEmojiPicker"/);
+  assert.match(client, /data-chat-emoji/);
+  assert.match(client, /function insertEmoji/);
+  assert.match(client, /setRangeText/);
+
+  assert.match(client, /id="portalChatAttention"/);
+  assert.match(client, /Chamar atenção/);
+  assert.match(client, /type: 'attention'/);
+  assert.match(client, /type === 'attention'/);
+  assert.match(client, /type === 'attention-ack'/);
+  assert.match(client, /type === 'attention-cooldown'/);
+  assert.match(client, /CHAT_ATTENTION_COOLDOWN_MS = 5000/);
+  assert.match(client, /CHAT_ATTENTION_EFFECT_MS = 1800/);
+  assert.match(client, /id="portalChatAttentionLive"/);
+  assert.match(client, /aria-live="assertive"/);
+
+  assert.match(css, /portal-chat-launcher\.attention-hit/);
+  assert.match(css, /portal-chat-panel\.attention-hit/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /portal-chat-emoji-grid/);
+
+  const attentionStart = durable.indexOf("if (payload?.type === 'attention')");
+  const attentionEnd = durable.indexOf("if (payload?.type !== 'typing')", attentionStart);
+  const attentionBlock = durable.slice(attentionStart, attentionEnd);
+  assert.doesNotMatch(attentionBlock, /AUTH_DB|portal_chat_messages/);
 });

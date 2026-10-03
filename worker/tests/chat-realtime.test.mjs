@@ -97,3 +97,23 @@ test('Durable Object recebe envio, confirma antes das tarefas secundárias e man
   assert.match(atomic, /relationship\.state = 'friends'/);
   assert.match(atomic, /CASE\s+WHEN sender\.role IN/s);
 });
+
+
+test('chamar atenção é evento efêmero do WebSocket com cooldown hibernável e sem D1', () => {
+  const durable = read('worker/chat-realtime-do.js');
+
+  assert.match(durable, /ATTENTION_COOLDOWN_MS = 5000/);
+  assert.match(durable, /'attention'/);
+  assert.match(durable, /payload\?\.type === 'attention'/);
+  assert.match(durable, /type: 'attention-ack'/);
+  assert.match(durable, /type: 'attention-cooldown'/);
+  assert.match(durable, /deserializeAttachment/);
+  assert.match(durable, /serializeAttachment\(\{ \.\.\.attachment, attentionCooldowns: cooldowns \}\)/);
+
+  const start = durable.indexOf("if (payload?.type === 'attention')");
+  const end = durable.indexOf("if (payload?.type !== 'typing')", start);
+  const block = durable.slice(start, end);
+  assert.match(block, /sendToUser\(target/);
+  assert.doesNotMatch(block, /AUTH_DB|prepare\(|portal_chat_messages/);
+  assert.doesNotMatch(block, /storage\.put|storage\.get/);
+});
