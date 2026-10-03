@@ -1,0 +1,18 @@
+# Institucional CAIXA - preparo local desativado
+
+03/10/2026. [Ensino](88-IS-PLANO-E-PRIMEIRO-LOTE.md) e [revisão/Chefe](89-IS-REVISAO-E-PROPOSTA-CHEFE.md): oito aulas, revisão e Chefe; **84 questões/336 justificativas**. Um único parecer pedagógico independente leu os dez Markdown no commit **366192bf8c21422b3c341013fca725e24eb4204a** e aprovou o recorte sem correção substantiva, gabarito concorrente, hipótese insuficiente ou pré-requisito ausente. Não repetiu cálculos/esquema/fontes nem usou API real; não é aceite humano, cobertura integral de leis ou avaliação independente do aluno. Textos permanecem inalterados.
+
+O gerador [studies-is-candidate.mjs](../../worker/scripts/studies-is-candidate.mjs) reutiliza a conversão MP/PC/CE/DP. [Artefato](../../worker/studies-content/banking-institution-specific-v1.js) com dez missões **draft**, IDs `banking.is.*`, questões `q.is*`, fontes prefixadas por unidade e recuperação convertida para missões/seções existentes. **Não importado pelo manifesto/mapa/runtime** nesta etapa; nenhum arquivo de publicação ativo foi alterado. `parametersApproved` permanece falso e o resumo declara `publicationReady:false`; não há comando de ativação.
+
+Sequência apenas proposta para futura integração: ordens 65-74, primeira dependente do Chefe DP e demais da unidade anterior; 100 XP/aula/revisão, Chefe 220 XP/75%, seguindo o padrão existente. A dependência DP também permanece draft; a validação conjunta inclui suas missões/fontes para conferir referências, sem publicá-las. Perfil nominal exclusivamente histórico CAIXA 2024/NM, referenceOnly. Parâmetros/progressão ainda não aprovados para este bloco.
+
+## Verificação proporcional executada
+
+- `node --test worker/tests/studies-is-candidate.test.mjs`: **sete testes aprovados**. Conferem draft não exposto, catálogo/fontes/DP inalterados, texto/gabaritos/justificativas preservados, IDs e recuperação, sequência proposta e itens próprios do Chefe. Negativos rejeitam pacote incompleto/duplicado/ativado, fonte desconhecida, seção inexistente e dependência de aula futura.
+- `node worker/scripts/studies-is-candidate.mjs --check-generated`: artefato sincronizado, dez missões/84 questões/39 registros de fonte por unidade; não implica 39 fontes únicas ou cobertura normativa integral.
+- Sintaxe do gerador e `node worker/scripts/check-studies-isolation.mjs` aprovados. Detector e workflows preservados, sem exceções novas.
+- Este pacote usa texto simples; o conversor de apresentações foi reaproveitado sem alteração. Sem tabela/diagrama/link Markdown que exija nova projeção de apresentação nesta etapa. Recuperação declarada usa IDs de ensino, validados no candidato.
+
+Não foram repetidos testes de MP/PC/CE/DP, auditoria geral, Chromium ou suítes Worker. Não houve consulta D1, histórico real, mudança de autorização ou escrita nas tabelas de progresso. Testes locais de catálogo não equivalem à homologação da UI/roteador autenticado. A mesma evidência produtiva CE registrada no checkpoint continua com seu SHA/limites; IS não está publicado.
+
+Próxima etapa local: preparar a ligação desativada de manifesto/mapa e fixture de leitura/retomada no padrão existente, mantendo o catálogo ativo idêntico e verificando somente os fluxos afetados. Antes de ativação futura, concluir gates e obter autorização específica de integração/publicação. Push desta nova branch segue pausado após rejeição automática por exigir autorização específica; nenhuma tentativa adicional, PR novo, merge ou deploy nesta entrega. #572/#598 e preview Worker permanecem pendências separadas, sem repetir diagnóstico. Fase 2 sem aceite humano observado.
