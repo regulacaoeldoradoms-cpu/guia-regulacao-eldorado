@@ -36,7 +36,12 @@ O perfil lógico `telemedicina` passa a ter o mesmo direito de usar o chat inter
 
 A identidade de Telemedicina continua seguindo a arquitetura definida em `docs/TELEMEDICINA.md`: a conta possui papel-base `recepcao` no registro principal do D1 e a tabela `auth_telemedicine_access` determina a capacidade lógica `telemedicina`.
 
-Por isso, o chat deve sempre usar a camada de autenticação flexível e a decoração de identidade de Telemedicina antes de decidir autorização ou apresentar contatos. Isso evita que o Técnico em Telemedicina seja bloqueado indevidamente ou exibido como simples Recepção.
+Por isso, a **listagem e apresentação dos contatos** continua usando a decoração de
+identidade de Telemedicina para exibir corretamente a função lógica. No caminho rápido
+de envio não é necessário carregar essa decoração: o papel-base `recepcao` já pertence
+à matriz profissional e a autorização atômica no D1 aceita esse papel. Essa separação
+evita bloquear o Técnico em Telemedicina sem obrigar cada mensagem a consultar
+capabilities que não alteram a permissão de conversa.
 
 ## Disponibilidade global nos módulos
 
@@ -156,42 +161,55 @@ sem recarregar o histórico completo.
 
 ## Confirmação rápida de envio no servidor
 
-Decisão permanente atualizada em 02/10/2026: o balão otimista continua aparecendo no
-mesmo instante do clique, mas o estado **enviando** deve desaparecer assim que a
-mensagem estiver gravada de forma idempotente no D1. Notificação push, publicação do
-evento WebSocket e atualização do diretório não pertencem ao caminho crítico do ACK.
+Decisão permanente atualizada em 02/10/2026: o balão otimista aparece no instante do
+clique e, quando o WebSocket estiver saudável, **a própria mensagem também é enviada
+pelo canal já aberto**. O POST HTTP deixa de ser o transporte primário e permanece como
+fallback idempotente.
 
-Para isso, a rota `POST /api/chat/messages` usa um caminho de autenticação específico
-do Chat: valida a assinatura da sessão, confirma no D1 que a conta continua ativa e
-que a versão da sessão ainda é válida, preserva o gate de e-mail profissional quando
-habilitado e verifica a autorização do destinatário sem carregar capabilities de
-Telemedicina, Conselho, papéis adicionais ou Central de Documentos.
+Fluxo primário:
 
-A autorização continua server-side. Para conversa profissional, o alvo ativo é
-validado diretamente pelo cargo institucional; quando a autorização depende de
-amizade, a relação `friends` continua sendo conferida no D1. Nenhum cache local
-substitui essa decisão.
+1. o cliente envia `{ type: "send", to, body, clientId }` pelo WebSocket existente;
+2. o Durable Object recupera do attachment a identidade e a versão da sessão que foram
+   assinadas no ticket HMAC do upgrade;
+3. uma única instrução `INSERT OR IGNORE ... SELECT` no D1 valida, na mesma operação,
+   conta ativa, `session_version`, gate de e-mail quando habilitado, destinatário ativo
+   e autorização institucional ou amizade `friends`;
+4. se a linha for criada, o próprio resultado da escrita fornece o ID e o servidor
+   envia `send-ack` imediatamente pelo mesmo WebSocket;
+5. somente depois do ACK são disparados entrega realtime ao destinatário e Web Push.
 
-No envio com `client_id`, o caso normal faz `INSERT OR IGNORE` e constrói a
-confirmação a partir do próprio resultado da escrita. A consulta pelo `client_id`
-ocorre somente quando a inserção foi ignorada, isto é, no retry idempotente. Isso
-remove as leituras anterior e posterior que existiam em todo envio novo.
+A autorização permanece integralmente no servidor. O Durable Object não confia na
+lista visual de contatos para gravar mensagens. Para profissionais, o `INSERT ...
+SELECT` valida os cargos atuais no D1; para canais sociais, a mesma instrução exige a
+amizade atual e perfis sociais não suspensos. Alterações de cargo, desativação da conta,
+revogação da amizade ou mudança da `session_version` passam a bloquear a escrita sem
+depender de reconexão do navegador.
 
-O roteador principal também encaminha `/api/chat/*` antes das migrações e guards
-globais que não pertencem ao Chat. O preflight CORS do Chat passa pelo mesmo caminho
-curto. A própria rota continua responsável por origem, sessão, gate de e-mail e
-permissão de contato.
+O ticket realtime passou a incluir a `session_version` dentro da carga HMAC assinada.
+O Worker compara essa versão novamente durante o upgrade e o Durable Object a conserva
+somente no attachment hibernável do socket. A cada envio, o D1 revalida a versão atual.
 
-A resposta de envio inclui telemetria técnica sem conteúdo da mensagem:
+No caso comum de mensagem nova, não há SELECT anterior nem posterior à escrita. Uma
+consulta por `client_id` ocorre somente quando `INSERT OR IGNORE` não cria a linha,
+para distinguir um retry legítimo de uma autorização que deixou de existir. Assim,
+reenvios continuam idempotentes e não geram mensagem duplicada.
 
-- `Server-Timing: chat_ack;dur=..., d1_write;dur=...`;
-- `X-Portal-Chat-Ack-Ms`;
-- log estruturado `chat_send_ack` com duração total, duração da escrita e indicação
-  de criação/retry, sem nome de usuário e sem texto da conversa.
+Se o socket não confirmar o envio em aproximadamente **1,8 segundo**, se fechar ou se
+não estiver conectado, o cliente repete a mesma tentativa pelo
+`POST /api/chat/messages` usando o mesmo `client_id`. A constraint única do D1
+garante que a corrida WebSocket↔HTTP não duplique a mensagem. O POST conserva o caminho
+rápido implementado anteriormente.
 
-Depois do ACK, push e entrega WebSocket são executados por `waitUntil` quando o
-runtime fornece `ExecutionContext`. O cliente atualiza localmente a data da conversa
-e não força uma nova carga do diretório apenas porque acabou de enviar uma mensagem.
+Telemetria técnica permanece sem identidade e sem conteúdo da conversa:
+
+- WebSocket: evento `chat_ws_send_ack` com duração do ACK e indicador de
+  criação/retry;
+- WebSocket recusado: `chat_ws_send_rejected` com código técnico e duração;
+- fallback HTTP: `Server-Timing`, `X-Portal-Chat-Ack-Ms` e
+  `chat_send_ack`.
+
+O cliente atualiza a data da conversa localmente e não recarrega o diretório inteiro
+após uma confirmação de envio.
 
 ## Tempo real, indicador de digitação e novas mensagens
 
@@ -313,6 +331,7 @@ Essa recusa não impede a conversa profissional.
 - `worker/portal-chat-v2.js` — autorização, contatos, presença, mensagens, recibos e rotas realtime;
 - `worker/chat-realtime.js` — tickets efêmeros e ponte autenticada para o canal WebSocket;
 - `worker/chat-realtime-do.js` — Durable Object hibernável para eventos em tempo real, sem persistir conteúdo das conversas;
+- `worker/chat-send-atomic.js` — autorização e gravação atômicas das mensagens enviadas pelo WebSocket;
 - `worker/auth-management-flex.js` — sessão com perfil lógico de Telemedicina;
 - `worker/telemedicine-access.js` — decoração do papel-base `recepcao` como `telemedicina`;
 - `worker/social.js` e `worker/social-policy.js` — resolução e autorização do perfil,

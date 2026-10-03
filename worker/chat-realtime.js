@@ -60,14 +60,16 @@ export function realtimeTicketFromRequest(request) {
   return values.find((value) => value !== REALTIME_PROTOCOL) || '';
 }
 
-export async function createChatRealtimeTicket(env, username, now = Date.now()) {
+export async function createChatRealtimeTicket(env, username, sessionVersion = 0, now = Date.now()) {
   const normalized = normalizeRealtimeUsername(username);
+  const version = Math.max(0, Number.parseInt(String(sessionVersion || '0'), 10) || 0);
   const key = await ticketKey(env);
-  if (!normalized || !key) return null;
+  if (!normalized || !version || !key) return null;
   const payload = base64UrlEncodeJson({
-    v: 1,
+    v: 2,
     scope: 'portal-chat-realtime',
     u: normalized,
+    sv: version,
     iat: now,
     exp: now + REALTIME_TICKET_TTL_MS
   });
@@ -96,14 +98,19 @@ export async function verifyChatRealtimeTicket(env, ticket, now = Date.now()) {
   if (!valid) return null;
   const username = normalizeRealtimeUsername(payload?.u);
   if (
-    payload?.v !== 1
+    payload?.v !== 2
     || payload?.scope !== 'portal-chat-realtime'
     || !username
+    || !Number(payload?.sv || 0)
     || Number(payload?.exp || 0) < now
     || Number(payload?.iat || 0) > now + 5000
     || Number(payload?.exp || 0) - Number(payload?.iat || 0) > REALTIME_TICKET_TTL_MS + 1000
   ) return null;
-  return { username, expiresAt: Number(payload.exp) };
+  return {
+    username,
+    sessionVersion: Math.max(0, Number.parseInt(String(payload.sv || '0'), 10) || 0),
+    expiresAt: Number(payload.exp)
+  };
 }
 
 function realtimeStub(env, username) {
@@ -165,13 +172,15 @@ export async function broadcastChatRealtime(env, username, event) {
   }
 }
 
-export async function upgradeChatRealtime(request, env, username) {
+export async function upgradeChatRealtime(request, env, username, sessionVersion) {
   const stub = realtimeStub(env, username);
-  if (!stub) return new Response('Tempo real indisponível.', { status: 503 });
+  const version = Math.max(0, Number.parseInt(String(sessionVersion || '0'), 10) || 0);
+  if (!stub || !version) return new Response('Tempo real indisponível.', { status: 503 });
   const headers = new Headers();
   headers.set('Upgrade', 'websocket');
   headers.set('Sec-WebSocket-Protocol', REALTIME_PROTOCOL);
   headers.set('X-Portal-Chat-User', normalizeRealtimeUsername(username));
+  headers.set('X-Portal-Chat-Session-Version', String(version));
   const forwarded = new Request(INTERNAL_BASE + '/connect', {
     method: 'GET',
     headers

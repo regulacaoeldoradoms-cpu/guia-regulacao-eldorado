@@ -18,6 +18,7 @@ jobs:
           node --check worker/portal-chat-v2.js
           node --check worker/chat-realtime.js
           node --check worker/chat-realtime-do.js
+          node --check worker/chat-send-atomic.js
           node --check worker/push-notifications.js
           node --check worker/index.js
           node --check js/portal-global-chat.js
@@ -34,8 +35,8 @@ jobs:
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-body' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-contact:hover' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-message.mine' css/portal-chat.css
-          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20261002-ackfast-1'" js/portal-global-chat.js
-          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20261002-ackfast-1'" js/portal-global-chat.js
+          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20261002-wssend-1'" js/portal-global-chat.js
+          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20261002-wssend-1'" js/portal-global-chat.js
           grep -q "CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1'" js/portal-global-chat.js
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
@@ -64,6 +65,14 @@ jobs:
           grep -q "portal-chat-unread-divider" css/portal-chat.css
           grep -q "portal-chat-typing" css/portal-chat.css
           grep -q "new WebSocket" js/portal-chat.js
+          grep -q "CHAT_REALTIME_SEND_ACK_TIMEOUT_MS = 1800" js/portal-chat.js
+          grep -q "type: 'send'" js/portal-chat.js
+          grep -q "type === 'send-ack'" js/portal-chat.js
+          grep -q "type === 'send-error'" js/portal-chat.js
+          grep -q "persistAtomicChatMessage" worker/chat-realtime-do.js
+          grep -q "INSERT OR IGNORE INTO portal_chat_messages" worker/chat-send-atomic.js
+          grep -q "sender.session_version = ?" worker/chat-send-atomic.js
+          grep -q "X-Portal-Chat-Session-Version" worker/chat-realtime.js
           grep -q "CHAT_FALLBACK_POLL_MS = 4500" js/portal-chat.js
           grep -q 'name = "CHAT_REALTIME"' worker/wrangler.toml
           grep -q 'new_sqlite_classes = \["PortalChatRealtime"\]' worker/wrangler.toml
@@ -91,7 +100,7 @@ jobs:
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "version: '20261002-ackfast-1'" js/portal-chat.js
+          grep -q "version: '20261002-wssend-1'" js/portal-chat.js
           grep -q "PortalChatSwitchOptimizer" js/portal-chat-switch-optimizer.js
           grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q "id=\"portalChatProfileLink\"" js/portal-chat.js
@@ -111,7 +120,7 @@ jobs:
             documentos/index.html agenda/index.html agenda/sync/index.html cidadao/index.html \
             conselho/painel/index.html admin/usuarios/index.html admin/monitoramento/index.html \
             admin/configuracao/index.html admin/social/index.html; do
-            grep -q "portal-global-chat.js?v=20261002-ackfast-1" "$file"
+            grep -q "portal-global-chat.js?v=20261002-wssend-1" "$file"
             ! grep -q "portal-chat.js?v=" "$file"
             ! grep -q "portal-chat-switch-optimizer.js?v=" "$file"
           done
