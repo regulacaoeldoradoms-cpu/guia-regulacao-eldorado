@@ -1,7 +1,7 @@
 'use strict';
 
 import { verifyPortalSessionToken } from './auth-management-v2.js';
-import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedicine-access.js';
+import { decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
 import { ensureSocialSchema } from './social-schema.js';
