@@ -1,0 +1,48 @@
+# Pagamentos Digitais — preparação desativada
+
+03/10/2026. [Lote editorial](85-DP-CONJUNTO-RASCUNHOS.md) e [Chefe](86-DP-REVISAO-E-PROPOSTA-CHEFE.md): 12 aulas, revisão e Chefe; 116 questões/464 justificativas. Leitura pedagógica agrupada pelo agente concluída, com correções documentadas em 85; parecer independente do lote alterado aprovado, com alcance limitado registrado em 85.
+
+O gerador [studies-dp-candidate.mjs](../../worker/scripts/studies-dp-candidate.mjs) reutiliza o padrão MP/PC/CE e o conversor de apresentação existente. O artefato [banking-digital-payments-v1.js](../../worker/studies-content/banking-digital-payments-v1.js) contém 14 missões **draft**, ligadas ao manifesto/mapa pelo filtro de publicação existente, porém excluídas do catálogo, fontes e mapa disponíveis enquanto draft. `parametersApproved` e `publicationReady` permanecem falsos. Não há opção CLI de ativação.
+
+Proposta preservada: começar após Chefe CE, ordens 51–64 e dependência da unidade anterior; 100 XP/aula/revisão e Chefe 220 XP/75%. IDs `banking.dp.*`, questões `q.dp*`, fontes prefixadas por unidade; recuperação e links do Chefe são convertidos para missões/seções existentes. Valores são preparação, sem alteração do histórico ou parâmetros publicados.
+
+## Evidência proporcional
+
+- Chefe: validador editorial aprovado em 03/10; 12 enunciados, 48 justificativas, seis cálculos, seis grupos e origens nas doze aulas. MD gerado, UTF-8 e links conferidos. Resultados do lote de 01/10 reaproveitados; não repetidos.
+- `node --test worker/tests/studies-dp-candidate.test.mjs`: sete testes aprovados. Comparam artefato/textos com a fonte editorial, preservação de catálogo/fontes e exclusão dos drafts; verificam sequência, enunciados próprios e recuperação; rejeitam pacote incompleto/duplicado/ativado, fonte desconhecida, seção inexistente e referência futura.
+- `node worker/scripts/studies-dp-candidate.mjs --check-generated`: artefato conferido. Detector textual de isolamento aprovado; nenhum ajuste ao detector ou workflow. Nenhuma suíte geral, API real ou D1 usada nesta preparação.
+- O detector identificou seis usos genéricos de “encaminhamento” no novo material de crédito. DP-10, DP-R e uma justificativa do Chefe passaram a identificar “envio da proposta”, com o mesmo sentido, IDs e gabaritos. Somente esses três artefatos foram regenerados e validados novamente; candidato/testes/isolamento passaram após a alteração. Nenhuma exceção foi acrescentada ao detector.
+
+O catálogo ativo continua com SFN/MP/PC/CE. Preparação offline não é homologação da UI nem publicação. Seis cenários Chromium DP passaram: consultas às doze aulas/revisão em 320px claro e 390px escuro com fonte ampliada; rede/repetição e resposta única; resposta pendente durante consulta/saída; retomada sem nova rodada; usuário não autorizado. Após mudar apenas o registro temporal de DP-09, os dois cenários de leitura foram repetidos e passaram; os quatro fluxos inalterados reaproveitados. O payload contém drafts exclusivamente como fixture para testar apresentação futura; não habilita o runtime.
+
+## Gates restantes
+
+Parecer independente solicitado para o diff concluído; leitura restante pelo agente registrada com limite. Revalidação Drex e testes direcionados concluídos. Restam CI terminal do novo commit, resolução/decisão explícita dos gates externos e autorização específica de ativação/merge/deploy pelo fluxo protegido. Revalidar fatos mutáveis se a publicação ocorrer depois de intervalo relevante. Marketplace/segmentação são recortes nominais BB; PC-07 continua excluído. Fase 2 sem aceite humano observado.
+
+## Estado de CI e limite de escopo
+
+No SHA-base da revisão **5475aec8**, os 23 checks terminaram: **21 verdes**, incluindo estudos, Chromium sintético e Pages; dois falharam. A atualização editorial requer CI própria; os resultados anteriores não são aprovação antecipada do novo commit.
+
+- [Pré-regulação, job 111260834034](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37142901222/job/111260834034): 731 testes Worker passaram. O job testa a árvore combinada **91eef0bdc059e39ff07d35a0381ed7cd27603cbf**, unindo DP 5475aec8 à main **6c4fcd86198103ad6e1e8adc07901219c7957c92**. Falha no passo “Conferir Worker nativo atualizado”: primeira exigência ausente nessa base é `GEMINI_TOTAL_TIMEOUT_MS` em `worker/index.js`, depois de alterações concorrentes da IA. O checkout DP isolado contém a expressão; não reproduz essa falha. Conferidos pontualmente log e três arquivos do passo no SHA da base, sem repetir suíte ou alterar IA/clínica. A conclusão anterior sobre versão de script ausente foi descartada: o helper confundia regex JS e grep BRE; o script está presente e o passo dele passou. Alinhar o gate ao cancelamento da integração Gemini requer responsável/escopo autorizado separado; não restaurar funcionalidade cancelada para satisfazer grep. Nenhum módulo ou gate foi alterado. Não se afirma que corrigir esta primeira exigência fará todas as restantes passarem.
+- Preview Worker legado falho: problema externo já registrado, separado do deploy produtivo protegido; este pacote não muda comando, nome, bindings ou acesso. Não representa prova de incidente produtivo.
+
+A publicação DP ainda exige autorização específica para ativação após Chefe CE (100 XP/aula/revisão, Chefe 220 XP/75%), integração do #572 e deploy protegido, após concluir UI/roteador, fontes mutáveis e gates. Não há exceção de CI implícita.
+
+## Validação final desativada — 03/10
+
+- Oito testes do candidato passaram, incluindo um runner com **seis cenários** de roteador real em SQLite local: manifesto/mapa; draft inacessível e autorização; pré-requisito/feedback/duplicação/retomada; preservação de todas as tabelas study_*, XP, tentativas, conquistas, revisão, avaliação A e sessão interrompida; recuperação DP-R; Chefe75%/220XP único sem conquista indevida. A projeção publicada existe apenas na VM da fixture. No módulo real, statusdraft e parâmetros não aprovados continuam; 50 missões/quatro blocos e fontes anteriores permanecem disponíveis.
+- A ligação de mapa usa o mesmo filtro publishedCatalog de MP/PC/CE. O primeiro teste revelou falta dessa preparação; ela foi completada sem ativar conteúdo. O teste valida tanto quatro blocos reais quanto cinco na projeção de VM. Não houve mudança de fluxo clínico, autorização, algoritmo de progresso ou gate.
+- DP-09/DP-R/Chefe regenerados e validados por alteração das referências Drex; artefato e isolamento passaram. A renderização consultou [página geral BCB](https://www.bcb.gov.br/estabilidadefinanceira/drex), [conceito](https://www.bcb.gov.br/meubc/faqs/p/drex) e [lançamento](https://www.bcb.gov.br/meubc/faqs/p/lancamento-do-drex), todas HTTP 200 em 03/10. A página geral mantém proposta futura e acesso por intermediário autorizado; FAQ de conceito exibe 16/10/2023, lançamento 20/02/2024 sem data específica. Isso confirma as afirmações limitadas da aula, sem extrapolar estágio global/arquitetura/disponibilidade.
+- CI de **dd4b33cd** terminal:21/23 verdes, incluindo estudos, Chromium sintético e Pages; pré-regulação e preview legado falhos. Testes do novo commit terão resultado próprio. Nenhuma suíte manual geral, API real ou D1.
+
+Autorizações mínimas futuras: **(1)** ativar DP após Chefe CE, sequência por conclusão anterior, 100 XP/aula/revisão e Chefe 220 XP/75%, integrar #572 e executar deploy:safe após gates; **(2)** se pré-regulação seguir bloqueando, atribuir alinhamento do workflow ao responsável da IA em escopo separado ou decidir explicitamente o tratamento desse gate com evidência. Não é necessário corrigir funcionalidade clínica em DP nem restaurar Gemini. Preview legado não será migrado/alterado neste pacote. Nenhuma dessas ações foi executada nesta preparação.
+
+## CI terminal do código — 11243d1c
+
+Às 19:11 UTC de 03/10, **27 checks concluídos: 24 verdes/três falhos**. Estudos, Chromium de estudos, Pages e PDF.js passaram. Nenhum check executando.
+
+- [Pré-regulação, job 111267522158](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37145179525/job/111267522158): **732 testes passaram**, depois a conferência textual Worker falhou. Árvore de teste 2cabf4d une 11243d1c à main 6c4fcd86; diagnóstico anterior do contrato Gemini aplicável, sem mudança neste módulo.
+- [Auditoria geral, job 111267522264](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/37145179511/job/111267522264): **194 casos falhos/22 aprovados em 28,1 min**. Exemplos de falha em preservação/social incluem “Unknown fixture endpoints”/“No unmodeled API”, com **POST /api/chat/realtime/ticket** não modelado. Registro limitado dos logs, sem auditoria dos 194 casos: não se presume que todos tenham a mesma causa, que sejam falsos positivos ou que inexista regressão. Exige responsável de fixtures/chat/portal em escopo separado; nenhum baseline/threshold/check foi dispensado.
+- [Preview Worker legado](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/runs/111267558308): falho, independente da confirmação produtiva CE. Sem migração ou alteração de nomes/bindings/acesso.
+
+A atualização seguinte é documental: testes de código 11243d1c continuam válidos por escopo, sem repetição manual. Ausência de nova execução da auditoria geral no commit documental não apaga sua falha. Publicação continua bloqueada por gates externos e falta de autorização específica.

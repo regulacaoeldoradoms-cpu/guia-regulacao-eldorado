@@ -76,11 +76,20 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname==='/api/social/relationships') data = { profiles:[], requests:[], nextCursor:'' };
     else if (url.pathname==='/api/social/search') data = {profiles:[],nextCursor:''};
     else if (url.pathname === '/api/chat/contacts') data = { contacts:[], conversations:[], unreadCount:0 };
+    // This audit deliberately measures the existing HTTP fallback, with all
+    // sockets blocked above. The ticket endpoint's real unavailable response
+    // is modeled explicitly; this is not coverage of the realtime transport.
+    else if (url.pathname === '/api/chat/realtime/ticket' && request.method() === 'POST')
+      return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Tempo real temporariamente indisponível.'})});
+    else if (url.pathname === '/api/chat/delivery' && request.method() === 'POST') data = {ok:true,delivered:0};
+    else if (url.pathname === '/api/chat/typing' && request.method() === 'POST') data = {ok:true};
+    else if (url.pathname === '/api/chat/read' && request.method() === 'POST') data = {ok:true,readThroughId:0};
     else if (url.pathname === '/api/chat/presence') data = {ok:true};
     else if (url.pathname === '/api/chat/users') data = {users:[auditFriend]};
     else if (url.pathname === '/api/chat/messages') data = {messages:[{id:1,fromUser:auditFriend.username,body:'MENSAGEM FICTÍCIA RECEBIDA',sentAt:'2026-09-24T12:00:00Z'},{id:2,fromUser:user.username,body:'MENSAGEM FICTÍCIA ENVIADA',sentAt:'2026-09-24T12:01:00Z'}]};
     else if (url.pathname === '/api/telemedicina/dashboard') data = { today:'2026-09-24', actor:{ admin:true }, patients:[auditPatient], followups:[auditFollowup], counts:{ total:1, pending:1, due:1 } };
     else if (/^\/api\/telemedicina\/patients\/[^/]+$/.test(url.pathname)) data = { patient:auditPatient, followups:[auditFollowup], events:[] };
+    else if (url.pathname === '/api/agenda/contact-state' && request.method() === 'GET') data = {active:auditAgenda.length,known:auditAgenda.length,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)};
     else if (url.pathname === '/api/agenda') data = { records:auditAgenda, summary:{ active:3, unread:2, lastSyncAt:'2026-09-24T12:00:00Z' } };
     else if (url.pathname === '/api/documents/access') data = { capabilities:user.documentCapabilities, drive:{ connected:true, configured:true, writeEnabled:false } };
     else if (url.pathname === '/api/documents/drive/list') data = { items:[], nextPageToken:'' };

@@ -55,6 +55,9 @@ jobs:
           npm install --no-package-lock --no-audit --no-fund
           npx playwright install --with-deps chromium
 
+      - name: Validar contrato das APIs sintéticas
+        run: node --test testing/browser/dark-audit-fixture-contract.test.mjs
+
       - name: Executar toda a auditoria sintética
         working-directory: testing/browser
         run: npx playwright test --config playwright-dark-audit.config.mjs
