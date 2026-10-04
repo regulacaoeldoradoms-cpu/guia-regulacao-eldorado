@@ -1,0 +1,161 @@
+// Preparação offline. Não importar este módulo Node no Worker ou no catálogo ativo.
+import { pathToFileURL } from 'node:url';
+import { readFile, writeFile } from 'node:fs/promises';
+import {
+  PUBLISHED_MISSIONS, STUDY_SOURCES, validateTeachingCatalog
+} from '../studies-content/manifest.js';
+import { validateQuestionFeedback } from '../studies-content/question-feedback-v1.js';
+import { DP_MISSIONS, DP_SOURCES } from '../studies-content/banking-digital-payments-v1.js';
+import { LP_MISSIONS, LP_SOURCES } from '../studies-content/portuguese-reading-v1.js';
+import { PT_MISSIONS, PT_SOURCES } from '../studies-content/portuguese-text-v1.js';
+import { OA_MISSIONS, OA_SOURCES } from '../studies-content/portuguese-accentuation-v1.js';
+import { compilePresentation } from './studies-mp-presentation.mjs';
+
+// Preparação local desativada: Português comum antecede Institucional CAIXA. Não ativar nesta etapa.
+// Preparação desativada. Parecer de conteúdo concluído com ajustes pedagógicos aplicados; ativação/publicação não autorizadas.
+export const OL_PLAN = Object.freeze([
+  ['ol01','letra-som'], ['ol02','consoantes'], ['ol03','vogais'], ['olr','revisao'], ['olchefe','boss']
+].map(([unit, suffix], index) => Object.freeze({
+  unit, id: 'portuguese.spelling.letters.' + suffix, order: index + 82,
+  prerequisiteId: index === 0 ? 'portuguese.spelling.boss' : null
+})));
+
+export async function loadOlEditorial() {
+  return Promise.all(OL_PLAN.map(async ({ unit }) => {
+    const module = await import(`../../docs/missao-bancaria/rascunhos/ol-${unit.slice(2)}-v1.mjs`);
+    return { unit, draft: structuredClone(module[`${unit.toUpperCase()}_DRAFT`]), sources: structuredClone(module.SOURCES) };
+  }));
+}
+
+export function compileOlCandidate(editorial) {
+  const baselineMissions = [...new Map([...PUBLISHED_MISSIONS, ...DP_MISSIONS, ...LP_MISSIONS, ...PT_MISSIONS, ...OA_MISSIONS].map(mission => [mission.id, mission])).values()].filter(mission => mission.order < OL_PLAN[0].order);
+  const baselineSources = [...new Map([...STUDY_SOURCES, ...DP_SOURCES, ...LP_SOURCES, ...PT_SOURCES, ...OA_SOURCES].map(source => [source.id, source])).values()];
+  const byUnit = new Map(editorial.map(entry => [entry.unit, entry]));
+  if (byUnit.size !== OL_PLAN.length || editorial.length !== OL_PLAN.length) {
+    throw new Error('O pacote OL requer as cinco unidades, sem duplicatas.');
+  }
+  const idMap = new Map(OL_PLAN.map(plan => [`draft.${plan.unit}`, plan.id]));
+  const remap = id => {
+    if (!idMap.has(id)) throw new Error(`Referência editorial desconhecida: ${id}`);
+    return idMap.get(id);
+  };
+  const sources = [];
+  const feedback = [];
+  const readingRequirements = [];
+  const missions = OL_PLAN.map((plan, index) => {
+    const entry = byUnit.get(plan.unit);
+    if (!entry || entry.draft.id !== `draft.${plan.unit}` || entry.draft.publication.status !== 'draft') {
+      throw new Error(`${plan.unit}: origem deve permanecer draft.`);
+    }
+    const draft = structuredClone(entry.draft);
+    // Texto editorial de rascunho preservado integralmente; nenhuma alteração de status dentro das aulas.
+    const presentation = text => compilePresentation(text, href => {
+      const match = href.match(/^ol-(0[1-3]|r|chefe)-v1\.md(?:#([\w-]+))?$/);
+      if (!match) return null;
+      const unit = `ol${match[1]}`;
+      const target = OL_PLAN.find(item => item.unit === unit);
+      const sectionId = match[2] || byUnit.get(unit)?.draft.sections[0]?.id;
+      if (!target || target.order > plan.order || !byUnit.get(unit)?.draft.sections.some(section => section.id === sectionId)) return null;
+      return { missionId: target.id, sectionId, wholeLesson: !match[2] };
+    });
+    const rich = text => /```|^\||\[[^\]]+\]\([^)]+\)/m.test(text) ? { presentation: presentation(text) } : {};
+    const sourceIds = new Map(entry.sources.map(source => [source.id, `ol.${plan.unit}.${source.id}`]));
+    if (sourceIds.size !== entry.sources.length) throw new Error(`${plan.unit}: fonte duplicada.`);
+    const remapSource = id => {
+      if (!sourceIds.has(id)) throw new Error(`${plan.unit}: fonte desconhecida: ${id}`);
+      return sourceIds.get(id);
+    };
+    sources.push(...entry.sources.map(source => ({ ...source, id: remapSource(source.id) })));
+    const questionCoverage = {};
+    const questions = draft.questions.map(question => {
+      const id = `q.${question.id}`;
+      const refs = [
+        ...(draft.teaching.questionCoverage[question.id] || []).map(ref => ({
+          missionId: remap(ref.missionId), sectionId: ref.sectionId
+        })),
+        ...(question.originRefs || []).map(ref => ({
+          missionId: remap(`draft.${ref.unit}`), sectionId: ref.sectionId
+        }))
+      ];
+      questionCoverage[id] = [...new Map(refs.map(ref => [`${ref.missionId}:${ref.sectionId}`, ref])).values()];
+      feedback.push({ questionId: id, optionReasons: [...question.optionRationales] });
+      // Somente o endpoint pós-resposta usa estes campos; publicMission mantém sua projeção explícita.
+      return {
+        id, topicId: plan.id, prompt: question.prompt, options: question.options,
+        answer: question.answer, explanation: question.explanation,
+        optionRationales: question.optionRationales, ...rich(question.prompt)
+      };
+    });
+    // Conserva o texto de rascunho e o inventário dos locais convertidos em apresentação.
+    // A apresentação não altera o ensino de rascunho.
+    for (const [location, text] of [
+      ...draft.sections.map(section => [`section:${section.id}`, section.body]),
+      ...draft.questions.map(question => [`question:q.${question.id}`, question.prompt])
+    ]) {
+      const formats = [
+        /```mermaid/.test(text) && 'diagram',
+        /^\|/m.test(text) && 'table',
+        /\[[^\]]+\]\([^)]+\.md(?:#[^)]+)?\)/.test(text) && 'lesson-link'
+      ].filter(Boolean);
+      if (formats.length) readingRequirements.push({ missionId: plan.id, location, formats });
+    }
+    return {
+      id: plan.id, topicId: plan.id, contentVersion: draft.contentVersion,
+      order: plan.order, title: draft.title, shortTitle: draft.editorialKey,
+      kind: draft.kind, objective: draft.objective,
+      // Parâmetros propostos, seguindo a sequência e o XP existentes.
+      xp: draft.kind === 'boss' ? 220 : 100,
+      passScore: draft.kind === 'boss' ? 75 : 0,
+      // Estimativa didática, não limite: leitura a 150 palavras/min + 2 min por questão,
+      // arredondada para o próximo múltiplo de 5. Não controla cronômetro ou conclusão.
+      estimatedMinutes: Math.ceil((draft.sections.reduce((sum, section) => sum + section.body.split(/\s+/).length, 0) / 150 + questions.length * 2) / 5) * 5,
+      publication: { status: 'draft', releaseId: 'letters-intro-r1', releaseSequence: 9, changeImpact: 'new' },
+      sourceIds: draft.sourceIds.map(remapSource),
+      sections: draft.sections.map(section => ({ ...section, sourceIds: section.sourceIds.map(remapSource), ...rich(section.body) })),
+      recall: draft.recall, questions,
+      teaching: { ...draft.teaching, questionCoverage },
+      candidate: {
+        editorialId: draft.id, blockId: draft.candidateBlockId,
+        prerequisiteId: index === 0 ? plan.prerequisiteId : OL_PLAN[index - 1].id,
+        parametersApproved: false
+      }
+    };
+  });
+  const catalog = [...baselineMissions, ...missions];
+  const allSources = [...baselineSources, ...sources];
+  const errors = [
+    ...validateTeachingCatalog(catalog, allSources),
+    ...validateQuestionFeedback(missions, feedback)
+  ];
+  const questionIds = catalog.flatMap(mission => mission.questions.map(question => question.id));
+  const topics = catalog.map(mission => mission.topicId);
+  if (new Set(questionIds).size !== questionIds.length) errors.push('duplicate-question-id');
+  if (new Set(topics).size !== topics.length) errors.push('duplicate-topic-id');
+  if (new Set(allSources.map(source => source.id)).size !== allSources.length) errors.push('duplicate-source-id');
+  if (baselineMissions.at(-1)?.id !== OL_PLAN[0].prerequisiteId || baselineMissions.at(-1)?.order !== 81) {
+    errors.push('published-prerequisite-changed');
+  }
+  if (errors.length) throw new Error(`Candidato OL inválido: ${errors.join(', ')}`);
+  return { status: 'draft', missions, sources, feedback, readingRequirements };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const candidate = compileOlCandidate(await loadOlEditorial());
+  if (process.argv.includes('--write') || process.argv.includes('--check-generated')) {
+    const target = new URL('../studies-content/portuguese-spelling-letters-v1.js', import.meta.url);
+    const output = '// Gerado por node worker/scripts/studies-ol-candidate.mjs --write. Não editar.\n'
+      + '// Rascunhos OL locais. Desativado; sem autorização de ativação/publicação.\n'
+      + `export const OL_MISSIONS = Object.freeze(${JSON.stringify(candidate.missions, null, 2)});\n`
+      + `export const OL_SOURCES = Object.freeze(${JSON.stringify(candidate.sources, null, 2)});\n`;
+    if (process.argv.includes('--write')) await writeFile(target, output);
+    else if ((await readFile(target, 'utf8')).replace(/\r\n/g, '\n') !== output) throw new Error('Artefato OL desatualizado; regenere sem editar o conteúdo de rascunho.');
+    console.log('Artefato OL: ' + (process.argv.includes('--write') ? 'gerado' : 'conferido'));
+  }
+  // Resumo da preparação; não há opção de ativação via CLI ou ambiente.
+  console.log(JSON.stringify({
+    status: candidate.status, missions: candidate.missions.length,
+    questions: candidate.feedback.length, optionReasons: candidate.feedback.reduce((sum, item) => sum + item.optionReasons.length, 0),
+    sources: candidate.sources.length, readingRequirements: candidate.readingRequirements,
+    publicationReady: false
+  }, null, 2));
+}

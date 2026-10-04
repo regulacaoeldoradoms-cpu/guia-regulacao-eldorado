@@ -1,0 +1,11 @@
+# HF/CF e ordem — pacote local reconciliado
+
+04/10/2026. Branch preparation/missao-hf-cf-main220-local, checkout missao-hifen-local. Sem push/PR/ativação/merge remoto/deploy/D1. Origem5513b16a (CF/HF e ordem autorizada) preservada; #602 remoto continua dbc272e9, sem alteração por esta execução.
+
+Main220f30989ff6215dc539c1d51f72823bb90e7c77 confirmada via conector, objeto lido por Git com autenticação existente. Merge local e10512bf sem conflito de código. Os23arquivos trazidos (Central/Home/contratos) têm blobs exatamente iguais à main; js/studies.js,js/studies-reader.js,worker/studies.js,study-rounds.js,study-assessments.js não mudaram. Não reaplicados patches nem reavaliada publicação Central/Worker.
+
+Merge local de #602 dbc272e983a4da0d75e60b564cd06d9280b14f4a reaproveitou a correção já aprovada “diagnóstico de prontidão”→“avaliação de prontidão” nos dois formatos e artefato PT. Metadata de ordem70–75 preservada; não retornou ao intervalo remoto80–85. Somente PROJECT_STATE conflitou; mantido o checkpoint atual com fatos de reconciliação. Documento102 conserva a evidência remota da correção. IDs,gabaritos,XP,parâmetros,progresso e motor linear preservados; drafts continuam excluídos.
+
+[CF106](106-CF-PREPARACAO-TECNICA.md) e [ordem107](107-ORDEM-PORTUGUES-ANTES-INSTITUCIONAL.md) guardam31testes dirigidos/42cenáriosSQLite e12Chromium aprovados antes da reconciliação. Como motor/leitor/avaliação e arquivos dos testes não foram afetados pelo merge, essa evidência é reutilizada. Verificação afetada aprovada: PT --check-generated; um teste de preservação do artefato PT;13testes de isolamento e3de ordem/perfis, total17testes. Diferenças/referências pertinentes conferidas. Não executada suíte geral ou nova auditoria de conteúdo.
+
+Pacote permanece local/desativado. Liberação futura exige autorização específica de envio/ativação pertinente e CI obrigatória na árvore de integração. Main220 já inclui #598/Home: não criar novo diff funcional Central nem usar preview falho como justificativa para alterar produção. Aceite humano pedagógico fase2 não observado. Autoria seguinte: pontuação no bloco existente portuguese.syntax, mantendo Institucional após o comum na preparação.
