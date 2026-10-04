@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-async function syntheticPortal(page, { holdProfile = null, badCredentials = false, mustChangePassword = false } = {}) {
+async function syntheticPortal(page, { holdProfile = null, badCredentials = false, mustChangePassword = false, failedChatAsset = '' } = {}) {
   // O cenário bloqueia SW; simula também ausência de Push para não aguardar SW.ready no logout.
   await page.addInitScript(() => { delete window.PushManager; });
   const calls = [];
@@ -12,6 +12,7 @@ async function syntheticPortal(page, { holdProfile = null, badCredentials = fals
     const url = new URL(request.url());
     calls.push({ path:url.pathname, navigation:request.isNavigationRequest(), at:Date.now() });
     if (url.hostname === '127.0.0.1') {
+      if (failedChatAsset && url.pathname === failedChatAsset) return route.abort('blockedbyclient');
       if (url.pathname === '/seguranca/') return route.fulfill({ contentType:'text/html', body:'<h1>Segurança fictícia</h1>' });
       return route.continue();
     }
@@ -79,6 +80,14 @@ test('Home REAL inicia durante os 10 s; revela o mesmo documento sem flash nem r
   expect(calls.filter((call) => call.navigation)).toHaveLength(1);
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   expect(errors).toEqual([]);
+  const bootstrapLoads = calls.filter((call) => call.path === '/js/portal-chat.js' || call.path === '/js/portal-chat-switch-optimizer.js').length;
+  await page.evaluate(() => { window.__originalGlobalChat = window.PortalGlobalChat; });
+  await page.addScriptTag({ url:'/js/portal-global-chat.js?v=synthetic-duplicate' });
+  await page.evaluate(() => window.PortalGlobalChat.start());
+  expect(await page.evaluate(() => window.PortalGlobalChat === window.__originalGlobalChat)).toBe(true);
+  expect(calls.filter((call) => call.path === '/js/portal-chat.js' || call.path === '/js/portal-chat-switch-optimizer.js')).toHaveLength(bootstrapLoads);
+  await expect(page.locator('#portalGlobalChatScript')).toHaveCount(1);
+  await expect(page.locator('#portalGlobalChatOptimizer')).toHaveCount(1);
   await page.locator('#portalLogout').click();
   await expect(page).toHaveURL(/\/login\/$/);
   expect(calls.filter((call) => call.path === '/api/auth/logout')).toHaveLength(1);
@@ -121,4 +130,39 @@ test('troca obrigatória de senha preserva destino sem iniciar Home ou APIs soci
   await page.locator('#portalOpeningVideo').evaluate((video) => video.dispatchEvent(new Event('ended')));
   await expect(page).toHaveURL(/\/seguranca\/\?primeiro-acesso=1$/);
   expect(calls.some((call) => call.path.startsWith('/api/social/'))).toBe(false);
+});
+test('global chat without a session does not load chat assets or start social APIs', async ({ page }) => {
+  const calls = await syntheticPortal(page);
+  await page.addScriptTag({url:'/js/portal-global-chat.js?v=synthetic-anonymous'});
+  expect(await page.evaluate(() => window.PortalGlobalChat.start())).toBe(false);
+  expect(await page.evaluate(() => window.RegulationAuth.getToken())).toBe('');
+  expect(calls.some(call => call.path === '/js/portal-chat.js' || call.path === '/js/portal-chat-switch-optimizer.js')).toBe(false);
+  expect(calls.some(call => call.path.startsWith('/api/chat/') || call.path.startsWith('/api/social/'))).toBe(false);
+  await expect(page.locator('#loginSubmit')).toBeEnabled();
+});
+test('dependent chat asset failure preserves a ready Home in the same document', async ({ page }) => {
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  const calls = await syntheticPortal(page, {failedChatAsset:'/js/portal-chat.js'});
+  await observeTransition(page);
+  await page.locator('#loginSubmit').click();
+  await expect(page.locator('#socialIdentityName')).toHaveText('Perfil carregado');
+  await expect.poll(() => page.evaluate(() => window.PortalHomeReady)).toBe(true);
+  expect(await page.evaluate(() => window.PortalGlobalChat.start())).toBe(false);
+  await page.locator('#portalOpeningVideo').evaluate(video => video.dispatchEvent(new Event('ended')));
+  await expect(page.locator('#portalOpening')).toHaveCount(0);
+  expect(await page.evaluate(() => window.__openingDocument)).toBe('same-document');
+  expect(await page.evaluate(() => window.__visibleFlashes)).toEqual([]);
+  expect(calls.filter(call => call.navigation)).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+test('global chat bootstrap load failure uses the existing bounded navigation fallback', async ({ page }) => {
+  const calls = await syntheticPortal(page, {failedChatAsset:'/js/portal-global-chat.js'});
+  await page.locator('#loginSubmit').click();
+  await expect(page.locator('#portalOpening')).toBeVisible();
+  await page.locator('#portalOpeningVideo').evaluate(video => video.dispatchEvent(new Event('ended')));
+  await expect(page).toHaveURL('http://127.0.0.1:4174/');
+  await expect(page.locator('#socialIdentityName')).toHaveText('Perfil carregado');
+  expect(await page.evaluate(() => window.__openingDocument)).toBeUndefined();
+  expect(calls.filter(call => call.path === '/api/auth/login')).toHaveLength(1);
+  expect(calls.filter(call => call.navigation)).toHaveLength(2);
 });

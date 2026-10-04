@@ -6,6 +6,7 @@
   const HOME_PATHS = new Set(['/', '/home/', '/index.html']);
   const SCRIPT_GLOBALS = new Map([
     ['/js/portal-performance.js', 'PortalPerformance'],
+    ['/js/portal-global-chat.js', 'PortalGlobalChat'],
     ['/js/auth-config.js', 'REGULATION_AUTH_CONFIG'],
     ['/js/auth-client.js', 'RegulationAuth'],
     ['/js/portal-theme.js', 'PortalTheme'],

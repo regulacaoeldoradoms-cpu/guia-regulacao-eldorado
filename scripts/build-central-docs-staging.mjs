@@ -175,6 +175,7 @@ const homologationCopies = [
   ['js/portal-observability.js', 'js/portal-observability.js', true],
   ['js/document-cache.js', 'js/document-cache.js', true],
   ['js/document-background.js', 'js/document-background.js', true],
+  ['js/document-navigation.js', 'js/document-navigation.js', true],
   ['js/document-editor.js', 'js/document-editor.js', true],
   ['js/document-ocr.js', 'js/document-ocr.js', true],
   ['js/document-viewer.js', 'js/document-viewer.js', true],

@@ -1,0 +1,182 @@
+{
+  "syntheticOnly": true,
+  "browser": "installed Chrome, existing Playwright 1.62.1",
+  "stats": {
+    "startTime": "2026-10-04T00:52:27.385Z",
+    "duration": 48673.195,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "Home REAL inicia durante os 10 s; revela o mesmo documento sem flash nem reinicialização",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 12377,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "Home REAL inicia durante os 10 s; revela o mesmo documento sem flash nem reinicialização",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 12293,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "Home lenta mantém último quadro; não revela login/loader enquanto perfil está pendente",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2724,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "Home lenta mantém último quadro; não revela login/loader enquanto perfil está pendente",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3218,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "credenciais inválidas não iniciam Home nem retiram controle do login",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 813,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "credenciais inválidas não iniciam Home nem retiram controle do login",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1645,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "troca obrigatória de senha preserva destino sem iniciar Home ou APIs sociais",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 683,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "troca obrigatória de senha preserva destino sem iniciar Home ou APIs sociais",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1572,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "global chat without a session does not load chat assets or start social APIs",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 677,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "global chat without a session does not load chat assets or start social APIs",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 734,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "dependent chat asset failure preserves a ready Home in the same document",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1695,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "dependent chat asset failure preserves a ready Home in the same document",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2723,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "global chat bootstrap load failure uses the existing bounded navigation fallback",
+      "project": "home-desktop",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1136,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "global chat bootstrap load failure uses the existing bounded navigation fallback",
+      "project": "home-mobile",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2083,
+          "errors": []
+        }
+      ]
+    }
+  ]
+}
