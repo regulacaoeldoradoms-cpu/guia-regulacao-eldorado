@@ -1930,7 +1930,7 @@ export const PT_MISSIONS = Object.freeze([
       {
         "id": "recuperacao",
         "heading": "11. Depois de uma resposta incorreta",
-        "body": "Nomeie a confusão: modo, referente, relação, condição, sequência ou compatibilidade. Volte à seção de origem, reescreva a pista e diga o que o distrator acrescentou ou mudou. Só depois tente novamente. Acertar um item após consulta não mede sozinho retenção futura; não converter o Chefe em diagnóstico de prontidão.",
+        "body": "Nomeie a confusão: modo, referente, relação, condição, sequência ou compatibilidade. Volte à seção de origem, reescreva a pista e diga o que o distrator acrescentou ou mudou. Só depois tente novamente. Acertar um item após consulta não mede sozinho retenção futura; não converter o Chefe em avaliação de prontidão.",
         "type": "summary",
         "sourceIds": []
       }

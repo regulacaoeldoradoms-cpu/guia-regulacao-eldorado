@@ -80,7 +80,7 @@ Referente: informação retomada. Marcador temporal: pista da ordem fornecida. R
 
 ## 11. Depois de uma resposta incorreta
 
-Nomeie a confusão: modo, referente, relação, condição, sequência ou compatibilidade. Volte à seção de origem, reescreva a pista e diga o que o distrator acrescentou ou mudou. Só depois tente novamente. Acertar um item após consulta não mede sozinho retenção futura; não converter o Chefe em diagnóstico de prontidão.
+Nomeie a confusão: modo, referente, relação, condição, sequência ou compatibilidade. Volte à seção de origem, reescreva a pista e diga o que o distrator acrescentou ou mudou. Só depois tente novamente. Acertar um item após consulta não mede sozinho retenção futura; não converter o Chefe em avaliação de prontidão.
 
 ## Recordação e recuperação
 

@@ -16,9 +16,13 @@ Todos parâmetros/desbloqueios apenas propostos, publication.status:draft e para
 - **Nove testes direcionados**: exclusão draft e preservação de artefato em LP/PT/OA/OL, mais seis cenários de roteador OL encapsulados em um teste. Comando: node --test --test-name-pattern="draft|artefato preserva|OL: seis cenários" worker/tests/studies-{lp,pt,oa,ol}-candidate.test.mjs, passando os quatro caminhos explicitamente.
 - **Seis Chromium OL, 6/6 em 9,7 s**, somente studies-ol.spec.mjs com studies-reader.config.mjs; API totalmente interceptada. Consulta ampliada em 320/390 px, claro/escuro; falha/repetição/interrupção/retomada e exclusividade wellyton. Uma passagem na base de autoria e outra na árvore reconciliada, justificada pela mudança de base.
 - Serialização de missões, fontes, planejamento e mapa ativos idêntica à base anterior: **50 missões/374 questões/quatro blocos publicados**, prontidão não medida. Controle de fontes/missões anterior ao preparo OA também idêntico. Progresso real não acessado.
-- Quatro --check-generated, ancestralidade de main/#600/#598/autoria e escopo de diff conferidos. Cinco arquivos de contratos #598 têm os mesmos blobs do commit original; os corpos editoriais e artefatos Português também são os mesmos da autoria. Sintaxe/diff/referências pertinentes conferidos após documentos.
+- Quatro --check-generated, ancestralidade de main/#600/#598/autoria e escopo de diff conferidos. Cinco arquivos de contratos #598 têm os mesmos blobs do commit original; os corpos editoriais e artefatos Português eram os mesmos da autoria na árvore reconciliada. Sintaxe/diff/referências pertinentes conferidos após documentos.
 
 Reutilizados pareceres pedagógicos e demais testes LP/PT/OA/DP/IS inalterados; não executada suíte geral nem novo diagnóstico de gates. Fixtures não substituem CI obrigatória futura, homologação autenticada ou aceite humano fase 2.
+
+## Correção dirigida da CI
+
+A CI de 4bea4009 passou 776/777 testes Worker; o único erro foi o detector rejeitar “diagnóstico de prontidão” no resumo de recuperação PT-Chefe. Substituído por “avaliação de prontidão” no Markdown, fonte estruturada e artefato gerado, mantendo significado, IDs, gabaritos, progresso e política de prontidão. Nenhuma alteração no detector, workflow ou permissões. Validação afetada: sincronia editorial/geração PT, um teste de preservação PT e os 13 testes de isolamento aprovados; diff sem erros. CI obrigatória será acompanhada no head atualizado.
 
 ## Bloqueios e próxima ação
 
