@@ -984,15 +984,18 @@
   async function loadEditorPreferences(warmed = null) {
     const caps = state.access?.capabilities || state.user?.documentCapabilities || {};
     if (caps.view !== true && caps.manage !== true) return false;
+    const context = navigationReads.context();
     try {
       const payload = warmed && typeof warmed === 'object'
         ? warmed
         : await readApi('/api/documents/preferences', { method: 'GET' });
+      navigationReads.assertCurrent(context);
       state.editorColorPalette = normalizeEditorColorPalette(payload?.colorPalette);
       state.viewerZoomScale = normalizeViewerZoomScale(payload?.viewerZoomScale);
       state.documentAiFieldOrder = normalizeTitonFieldOrder(payload?.fieldOrder);
       return true;
-    } catch (_) {
+    } catch (error) {
+      if (error.code === 'DOCUMENTS_STALE_READ') return false;
       state.editorColorPalette = [...DEFAULT_EDITOR_COLOR_PALETTE];
       state.viewerZoomScale = null;
       return false;
@@ -2005,6 +2008,7 @@
   }
 
   async function driveSyncFetch(path, options = {}) {
+    invalidateDocumentNavigation();
     const headers = new Headers(auth.authorizationHeader?.() || {});
     for (const [name, value] of Object.entries(options.headers || {})) {
       if (value !== undefined && value !== null && value !== '') headers.set(name, String(value));
@@ -2014,13 +2018,18 @@
       headers.set('Content-Type', 'application/json');
       body = JSON.stringify(options.json || {});
     }
-    const response = await fetch(endpoint + path, {
-      method: options.method || 'GET',
-      headers,
-      body,
-      cache: 'no-store',
-      credentials: 'omit'
-    });
+    let response;
+    try {
+      response = await fetch(endpoint + path, {
+        method: options.method || 'GET',
+        headers,
+        body,
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+    } finally {
+      invalidateDocumentNavigation();
+    }
     const type = String(response.headers.get('Content-Type') || '');
     const payload = type.includes('application/json')
       ? await response.json().catch(() => ({}))
@@ -2035,6 +2044,7 @@
   }
 
   function applyConfirmedDriveSync(operation, result, blob, copyName) {
+    invalidateDocumentNavigation();
     if (!result?.completed || !result.ref || !result.cacheKey || !result.currentVersion) {
       throw new Error('O Google Drive não retornou confirmação suficiente do salvamento.');
     }
@@ -3734,8 +3744,58 @@
     return parts.join(' · ');
   }
 
-  function api(path, options = {}) {
-    return auth.api(path, options);
+  let navigationRequestId = 0;
+  const navigationReads = window.PortalDocumentNavigation.create({
+    getSession: () => {
+      const current = auth.getCachedUser?.();
+      const token = auth.getToken?.();
+      return current?.username && token ? String(current.username) + '\u0000' + token : '';
+    },
+    request: (path, options) => {
+      const context = navigationReads.context();
+      return withDocumentReadRetry(() => {
+        navigationReads.assertCurrent(context);
+        return auth.api(path, options);
+      }, { label: DOCUMENT_READ_LABELS[path] || 'document_read' });
+    },
+    onClear: (reason) => {
+      navigationRequestId += 1;
+      state.loading = false;
+      els.loadMore.disabled = false;
+      state.folderSnapshot = null;
+      state.warmedDocumentPayload = null;
+      if (!['session', 'denied', 'access-error'].includes(reason)) return;
+      state.items = [];
+      state.stack = [];
+      state.nextPageToken = '';
+      state.searchQuery = '';
+      state.searchMode = false;
+      state.searchFilters = null;
+      state.selectedListIndex = -1;
+      state.listRenameRef = '';
+      state.access = null;
+      els.list.innerHTML = '';
+      els.search.value = '';
+      if (els.listTitle) els.listTitle.textContent = '';
+      if (els.listCount) els.listCount.textContent = '';
+      els.workspace.hidden = true;
+      els.pagination.hidden = true;
+      if (state.pdfItem || state.editorSession) closePdf();
+      window.PortalPerformance?.clearDocumentsWarm?.();
+    }
+  });
+
+  function invalidateDocumentNavigation() {
+    navigationReads.clear('mutation');
+    window.PortalPerformance?.clearDocumentsWarm?.({ keepRefresh: true });
+  }
+
+  async function api(path, options = {}) {
+    const mutation = path.startsWith('/api/documents/drive/')
+      && !['GET', 'HEAD'].includes(String(options.method || 'GET').toUpperCase());
+    if (mutation) invalidateDocumentNavigation();
+    try { return await auth.api(path, options); }
+    finally { if (mutation) invalidateDocumentNavigation(); }
   }
 
   function readApi(path, options = {}) {
@@ -5185,13 +5245,16 @@
   async function loadDocumentAiConfig(warmed = null) {
     state.documentAiConfig = null;
     if (documentAiCapabilities().extract !== true) return;
+    const context = navigationReads.context();
     try {
       const payload = warmed && typeof warmed === 'object'
         ? warmed
         : await readApi('/api/documents/ai/config', { method: 'GET' });
+      navigationReads.assertCurrent(context);
       state.documentAiConfig = payload?.ai || null;
       if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
-    } catch (_) {
+    } catch (error) {
+      if (error.code === 'DOCUMENTS_STALE_READ') return;
       state.documentAiConfig = null;
     }
   }
@@ -5791,9 +5854,12 @@
   }
 
   async function loadAccess() {
-    state.access = await readApi('/api/documents/access', { method: 'GET' });
+    const ticket = await navigationReads.authorize();
+    navigationReads.assertCurrent(ticket);
+    state.access = ticket.access;
     state.user = auth.getCachedUser() || state.user;
     renderAccessState();
+    return ticket;
   }
 
   function backgroundWarmPayloadPromise() {
@@ -6177,7 +6243,8 @@
     state.folderSnapshot = {
       parentRef: '',
       items: incoming.slice(),
-      nextPageToken: state.nextPageToken
+      nextPageToken: state.nextPageToken,
+      expiresAt: Date.now() + navigationReads.ttlMs - ageMs
     };
     renderItems();
     capture('drive_folder_opened', {
@@ -6190,7 +6257,8 @@
   }
 
   async function refreshWarmedRootFolderInBackground() {
-    const payload = await readApi('/api/documents/drive/list', {
+    const gate = await navigationReads.authorize();
+    const payload = await navigationReads.read('/api/documents/drive/list', {
       method: 'POST',
       body: JSON.stringify({
         parentRef: '',
@@ -6198,13 +6266,15 @@
         pageSize: 20,
         sortOrder: 'original'
       })
-    });
+    }, { force: true, ticket: gate });
+    navigationReads.assertCurrent(gate);
     const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : [], 'original');
     const nextPageToken = String(payload?.nextPageToken || '');
     state.folderSnapshot = {
       parentRef: '',
       items: incoming.slice(),
-      nextPageToken
+      nextPageToken,
+      expiresAt: payload.navigationExpiresAt
     };
 
     const safeToRepaint = (
@@ -6380,34 +6450,39 @@
     scheduleLikelyPdfWarmup();
   }
 
-  async function loadFolder({ append = false, pageToken = '' } = {}) {
+  async function loadFolder({ append = false, pageToken = '', ticket = null } = {}) {
     if (state.loading) return;
+    const readContext = navigationReads.context();
+    const requestId = ++navigationRequestId;
     background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
     const parentRef = currentParentRef();
 
-    if (!append) {
-      state.searchMode = false;
-      state.searchQuery = '';
-      state.searchFilters = defaultAdvancedSearchFilters();
-      syncAdvancedSearchButton();
-      state.selectedListIndex = -1;
-      els.search.value = '';
-      const snapshot = state.folderSnapshot;
-      if (state.listSortOrder === 'original' && snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
-        state.items = snapshot.items.slice();
-        state.nextPageToken = String(snapshot.nextPageToken || '');
-        renderItems();
-      } else {
-        els.list.innerHTML = '<div class="documents-loading">Carregando pasta…</div>';
-      }
-    } else {
-      els.loadMore.disabled = true;
-    }
-
     try {
-      const payload = await readApi('/api/documents/drive/list', {
+      const gate = ticket || await loadAccess();
+      navigationReads.assertCurrent(readContext);
+      if (!append) {
+        state.searchMode = false;
+        state.searchQuery = '';
+        state.searchFilters = defaultAdvancedSearchFilters();
+        syncAdvancedSearchButton();
+        state.selectedListIndex = -1;
+        els.search.value = '';
+        const snapshot = state.folderSnapshot;
+        if (state.listSortOrder === 'original' && snapshot && snapshot.expiresAt > Date.now()
+          && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
+          state.items = snapshot.items.slice();
+          state.nextPageToken = String(snapshot.nextPageToken || '');
+          renderItems();
+        } else {
+          els.list.innerHTML = '<div class="documents-loading">Carregando pasta…</div>';
+        }
+      } else {
+        els.loadMore.disabled = true;
+      }
+
+      const payload = await navigationReads.read('/api/documents/drive/list', {
         method: 'POST',
         body: JSON.stringify({
           parentRef,
@@ -6415,7 +6490,8 @@
           pageSize: 20,
           sortOrder: state.listSortOrder
         })
-      });
+      }, { ticket: gate });
+      navigationReads.assertCurrent(gate);
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : [], state.listSortOrder);
       state.items = append ? sortItems([...state.items, ...incoming], state.listSortOrder) : incoming;
       state.nextPageToken = String(payload?.nextPageToken || '');
@@ -6423,27 +6499,31 @@
         state.folderSnapshot = {
           parentRef,
           items: state.items.slice(),
-          nextPageToken: state.nextPageToken
+          nextPageToken: state.nextPageToken,
+          expiresAt: payload.navigationExpiresAt
         };
       }
       renderItems();
       capture('drive_folder_opened', {
         route: '/documentos/',
         duration_ms: duration(started),
-        source: 'drive',
-        cache_state: 'miss',
+        source: payload.navigationCacheState === 'hit' ? 'cache' : 'drive',
+        cache_state: payload.navigationCacheState || 'miss',
         drive_token_ms: driveTimingValue(payload, 'tokenMs'),
         drive_api_ms: driveTimingValue(payload, 'apiMs'),
         drive_map_ms: driveTimingValue(payload, 'mapMs')
       });
     } catch (error) {
+      if (error.code === 'DOCUMENTS_STALE_READ') return;
       if (!append && !state.items.length) {
         els.list.innerHTML = '<div class="documents-empty">Não foi possível carregar esta pasta.</div>';
       }
       showStatus(error.message || 'Não foi possível acessar o Google Drive.', 'warning');
     } finally {
-      state.loading = false;
-      els.loadMore.disabled = false;
+      if (requestId === navigationRequestId) {
+        state.loading = false;
+        els.loadMore.disabled = false;
+      }
     }
   }
 
@@ -6464,45 +6544,50 @@
     if (!value && !hasAdvanced) return loadFolder();
     if (state.loading) return;
 
+    const readContext = navigationReads.context();
+    const requestId = ++navigationRequestId;
     background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
 
-    if (!append) {
-      state.searchMode = true;
-      state.searchQuery = value;
-      state.searchTitleOnly = titleOnly === true;
-      state.searchFilters = normalizedFilters;
-      if (els.searchTitleOnly) els.searchTitleOnly.checked = state.searchTitleOnly;
-      syncAdvancedSearchButton();
-      state.selectedListIndex = -1;
-
-      const snapshot = state.folderSnapshot;
-      const needle = normalizedSearchText(value);
-      const canUseLocalNamePreview = Boolean(
-        value
-        && !hasAdvanced
-        && state.listSortOrder === 'original'
-        && snapshot
-        && snapshot.parentRef === currentParentRef()
-      );
-      const localMatches = canUseLocalNamePreview
-        ? snapshot.items.filter((item) => normalizedSearchText(item?.name).includes(needle))
-        : [];
-
-      if (localMatches.length) {
-        state.items = sortItems(localMatches, state.listSortOrder);
-        state.nextPageToken = '';
-        renderItems();
-      } else {
-        els.list.innerHTML = '<div class="documents-loading">Pesquisando no Drive…</div>';
-      }
-    } else {
-      els.loadMore.disabled = true;
-    }
-
     try {
-      const payload = await readApi('/api/documents/drive/search', {
+      const gate = await loadAccess();
+      navigationReads.assertCurrent(readContext);
+      if (!append) {
+        state.searchMode = true;
+        state.searchQuery = value;
+        state.searchTitleOnly = titleOnly === true;
+        state.searchFilters = normalizedFilters;
+        if (els.searchTitleOnly) els.searchTitleOnly.checked = state.searchTitleOnly;
+        syncAdvancedSearchButton();
+        state.selectedListIndex = -1;
+
+        const snapshot = state.folderSnapshot;
+        const needle = normalizedSearchText(value);
+        const canUseLocalNamePreview = Boolean(
+          value
+          && !hasAdvanced
+          && state.listSortOrder === 'original'
+        && snapshot
+        && snapshot.expiresAt > Date.now()
+          && snapshot.parentRef === currentParentRef()
+        );
+        const localMatches = canUseLocalNamePreview
+          ? snapshot.items.filter((item) => normalizedSearchText(item?.name).includes(needle))
+          : [];
+
+        if (localMatches.length) {
+          state.items = sortItems(localMatches, state.listSortOrder);
+          state.nextPageToken = '';
+          renderItems();
+        } else {
+          els.list.innerHTML = '<div class="documents-loading">Pesquisando no Drive…</div>';
+        }
+      } else {
+        els.loadMore.disabled = true;
+      }
+
+      const payload = await navigationReads.read('/api/documents/drive/search', {
         method: 'POST',
         body: JSON.stringify({
           query: value,
@@ -6512,7 +6597,8 @@
           titleOnly: state.searchTitleOnly,
           filters: state.searchFilters
         })
-      });
+      }, { ticket: gate });
+      navigationReads.assertCurrent(gate);
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : [], state.listSortOrder);
       state.items = append ? sortItems([...state.items, ...incoming], state.listSortOrder) : incoming;
       state.nextPageToken = String(payload?.nextPageToken || '');
@@ -6520,20 +6606,24 @@
       capture('drive_search_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
-        source: 'drive',
+        source: payload.navigationCacheState === 'hit' ? 'cache' : 'drive',
+        cache_state: payload.navigationCacheState || 'miss',
         result_count_bucket: resultCountBucket(state.items.length),
         drive_token_ms: driveTimingValue(payload, 'tokenMs'),
         drive_api_ms: driveTimingValue(payload, 'apiMs'),
         drive_map_ms: driveTimingValue(payload, 'mapMs')
       });
     } catch (error) {
+      if (error.code === 'DOCUMENTS_STALE_READ') return;
       if (!append && !state.items.length) {
         els.list.innerHTML = '<div class="documents-empty">Não foi possível concluir a pesquisa.</div>';
       }
       showStatus(error.message || 'Não foi possível pesquisar no Google Drive.', 'warning');
     } finally {
-      state.loading = false;
-      els.loadMore.disabled = false;
+      if (requestId === navigationRequestId) {
+        state.loading = false;
+        els.loadMore.disabled = false;
+      }
     }
   }
 
@@ -7442,6 +7532,10 @@
   }, true);
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
+    if (event.data?.type === 'PORTAL_DOCUMENTS_INVALIDATED') {
+      navigationReads.clear('mutation');
+      return;
+    }
     if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
     if (!state.pdfStreamId || event.data.viewId !== state.pdfStreamId || !state.pdfItem) return;
     const item = state.pdfItem;
@@ -7456,17 +7550,33 @@
 
   els.logout.addEventListener('click', async () => {
     if (!(await requestClosePdf())) return;
+    navigationReads.clear('session');
+    window.PortalPerformance?.clearDocumentsWarm?.();
     if (documentCache?.clearAll) await documentCache.clearAll().catch(() => {});
     await auth.logout();
     location.replace('/login/');
   });
 
   window.addEventListener('pagehide', () => {
+    navigationReads.clear('mutation');
     state.cachePrefetchGeneration += 1;
     if (cacheWarmTimer) clearTimeout(cacheWarmTimer);
     releaseDocumentPresence({ keepalive: true }).catch(() => {});
     closePdf();
   }, { once: true });
+
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    navigationReads.clear('session');
+    loadAccess().then((ticket) => loadFolder({ ticket })).catch(() => {});
+  });
+
+  window.addEventListener('portal:session-cleared', () => navigationReads.clear('session'));
+  window.addEventListener('portal:session-ready', (event) => {
+    navigationReads.syncSession();
+    if (event.detail?.user?.documentCapabilities?.view === false) navigationReads.clear('denied');
+  });
+  window.addEventListener('storage', () => navigationReads.syncSession());
 
   const oauthState = new URLSearchParams(location.search).get('oauth');
   if (oauthState) {
@@ -7480,26 +7590,35 @@
   }
 
   try {
+    const startupContext = navigationReads.context();
     const warmedPromise = backgroundWarmPayloadPromise();
-    await loadAccess();
+    const ticket = await loadAccess();
     const warmed = await warmedPromise;
+    navigationReads.assertCurrent(startupContext);
+    navigationReads.assertCurrent(ticket);
     state.warmedDocumentPayload = warmed || null;
-
-    if (state.access?.capabilities?.view || state.access?.capabilities?.manage) {
-      await Promise.all([
-        loadEditorPreferences(warmed?.preferences || null),
-        loadDocumentAiConfig(warmed?.aiConfig || null)
-      ]);
-    }
 
     if (state.access?.capabilities?.view && state.access?.drive?.connected) {
       if (warmedRootFolder(warmed)) {
-        refreshWarmedRootFolderInBackground().catch(() => {});
+        navigationReads.seed('/api/documents/drive/list', {
+          body: JSON.stringify({ parentRef: '', pageToken: '', pageSize: 20, sortOrder: 'original' })
+        }, warmed.folder, ticket, Number(warmed.ageMs || 0));
+        if (Number(warmed.ageMs || 0) >= navigationReads.ttlMs) {
+          refreshWarmedRootFolderInBackground().catch(() => {});
+        }
       } else {
-        await loadFolder();
+        await loadFolder({ ticket });
       }
     }
+    if (navigationReads.isCurrent(ticket)
+      && (state.access?.capabilities?.view || state.access?.capabilities?.manage)) {
+      Promise.all([
+        loadEditorPreferences(warmed?.preferences || null),
+        loadDocumentAiConfig(warmed?.aiConfig || null)
+      ]).catch(() => {});
+    }
   } catch (error) {
+    if (error.code === 'DOCUMENTS_STALE_READ') return;
     showStatus(error.message || 'Não foi possível iniciar a Central de Documentos.', 'warning');
     els.badge.textContent = 'Central indisponível';
     els.badge.className = 'documents-drive-status sr-only pending';

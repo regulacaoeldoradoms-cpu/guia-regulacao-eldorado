@@ -1,0 +1,101 @@
+{
+  "baseline": "6c4fcd86198103ad6e1e8adc07901219c7957c92",
+  "method": "Real startup/navigation/Service Worker functions in Node VM; synthetic DOM, virtual clock and mocked APIs. No browser/production latency claim.",
+  "delaysMs": {
+    "access": 25,
+    "drive": 300,
+    "preferences": 100,
+    "ai": 180,
+    "pendingWarmPreferences": 1000
+  },
+  "rows": [
+    {
+      "scenario": "cold opening",
+      "before": {
+        "ms": 505,
+        "driveRequests": 1
+      },
+      "after": {
+        "ms": 325,
+        "driveRequests": 1
+      }
+    },
+    {
+      "scenario": "warm root, preferences/AI unavailable in snapshot",
+      "before": {
+        "ms": 205,
+        "driveRequests": 1
+      },
+      "after": {
+        "ms": 25,
+        "driveRequests": 0
+      }
+    },
+    {
+      "scenario": "complete warm snapshot",
+      "before": {
+        "ms": 25,
+        "driveRequests": 1
+      },
+      "after": {
+        "ms": 25,
+        "driveRequests": 0
+      }
+    },
+    {
+      "scenario": "first entry into uncached folder",
+      "before": {
+        "ms": 300,
+        "driveRequests": 1
+      },
+      "after": {
+        "ms": 325,
+        "driveRequests": 1
+      }
+    },
+    {
+      "scenario": "folder entry then return to cached root",
+      "before": {
+        "ms": 600,
+        "driveRequests": 2
+      },
+      "after": {
+        "ms": 350,
+        "driveRequests": 1
+      }
+    },
+    {
+      "scenario": "search then repeat identical search",
+      "before": {
+        "ms": 600,
+        "driveRequests": 2
+      },
+      "after": {
+        "ms": 350,
+        "driveRequests": 1
+      }
+    },
+    {
+      "scenario": "concurrent root refresh and navigation",
+      "before": {
+        "ms": 300,
+        "driveRequests": 2
+      },
+      "after": {
+        "ms": 325,
+        "driveRequests": 1
+      }
+    },
+    {
+      "scenario": "warmup pending, root ready before preferences",
+      "before": {
+        "ms": 1205,
+        "driveRequests": 2
+      },
+      "after": {
+        "ms": 325,
+        "driveRequests": 1
+      }
+    }
+  ]
+}

@@ -1,6 +1,17 @@
 # Central de Documentos — Status
 
-Última atualização: 02/10/2026.
+Última atualização: 04/10/2026.
+
+## Checkpoint atual — integração para revisão — 04/10/2026
+
+- Integração autorizada em nova draft: pacote #599 `f4306fc1` + cinco ajustes técnicos exatos #598 `2e600517`, base remota `6c4fcd86`. Sem conflito; checkpoint e checkout bancários preservados. Sem merge/ativação/deploy.
+- Home: autorizada somente a entrada exata `['/js/portal-global-chat.js', 'PortalGlobalChat']` em `SCRIPT_GLOBALS`; mesma origem e demais proteções preservadas.
+- Verificado localmente: Home **23/23 Node e 14/14 Chromium**, incluindo rejeições, duplicidade, sem sessão e falhas de carregamento. Etapa integrada anterior: **12/12 contratos CI e 2/2 Chromium escuro da Central**, aplicáveis aos arquivos inalterados.
+- Reaproveitados #599: aggregate **737/737** e CI Central Chromium/fases/staging/governança; #598: auditoria global **216/216** no próprio head. Esses resultados não substituem CI da nova árvore.
+- Desempenho/cache: lista liberada após acesso vivo; preferências/IA assíncronas, deduplicação e RAM 20 s/12 entradas/200 itens com isolamento/invalidação. Medições sintéticas frio 505→325 ms, pasta e busca repetidas 600→350 ms; pasta inédita 300→325 ms. Não são medições produtivas.
+- Evidências: [integração e limites](CENTRAL-DOCUMENTOS-INTEGRACAO-20261004.md), [relatório RAM](CENTRAL-DOCUMENTOS-NAVEGACAO-RAM-20261003.md). Próxima ação: conferir head remoto e CI terminal da nova draft; registrar na descrição sem ciclo documental. Worker legado/checks obrigatórios da main continuam pendentes, sem repetir preview.
+
+Registros de entregas publicadas anteriores abaixo preservados como histórico.
 
 ## Central de Documentos — recuperação de falhas transitórias de conexão — PUBLICADA — 29/09/2026
 
@@ -511,3 +522,4 @@ Riscos conhecidos: a API do Google Drive possui um único campo técnico `versio
 | Próxima ação exata | Unir/editar PDF e renomeá-lo durante a sincronização; confirmar visualmente que ambos concluem sem espera mútua e que as últimas gravações confirmadas prevalecem. |
 | Arquivos e fontes principais | `worker/document-drive.js`; `js/documents.js`; `worker/tests/document-rename.test.mjs`; `worker/tests/documents-phase1.test.mjs`; `worker/tests/documents-ui.test.mjs`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; PR #585; merge `b5eef032`; Guia Mestre 1.1. |
 
+CI adicional: o run de abertura pós-login `37161739497` teve quatro timeouts de 35 s em `opening-home-ready.spec.mjs`, ao avaliar o vídeo da Home. Causa não determinada neste escopo; preservar como pendência antes de publicação. A revisão final também zera termos/filtros e snapshots residuais da interface na invalidação de sessão; aggregate 737/737 e benchmark idêntico reaprovados.

@@ -22,6 +22,7 @@ on:
       - 'testing/browser/serve-opening-home.mjs'
       - 'testing/browser/serve-staging.mjs'
       - 'worker/tests/post-login-opening.test.mjs'
+      - 'worker/tests/home-transition-security.test.mjs'
       - '.github/workflows/validate-post-login-opening-browser.yml'
   push:
     branches: [main]
@@ -61,7 +62,7 @@ jobs:
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Conferir binário oficial e contratos de login
-        run: node --test worker/tests/post-login-opening.test.mjs
+        run: node --test worker/tests/post-login-opening.test.mjs worker/tests/home-transition-security.test.mjs
       - name: Executar laboratório da abertura
         working-directory: testing/browser
         run: npx playwright test --config playwright-opening.config.mjs
