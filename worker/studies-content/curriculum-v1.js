@@ -4,6 +4,10 @@ import { MP_MISSIONS } from './banking-markets-policy-v1.js';
 import { PC_MISSIONS } from './banking-products-credit-v1.js';
 import { CE_MISSIONS } from './banking-capital-exchange-v1.js';
 import { DP_MISSIONS } from './banking-digital-payments-v1.js';
+import { OL_MISSIONS } from './portuguese-spelling-letters-v1.js';
+import { OA_MISSIONS } from './portuguese-accentuation-v1.js';
+import { PT_MISSIONS } from './portuguese-text-v1.js';
+import { LP_MISSIONS } from './portuguese-reading-v1.js';
 import { IS_MISSIONS } from './banking-institution-specific-v1.js';
 import { publishedCatalog } from './publication-registry.js';
 
@@ -89,9 +93,9 @@ export const COURSE_AREAS = Object.freeze([
     block('banking.institution-specific', 'Tópicos institucionais e programas específicos do edital', ['caixa.tbn.2024-nm'], publishedCatalog(IS_MISSIONS).map(mission => mission.id))
   ]),
   area('portuguese', 'Língua Portuguesa', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], [
-    block('portuguese.reading', 'Compreensão, interpretação e argumentação', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
-    block('portuguese.text', 'Organização, tipologia, coesão e coerência', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
-    block('portuguese.spelling', 'Ortografia, acentuação e acordo ortográfico', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
+    block('portuguese.reading', 'Compreensão, interpretação e argumentação', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(LP_MISSIONS).map(mission => mission.id)),
+    block('portuguese.text', 'Organização, tipologia, coesão e coerência', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog(PT_MISSIONS).map(mission => mission.id)),
+    block('portuguese.spelling', 'Ortografia, acentuação e acordo ortográfico', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'], publishedCatalog([...OA_MISSIONS, ...OL_MISSIONS]).map(mission => mission.id)),
     block('portuguese.syntax', 'Sintaxe, pontuação, concordância, regência e crase', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm']),
     block('portuguese.meaning-writing', 'Semântica, colocação pronominal e escrita formal', ['bb.agente-comercial.2022-001', 'caixa.tbn.2024-nm'])
   ]),
