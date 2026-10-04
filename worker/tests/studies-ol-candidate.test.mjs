@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { OL_PLAN, loadOlEditorial, compileOlCandidate } from '../scripts/studies-ol-candidate.mjs';
@@ -114,4 +116,12 @@ test('itens próprios preservam justificativa correta sem ciclo de posições A�
     for (const q of entry.draft.questions) assert.equal(q.explanation, q.optionRationales[q.answer]);
   }
   assert.match(editorial[2].draft.sections.find(s => s.id === 'familia').body, /A sílaba tônica é a pronunciada com maior destaque; as maiúsculas a indicam/);
+});
+
+test('OL: seis cenários de roteador real em SQLite offline, sem ativação', () => {
+  const env = { ...process.env }; delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(process.execPath, ['--experimental-vm-modules', '--test', '--test-reporter=tap', fileURLToPath(new URL('./helpers/studies-ol-route-runner.mjs', import.meta.url))], { env, encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024 });
+  assert.equal(result.status, 0, result.stdout + '\n' + result.stderr);
+  assert.match(result.stdout, /# pass 6\b/); assert.match(result.stdout, /# fail 0\b/);
+  assert(candidate.missions.every(m => m.publication.status === 'draft' && m.candidate.parametersApproved === false));
 });
