@@ -1,6 +1,6 @@
 # OA-R — Revisão cumulativa de tonicidade e acentuação
 
-**Rascunho para revisão, não publicado.** Rascunho local fora do catálogo; revisão independente pendente.
+**Rascunho para revisão, não publicado.** Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação.
 
 Fonte editorial: [oa-r-v1.mjs](oa-r-v1.mjs). Regenerar com `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=oar --render`.
 

@@ -446,7 +446,7 @@ export const OAR_DRAFT = {
 };
 
 export const EDITORIAL = {
-  "stage": "Rascunho local fora do catálogo; revisão independente pendente",
+  "stage": "Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação",
   "referenceOnlyProfiles": [
     {
       "id": "bb.agente-comercial.2022-001",

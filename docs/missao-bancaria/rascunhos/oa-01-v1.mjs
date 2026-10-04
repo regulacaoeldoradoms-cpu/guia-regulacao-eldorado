@@ -398,7 +398,7 @@ export const OA01_DRAFT = {
 };
 
 export const EDITORIAL = {
-  "stage": "Rascunho local fora do catálogo; revisão independente pendente",
+  "stage": "Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação",
   "referenceOnlyProfiles": [
     {
       "id": "bb.agente-comercial.2022-001",
@@ -427,7 +427,7 @@ export const EDITORIAL = {
     "Acordo Ortográfico consultado em 04/10/2026; referência às Bases VIII, IX e XI, sem reconstruir o histórico jurídico ou ensinar todas as exceções.",
     "Leituras e divisões simples fornecidas para o exercício; não ensina todas as regras de separação silábica, encontros vocálicos ou translineação.",
     "Sem lista completa de terminações, sinais gráficos, casos de hífen ou regras de acentuação nesta primeira aula.",
-    "Fora do catálogo, sem XP/ordem/importação runtime; parecer independente pendente, sem aceite humano ou publicação."
+    "Fora do catálogo, sem XP/ordem/importação runtime; parecer independente concluído, sem aceite humano ou publicação."
   ]
 };
 

@@ -1,6 +1,6 @@
 # OA-CHEFE — Chefe de acentuação: classe, regra e restrição
 
-**Rascunho para revisão, não publicado.** Rascunho local fora do catálogo; revisão independente pendente.
+**Rascunho para revisão, não publicado.** Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação.
 
 Fonte editorial: [oa-chefe-v1.mjs](oa-chefe-v1.mjs). Regenerar com `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=oachefe --render`.
 
