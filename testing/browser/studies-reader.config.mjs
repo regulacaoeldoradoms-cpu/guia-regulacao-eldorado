@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: '.',
-  testMatch: ['studies-reader.spec.mjs', 'studies-application.spec.mjs', 'studies-operators-insurance.spec.mjs', 'studies-payments-review.spec.mjs', 'studies-rounds.spec.mjs', 'studies-time.spec.mjs', 'studies-resume.spec.mjs', 'studies-assessment.spec.mjs', 'studies-mp.spec.mjs', 'studies-pc.spec.mjs', 'studies-ce.spec.mjs', 'studies-dp.spec.mjs', 'studies-is.spec.mjs', 'studies-lp.spec.mjs'],
+  testMatch: ['studies-reader.spec.mjs', 'studies-application.spec.mjs', 'studies-operators-insurance.spec.mjs', 'studies-payments-review.spec.mjs', 'studies-rounds.spec.mjs', 'studies-time.spec.mjs', 'studies-resume.spec.mjs', 'studies-assessment.spec.mjs', 'studies-mp.spec.mjs', 'studies-pc.spec.mjs', 'studies-ce.spec.mjs', 'studies-dp.spec.mjs', 'studies-is.spec.mjs', 'studies-lp.spec.mjs', 'studies-pt.spec.mjs'],
   fullyParallel: true,
   workers: 2,
   retries: 0,

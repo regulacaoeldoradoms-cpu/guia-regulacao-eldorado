@@ -8,4 +8,4 @@ Sequência editorial local prevista: **PT-01**, organização de trechos, sequê
 
 Artefato `draft.pt01` fora do catálogo, sem ordem/XP/importação no runtime. Gabaritos A/B/C/D com duas ocorrências cada; estrutura, objetivos, seções, links, sincronia MJS/Markdown e exclusão draft conferidos pelo validador reutilizado. Sem cálculos novos, fatos normativos mutáveis, atribuições a terceiros, produção/D1 ou testes integrais. Parecer independente ainda pendente; conferência do autor não o substitui.
 
-Próxima autoria: PT-02, limitada a pistas textuais de referência/retomada, com exemplos que explicitem quando um pronome permite mais de um antecedente. LP permanece tecnicamente preparado e desativado conforme [93](93-LP-PREPARACAO-TECNICA.md); sem push/ativação/merge/deploy LP/PT autorizados.
+PT-02/03/04, revisão e Chefe concluídos no [lote 95](95-PT-LOTE-REVISAO-E-CHEFE.md); [preparo 96](96-PT-PREPARACAO-TECNICA.md) local desativado com verificações direcionadas. Próxima etapa: parecer independente agrupado e ajustes somente dos achados. LP permanece preparado desativado conforme [93](93-LP-PREPARACAO-TECNICA.md); sem push/ativação/merge/deploy LP/PT autorizados.

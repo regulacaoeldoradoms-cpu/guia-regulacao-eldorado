@@ -5,14 +5,14 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe', 'lp01', 'lp02', 'lp03', 'lpr', 'lpchefe', 'pt01'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe', 'lp01', 'lp02', 'lp03', 'lpr', 'lpchefe', 'pt01', 'pt02', 'pt03', 'pt04', 'ptr', 'ptchefe'].includes(unit), 'Unidade editorial desconhecida');
 const isCE = unit.startsWith('ce');
 const isDP = unit.startsWith('dp');
 const isIS = unit.startsWith('is');
 const isLP = unit.startsWith('lp');
-const isPT = unit === 'pt01';
+const isPT = unit.startsWith('pt');
 const sourceDate = isPT ? '2026-10-04' : isIS || isLP ? '2026-10-03' : isCE || isDP ? '2026-10-01' : '2026-09-30';
-const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe', 'ischefe', 'lpchefe'].includes(unit);
+const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe', 'ischefe', 'lpchefe', 'ptchefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -66,9 +66,9 @@ for (const question of draft.questions) {
   }
   for (const id of question.recoverySectionIds) assert(sections.has(id));
   for (const objective of question.objectiveIds) objectives.add(objective);
-  if (isBoss || ['mpr', 'pcr', 'cer', 'dpr', 'isr', 'lpr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
+  if (isBoss || ['mpr', 'pcr', 'cer', 'dpr', 'isr', 'lpr', 'ptr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
   for (const ref of question.originRefs || []) {
-    assert(isLP ? /^lp0[1-3]$/.test(ref.unit) : isIS ? /^is0[1-8]$/.test(ref.unit) : isDP ? /^dp(0[1-9]|1[0-2])$/.test(ref.unit) : isCE ? /^ce(0[1-9]|1[01])$/.test(ref.unit) : unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
+    assert(isPT ? /^pt0[1-4]$/.test(ref.unit) : isLP ? /^lp0[1-3]$/.test(ref.unit) : isIS ? /^is0[1-8]$/.test(ref.unit) : isDP ? /^dp(0[1-9]|1[0-2])$/.test(ref.unit) : isCE ? /^ce(0[1-9]|1[01])$/.test(ref.unit) : unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
     const origin = await import(`./${ref.unit.slice(0, 2)}-${ref.unit.slice(2)}-v1.mjs`);
     const originDraft = origin[`${ref.unit.toUpperCase()}_DRAFT`];
     const originSection = originDraft.sections.find(section => section.id === ref.sectionId);
@@ -82,6 +82,7 @@ if (isIS || isLP || isPT) assert.deepEqual([...objectives].sort(), Object.keys(E
 if (isDP) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
 if ((isCE || isDP || isIS || isLP || isPT) && !isBoss) assert.equal(draft.questions.length, 8);
+if (['ptr', 'ptchefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['pt01', 'pt02', 'pt03', 'pt04']);
 if (['lpr', 'lpchefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['lp01', 'lp02', 'lp03']);
 if (['isr', 'ischefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`));
 if (unit === 'dpr') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`));
@@ -131,7 +132,7 @@ if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
 const review = unit === 'ce01' ? '../80-CE-PLANO-E-PRIMEIRA-UNIDADE.md' : { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md', pcchefe: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
 const ceReview = ['cer', 'cechefe'].includes(unit) ? '../82-CE-REVISAO-E-PROPOSTA-CHEFE.md' : '../81-CE-CONJUNTO-RASCUNHOS.md';
-const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', isPT ? '../94-PT-ORGANIZACAO-PLANO-E-PRIMEIRA-UNIDADE.md' : isLP ? (unit === 'lp01' ? '../91-LP-LEITURA-PRIMEIRO-RASCUNHO.md' : '../92-LP-LEITURA-LOTE-REVISAO-CHEFE.md') : isIS ? '../88-IS-PLANO-E-PRIMEIRO-LOTE.md' : isDP ? '../85-DP-CONJUNTO-RASCUNHOS.md' : isCE && unit !== 'ce01' ? ceReview : review, '../../../PROJECT_STATE.md'];
+const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', isPT ? (unit === 'pt01' ? '../94-PT-ORGANIZACAO-PLANO-E-PRIMEIRA-UNIDADE.md' : '../95-PT-LOTE-REVISAO-E-CHEFE.md') : isLP ? (unit === 'lp01' ? '../91-LP-LEITURA-PRIMEIRO-RASCUNHO.md' : '../92-LP-LEITURA-LOTE-REVISAO-CHEFE.md') : isIS ? '../88-IS-PLANO-E-PRIMEIRO-LOTE.md' : isDP ? '../85-DP-CONJUNTO-RASCUNHOS.md' : isCE && unit !== 'ce01' ? ceReview : review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
   const file = path.resolve(import.meta.dirname, relative);
@@ -144,7 +145,7 @@ for (const relative of related) {
     if (local) {
       const targetFile = path.resolve(path.dirname(file), decodeURIComponent(local));
       assert(fs.existsSync(targetFile), `${relative}: ${target}`);
-      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe)|ce-(?:0[1-9]|1[01]|r|chefe)|is-(?:0[1-8])|dp-(?:0[1-9]|1[0-2]|r|chefe))-v1\.md$/.test(targetFile)) {
+      if (anchor && /(?:mp-(?:0[1-9]|r|chefe)|pc-(?:01a|0[1-6]|0[89]|10|11[a-e]|r|chefe)|ce-(?:0[1-9]|1[01]|r|chefe)|is-(?:0[1-8])|lp-(?:0[1-3]|r|chefe)|pt-(?:0[1-4]|r|chefe)|dp-(?:0[1-9]|1[0-2]|r|chefe))-v1\.md$/.test(targetFile)) {
         assert(fs.readFileSync(targetFile, 'utf8').includes(`id="${anchor}"`), `${relative}: origem ${target}`);
       }
     }
