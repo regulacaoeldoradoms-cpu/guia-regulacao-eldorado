@@ -1,6 +1,6 @@
 # PT-CHEFE — Chefe de organização textual: pistas, relações e limites
 
-**Rascunho para revisão, não publicado.** Rascunho local fora do catálogo; revisão independente pendente.
+**Rascunho para revisão, não publicado.** Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação.
 
 Fonte editorial: [pt-chefe-v1.mjs](pt-chefe-v1.mjs). Regenerar com `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=ptchefe --render`.
 
@@ -402,7 +402,7 @@ Aula de origem: [PT-04: 5. Comparar afirmações sobre o mesmo caso](pt-04-v1.md
 
 ### Questão 12
 
-Texto autoral: A atividade recebeu doze inscrições. Depois, sete pessoas compareceram. Um leitor atribuiu o não comparecimento à chuva. Qual retomada recupera esse erro?
+Texto autoral: Doze pessoas se inscreveram na atividade. Depois, sete delas compareceram. Um leitor atribuiu o não comparecimento à chuva. Qual retomada recupera esse erro?
 
 A. Afirmar que inscrição e presença sempre têm a mesma quantidade.
 
@@ -419,7 +419,7 @@ D. Distinguir inscrição de comparecimento e reconhecer que o motivo do não co
 
 - **A:** São informações distintas; essa exigência não foi dada.
 - **B:** Cria causa externa ao trecho.
-- **C:** Contraria as doze inscrições relatadas.
+- **C:** Contraria as doze pessoas inscritas relatadas.
 - **D:** Conserva os dados e identifica a causa acrescentada sem apoio.
 
 Para recuperar: [7. Coerência e informação ausente](#compatibilidade); [11. Depois de uma resposta incorreta](#recuperacao).

@@ -1,6 +1,6 @@
 # PT-R — Revisão cumulativa de organização, retomadas e relações
 
-**Rascunho para revisão, não publicado.** Rascunho local fora do catálogo; revisão independente pendente.
+**Rascunho para revisão, não publicado.** Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação.
 
 Fonte editorial: [pt-r-v1.mjs](pt-r-v1.mjs). Regenerar com `node docs/missao-bancaria/rascunhos/validate-mp01.mjs --unit=ptr --render`.
 
@@ -58,7 +58,7 @@ Identifique o mesmo participante, objeto e instante antes de comparar afirmaçõ
 
 Caso 1: exatamente às 10h, a mesma caixa estava vazia e, no mesmo instante, continha dois livros. Nas condições literais fornecidas, há conflito entre vazia e contendo livros.
 
-Caso 2: dez pessoas se inscreveram e seis compareceram depois. As informações podem coexistir; o motivo do não comparecimento não foi fornecido. Não chamar qualquer informação ausente de contradição.
+Caso 2: dez pessoas se inscreveram e seis delas compareceram depois. As informações podem coexistir; o motivo do não comparecimento não foi fornecido. Não chamar qualquer informação ausente de contradição.
 
 <a id="glossario"></a>
 

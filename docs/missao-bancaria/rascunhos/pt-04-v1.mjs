@@ -60,14 +60,14 @@ export const PT04_DRAFT = {
     {
       "id": "limite",
       "heading": "7. O texto coerente também pode deixar informação em aberto",
-      "body": "Texto autoral C: A oficina recebeu oito inscrições. Depois, quatro pessoas compareceram à primeira reunião.\n\nAs duas quantidades podem coexistir: inscrição e comparecimento são informações distintas. O trecho não informa quem compareceu nem por que os demais não compareceram. Sem outra pista, não atribuir a ausência a uma causa específica. Compatibilidade não significa que todos os detalhes estejam disponíveis.",
+      "body": "Texto autoral C: Oito pessoas se inscreveram na oficina. Depois, quatro delas compareceram à primeira reunião.\n\nAs duas quantidades podem coexistir: inscrição e comparecimento são informações distintas. O trecho não informa quem compareceu nem por que os demais não compareceram. Sem outra pista, não atribuir a ausência a uma causa específica. Compatibilidade não significa que todos os detalhes estejam disponíveis.",
       "type": "explanation",
       "sourceIds": []
     },
     {
       "id": "ex-lacuna",
       "heading": "8. Exemplo resolvido: não completar com palpite",
-      "body": "Pergunta: C prova que quatro pessoas faltaram por causa da chuva?\n\nNão. A chuva não foi mencionada e o motivo do não comparecimento não foi dado. A resposta segura conserva oito inscrições e quatro comparecimentos sem inventar causa. Ter um número menor de presentes não é, por si só, contradição com a quantidade de inscrições.",
+      "body": "Pergunta: C prova que quatro pessoas faltaram por causa da chuva?\n\nNão. A chuva não foi mencionada e o motivo do não comparecimento não foi dado. A resposta segura conserva oito pessoas inscritas e quatro delas presentes sem inventar causa. Ter um número menor de presentes não é, por si só, contradição com a quantidade de inscrições.",
       "type": "worked-example",
       "sourceIds": []
     },
@@ -202,7 +202,7 @@ export const PT04_DRAFT = {
       "id": "pt04.q05",
       "prompt": "Qual interpretação preserva o limite das informações de C?",
       "options": [
-        "Oito inscrições e quatro comparecimentos são compatíveis; o motivo das ausências não foi informado.",
+        "Oito pessoas inscritas e quatro delas presentes são compatíveis; o motivo das ausências não foi informado.",
         "Quatro pessoas faltaram obrigatoriamente por causa da chuva.",
         "Inscrições e comparecimentos precisam ter sempre a mesma quantidade.",
         "O texto prova que ninguém se inscreveu."
@@ -385,7 +385,7 @@ export const PT04_DRAFT = {
 };
 
 export const EDITORIAL = {
-  "stage": "Rascunho local fora do catálogo; revisão independente pendente",
+  "stage": "Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação",
   "referenceOnlyProfiles": [
     {
       "id": "bb.agente-comercial.2022-001",

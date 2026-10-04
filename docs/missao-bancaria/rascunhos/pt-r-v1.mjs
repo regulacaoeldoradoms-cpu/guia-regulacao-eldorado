@@ -67,7 +67,7 @@ export const PTR_DRAFT = {
     {
       "id": "ex-revisao",
       "heading": "8. Exemplo resolvido: contradição ou falta de informação?",
-      "body": "Caso 1: exatamente às 10h, a mesma caixa estava vazia e, no mesmo instante, continha dois livros. Nas condições literais fornecidas, há conflito entre vazia e contendo livros.\n\nCaso 2: dez pessoas se inscreveram e seis compareceram depois. As informações podem coexistir; o motivo do não comparecimento não foi fornecido. Não chamar qualquer informação ausente de contradição.",
+      "body": "Caso 1: exatamente às 10h, a mesma caixa estava vazia e, no mesmo instante, continha dois livros. Nas condições literais fornecidas, há conflito entre vazia e contendo livros.\n\nCaso 2: dez pessoas se inscreveram e seis delas compareceram depois. As informações podem coexistir; o motivo do não comparecimento não foi fornecido. Não chamar qualquer informação ausente de contradição.",
       "type": "worked-example",
       "sourceIds": []
     },
@@ -416,7 +416,7 @@ export const PTR_DRAFT = {
 };
 
 export const EDITORIAL = {
-  "stage": "Rascunho local fora do catálogo; revisão independente pendente",
+  "stage": "Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação",
   "referenceOnlyProfiles": [
     {
       "id": "bb.agente-comercial.2022-001",

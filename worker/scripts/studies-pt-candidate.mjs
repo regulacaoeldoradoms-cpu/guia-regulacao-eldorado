@@ -11,7 +11,7 @@ import { LP_MISSIONS, LP_SOURCES } from '../studies-content/portuguese-reading-v
 import { compilePresentation } from './studies-mp-presentation.mjs';
 
 // Preparação local desativada; dependências DP/IS/LP também draft; sequência apenas proposta. Não ligar ao runtime neste passo.
-// Preparação desativada. Parecer independente de conteúdo pendente; ativação/publicação não autorizadas.
+// Preparação desativada. Parecer de conteúdo concluído; ativação/publicação não autorizadas.
 export const PT_PLAN = Object.freeze([
   ['pt01','organizacao'], ['pt02','referencias'], ['pt03','conectivos'],
   ['pt04','coerencia'], ['ptr','revisao'], ['ptchefe','boss']

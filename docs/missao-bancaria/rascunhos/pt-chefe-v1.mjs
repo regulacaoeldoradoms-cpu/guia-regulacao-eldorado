@@ -442,7 +442,7 @@ export const PTCHEFE_DRAFT = {
     },
     {
       "id": "ptchefe.q12",
-      "prompt": "Texto autoral: A atividade recebeu doze inscrições. Depois, sete pessoas compareceram. Um leitor atribuiu o não comparecimento à chuva. Qual retomada recupera esse erro?",
+      "prompt": "Texto autoral: Doze pessoas se inscreveram na atividade. Depois, sete delas compareceram. Um leitor atribuiu o não comparecimento à chuva. Qual retomada recupera esse erro?",
       "options": [
         "Afirmar que inscrição e presença sempre têm a mesma quantidade.",
         "Inventar previsão de chuva para justificar a resposta.",
@@ -454,7 +454,7 @@ export const PTCHEFE_DRAFT = {
       "optionRationales": [
         "São informações distintas; essa exigência não foi dada.",
         "Cria causa externa ao trecho.",
-        "Contraria as doze inscrições relatadas.",
+        "Contraria as doze pessoas inscritas relatadas.",
         "Conserva os dados e identifica a causa acrescentada sem apoio."
       ],
       "recoverySectionIds": [
@@ -607,7 +607,7 @@ export const PTCHEFE_DRAFT = {
 };
 
 export const EDITORIAL = {
-  "stage": "Rascunho local fora do catálogo; revisão independente pendente",
+  "stage": "Rascunho local desativado; parecer pedagógico independente concluído, sem aceite de publicação",
   "referenceOnlyProfiles": [
     {
       "id": "bb.agente-comercial.2022-001",
