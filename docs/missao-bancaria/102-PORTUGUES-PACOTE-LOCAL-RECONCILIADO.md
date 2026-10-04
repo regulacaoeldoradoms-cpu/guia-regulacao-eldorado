@@ -1,6 +1,6 @@
 # Português — pacote local reconciliado para draft
 
-04/10/2026. Somente preparo; **nenhum push/PR, transição, merge remoto, ativação ou deploy**. Preservadas as branches publicadas e o checkout original de autoria.
+04/10/2026. Salvamento remoto autorizado: **[#602 draft](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/602)**, pacote 4bea4009 confirmado remoto. Sem transição, merge remoto, ativação ou deploy. Preservadas as branches publicadas e o checkout original de autoria.
 
 ## Árvores e escopo
 
@@ -22,6 +22,6 @@ Reutilizados pareceres pedagógicos e demais testes LP/PT/OA/DP/IS inalterados; 
 
 ## Bloqueios e próxima ação
 
-Enviar/salvar remotamente os quatro lotes e abrir draft PR **ainda pendente de aprovação específica**. A base composta é local: #572/#600/#598 não estão integrados na main. Antes do envio, definir a referência remota da cadeia para que o PR de Português não inclua inadvertidamente dependências/contratos já tratados em PRs separados. Comparado diretamente à main, o pacote inclui essas dependências; não alegar diff apenas Português nessa comparação. A base separada torna esse limite explícito.
+Envio dos quatro lotes e abertura de draft PR **explicitamente autorizados e executados** em #602. A base composta é local: #572/#600/#598 não estão integrados na main. Não foi criada base remota adicional. O draft tem base main e declara explicitamente a inclusão das dependências/contratos existentes em PRs separados. Comparado diretamente à main, o pacote inclui essas dependências; não alegar diff apenas Português nessa comparação. A base separada torna esse limite explícito.
 
-Ativação/publicação não autorizadas; dependência CAIXA IS→Português comum BB/CAIXA requer decisão antes de liberar acesso. Aceite humano pedagógico fase 2 não observado. Próxima ação segura: salvar em draft pelo fluxo aprovado quando chegar autorização e existir base remota adequada; enquanto isso, pode seguir autoria local do hífen já previsto, sem alterar prioridade de integração.
+Ativação/publicação não autorizadas; dependência CAIXA IS→Português comum BB/CAIXA requer decisão antes de liberar acesso. Aceite humano pedagógico fase 2 não observado. Próxima ação: acompanhar CI do draft no head final, corrigindo apenas falhas pertinentes; autoria de hífen já prevista segue localmente em branch separada, sem integrar esse conteúdo ao PR.
