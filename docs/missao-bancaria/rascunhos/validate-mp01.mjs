@@ -5,15 +5,16 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe', 'lp01', 'lp02', 'lp03', 'lpr', 'lpchefe', 'pt01', 'pt02', 'pt03', 'pt04', 'ptr', 'ptchefe', 'oa01', 'oa02', 'oa03', 'oa04', 'oar', 'oachefe'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe', 'lp01', 'lp02', 'lp03', 'lpr', 'lpchefe', 'pt01', 'pt02', 'pt03', 'pt04', 'ptr', 'ptchefe', 'oa01', 'oa02', 'oa03', 'oa04', 'oar', 'oachefe', 'ol01', 'ol02', 'ol03', 'olr', 'olchefe'].includes(unit), 'Unidade editorial desconhecida');
 const isCE = unit.startsWith('ce');
 const isDP = unit.startsWith('dp');
 const isIS = unit.startsWith('is');
 const isLP = unit.startsWith('lp');
 const isPT = unit.startsWith('pt');
+const isOL = unit.startsWith('ol');
 const isOA = unit.startsWith('oa');
-const sourceDate = isPT || isOA ? '2026-10-04' : isIS || isLP ? '2026-10-03' : isCE || isDP ? '2026-10-01' : '2026-09-30';
-const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe', 'ischefe', 'lpchefe', 'ptchefe', 'oachefe'].includes(unit);
+const sourceDate = isPT || isOA || isOL ? '2026-10-04' : isIS || isLP ? '2026-10-03' : isCE || isDP ? '2026-10-01' : '2026-09-30';
+const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe', 'ischefe', 'lpchefe', 'ptchefe', 'oachefe', 'olchefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
 const { SOURCES, EDITORIAL } = content;
@@ -26,7 +27,7 @@ unique(SOURCES); unique(draft.sections); unique(draft.questions);
 assert.equal(draft.publication.status, 'draft');
 assert.equal(draft.teaching.contractVersion, 1);
 assert.equal(draft.teaching.reviewStatus, 'human-review-pending');
-assert.equal(draft.candidateBlockId, isOA ? 'portuguese.spelling' : isPT ? 'portuguese.text' : isLP ? 'portuguese.reading' : isIS ? 'banking.institution-specific' : isDP ? 'banking.digital-payments' : isCE ? 'banking.capital-exchange' : unit.startsWith('pc') ? 'banking.products-credit' : 'banking.markets-policy');
+assert.equal(draft.candidateBlockId, isOA || isOL ? 'portuguese.spelling' : isPT ? 'portuguese.text' : isLP ? 'portuguese.reading' : isIS ? 'banking.institution-specific' : isDP ? 'banking.digital-payments' : isCE ? 'banking.capital-exchange' : unit.startsWith('pc') ? 'banking.products-credit' : 'banking.markets-policy');
 assert.equal(draft.xp, undefined);
 assert.equal(draft.order, undefined);
 assert.deepEqual(validatePublicationCatalog([draft]), []);
@@ -67,9 +68,9 @@ for (const question of draft.questions) {
   }
   for (const id of question.recoverySectionIds) assert(sections.has(id));
   for (const objective of question.objectiveIds) objectives.add(objective);
-  if (isBoss || ['mpr', 'pcr', 'cer', 'dpr', 'isr', 'lpr', 'ptr', 'oar'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
+  if (isBoss || ['mpr', 'pcr', 'cer', 'dpr', 'isr', 'lpr', 'ptr', 'oar', 'olr'].includes(unit)) assert(question.originRefs?.length, 'Revisão/Chefe requer aula de origem por questão');
   for (const ref of question.originRefs || []) {
-    assert(isOA ? /^oa0[1-4]$/.test(ref.unit) : isPT ? /^pt0[1-4]$/.test(ref.unit) : isLP ? /^lp0[1-3]$/.test(ref.unit) : isIS ? /^is0[1-8]$/.test(ref.unit) : isDP ? /^dp(0[1-9]|1[0-2])$/.test(ref.unit) : isCE ? /^ce(0[1-9]|1[01])$/.test(ref.unit) : unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
+    assert(isOL ? /^ol0[1-3]$/.test(ref.unit) : isOA ? /^oa0[1-4]$/.test(ref.unit) : isPT ? /^pt0[1-4]$/.test(ref.unit) : isLP ? /^lp0[1-3]$/.test(ref.unit) : isIS ? /^is0[1-8]$/.test(ref.unit) : isDP ? /^dp(0[1-9]|1[0-2])$/.test(ref.unit) : isCE ? /^ce(0[1-9]|1[01])$/.test(ref.unit) : unit.startsWith('pc') ? /^pc(01a|0[1-6]|0[89]|10|11[a-e])$/.test(ref.unit) : /^mp(0[1-9]|r)$/.test(ref.unit));
     const origin = await import(`./${ref.unit.slice(0, 2)}-${ref.unit.slice(2)}-v1.mjs`);
     const originDraft = origin[`${ref.unit.toUpperCase()}_DRAFT`];
     const originSection = originDraft.sections.find(section => section.id === ref.sectionId);
@@ -78,11 +79,12 @@ for (const question of draft.questions) {
     originLabels.set(`${ref.unit}:${ref.sectionId}`, `${originDraft.editorialKey}: ${originSection.heading}`);
   }
 }
-assert.deepEqual([...objectives].sort(), isIS || isLP || isPT || isOA ? ['O1', 'O2', 'O3', 'O4'] : ['O1', 'O2', 'O3', 'O4', 'O5', ...(['dp01', 'dp02'].includes(unit) ? [] : ['O6'])]);
-if (isIS || isLP || isPT || isOA) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
+assert.deepEqual([...objectives].sort(), isIS || isLP || isPT || isOA || isOL ? ['O1', 'O2', 'O3', 'O4'] : ['O1', 'O2', 'O3', 'O4', 'O5', ...(['dp01', 'dp02'].includes(unit) ? [] : ['O6'])]);
+if (isIS || isLP || isPT || isOA || isOL) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 if (isDP) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
-if ((isCE || isDP || isIS || isLP || isPT || isOA) && !isBoss) assert.equal(draft.questions.length, 8);
+if ((isCE || isDP || isIS || isLP || isPT || isOA || isOL) && !isBoss) assert.equal(draft.questions.length, 8);
+if (['olr', 'olchefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['ol01', 'ol02', 'ol03']);
 if (['oar', 'oachefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['oa01', 'oa02', 'oa03', 'oa04']);
 if (['ptr', 'ptchefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['pt01', 'pt02', 'pt03', 'pt04']);
 if (['lpr', 'lpchefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['lp01', 'lp02', 'lp03']);
