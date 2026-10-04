@@ -5,12 +5,13 @@ import { PUBLISHED_MISSIONS } from '../../../worker/studies-content/manifest.js'
 import { publishedCatalog, validatePublicationCatalog } from '../../../worker/studies-content/publication-registry.js';
 
 const unit = process.argv.find(arg => arg.startsWith('--unit='))?.split('=')[1] || 'mp01';
-assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe', 'lp01', 'lp02', 'lp03', 'lpr', 'lpchefe'].includes(unit), 'Unidade editorial desconhecida');
+assert(['mp01', 'mp02', 'mp03', 'mp04', 'mp05', 'mp06', 'mp07', 'mp08', 'mp09', 'mpr', 'mpchefe', 'pc01a', 'pc01', 'pc02', 'pc03', 'pc04', 'pc05', 'pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e', 'pcr', 'pcchefe', 'ce01', 'ce02', 'ce03', 'ce04', 'ce05', 'ce06', 'ce07', 'ce08', 'ce09', 'ce10', 'ce11', 'cer', 'cechefe', ...Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`), 'dpr', 'dpchefe', ...Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`), 'isr', 'ischefe', 'lp01', 'lp02', 'lp03', 'lpr', 'lpchefe', 'pt01'].includes(unit), 'Unidade editorial desconhecida');
 const isCE = unit.startsWith('ce');
 const isDP = unit.startsWith('dp');
 const isIS = unit.startsWith('is');
 const isLP = unit.startsWith('lp');
-const sourceDate = isIS || isLP ? '2026-10-03' : isCE || isDP ? '2026-10-01' : '2026-09-30';
+const isPT = unit === 'pt01';
+const sourceDate = isPT ? '2026-10-04' : isIS || isLP ? '2026-10-03' : isCE || isDP ? '2026-10-01' : '2026-09-30';
 const isBoss = ['mpchefe', 'pcchefe', 'cechefe', 'dpchefe', 'ischefe', 'lpchefe'].includes(unit);
 const stem = `${unit.slice(0, 2)}-${unit.slice(2)}-v1`;
 const content = await import(`./${stem}.mjs`);
@@ -24,7 +25,7 @@ unique(SOURCES); unique(draft.sections); unique(draft.questions);
 assert.equal(draft.publication.status, 'draft');
 assert.equal(draft.teaching.contractVersion, 1);
 assert.equal(draft.teaching.reviewStatus, 'human-review-pending');
-assert.equal(draft.candidateBlockId, isLP ? 'portuguese.reading' : isIS ? 'banking.institution-specific' : isDP ? 'banking.digital-payments' : isCE ? 'banking.capital-exchange' : unit.startsWith('pc') ? 'banking.products-credit' : 'banking.markets-policy');
+assert.equal(draft.candidateBlockId, isPT ? 'portuguese.text' : isLP ? 'portuguese.reading' : isIS ? 'banking.institution-specific' : isDP ? 'banking.digital-payments' : isCE ? 'banking.capital-exchange' : unit.startsWith('pc') ? 'banking.products-credit' : 'banking.markets-policy');
 assert.equal(draft.xp, undefined);
 assert.equal(draft.order, undefined);
 assert.deepEqual(validatePublicationCatalog([draft]), []);
@@ -76,11 +77,11 @@ for (const question of draft.questions) {
     originLabels.set(`${ref.unit}:${ref.sectionId}`, `${originDraft.editorialKey}: ${originSection.heading}`);
   }
 }
-assert.deepEqual([...objectives].sort(), isIS || isLP ? ['O1', 'O2', 'O3', 'O4'] : ['O1', 'O2', 'O3', 'O4', 'O5', ...(['dp01', 'dp02'].includes(unit) ? [] : ['O6'])]);
-if (isIS || isLP) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
+assert.deepEqual([...objectives].sort(), isIS || isLP || isPT ? ['O1', 'O2', 'O3', 'O4'] : ['O1', 'O2', 'O3', 'O4', 'O5', ...(['dp01', 'dp02'].includes(unit) ? [] : ['O6'])]);
+if (isIS || isLP || isPT) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 if (isDP) assert.deepEqual([...objectives].sort(), Object.keys(EDITORIAL.objectives).sort());
 assert.deepEqual(Object.keys(draft.teaching.questionCoverage).sort(), ids(draft.questions).sort());
-if ((isCE || isDP || isIS || isLP) && !isBoss) assert.equal(draft.questions.length, 8);
+if ((isCE || isDP || isIS || isLP || isPT) && !isBoss) assert.equal(draft.questions.length, 8);
 if (['lpr', 'lpchefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), ['lp01', 'lp02', 'lp03']);
 if (['isr', 'ischefe'].includes(unit)) assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 8 }, (_, i) => `is${String(i + 1).padStart(2, '0')}`));
 if (unit === 'dpr') assert.deepEqual([...new Set(draft.questions.flatMap(q => q.originRefs.map(ref => ref.unit)))].sort(), Array.from({ length: 12 }, (_, i) => `dp${String(i + 1).padStart(2, '0')}`));
@@ -130,7 +131,7 @@ if (process.argv.includes('--render')) fs.writeFileSync(output, markdown);
 assert.equal(fs.readFileSync(output, 'utf8').replace(/\r\n/g, '\n'), markdown, 'Regenerar a prévia Markdown do rascunho');
 const review = unit === 'ce01' ? '../80-CE-PLANO-E-PRIMEIRA-UNIDADE.md' : { mp01: '../68-MP01-RASCUNHO-E-REVISAO.md', mp02: '../69-MP02-RASCUNHO-E-REVISAO.md', mp03: '../70-MP03-RASCUNHO-E-REVISAO.md', mpchefe: '../72-MP-CHEFE-RASCUNHO-E-REVISAO.md', pc01a: '../74-PC01A-RASCUNHO-E-REVISAO.md', pc04: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pc05: '../76-PC04-05-RASCUNHOS-E-REVISAO.md', pcr: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md', pcchefe: '../78-PC-REVISAO-E-PROPOSTA-CHEFE.md' }[unit] || (['pc06', 'pc08', 'pc09', 'pc10', 'pc11a', 'pc11b', 'pc11c', 'pc11d', 'pc11e'].includes(unit) ? '../77-PC-CONJUNTO-COMUM-RASCUNHOS.md' : unit.startsWith('pc') ? '../75-PC01-03-RASCUNHOS-E-REVISAO.md' : '../71-MP-BLOCO-RASCUNHO-E-REVISAO.md');
 const ceReview = ['cer', 'cechefe'].includes(unit) ? '../82-CE-REVISAO-E-PROPOSTA-CHEFE.md' : '../81-CE-CONJUNTO-RASCUNHOS.md';
-const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', isLP ? (unit === 'lp01' ? '../91-LP-LEITURA-PRIMEIRO-RASCUNHO.md' : '../92-LP-LEITURA-LOTE-REVISAO-CHEFE.md') : isIS ? '../88-IS-PLANO-E-PRIMEIRO-LOTE.md' : isDP ? '../85-DP-CONJUNTO-RASCUNHOS.md' : isCE && unit !== 'ce01' ? ceReview : review, '../../../PROJECT_STATE.md'];
+const related = [`${stem}.mjs`, `${stem}.md`, 'validate-mp01.mjs', isPT ? '../94-PT-ORGANIZACAO-PLANO-E-PRIMEIRA-UNIDADE.md' : isLP ? (unit === 'lp01' ? '../91-LP-LEITURA-PRIMEIRO-RASCUNHO.md' : '../92-LP-LEITURA-LOTE-REVISAO-CHEFE.md') : isIS ? '../88-IS-PLANO-E-PRIMEIRO-LOTE.md' : isDP ? '../85-DP-CONJUNTO-RASCUNHOS.md' : isCE && unit !== 'ce01' ? ceReview : review, '../../../PROJECT_STATE.md'];
 let localLinks = 0;
 for (const relative of related) {
   const file = path.resolve(import.meta.dirname, relative);
