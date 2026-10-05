@@ -120,7 +120,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.2\.5/);
+  assert.match(source, /@version\s+1\.2\.6/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -528,7 +528,7 @@ test('homologação do diálogo exige título exato e não amplia para outro con
   assert.equal(tools.patientDetailsRoot({ querySelectorAll: () => [unrelated] }), null);
 });
 
-function syntheticConsultationFlow({ phone = '(11) 99000-0001', dialogDelay = 0, onAction, onPoll } = {}) {
+function syntheticConsultationFlow({ phone = '(11) 99000-0001', dialogDelay = 0, menuClosed = false, menuAmbiguous = false, menuTriggerAmbiguous = false, menuNeverOpens = false, onMenu, onAction, onPoll } = {}) {
   const fixture = read('worker/tests/fixtures/agenda-patient-dialog.html');
   const fieldId = fixture.match(/<input class="fi-input" id="([^"]+)"/)[1];
   let tick = Date.now();
@@ -538,6 +538,10 @@ function syntheticConsultationFlow({ phone = '(11) 99000-0001', dialogDelay = 0,
   let clicked = false;
   let polls = 0;
   let navigations = 0;
+  let menuOpen = !menuClosed;
+  let menuClicks = 0;
+  let actionClicks = 0;
+  let otherClicks = 0;
   let tools;
   const dialogFor = (value) => {
     const values = Array.isArray(value) ? value : [value];
@@ -545,22 +549,36 @@ function syntheticConsultationFlow({ phone = '(11) 99000-0001', dialogDelay = 0,
     const outer = { ...patientDialog(), querySelectorAll: inner.querySelectorAll, contains: (node) => node === inner };
     return [outer, inner];
   };
-  const makeRoot = (value) => ({ readyState: 'complete', querySelectorAll(selector) {
-    if (selector.startsWith('button,')) return [{ textContent: 'Ver Dados do Paciente', getClientRects: () => [{}], click() {
+  const makeRoot = (value) => {
+    const dropdown = { getClientRects: () => [{}], closest: () => null, contains: (node) => node === action,
+      querySelectorAll: () => menuTriggerAmbiguous ? [trigger, { ...trigger }] : [trigger] };
+    const panel = { closest: () => dropdown };
+    const trigger = { textContent: 'Ações', disabled: false, getClientRects: () => [{}], closest: (selector) => selector === '.fi-dropdown' ? dropdown : null,
+      click() { menuClicks++; if (!menuNeverOpens) menuOpen = true;
+        onMenu?.({ frame, tools, action, replaceDocument: () => { root = makeRoot(value); } }); } };
+    const otherAction = { textContent: 'Responder Critérios', getClientRects: () => [{}], click() { otherClicks++; } };
+    const action = { textContent: 'Ver Dados do Paciente', getClientRects: () => menuOpen ? [{}] : [],
+      closest: (selector) => selector === '.fi-dropdown-panel' ? panel : selector === '.fi-dropdown' ? dropdown : null,
+      click() {
+      actionClicks++;
       clicked = true;
       onAction?.({ frame, tools, replaceDocument: (otherPhone) => { root = makeRoot(otherPhone); } });
-    } }];
+    } };
+    return { readyState: 'complete', querySelectorAll(selector) {
+    if (selector.startsWith('button,')) return menuAmbiguous ? [trigger, otherAction, action, { ...action }] : [trigger, otherAction, action];
     if (selector.includes('dialog')) return clicked && polls >= dialogDelay ? dialogFor(value) : [];
     return [];
-  } });
+  } };
+  };
   const frame = { closed: false, get document() { return root; }, get location() { return location; }, set location(value) {
-    navigations++; location = new URL(value); clicked = false; polls = 0; root = makeRoot(phone);
+    navigations++; location = new URL(value); clicked = false; menuOpen = !menuClosed; polls = 0; root = makeRoot(phone);
   } };
   tools = contactTools({ setTimeout(resolve, ms) {
     tick += ms; polls++; onPoll?.({ frame, tools, polls }); resolve();
   } }, FlowClock);
   tools.setWindow(frame);
-  return { tools, frame, setPhone(value) { phone = value; }, navigations: () => navigations, polls: () => polls };
+  return { tools, frame, setPhone(value) { phone = value; }, navigations: () => navigations, polls: () => polls,
+    menuClicks: () => menuClicks, actionClicks: () => actionClicks, otherClicks: () => otherClicks };
 }
 
 async function hrefAfterSyntheticCollection(flow, record = { sourceId: 'synthetic-a', patient: 'Paciente de teste A', requestedAt: '2026-10-01' }) {
@@ -647,6 +665,51 @@ test('fluxo sintético aguarda diálogo atrasado e rejeita fechado, ausente ou a
     assert.equal(result.href, '');
     assert.equal(result.result.failed, 1);
   }
+});
+
+test('ação do paciente em menu inicialmente fechado abre somente seu trigger e mantém destino por ficha', async () => {
+  const menuFixture = read('worker/tests/fixtures/agenda-patient-menu.html');
+  assert.match(menuFixture, /class="fi-dropdown-panel" style="display:none"/);
+  assert.match(menuFixture, /class="fi-dropdown-trigger"/);
+  const flow = syntheticConsultationFlow({ menuClosed: true });
+  const outcome = await hrefAfterSyntheticCollection(flow);
+  assert.equal(outcome.href && new URL(outcome.href).pathname, '/5511990000001');
+  assert.equal(flow.menuClicks(), 1);
+  assert.equal(flow.actionClicks(), 1);
+  assert.equal(flow.otherClicks(), 0);
+});
+
+test('menu de paciente ambíguo ou trigger ambíguo não gera cliques nem destino', async () => {
+  for (const options of [{ menuAmbiguous: true }, { menuTriggerAmbiguous: true }]) {
+    const flow = syntheticConsultationFlow({ menuClosed: true, ...options });
+    const outcome = await hrefAfterSyntheticCollection(flow);
+    assert.equal(outcome.href, '');
+    assert.equal(flow.menuClicks(), 0);
+    assert.equal(flow.actionClicks(), 0);
+  }
+});
+
+test('menu que não abre não é clicado repetidamente e não gera destino', async () => {
+  const flow = syntheticConsultationFlow({ menuClosed: true, menuNeverOpens: true });
+  assert.equal((await hrefAfterSyntheticCollection(flow)).href, '');
+  assert.equal(flow.menuClicks(), 1);
+  assert.equal(flow.actionClicks(), 0);
+});
+
+test('fechamento ou troca de Document após abrir menu cancela antes da ação e do telefone', async () => {
+  for (const onMenu of [({ frame }) => { frame.closed = true; }, ({ replaceDocument }) => replaceDocument()]) {
+    const flow = syntheticConsultationFlow({ menuClosed: true, onMenu });
+    assert.equal((await hrefAfterSyntheticCollection(flow)).href, '');
+    assert.equal(flow.menuClicks(), 1);
+    assert.equal(flow.actionClicks(), 0);
+  }
+});
+
+test('ação que muda de dropdown após abertura é recusada sem destino', async () => {
+  const flow = syntheticConsultationFlow({ menuClosed: true, onMenu: ({ action }) => { action.closest = () => ({}); } });
+  assert.equal((await hrefAfterSyntheticCollection(flow)).href, '');
+  assert.equal(flow.menuClicks(), 1);
+  assert.equal(flow.actionClicks(), 0);
 });
 
 test('fluxo sintético repete contato só para mesma associação e cancela cache com janela fechada', async () => {

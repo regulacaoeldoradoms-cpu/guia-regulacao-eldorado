@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.5
+// @version      1.2.6
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-2
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-2
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-menu-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-menu-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -261,6 +261,24 @@
     return actions.length === 1 ? actions[0] : null;
   }
 
+  function patientActionMenu(root) {
+    // Open only the Filament dropdown that owns the unique hidden patient action.
+    // Never guess a three-dot control elsewhere in the consultation.
+    const actions = [...root.querySelectorAll('button, a, [role="button"]')]
+      .filter((node) => !node.disabled && normalizeSearch(node.textContent) === 'ver dados do paciente');
+    if (actions.length !== 1 || actions[0].getClientRects().length > 0) return null;
+    const action = actions[0];
+    const panel = action.closest?.('.fi-dropdown-panel');
+    const dropdown = panel?.closest?.('.fi-dropdown');
+    if (!dropdown || action.closest?.('.fi-dropdown') !== dropdown
+      || dropdown.getClientRects().length === 0
+      || dropdown.closest('[hidden], [aria-hidden="true"]')) return null;
+    const triggers = [...dropdown.querySelectorAll('.fi-dropdown-trigger button, .fi-dropdown-trigger a, .fi-dropdown-trigger [role="button"]')]
+      .filter((node) => node.getClientRects().length > 0 && !node.disabled
+        && node.closest('.fi-dropdown') === dropdown && !node.closest('.fi-dropdown-panel'));
+    return triggers.length === 1 ? { dropdown, trigger: triggers[0] } : null;
+  }
+
   function clearBridgeReadyWait() {
     if (bridgeReadyTimer) window.clearTimeout(bridgeReadyTimer);
     bridgeReadyTimer = null;
@@ -335,6 +353,7 @@
     const expectedPath = new URL(targetUrl).pathname;
     const startedAt = Date.now();
     let clicked = false;
+    let openedMenu = null;
     while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
       assertContactSession(frameWindow, generation);
       if (frameWindow.location.pathname !== expectedPath) {
@@ -345,8 +364,17 @@
       if (!clicked) {
         const action = patientAction(root);
         if (action) {
+          if (openedMenu && action.closest?.('.fi-dropdown') !== openedMenu) {
+            throw new Error('A ação do paciente mudou durante a abertura do menu.');
+          }
           action.click();
           clicked = true;
+        } else if (!openedMenu) {
+          const menu = patientActionMenu(root);
+          if (menu) {
+            openedMenu = menu.dropdown;
+            menu.trigger.click();
+          }
         }
       } else {
         const details = patientDetailsRoot(root);
