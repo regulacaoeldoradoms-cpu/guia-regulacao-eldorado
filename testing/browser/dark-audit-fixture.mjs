@@ -89,8 +89,8 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/chat/messages') data = {messages:[{id:1,fromUser:auditFriend.username,body:'MENSAGEM FICTÍCIA RECEBIDA',sentAt:'2026-09-24T12:00:00Z'},{id:2,fromUser:user.username,body:'MENSAGEM FICTÍCIA ENVIADA',sentAt:'2026-09-24T12:01:00Z'}]};
     else if (url.pathname === '/api/telemedicina/dashboard') data = { today:'2026-09-24', actor:{ admin:true }, patients:[auditPatient], followups:[auditFollowup], counts:{ total:1, pending:1, due:1 } };
     else if (/^\/api\/telemedicina\/patients\/[^/]+$/.test(url.pathname)) data = { patient:auditPatient, followups:[auditFollowup], events:[] };
-    else if (url.pathname === '/api/agenda/contact-state' && request.method() === 'GET') data = {active:auditAgenda.length,known:auditAgenda.length,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)};
-    else if (url.pathname === '/api/agenda') data = { records:auditAgenda, summary:{ active:3, unread:2, lastSyncAt:'2026-09-24T12:00:00Z' } };
+    else if (url.pathname === '/api/agenda/contact-state' && request.method() === 'GET') data = {contactCapability:'patient-details-v2',active:auditAgenda.length,known:auditAgenda.length,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)};
+    else if (url.pathname === '/api/agenda') data = { contactCapability:'patient-details-v2', records:auditAgenda, summary:{ active:3, unread:2, lastSyncAt:'2026-09-24T12:00:00Z' } };
     else if (url.pathname === '/api/documents/access') data = { capabilities:user.documentCapabilities, drive:{ connected:true, configured:true, writeEnabled:false } };
     else if (url.pathname === '/api/documents/drive/list') data = { items:[], nextPageToken:'' };
     else if (url.pathname === '/api/documents/preferences') data = { preferences:{} };
