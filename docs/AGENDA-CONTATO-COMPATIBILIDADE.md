@@ -8,7 +8,7 @@ Worker, frontend, ponte e coletor usam o identificador exato `patient-details-v2
 - Um card não contém link navegável pré-carregado. O botão abre somente uma janela inerte durante o gesto do usuário, consulta novamente a listagem protegida e compara ficha, paciente, solicitação, data/horário e telefone. Só atribui o destino após confirmação atual da capacidade e do mesmo contato ativo e válido; alteração, revogação, expiração, erro ou janela fechada interrompem a abertura.
 - Ponte confere a capacidade antes de cada POST, inclusive antes de responder a uma repetição deduplicada. Exige também capacidade no ACK e no estado posterior à escrita; perda/erro devolve falha, sem apresentar um sucesso em cache.
 - Coletor só inicia/envia com capacidade confirmada. READY ou RESULT atual sem capacidade válida pausa a sessão, invalida geração/entrega pendente e limpa cache de contato, IDs conhecidos e fingerprint. Uma nova ativação precisa de nova confirmação; READY tardio não reativa uma sessão pausada.
-- Coletor candidato 1.2.6 usa cache `20261005-menu-1`; frontend e ponte permanecem no cache `20261005-contact-2`. A capacidade exigida continua `patient-details-v2`.
+- Coletor candidato 1.2.7 e ponte usam cache `20261005-pending-1`; frontend permanece no cache `20261005-contact-2`. A capacidade exigida continua `patient-details-v2`; pontes anteriores deixam o recorte fora da captura sem classificação.
 
 ## Compatibilidade e retorno
 
