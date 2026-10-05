@@ -12,7 +12,9 @@ on:
       - 'worker/agenda.js'
       - 'worker/index.js'
       - 'worker/tests/agenda.test.mjs'
+      - 'worker/tests/agenda-contact-contract.test.mjs'
       - 'worker/tests/agenda-capacity.test.mjs'
+      - 'worker/tests/fixtures/agenda-patient-dialog.html'
       - 'docs/AGENDA-DIGSAUDE*.md'
       - 'scripts/agenda/**'
       - '.github/workflows/validate-agenda.yml'
@@ -28,7 +30,9 @@ on:
       - 'worker/agenda.js'
       - 'worker/index.js'
       - 'worker/tests/agenda.test.mjs'
+      - 'worker/tests/agenda-contact-contract.test.mjs'
       - 'worker/tests/agenda-capacity.test.mjs'
+      - 'worker/tests/fixtures/agenda-patient-dialog.html'
       - 'docs/AGENDA-DIGSAUDE*.md'
       - 'scripts/agenda/**'
 
@@ -51,4 +55,4 @@ jobs:
           node --input-type=module --check < worker/index.js
           node --check scripts/agenda/recuperar-firebase-agenda.mjs
       - name: Executar testes da Agenda
-        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-capacity.test.mjs scripts/agenda/recuperar-firebase-agenda.test.mjs
+        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-contact-contract.test.mjs worker/tests/agenda-capacity.test.mjs scripts/agenda/recuperar-firebase-agenda.test.mjs

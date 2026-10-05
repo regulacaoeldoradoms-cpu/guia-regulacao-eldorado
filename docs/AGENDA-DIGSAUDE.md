@@ -117,8 +117,8 @@ Objetivo operacional: o profissional que realiza a sincronização do DigSaúde 
 
 - o telefone é obtido somente dentro da sessão já autenticada do DigSaúde;
 - o sincronizador consulta a rota individual `/consultas/{id}/view` correspondente ao mesmo `sourceId` já presente na aba Agendados;
-- quando o telefone não está presente no HTML inicial, o sincronizador abre a própria consulta em um iframe same-origin invisível, aciona o botão real **Ver Dados do Paciente** e aguarda o campo de telefone aparecer no DOM;
-- o userscript não roda sua interface dentro desse iframe, evitando recursão;
+- o sincronizador usa a janela auxiliar same-origin, aguarda a rota exata da consulta e um novo Document, aciona **Ver Dados do Paciente** e lê somente o diálogo visível **Dados do Paciente**;
+- o userscript não roda sua interface dentro da janela auxiliar, evitando recursão;
 - o próprio DigSaúde executa o Livewire normalmente; o sincronizador não monta nem replica payload interno do framework;
 - todo o fluxo permanece same-origin e usa somente a sessão já autenticada do navegador;
 - senha, cookie, bearer token e sessão do DigSaúde não são enviados ao Portal;
@@ -129,14 +129,14 @@ Objetivo operacional: o profissional que realiza a sincronização do DigSaúde 
 
 O telefone normalizado é enviado junto com o snapshot operacional da Agenda e armazenado no Firestore privado do módulo. Ele não é versionado no GitHub, não entra em PostHog, logs ou observabilidade e é devolvido apenas pela API autenticada da Agenda para usuários autorizados de Telemedicina/Desenvolvedor.
 
-Se uma coleta temporária falhar, um telefone previamente sincronizado é preservado; a falha não apaga o contato conhecido.
+No patch local de 05/10/2026, contatos legados não são considerados verificados. A coleta recebe versão e vínculo com a consulta; o Worker vincula o contato ao paciente/data de solicitação do espelho e limita sua validade a 24 horas. Uma coleta realizada que retorne vazio ou falhe revoga o destino anterior. Um snapshot que não tentou coletar contato só preserva um contato verificado, ainda válido e da mesma associação. Esta alteração está apenas local. O diálogo/campo foi homologado estruturalmente em 05/10/2026; a validação operacional completa e a publicação continuam pendentes.
 
 ### Ação no card
 
 O botão principal do card deixa de ser **Abrir no DigSaúde** e passa a ser **Avisar por WhatsApp**.
 
 Ao clicar:
-- o WhatsApp abre diretamente no número sincronizado do paciente;
+- a Agenda reconfirma a capacidade v2 do Worker e o contato da mesma ficha antes de atribuir o destino à janela; perda de capacidade, mudança ou revogação interrompem a abertura;
 - a mensagem é apenas preparada; o envio continua exigindo confirmação humana no WhatsApp;
 - o agendamento é marcado como visualizado para aquele usuário;
 - o local do atendimento não é incluído automaticamente, pois será informado em seguida pelo Técnico em Telemedicina.
@@ -232,3 +232,6 @@ A V3.4:
 
 A finalidade é operacional: preparar lembretes para consultas atuais e futuras sem gastar tempo enriquecendo retrospectivamente agendamentos antigos.
 
+### Compatibilidade de entrega e rollback — 05/10/2026
+
+O contrato `contactCapability: patient-details-v2` impede que frontend, ponte e coletor atualizados usem contatos de um Worker anterior. A perda da capacidade limpa caches e pausa a coleta; o botão não contém link navegável pré-carregado e revalida a mesma ficha antes de abrir um destino. O gate de deploy e seu rollback continuam intactos. Atualizar/reabrir clientes e coletor é necessário; links antigos já carregados não recebem essa proteção. Detalhes e testes em `AGENDA-CONTATO-COMPATIBILIDADE.md`.

@@ -9,6 +9,9 @@ import {
 } from './firebase-gateway.js';
 import { telemedicineAccessFor, ensureTelemedicineUnderlyingRole } from './telemedicine-access.js';
 
+const CONTACT_VERSION = 'patient-details-v2';
+const CONTACT_TTL_MS = 24 * 60 * 60 * 1000;
+
 const COLLECTION = 'telemedicine_digsaude_agenda';
 const READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state';
 const MAX_RECORDS_PER_SYNC = 250;
@@ -43,18 +46,22 @@ function cleanSourceId(value) {
 }
 
 function normalizeBrazilPhone(value) {
-  let digits = String(value ?? '').replace(/\D/g, '');
-  if (!digits) return '';
+  const source = String(value ?? '').trim();
+  if (!/^\+?[\d\s().-]+$/.test(source)) return '';
+  let digits = source.replace(/\D/g, '');
   if (digits.startsWith('0')) digits = digits.slice(1);
-  if ((digits.length === 10 || digits.length === 11) && !digits.startsWith('55')) digits = '55' + digits;
-  if (!/^55\d{10,11}$/.test(digits)) return '';
-  return digits;
+  if (digits.length === 10 || digits.length === 11) digits = '55' + digits;
+  const match = digits.match(/^55(\d{2})([2-5]\d{7}|9\d{8})$/);
+  const ddds = /^(?:1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[134579]|8[1-9]|9[1-9])$/;
+  return match && ddds.test(match[1]) ? digits : '';
 }
 
 
 function normalizeRecord(input = {}) {
   const sourceId = cleanSourceId(input.sourceId);
   if (!sourceId) throw Object.assign(new Error('Identificador do agendamento inválido.'), { status: 400 });
+  const contactChecked = input.contactVersion === CONTACT_VERSION
+    && cleanSourceId(input.contactSourceId) === sourceId;
   return {
     sourceId,
     requestedAt: clean(input.requestedAt, 40),
@@ -70,8 +77,41 @@ function normalizeRecord(input = {}) {
     appointmentType: clean(input.appointmentType, 120),
     facility: clean(input.facility, 180),
     status: clean(input.status, 120),
-    phone: normalizeBrazilPhone(input.phone)
+    phone: contactChecked
+      ? normalizeBrazilPhone(input.phone) : '',
+    contactVersion: contactChecked
+      ? CONTACT_VERSION : '',
+    contactSourceId: sourceId,
+    contactPatient: clean(input.patient, 180),
+    contactRequestedAt: clean(input.requestedAt, 40),
+    contactVerifiedAt: contactChecked
+      ? new Date().toISOString() : ''
   };
+}
+
+function verifiedContactPhone(record, now = Date.now()) {
+  const age = now - Date.parse(record?.contactVerifiedAt || '');
+  if (record?.contactVersion !== CONTACT_VERSION
+    || record.contactSourceId !== record.sourceId
+    || record.contactPatient !== record.patient
+    || record.contactRequestedAt !== record.requestedAt
+    || !Number.isFinite(age) || age < 0 || age >= CONTACT_TTL_MS) return '';
+  return normalizeBrazilPhone(record.phone);
+}
+
+function contactForSync(record, existing) {
+  // A checked-but-empty contact revokes an earlier destination. Old clients cannot restore it.
+  if (record.contactVersion === CONTACT_VERSION) return record;
+  if (existing && record.patient === existing.patient
+    && record.requestedAt === existing.requestedAt && verifiedContactPhone(existing)) {
+    return {
+      ...record,
+      phone: verifiedContactPhone(existing),
+      contactVersion: existing.contactVersion,
+      contactVerifiedAt: existing.contactVerifiedAt
+    };
+  }
+  return { ...record, phone: '', contactVersion: '', contactVerifiedAt: '' };
 }
 
 function comparable(record = {}) {
@@ -200,7 +240,7 @@ function publicRecord(record, username, readMemory) {
     appointmentType: clean(record.appointmentType, 120),
     facility: clean(record.facility, 180),
     status: clean(record.status, 120),
-    phone: normalizeBrazilPhone(record.phone),
+    phone: verifiedContactPhone(record),
     firstSeenAt: clean(record.firstSeenAt, 40),
     lastSeenAt: clean(record.lastSeenAt, 40),
     lastChangedAt: clean(record.lastChangedAt, 40),
@@ -219,9 +259,10 @@ function contactState(records = []) {
     const sourceId = cleanSourceId(record?.sourceId);
     if (!sourceId) continue;
     active.push(sourceId);
-    if (normalizeBrazilPhone(record?.phone)) knownSourceIds.push(sourceId);
+    if (verifiedContactPhone(record)) knownSourceIds.push(sourceId);
   }
   return {
+    contactCapability: CONTACT_VERSION,
     active: active.length,
     known: knownSourceIds.length,
     missing: Math.max(0, active.length - knownSourceIds.length),
@@ -305,8 +346,7 @@ async function syncRecords(env, input, user) {
       documentPath: `${COLLECTION}/${existing.id || documentId}`,
       data: {
         ...existingData,
-        ...record,
-        phone: record.phone || normalizeBrazilPhone(existing.phone),
+        ...contactForSync(record, existing),
         firstSeenAt: clean(existing.firstSeenAt, 40) || now,
         lastSeenAt: now,
         lastChangedAt: stateChanged ? now : (clean(existing.lastChangedAt, 40) || now),
@@ -349,6 +389,7 @@ async function syncRecords(env, input, user) {
 
   const phoneReceived = normalized.filter((record) => normalizeBrazilPhone(record.phone)).length;
   return {
+    contactCapability: CONTACT_VERSION,
     synchronizedAt: now,
     received: normalized.length,
     totalCount: expectedTotal || normalized.length,
@@ -445,8 +486,9 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
       .filter((item) => item.sourceId)
       .sort(agendaSort);
     const active = records.filter((item) => item.active);
-    return json({
-      records,
+      return json({
+        contactCapability: CONTACT_VERSION,
+        records,
       summary: {
         active: active.length,
         unread: active.filter((item) => item.unread).length,

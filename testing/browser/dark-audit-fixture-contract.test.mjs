@@ -29,7 +29,12 @@ for (const path of ['/api/chat/delivery','/api/chat/typing','/api/chat/read']) t
 });
 test('agenda contact state matches the synthetic appointments',async()=>{
   const {response,network}=await fixtureRequest('/api/agenda/contact-state');
-  assert.deepEqual(JSON.parse(response.body),{active:3,known:3,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)});
+  assert.deepEqual(JSON.parse(response.body),{contactCapability:'patient-details-v2',active:3,known:3,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)});
+  assert.deepEqual(network.unexpected,[]);
+});
+test('agenda listing models the current contact capability',async()=>{
+  const {response,network}=await fixtureRequest('/api/agenda');
+  assert.equal(JSON.parse(response.body).contactCapability,'patient-details-v2');
   assert.deepEqual(network.unexpected,[]);
 });
 for (const [path,method] of [['/api/chat/realtime/ticket','GET'],['/api/chat/realtime/tickets','POST'],['/api/agenda/contact-state','POST'],['/api/unknown','GET']]) test(`unmodeled ${method} ${path} still fails closed`,async()=>{

@@ -1,0 +1,49 @@
+{
+  "inspectedAt": "2026-10-05",
+  "method": "supported Chrome extension; scoped read-only locator DOM",
+  "route": "/Núcleo de Telessaúde - SES-Fiocruz/consultas/{ID_REMOVIDO}/view",
+  "scope": "already-open dialog in a different consultation, authorized for structural homologation only",
+  "heading": {
+    "text": "Dados do Paciente",
+    "tag": "H2",
+    "class": "fi-modal-heading"
+  },
+  "outer": {
+    "role": "dialog",
+    "classes": "fi-modal fi-modal-open",
+    "tag": "DIV"
+  },
+  "inner": {
+    "visible": true,
+    "tag": "DIV",
+    "class": "fi-modal-window"
+  },
+  "phoneField": {
+    "label": {
+      "for": "mountedActionsData.0.telefonecel",
+      "text": "Telefone",
+      "tag": "LABEL",
+      "class": "fi-fo-field-wrp-label"
+    },
+    "id": "mountedActionsData.0.telefonecel",
+    "wireModel": "mountedActionsData.0.telefonecel",
+    "name": "",
+    "type": "text",
+    "disabled": true,
+    "tag": "INPUT",
+    "readonly": false,
+    "wrapper": "fi-fo-field-wrp"
+  },
+  "selectorValidation": {
+    "labelMatches": true,
+    "matchingContainersBeforeDedup": 2,
+    "phoneFieldMatches": 1,
+    "matchingIndependentDialogs": 1
+  },
+  "inputValuesRead": false,
+  "personalValuesPersisted": false,
+  "originalIncidentCauseConfirmed": false,
+  "liveAutomaticOpeningActionTested": false,
+  "fixture": "worker/tests/fixtures/agenda-patient-dialog.html",
+  "note": "Fixture retains selected structural ancestors and fi-* classes; all values/record identity synthetic. No real phone read or validated."
+}

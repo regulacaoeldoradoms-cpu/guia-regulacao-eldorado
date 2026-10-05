@@ -56,7 +56,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20261002-whatsapp-2/);
+  assert.match(html, /js\/agenda\.js\?v=20261005-contact-2/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -70,7 +70,7 @@ test('sincronizador lê Agendados e consulta somente o contato necessário na se
   assert.match(source, /ver dados do paciente/);
   assert.match(source, /telefonecel/);
   assert.match(source, /function phoneCandidate/);
-  assert.match(source, /source\.split\(\/\[\\n\|;,\/\]\+\//);
+  assert.doesNotMatch(source, /source\.split|source\.matchAll/);
   assert.match(source, /normalizeSearch\(node\.textContent\)/);
   assert.match(source, /phoneFieldWrapper/);
   assert.match(source, /knownContactIds/);
@@ -120,7 +120,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.2\.4/);
+  assert.match(source, /@version\s+1\.2\.5/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -159,8 +159,8 @@ test('Agenda usa contato protegido para abrir lembrete diretamente no WhatsApp d
   const css = read('css/agenda.css');
 
   assert.match(backend, /normalizeBrazilPhone/);
-  assert.match(backend, /phone:\s*normalizeBrazilPhone\(record\.phone\)/);
-  assert.match(backend, /phone:\s*record\.phone \|\| normalizeBrazilPhone\(existing\.phone\)/);
+  assert.match(backend, /phone:\s*verifiedContactPhone\(record\)/);
+  assert.match(backend, /contactForSync\(record, existing\)/);
   assert.match(frontend, /Avisar por WhatsApp/);
   assert.match(frontend, /Data já passou/);
   assert.match(frontend, /function isPastAppointment/);
@@ -268,4 +268,479 @@ test('Agenda permite ordenar agendamentos do mais próximo ao mais distante e vi
   assert.match(source, /appointmentTime/);
   assert.match(source, /\.sort\(compareAppointment\)/);
   assert.match(source, /els\.order\.addEventListener\('change', render\)/);
+});
+
+// All contacts and identities below are synthetic; no network or real storage is used.
+function contactTools(windowOverrides = {}, clock = Date) {
+  const source = read('agenda/digsaude-agenda-sync.user.js');
+  const window = { location: new URL('https://example.test/unidade/consultas'), ...windowOverrides };
+  const context = { window, URL, Date: clock, document: {}, Map, Set };
+  vm.runInNewContext(source.slice(0, source.indexOf('  function widget()')) + `
+    function setButton() {}
+    globalThis.tools = { normalizePhone, phoneCandidate, phoneFromNode, phoneFromRoot,
+      patientDetailsRoot, navigateContactWindow, extractContact, enrichSnapshotContacts,
+      setWindow(value) { portalWindow = value; } };
+  })();`, context);
+  return context.tools;
+}
+
+function backendContactTools(existing = []) {
+  const writes = [];
+  const context = {
+    Date, TextEncoder, crypto: globalThis.crypto,
+    firestoreList: async () => ({ documents: existing }),
+    firestoreCommit: async (_env, batch) => { writes.push(...batch); }
+  };
+  const source = read('worker/agenda.js').replace(/import[\s\S]*?from\s+'[^']+';/g, '').replace(/export /g, '');
+  vm.runInNewContext(source + '\nglobalThis.tools = { normalizeBrazilPhone, normalizeRecord, publicRecord, contactState, syncRecords, contactForSync };', context);
+  return { ...context.tools, writes };
+}
+
+function reminderTools() {
+  const source = read('js/agenda.js');
+  const context = { formatDate: (value) => value };
+  vm.runInNewContext(source.slice(source.indexOf('  function normalizedPatientPhone('), source.indexOf('  async function markRead('))
+    + '\nglobalThis.tools = { normalizedPatientPhone, patientWhatsappUrl };', context);
+  return context.tools;
+}
+
+const syntheticContact = {
+  sourceId: 'synthetic-a', patient: 'Paciente de teste A', requestedAt: '2026-10-01',
+  phone: '5511990000001', contactVersion: 'patient-details-v2', contactSourceId: 'synthetic-a'
+};
+
+function phoneInput(value, attributes = {}) {
+  return { tagName: 'INPUT', value, textContent: '', getAttribute: (key) => ({ name: 'data.telefonecel', ...attributes })[key] || null };
+}
+function patientDialog(inputs = [], labels = []) {
+  return {
+    getClientRects: () => [{}], closest: () => null,
+    querySelectorAll(selector) {
+      if (selector.startsWith('h1,')) return [{ textContent: 'Dados do Paciente' }];
+      if (selector.startsWith('label,')) return labels;
+      if (selector.includes('telefonecel')) return inputs;
+      return [];
+    },
+    contains: (node) => inputs.includes(node)
+  };
+}
+
+test('normalização aceita somente campo inteiro válido e mantém DDD e nono dígito', () => {
+  const collector = contactTools();
+  const backend = backendContactTools();
+  for (const value of ['(11) 99000-0001', '+55 (11) 99000-0001', '011990000001']) {
+    assert.equal(collector.phoneCandidate(value), syntheticContact.phone);
+    assert.equal(backend.normalizeBrazilPhone(value), syntheticContact.phone);
+  }
+  // DDD 55 is a domestic area code too, not necessarily the country prefix.
+  assert.equal(backend.normalizeBrazilPhone('(55) 99000-0001'), '5555990000001');
+  for (const value of ['', 'CPF 11990000001', 'ID=11990000001', '00000000000',
+    '00990000001', '(11) 8900-0001', '11990000001 / 21990000002', '551199000000100']) {
+    assert.equal(collector.phoneCandidate(value), '');
+    assert.equal(backend.normalizeBrazilPhone(value), '');
+  }
+  assert.equal(collector.phoneCandidate('(11) 3000-0001'), '551130000001');
+  assert.equal(collector.phoneFromNode(phoneInput('', { placeholder: '(11) 99000-0001', value: '(11) 99000-0001' })), '');
+});
+
+test('extração rejeita ausente ou ambíguo e ignora identificadores genéricos', () => {
+  const tools = contactTools();
+  assert.equal(tools.phoneFromRoot(patientDialog([phoneInput('(11) 99000-0001')])), syntheticContact.phone);
+  assert.equal(tools.phoneFromRoot(patientDialog([phoneInput('(11) 99000-0001'), phoneInput('(21) 99000-0002')])), '');
+  assert.equal(tools.phoneFromRoot(patientDialog([])), '');
+  assert.equal(tools.phoneFromRoot(patientDialog([phoneInput('(21) 99000-0002', { name: 'profissional.telefone' })])), '');
+  assert.equal(tools.phoneFromRoot(patientDialog([phoneInput('(21) 99000-0002', { name: 'unidade.telefone' })])), '');
+  const genericId = phoneInput('11990000001');
+  const root = patientDialog();
+  const original = root.querySelectorAll;
+  root.querySelectorAll = (selector) => selector === 'input, textarea' ? [genericId] : original(selector);
+  assert.equal(tools.phoneFromRoot(root), '');
+  const wrapper = { querySelectorAll: () => [genericId] };
+  const broadLabel = { textContent: 'Telefone CPF', getAttribute: () => null, closest: () => wrapper };
+  assert.equal(tools.phoneFromRoot(patientDialog([], [broadLabel])), '');
+});
+
+test('coleta fica no único diálogo visível Dados do Paciente', () => {
+  const tools = contactTools();
+  const patient = patientDialog([phoneInput('(11) 99000-0001')]);
+  const professional = { ...patientDialog([phoneInput('(21) 99000-0002')]), querySelectorAll: () => [{ textContent: 'Profissional / Unidade' }] };
+  const hidden = { ...patientDialog(), getClientRects: () => [] };
+  assert.equal(tools.patientDetailsRoot({ querySelectorAll: () => [professional, hidden, patient] }), patient);
+  assert.equal(tools.patientDetailsRoot({ querySelectorAll: () => [professional] }), null);
+  assert.equal(tools.patientDetailsRoot({ querySelectorAll: () => [patient, patientDialog()] }), null);
+});
+
+test('navegação aguarda rota exata e novo Document antes de ler outra ficha', async () => {
+  let waits = 0;
+  const oldRoot = { readyState: 'complete' };
+  const newRoot = { readyState: 'complete' };
+  let currentRoot = oldRoot;
+  let currentUrl = new URL('https://example.test/unidade/consultas/synthetic-a/view');
+  const frame = {
+    closed: false, get document() { return currentRoot; },
+    get location() { return currentUrl; }, set location(_value) { /* navigation is pending */ }
+  };
+  const tools = contactTools({ setTimeout(resolve) {
+    waits++;
+    currentUrl = new URL('https://example.test/unidade/consultas/synthetic-b/view');
+    if (waits === 2) currentRoot = newRoot; // URL alone is insufficient.
+    resolve();
+  } });
+  tools.setWindow(frame);
+  const result = await tools.navigateContactWindow('https://example.test/unidade/consultas/synthetic-b/view');
+  assert.equal(waits, 2);
+  assert.equal(result.root, newRoot);
+});
+
+test('fichas sintéticas percorrem coleta → espelho → href sem trocar destinos', async () => {
+  const tools = contactTools({ setTimeout(resolve) { resolve(); } });
+  let currentRoot = { readyState: 'complete' };
+  let currentUrl = new URL('https://example.test/unidade/consultas');
+  const phones = { 'synthetic-a': '(11) 99000-0001', 'synthetic-b': '(21) 99000-0002' };
+  const frame = {
+    closed: false, get document() { return currentRoot; }, get location() { return currentUrl; },
+    set location(value) {
+      currentUrl = new URL(value);
+      let clicked = false;
+      const sourceId = currentUrl.pathname.split('/').at(-2);
+      const dialog = patientDialog([phoneInput(phones[sourceId])]);
+      const action = { textContent: 'Ver Dados do Paciente', getClientRects: () => [{}], click() { clicked = true; } };
+      currentRoot = { readyState: 'complete', querySelectorAll(selector) {
+        if (selector.startsWith('button,')) return [action];
+        if (selector.includes('dialog')) return clicked ? [dialog] : [];
+        // Even a professional phone in the consultation page must never be read.
+        return [phoneInput('(31) 99000-0003')];
+      } };
+    }
+  };
+  tools.setWindow(frame);
+  const backend = backendContactTools();
+  const frontend = reminderTools();
+  for (const [sourceId, patient] of [['synthetic-a', 'Paciente de teste A'], ['synthetic-b', 'Paciente de teste B']]) {
+    const record = { sourceId, patient, requestedAt: '2026-10-01' };
+    const result = await tools.enrichSnapshotContacts({ records: [record] });
+    assert.equal(result.found, 1);
+    assert.equal(record.contactSourceId, sourceId);
+    assert.equal(record.contactVersion, 'patient-details-v2');
+    await backend.syncRecords({}, { records: [record] }, { username: 'synthetic-operator' });
+    const saved = backend.writes.at(-1).data;
+    const published = backend.publicRecord(saved, 'synthetic-operator', new Map());
+    const url = new URL(frontend.patientWhatsappUrl(published));
+    assert.equal(url.pathname.slice(1), sourceId === 'synthetic-a' ? '5511990000001' : '5521990000002');
+    assert.ok(url.searchParams.get('text').includes(patient));
+  }
+});
+
+test('contato legado não gera href nem permanece marcado como conhecido', () => {
+  const backend = backendContactTools();
+  const legacy = { ...syntheticContact, contactVersion: undefined };
+  const published = backend.publicRecord(legacy, 'synthetic-operator', new Map());
+  assert.equal(published.phone, '');
+  assert.equal(reminderTools().patientWhatsappUrl(published), '');
+  assert.equal(backend.contactState([legacy]).known, 0);
+});
+
+test('contato conferido expira e perde validade ao mudar associação da ficha', () => {
+  const backend = backendContactTools();
+  const verified = backend.normalizeRecord(syntheticContact);
+  assert.equal(backend.contactState([verified]).known, 1);
+  for (const changed of [
+    { ...verified, patient: 'Paciente de teste C' },
+    { ...verified, requestedAt: '2026-10-02' },
+    { ...verified, sourceId: 'synthetic-c' },
+    { ...verified, contactVerifiedAt: new Date(Date.now() - 25 * 3600000).toISOString() },
+    { ...verified, contactVerifiedAt: 'invalid' }
+  ]) {
+    assert.equal(backend.publicRecord(changed, '', new Map()).phone, '');
+    assert.equal(backend.contactState([changed]).known, 0);
+  }
+});
+
+test('rechecagem vazia revoga destino salvo; versão antiga não restaura telefone legado', async () => {
+  const initial = backendContactTools().normalizeRecord(syntheticContact);
+  for (const incoming of [
+    { ...syntheticContact, phone: '' },
+    { ...syntheticContact, phone: 'CPF 11990000001' },
+    { ...syntheticContact, contactSourceId: 'synthetic-b', patient: 'Paciente de teste B' }
+  ]) {
+    const backend = backendContactTools([{ ...initial, id: 'synthetic-doc' }]);
+    await backend.syncRecords({}, { records: [incoming] }, { username: 'synthetic-operator' });
+    assert.equal(backend.writes[0].data.phone, '');
+  }
+  const legacyBackend = backendContactTools([{ ...syntheticContact, id: 'synthetic-doc' }]);
+  await legacyBackend.syncRecords({}, { records: [{ ...syntheticContact, contactVersion: undefined }] }, { username: 'synthetic-operator' });
+  assert.equal(legacyBackend.writes[0].data.phone, '');
+  const backend = backendContactTools();
+  const unattempted = backend.normalizeRecord({ ...syntheticContact, phone: undefined, contactVersion: undefined });
+  assert.equal(backend.contactForSync(unattempted, initial).phone, initial.phone);
+});
+
+test('frontend recusa destino inválido sem fabricar nono dígito', () => {
+  const frontend = reminderTools();
+  for (const phone of ['', undefined, '551189000001', '5500990000001', 'CPF 11990000001']) {
+    assert.equal(frontend.patientWhatsappUrl({ ...syntheticContact, phone }), '');
+  }
+});
+
+test('falha de coleta segue ao espelho como contato vazio e revoga destino anterior', async () => {
+  let tick = Date.now();
+  class TestClock extends Date { static now() { tick += 2000; return tick; } }
+  const tools = contactTools({ setTimeout(resolve) { resolve(); } }, TestClock);
+  let root = { readyState: 'complete' };
+  let location = new URL('https://example.test/unidade/consultas');
+  const frame = {
+    closed: false, get document() { return root; }, get location() { return location; },
+    set location(value) { location = new URL(value); root = { readyState: 'complete', querySelectorAll: () => [] }; }
+  };
+  tools.setWindow(frame);
+  const record = { sourceId: syntheticContact.sourceId, patient: syntheticContact.patient, requestedAt: syntheticContact.requestedAt };
+  const result = await tools.enrichSnapshotContacts({ records: [record] });
+  assert.equal(result.failed, 1);
+  assert.equal(result.requested, 1);
+  assert.equal(record.phone, '');
+  assert.equal(record.contactVersion, 'patient-details-v2');
+  const existing = backendContactTools().normalizeRecord(syntheticContact);
+  const backend = backendContactTools([{ ...existing, id: 'synthetic-doc' }]);
+  await backend.syncRecords({}, { records: [record] }, { username: 'synthetic-operator' });
+  assert.equal(backend.publicRecord(backend.writes[0].data, '', new Map()).phone, '');
+});
+
+test('Filament homologado trata role=dialog e fi-modal-window aninhados como um diálogo', () => {
+  const fixture = read('worker/tests/fixtures/agenda-patient-dialog.html');
+  assert.match(fixture, /class="fi-modal fi-modal-open" role="dialog"/);
+  assert.match(fixture, /class="fi-modal-window(?:\s|")/);
+  assert.match(fixture, /for="mountedActionsData\.0\.telefonecel"/);
+  assert.match(fixture, /id="mountedActionsData\.0\.telefonecel"[^>]+disabled/);
+  const input = phoneInput('(11) 99000-0001', { name: '', id: 'mountedActionsData.0.telefonecel' });
+  input.disabled = true;
+  const inner = patientDialog([input]);
+  const outer = { ...patientDialog([input]), contains: (node) => node === inner || node === input };
+  const tools = contactTools();
+  const selected = tools.patientDetailsRoot({ querySelectorAll: () => [outer, inner] });
+  assert.equal(selected, inner);
+  assert.equal(tools.phoneFromRoot(selected), syntheticContact.phone);
+  assert.equal(tools.patientDetailsRoot({ querySelectorAll: () => [outer, inner, patientDialog()] }), null);
+});
+
+test('homologação do diálogo exige título exato e não amplia para outro contêiner', () => {
+  const tools = contactTools();
+  const unrelated = { ...patientDialog(), querySelectorAll: () => [{ textContent: 'Outros dados do paciente e unidade' }] };
+  assert.equal(tools.patientDetailsRoot({ querySelectorAll: () => [unrelated] }), null);
+});
+
+function syntheticConsultationFlow({ phone = '(11) 99000-0001', dialogDelay = 0, onAction, onPoll } = {}) {
+  const fixture = read('worker/tests/fixtures/agenda-patient-dialog.html');
+  const fieldId = fixture.match(/<input class="fi-input" id="([^"]+)"/)[1];
+  let tick = Date.now();
+  class FlowClock extends Date { static now() { return tick; } }
+  let location = new URL('https://example.test/unidade/consultas');
+  let root = { readyState: 'complete' };
+  let clicked = false;
+  let polls = 0;
+  let navigations = 0;
+  let tools;
+  const dialogFor = (value) => {
+    const values = Array.isArray(value) ? value : [value];
+    const inner = patientDialog(values.map((item) => phoneInput(item, { name: '', id: fieldId })));
+    const outer = { ...patientDialog(), querySelectorAll: inner.querySelectorAll, contains: (node) => node === inner };
+    return [outer, inner];
+  };
+  const makeRoot = (value) => ({ readyState: 'complete', querySelectorAll(selector) {
+    if (selector.startsWith('button,')) return [{ textContent: 'Ver Dados do Paciente', getClientRects: () => [{}], click() {
+      clicked = true;
+      onAction?.({ frame, tools, replaceDocument: (otherPhone) => { root = makeRoot(otherPhone); } });
+    } }];
+    if (selector.includes('dialog')) return clicked && polls >= dialogDelay ? dialogFor(value) : [];
+    return [];
+  } });
+  const frame = { closed: false, get document() { return root; }, get location() { return location; }, set location(value) {
+    navigations++; location = new URL(value); clicked = false; polls = 0; root = makeRoot(phone);
+  } };
+  tools = contactTools({ setTimeout(resolve, ms) {
+    tick += ms; polls++; onPoll?.({ frame, tools, polls }); resolve();
+  } }, FlowClock);
+  tools.setWindow(frame);
+  return { tools, frame, setPhone(value) { phone = value; }, navigations: () => navigations, polls: () => polls };
+}
+
+async function hrefAfterSyntheticCollection(flow, record = { sourceId: 'synthetic-a', patient: 'Paciente de teste A', requestedAt: '2026-10-01' }) {
+  const result = await flow.tools.enrichSnapshotContacts({ records: [record] });
+  const backend = backendContactTools();
+  await backend.syncRecords({}, { records: [record] }, { username: 'synthetic-operator' });
+  const published = backend.publicRecord(backend.writes[0].data, '', new Map());
+  return { result, record, href: reminderTools().patientWhatsappUrl(published) };
+}
+
+test('fluxo sintético aborta quando janela fecha após abrir o diálogo', async () => {
+  const flow = syntheticConsultationFlow({ onAction: ({ frame }) => { frame.closed = true; } });
+  const outcome = await hrefAfterSyntheticCollection(flow);
+  assert.equal(outcome.href, '');
+  assert.equal(outcome.result.failed, 1);
+});
+
+test('fluxo sintético aborta resposta que troca Document durante a coleta', async () => {
+  const flow = syntheticConsultationFlow({ onAction: ({ replaceDocument }) => replaceDocument('(21) 99000-0002') });
+  assert.equal((await hrefAfterSyntheticCollection(flow)).href, '');
+});
+
+function automaticSourceFlow({ autoReady = true } = {}) {
+  const fixtureFlow = syntheticConsultationFlow();
+  const frame = fixtureFlow.frame;
+  const listeners = new Map();
+  const timers = new Map();
+  const sent = [];
+  let timerId = 0;
+  const portal = 'https://regulacaoeldoradoms.com.br';
+  const window = {
+    location: new URL('https://example.test/unidade/consultas'),
+    addEventListener: (name, listener) => listeners.set(name, listener),
+    setTimeout(fn, ms) { const id = ++timerId; if (ms === 160 || ms === 180) queueMicrotask(fn); else timers.set(id, { fn, ms }); return id; },
+    clearTimeout: (id) => timers.delete(id),
+    setInterval(fn, ms) { const id = ++timerId; timers.set(id, { fn, ms }); return id; },
+    clearInterval: (id) => timers.delete(id), open: () => frame, focus() {}
+  };
+  const locationProperty = Object.getOwnPropertyDescriptor(frame, 'location');
+  Object.defineProperty(frame, 'location', { ...locationProperty, set(value) {
+    locationProperty.set(value);
+    if (autoReady && String(value).startsWith(portal)) queueMicrotask(() => listeners.get('message')?.({
+      origin: portal, source: frame, data: { type: 'PORTAL_AGENDA_DIGSAUDE_READY', contactCapability: 'patient-details-v2', knownSourceIds: [] }
+    }));
+  } });
+  frame.postMessage = (message) => sent.push(structuredClone(message));
+  const document = { getElementById: () => null, addEventListener() {}, hidden: false };
+  const context = { window, document, URL, Date, Map, Set };
+  const source = read('agenda/digsaude-agenda-sync.user.js');
+  vm.runInNewContext(source.slice(0, source.indexOf('  function mountWidget()')) + `
+    autoEnabled = true; contactCapabilityVerified = true; portalWindow = window.open();
+    globalThis.tools = { runAutomaticSync, pauseAutomatic,
+      activateAutomaticSync: () => { activateAutomaticSync(); contactCapabilityVerified = true; },
+      setFetcher(fn) { fetchSnapshot = fn; },
+      state() { return { pendingSyncId, syncInFlight, lastFingerprint }; },
+      retry() { sendSnapshot(); } };
+  })();`, context);
+  return { ...context.tools, sent, frame, timers,
+    reply(data) { listeners.get('message')({ origin: portal, source: frame, data }); } };
+}
+
+const syntheticSnapshot = () => ({ complete: true, totalCount: 1, records: [{ sourceId: 'synthetic-a', patient: 'Paciente de teste A', requestedAt: '2026-10-01' }] });
+
+test('automático sintético descarta fetch antigo após pausar e reativar', async () => {
+  const flow = automaticSourceFlow();
+  let finishOld;
+  flow.setFetcher(() => new Promise((resolve) => { finishOld = resolve; }));
+  const oldRun = flow.runAutomaticSync();
+  flow.pauseAutomatic();
+  flow.activateAutomaticSync();
+  finishOld(syntheticSnapshot());
+  await oldRun;
+  assert.equal(flow.sent.length, 0);
+  assert.equal(flow.state().pendingSyncId, '');
+});
+
+test('fluxo sintético aguarda diálogo atrasado e rejeita fechado, ausente ou ambíguo', async () => {
+  const delayed = syntheticConsultationFlow({ dialogDelay: 4 });
+  const outcome = await hrefAfterSyntheticCollection(delayed);
+  assert.equal(new URL(outcome.href).pathname, '/5511990000001');
+  assert.ok(delayed.polls() >= 4);
+  for (const options of [{ dialogDelay: Infinity }, { phone: '' }, { phone: ['(11) 99000-0001', '(21) 99000-0002'] }]) {
+    const result = await hrefAfterSyntheticCollection(syntheticConsultationFlow(options));
+    assert.equal(result.href, '');
+    assert.equal(result.result.failed, 1);
+  }
+});
+
+test('fluxo sintético repete contato só para mesma associação e cancela cache com janela fechada', async () => {
+  const flow = syntheticConsultationFlow();
+  const first = await hrefAfterSyntheticCollection(flow);
+  assert.equal(new URL(first.href).pathname, '/5511990000001');
+  assert.equal((await hrefAfterSyntheticCollection(flow)).href, first.href);
+  assert.equal(flow.navigations(), 1);
+  flow.setPhone('(21) 99000-0002');
+  const changed = await hrefAfterSyntheticCollection(flow, { sourceId: 'synthetic-a', patient: 'Paciente de teste B', requestedAt: '2026-10-02' });
+  assert.equal(new URL(changed.href).pathname, '/5521990000002');
+  assert.equal(flow.navigations(), 2);
+  flow.frame.closed = true;
+  assert.equal((await hrefAfterSyntheticCollection(flow)).href, '');
+});
+
+test('automático sintético cancela espera da ponte sem enviar snapshot', async () => {
+  const flow = automaticSourceFlow({ autoReady: false });
+  flow.setFetcher(async () => syntheticSnapshot());
+  const run = flow.runAutomaticSync();
+  await new Promise(setImmediate);
+  assert.notEqual(flow.state().pendingSyncId, '');
+  flow.pauseAutomatic();
+  await run;
+  flow.retry();
+  assert.equal(flow.sent.length, 0);
+  assert.equal(flow.state().pendingSyncId, '');
+});
+
+test('automático sintético ignora erro antigo sem limpar envio da nova sessão', async () => {
+  const flow = automaticSourceFlow();
+  let rejectOld;
+  flow.setFetcher(() => new Promise((_resolve, reject) => { rejectOld = reject; }));
+  const oldRun = flow.runAutomaticSync();
+  flow.pauseAutomatic(); flow.activateAutomaticSync();
+  flow.setFetcher(async () => syntheticSnapshot());
+  await flow.runAutomaticSync();
+  const currentId = flow.state().pendingSyncId;
+  assert.notEqual(currentId, '');
+  rejectOld(new Error('synthetic stale failure'));
+  await oldRun;
+  assert.equal(flow.state().pendingSyncId, currentId);
+  assert.equal(flow.sent.length, 1);
+});
+
+async function syntheticBridgeFlow() {
+  const records = [];
+  const backend = backendContactTools(records);
+  const replies = [];
+  const opener = { closed: false, postMessage: (message) => replies.push(structuredClone(message)) };
+  let receive;
+  let syncCalls = 0;
+  const context = {
+    document: { getElementById: () => ({ textContent: '', hidden: true }) },
+    window: { opener, addEventListener: (_name, fn) => { receive = fn; }, RegulationAuth: {
+      requireRole: async () => ({ role: 'telemedicina' }),
+      async api(path, options) {
+        if (path.endsWith('/contact-state')) return backend.contactState(records);
+        assert.equal(path, '/api/agenda/sync');
+        syncCalls++;
+        const result = await backend.syncRecords({}, JSON.parse(options.body), { username: 'synthetic-operator' });
+        for (const write of backend.writes) {
+          const row = { ...write.data, id: write.documentPath.split('/').at(-1) };
+          const index = records.findIndex((item) => item.sourceId === row.sourceId);
+          if (index < 0) records.push(row); else records[index] = row;
+        }
+        return result;
+      }
+    } }, Date
+  };
+  await vm.runInNewContext(read('js/agenda-sync-bridge.js'), context);
+  return { records, backend, replies, syncCalls: () => syncCalls,
+    accept(data) { return receive({ origin: 'https://teleatendimento.saude.ms.gov.br', source: opener, data }); } };
+}
+
+test('automático sintético atravessa ponte real, ignora resposta antiga e deduplica repetição até href', async () => {
+  const source = automaticSourceFlow();
+  source.setFetcher(async () => syntheticSnapshot());
+  await source.runAutomaticSync();
+  const currentId = source.state().pendingSyncId;
+  source.reply({ type: 'PORTAL_AGENDA_DIGSAUDE_RESULT', syncId: 'synthetic-old-sync', ok: true, knownSourceIds: ['synthetic-b'] });
+  assert.equal(source.state().pendingSyncId, currentId);
+  source.retry();
+  assert.equal(source.sent.length, 2);
+  assert.equal(source.sent[0].syncId, source.sent[1].syncId);
+  const bridge = await syntheticBridgeFlow();
+  await bridge.accept(source.sent[0]);
+  await bridge.accept(source.sent[1]);
+  assert.equal(bridge.syncCalls(), 1);
+  const results = bridge.replies.filter((message) => message.type === 'PORTAL_AGENDA_DIGSAUDE_RESULT');
+  assert.equal(results.length, 2);
+  source.reply(results[0]); source.reply(results[1]);
+  assert.equal(source.state().pendingSyncId, '');
+  const published = bridge.backend.publicRecord(bridge.records[0], '', new Map());
+  assert.equal(new URL(reminderTools().patientWhatsappUrl(published)).pathname, '/5511990000001');
+  assert.equal(bridge.records[0].sourceId, 'synthetic-a');
 });
