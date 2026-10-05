@@ -314,8 +314,10 @@
   }
 
   function normalizedPatientPhone(value) {
-    const digits = String(value || '').replace(/\D/g, '');
-    return /^55\d{10,11}$/.test(digits) ? digits : '';
+    const source = String(value ?? '').trim();
+    const match = source.match(/^55(\d{2})([2-5]\d{7}|9\d{8})$/);
+    const ddds = /^(?:1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[134579]|8[1-9]|9[1-9])$/;
+    return match && ddds.test(match[1]) ? source : '';
   }
 
   function reminderSpecialty(record) {

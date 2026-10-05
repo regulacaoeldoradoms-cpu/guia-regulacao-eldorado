@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.4
+// @version      1.2.5
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-5
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261002-whatsapp-5
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -27,6 +27,7 @@
   const RESULT_TIMEOUT_MS = 60 * 1000;
   const BRIDGE_WATCH_MS = 15 * 1000;
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+  const CONTACT_VERSION = 'patient-details-v2';
   const CONTACT_CONCURRENCY = 1;
   const CONTACT_WINDOW_TIMEOUT_MS = 8 * 1000;
   const BRIDGE_READY_TIMEOUT_MS = 15 * 1000;
@@ -52,6 +53,7 @@
   let bridgeReadyResolve = null;
   let bridgeReadyReject = null;
   let bridgeReadyTimer = null;
+  let sessionGeneration = 0;
   const contactCache = new Map();
   const knownContactIds = new Set();
 
@@ -165,10 +167,14 @@
   }
 
   function normalizePhone(value) {
-    let digits = String(value || '').replace(/\D/g, '');
+    const source = String(value ?? '').trim();
+    if (!/^\+?[\d\s().-]+$/.test(source)) return '';
+    let digits = source.replace(/\D/g, '');
     if (digits.startsWith('0')) digits = digits.slice(1);
     if (digits.length === 10 || digits.length === 11) digits = '55' + digits;
-    return /^55\d{10,11}$/.test(digits) ? digits : '';
+    const match = digits.match(/^55(\d{2})([2-5]\d{7}|9\d{8})$/);
+    const ddds = /^(?:1[1-9]|2[12478]|3[1-578]|4[1-9]|5[1345]|6[1-9]|7[134579]|8[1-9]|9[1-9])$/;
+    return match && ddds.test(match[1]) ? digits : '';
   }
 
   function consultationUrl(sourceId) {
@@ -181,121 +187,61 @@
   }
 
   function phoneCandidate(value) {
-    const source = String(value || '').trim();
-    if (!source) return '';
-
-    const direct = normalizePhone(source);
-    if (direct) return direct;
-
-    const pieces = source.split(/[\n|;,/]+/).map((item) => item.trim()).filter(Boolean);
-    for (const piece of pieces) {
-      const phone = normalizePhone(piece);
-      if (phone) return phone;
-    }
-
-    const pattern = /(?:\+?55[\s().-]*)?(?:\(?\d{2}\)?[\s().-]*)?(?:9[\s.-]?\d{4}|\d{4})[\s.-]?\d{4}/g;
-    for (const match of source.matchAll(pattern)) {
-      const phone = normalizePhone(match[0]);
-      if (phone) return phone;
-    }
-
-    return '';
+    // Accept a whole field only: never extract a phone-shaped substring from an ID.
+    return normalizePhone(value);
   }
 
   function phoneFromNode(node) {
     if (!node) return '';
-    const values = [
-      node.value,
-      node.getAttribute?.('value'),
-      node.textContent,
-      node.getAttribute?.('aria-label'),
-      node.getAttribute?.('placeholder')
-    ];
-    for (const value of values) {
-      const phone = phoneCandidate(value);
-      if (phone) return phone;
-    }
-    return '';
+    const isInput = /^(INPUT|TEXTAREA)$/.test(node.tagName || '');
+    return phoneCandidate(isInput ? node.value : node.textContent);
   }
 
   function phoneFieldWrapper(label) {
-    if (!label) return null;
-    const preferred = label.closest?.(
-      '.fi-fo-field-wrp, .fi-input-wrp, [data-field-wrapper], [data-state-path], .grid'
-    );
-    if (preferred) return preferred;
+    return label?.closest?.('.fi-fo-field-wrp, [data-field-wrapper]') || null;
+  }
 
-    let current = label.parentElement;
-    for (let depth = 0; current && depth < 6; depth += 1, current = current.parentElement) {
-      if (current.querySelector?.('input, textarea, [role="textbox"], [contenteditable="true"]')) return current;
-    }
-    return label.parentElement;
+  function patientDetailsRoot(root) {
+    const dialogs = [...root.querySelectorAll('[role="dialog"], .fi-modal-window')]
+      .filter((node) => node.getClientRects().length > 0 && !node.closest('[hidden], [aria-hidden="true"]'))
+      .filter((node) => [...node.querySelectorAll('h1, h2, h3, .fi-modal-heading')]
+        .some((heading) => normalizeSearch(heading.textContent) === 'dados do paciente'));
+    // Filament exposes an outer role=dialog and its inner fi-modal-window.
+    const independent = dialogs.filter((node) => !dialogs.some((other) => other !== node && node.contains(other)));
+    return independent.length === 1 ? independent[0] : null;
   }
 
   function phoneFromRoot(root) {
-    const selectors = [
-      'input[name*="telefonecel" i]',
-      'input[id*="telefonecel" i]',
-      '[wire\\:model*="telefonecel" i]',
-      '[data-state-path*="telefonecel" i] input',
-      'input[name*="telefone" i]',
-      'input[id*="telefone" i]',
-      '[wire\\:model*="telefone" i]',
-      '[data-state-path*="telefone" i] input',
-      'input[name*="celular" i]',
-      'input[id*="celular" i]',
-      'input[type="tel"]',
-      'input[inputmode="tel"]'
-    ];
-
-    for (const selector of selectors) {
-      for (const node of root.querySelectorAll(selector)) {
-        const phone = phoneFromNode(node);
-        if (phone) return phone;
-      }
-    }
-
-    const labels = [...root.querySelectorAll('label, span, div, p')]
-      .filter((node) => {
-        const text = normalizeSearch(node.textContent);
-        return text === 'telefone' || text.startsWith('telefone ');
-      });
-
-    for (const label of labels) {
-      const explicitTarget = label.getAttribute?.('for');
-      if (explicitTarget) {
-        const target = root.getElementById?.(explicitTarget);
-        const phone = phoneFromNode(target);
-        if (phone) return phone;
-      }
-
-      const wrapper = phoneFieldWrapper(label);
-      if (!wrapper) continue;
-
-      const nodes = [
-        ...wrapper.querySelectorAll('input, textarea, [role="textbox"], [contenteditable="true"], output, dd, p, span')
-      ];
-      for (const node of nodes) {
-        const phone = phoneFromNode(node);
-        if (phone) return phone;
-      }
-
-      const phone = phoneCandidate(wrapper.textContent);
-      if (phone) return phone;
-    }
-
-    const genericInputs = [...root.querySelectorAll('input, textarea')];
-    for (const node of genericInputs) {
+    // The caller supplies only the visible patient dialog, never the consultation page.
+    if (!root) return '';
+    const phones = new Set();
+    const add = (node) => {
       const phone = phoneFromNode(node);
-      if (!phone) continue;
-      const nearby = normalizeSearch(
-        node.closest?.('.fi-fo-field-wrp, .fi-input-wrp, [data-field-wrapper], .grid')?.textContent || ''
-      );
-      if (/cpf|cns|cep|número|numero/.test(nearby)) continue;
-      return phone;
+      if (phone) phones.add(phone);
+    };
+    for (const node of root.querySelectorAll(
+      'input[name*="telefonecel" i], input[id*="telefonecel" i], input[name*="telefone" i], input[id*="telefone" i], input[name*="celular" i], input[id*="celular" i]'
+    )) {
+      const keys = [node.getAttribute('name'), node.getAttribute('id')].filter(Boolean);
+      if (keys.some((key) => /profissional|unidade|estabelecimento/i.test(key))) continue;
+      if (keys.some((key) => /(?:^|[.\[_-])(?:telefonecel(?:ular)?|telefone|celular)\]?$/i.test(key))) add(node);
     }
 
-    return '';
+    for (const label of root.querySelectorAll('label, .fi-fo-field-wrp-label, .fi-in-entry-wrp-label')) {
+      const text = normalizeSearch(label.textContent).replace(/[:*]$/g, '').trim();
+      if (!/^(telefone(?: celular)?|celular)$/.test(text)) continue;
+      const targetId = label.getAttribute?.('for');
+      if (targetId) {
+        const target = root.ownerDocument?.getElementById(targetId);
+        if (target && root.contains(target)) add(target);
+        continue;
+      }
+      const wrapper = phoneFieldWrapper(label)
+        || label.closest?.('.fi-in-entry-wrp');
+      if (!wrapper) continue;
+      for (const node of wrapper.querySelectorAll('input, textarea, output, dd, .fi-in-text-item')) add(node);
+    }
+    return phones.size === 1 ? [...phones][0] : '';
   }
 
   function updateKnownContactIds(values) {
@@ -308,8 +254,10 @@
   }
 
   function patientAction(root) {
-    return [...root.querySelectorAll('button, a, [role="button"]')]
-      .find((node) => normalizeSearch(node.textContent).includes('ver dados do paciente')) || null;
+    const actions = [...root.querySelectorAll('button, a, [role="button"]')]
+      .filter((node) => node.getClientRects().length > 0 && !node.disabled)
+      .filter((node) => normalizeSearch(node.textContent) === 'ver dados do paciente');
+    return actions.length === 1 ? actions[0] : null;
   }
 
   function clearBridgeReadyWait() {
@@ -336,26 +284,37 @@
     });
   }
 
-  async function navigateContactWindow(targetUrl) {
-    if (!portalWindow || portalWindow.closed) throw new Error('A janela auxiliar foi fechada.');
+  function assertContactSession(contactWindow, generation) {
+    if (generation !== sessionGeneration || !contactWindow || contactWindow.closed || portalWindow !== contactWindow) {
+      throw new Error('A coleta foi cancelada ou a janela auxiliar foi fechada.');
+    }
+  }
+
+  async function navigateContactWindow(targetUrl, generation = sessionGeneration) {
+    const contactWindow = portalWindow;
+    assertContactSession(contactWindow, generation);
+    let previousRoot = null;
+    try { previousRoot = contactWindow.document; } catch (_) {}
     try {
-      portalWindow.location = targetUrl;
+      contactWindow.location = targetUrl;
     } catch (_) {
       throw new Error('Não foi possível abrir a consulta na janela auxiliar.');
     }
 
+    const expectedUrl = new URL(targetUrl);
     const startedAt = Date.now();
     while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
-      if (!portalWindow || portalWindow.closed) throw new Error('A janela auxiliar foi fechada.');
+      assertContactSession(contactWindow, generation);
       try {
-        const currentUrl = new URL(portalWindow.location.href);
-        const root = portalWindow.document;
+        const currentUrl = new URL(contactWindow.location.href);
+        const root = contactWindow.document;
         if (
           currentUrl.origin === window.location.origin
-          && root
+          && currentUrl.pathname === expectedUrl.pathname
+          && root && root !== previousRoot
           && (root.readyState === 'interactive' || root.readyState === 'complete')
         ) {
-          return { root, frameWindow: portalWindow };
+          return { root, frameWindow: contactWindow };
         }
       } catch (_) {}
       await new Promise((resolve) => window.setTimeout(resolve, 160));
@@ -363,50 +322,44 @@
     throw new Error('Tempo excedido ao abrir a consulta.');
   }
 
-  async function extractContact(sourceId) {
-    const cached = contactCache.get(sourceId);
-    if (cached && cached.phone && Date.now() - cached.checkedAt < CONTACT_CACHE_TTL_MS) return cached.phone;
+  async function extractContact(record, generation = sessionGeneration) {
+    assertContactSession(portalWindow, generation);
+    const { sourceId, patient, requestedAt } = record;
+    const cacheKey = JSON.stringify([sourceId, patient, requestedAt]);
+    const cached = contactCache.get(cacheKey);
+    if (cached && Date.now() - cached.checkedAt < CONTACT_CACHE_TTL_MS) return cached.phone;
 
-    const { root, frameWindow } = await navigateContactWindow(consultationUrl(sourceId));
-    if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
-      throw new Error('A sessão do DigSaúde expirou.');
-    }
-
-    let phone = phoneFromRoot(root);
-    if (phone) {
-      contactCache.set(sourceId, { phone, checkedAt: Date.now() });
-      return phone;
-    }
-
+    const targetUrl = consultationUrl(sourceId);
+    const { root: consultationRoot, frameWindow } = await navigateContactWindow(targetUrl, generation);
+    const expectedPath = new URL(targetUrl).pathname;
     const startedAt = Date.now();
     let clicked = false;
     while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
-      if (/\/login(?:\/|$)/i.test(frameWindow.location.pathname)) {
-        throw new Error('A sessão do DigSaúde expirou.');
+      assertContactSession(frameWindow, generation);
+      if (frameWindow.location.pathname !== expectedPath) {
+        throw new Error('A consulta carregada não corresponde ao agendamento.');
       }
-
-      phone = phoneFromRoot(root);
-      if (phone) {
-        contactCache.set(sourceId, { phone, checkedAt: Date.now() });
-        return phone;
-      }
-
+      const root = frameWindow.document;
+      if (root !== consultationRoot) throw new Error('A consulta foi recarregada durante a coleta.');
       if (!clicked) {
         const action = patientAction(root);
         if (action) {
           action.click();
           clicked = true;
         }
+      } else {
+        const details = patientDetailsRoot(root);
+        if (details) {
+          const phone = phoneFromRoot(details);
+          if (phone) {
+            contactCache.set(cacheKey, { phone, checkedAt: Date.now() });
+            return phone;
+          }
+        }
       }
-
       await new Promise((resolve) => window.setTimeout(resolve, 180));
     }
-
-    throw new Error(
-      clicked
-        ? 'O telefone não apareceu após abrir os dados do paciente.'
-        : 'A ação Ver Dados do Paciente não foi localizada.'
-    );
+    throw new Error('Não foi possível verificar o telefone nos dados do paciente.');
   }
 
   function localIsoToday() {
@@ -429,6 +382,7 @@
   }
 
   async function enrichSnapshotContacts(snapshot) {
+    const generation = sessionGeneration;
     const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
     const targets = records.filter((record) => (
       record?.sourceId
@@ -441,14 +395,17 @@
 
     const runner = async () => {
       while (cursor < targets.length) {
+        if (generation !== sessionGeneration) return;
         const index = cursor++;
         const record = targets[index];
         setButton(
           `Automático ativo · contatos ${index + 1}/${targets.length} · ${knownContactIds.size} já salvos…`,
           'working'
         );
+        record.contactVersion = CONTACT_VERSION;
+        record.contactSourceId = record.sourceId;
         try {
-          record.phone = await extractContact(record.sourceId);
+          record.phone = await extractContact(record, generation);
           if (record.phone) found += 1;
           else failed += 1;
         } catch (_) {
@@ -496,7 +453,7 @@
     return JSON.stringify({
       totalCount: snapshot.totalCount,
       complete: snapshot.complete,
-      records: (snapshot.records || []).map(({ phone: _phone, ...record }) => record)
+      records: (snapshot.records || []).map(({ phone: _phone, contactVersion: _version, contactSourceId: _source, ...record }) => record)
     });
   }
 
@@ -617,7 +574,7 @@
   }
 
   function sendSnapshot() {
-    if (!portalWindow || portalWindow.closed || !pendingSnapshot || !pendingSyncId) return;
+    if (!autoEnabled || !portalWindow || portalWindow.closed || !pendingSnapshot || !pendingSyncId) return;
     try {
       portalWindow.postMessage({
         type: 'PORTAL_AGENDA_DIGSAUDE_SYNC',
@@ -649,9 +606,11 @@
   }
 
   function pauseAutomatic(reason = 'Automático pausado · clique para reativar') {
+    sessionGeneration += 1;
     autoEnabled = false;
     stopAutomaticTimers();
     stopDeliveryRetry();
+    bridgeReadyReject?.(new Error('A sincronização foi pausada.'));
     clearBridgeReadyWait();
     syncInFlight = false;
     pendingSnapshot = null;
@@ -669,14 +628,20 @@
     }
 
     syncInFlight = true;
+    const generation = sessionGeneration;
+    const syncWindow = portalWindow;
     setButton('Automático ativo · verificando…', 'working');
 
     try {
       const nextSnapshot = await fetchSnapshot();
+      if (!autoEnabled || generation !== sessionGeneration) return;
+      assertContactSession(syncWindow, generation);
       lastCheckAt = Date.now();
       const contactResult = await enrichSnapshotContacts(nextSnapshot);
+      if (!autoEnabled || generation !== sessionGeneration) return;
+      assertContactSession(syncWindow, generation);
       const nextFingerprint = fingerprint(nextSnapshot);
-      const hasContactUpdates = contactResult.found > 0;
+      const hasContactUpdates = contactResult.requested > 0;
 
       if (!force && nextFingerprint === lastFingerprint && !hasContactUpdates) {
         syncInFlight = false;
@@ -702,8 +667,11 @@
       const ready = waitForBridgeReady();
       portalWindow.location = BRIDGE_URL;
       await ready;
+      if (!autoEnabled || generation !== sessionGeneration) return;
+      assertContactSession(syncWindow, generation);
       scheduleDeliveryRetry();
     } catch (error) {
+      if (generation !== sessionGeneration) return;
       clearBridgeReadyWait();
       syncInFlight = false;
       lastCheckAt = Date.now();
@@ -724,6 +692,7 @@
   }
 
   function activateAutomaticSync() {
+    sessionGeneration += 1;
     portalWindow = window.open(
       BRIDGE_URL,
       'portal-agenda-contact-bridge',
