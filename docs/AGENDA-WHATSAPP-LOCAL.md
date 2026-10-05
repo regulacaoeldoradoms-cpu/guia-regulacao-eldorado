@@ -72,3 +72,11 @@ Correção: coleta fixa a referência da janela e do Document validado; verifica
 8/8 testes novos aprovados com DOM modelado a partir da fixture homologada e sem navegador real: diálogo atrasado, fechado, ausente/ambíguo; cache só na mesma associação; fechamento inclusive com cache; troca de Document; fetch/erro antigo após pausa; cancelamento durante espera da ponte; resposta antiga; repetição pelo userscript e deduplicação executando o código real da ponte; backend com armazenamento mockado até href. Três testes afetados de navegação/coleta anteriores também foram reexecutados e aprovados. A suíte contém agora 69 testes, sem nova execução integral local.
 
 O fluxo completo foi exercitado apenas em ambiente sintético. Mantêm-se pendentes homologação operacional ao vivo e causa individual do incidente. A aba real não foi operada nesta etapa e segue liberada ao usuário.
+
+## Contrato de compatibilidade autorizado
+
+O PR inclui agora capacidade v2 explícita no Worker e verificação em frontend/ponte/coletor. Backend antigo, rollback, marcador ausente/inválido e erro deixam consumidores atualizados sem destino; a perda de capacidade limpa cache e cancela a sessão. O botão revalida o registro antes de atribuir URL a uma janela inicialmente inerte. O gate de deploy e seu rollback não foram modificados.
+
+7 testes focados novos e 49 testes afetados de Agenda/contrato/capacidade aprovados. Evidência anterior de recuperação Firebase permanece reutilizada; suíte CI passa a ter 76 testes. Homologação integrada local com páginas/scripts completos e Worker com armazenamento sintético: 12 verificações, 51 chamadas API, zero erros JavaScript, sem navegação externa ou mensagens. Clientes antigos precisam ser fechados/atualizados antes da retomada; somente clientes atualizados entendem esse contrato.
+
+Publicação coordenada posteriormente autorizada, condicionada às checagens e ao plano de transição. Nenhuma publicação foi realizada durante estes testes. Não se exige reproduzir indefinidamente o incidente original como pré-condição para o piloto controlado. A conferência operacional restrita continua pendente após a entrega confirmada.

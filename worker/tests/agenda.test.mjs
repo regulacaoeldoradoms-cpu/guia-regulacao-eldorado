@@ -56,7 +56,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20261005-contact-1/);
+  assert.match(html, /js\/agenda\.js\?v=20261005-contact-2/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -603,7 +603,7 @@ function automaticSourceFlow({ autoReady = true } = {}) {
   Object.defineProperty(frame, 'location', { ...locationProperty, set(value) {
     locationProperty.set(value);
     if (autoReady && String(value).startsWith(portal)) queueMicrotask(() => listeners.get('message')?.({
-      origin: portal, source: frame, data: { type: 'PORTAL_AGENDA_DIGSAUDE_READY', knownSourceIds: [] }
+      origin: portal, source: frame, data: { type: 'PORTAL_AGENDA_DIGSAUDE_READY', contactCapability: 'patient-details-v2', knownSourceIds: [] }
     }));
   } });
   frame.postMessage = (message) => sent.push(structuredClone(message));
@@ -611,8 +611,9 @@ function automaticSourceFlow({ autoReady = true } = {}) {
   const context = { window, document, URL, Date, Map, Set };
   const source = read('agenda/digsaude-agenda-sync.user.js');
   vm.runInNewContext(source.slice(0, source.indexOf('  function mountWidget()')) + `
-    autoEnabled = true; portalWindow = window.open();
-    globalThis.tools = { runAutomaticSync, pauseAutomatic, activateAutomaticSync,
+    autoEnabled = true; contactCapabilityVerified = true; portalWindow = window.open();
+    globalThis.tools = { runAutomaticSync, pauseAutomatic,
+      activateAutomaticSync: () => { activateAutomaticSync(); contactCapabilityVerified = true; },
       setFetcher(fn) { fetchSnapshot = fn; },
       state() { return { pendingSyncId, syncInFlight, lastFingerprint }; },
       retry() { sendSnapshot(); } };

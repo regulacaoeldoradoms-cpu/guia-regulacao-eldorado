@@ -2,6 +2,7 @@
 
 (async () => {
   const DIGSAUDE_ORIGIN = 'https://teleatendimento.saude.ms.gov.br';
+  const CONTACT_CAPABILITY = 'patient-details-v2';
   const auth = window.RegulationAuth;
   const status = document.getElementById('syncBridgeStatus');
   const agendaLink = document.getElementById('syncBridgeAgendaLink');
@@ -25,16 +26,18 @@
   async function loadContactState() {
     try {
       const state = await auth.api('/api/agenda/contact-state', { method: 'GET' });
+      const contactCapability = state?.contactCapability === CONTACT_CAPABILITY ? CONTACT_CAPABILITY : '';
       return {
+        contactCapability,
         active: Number(state?.active || 0),
         known: Number(state?.known || 0),
         missing: Number(state?.missing || 0),
-        knownSourceIds: Array.isArray(state?.knownSourceIds)
+        knownSourceIds: contactCapability && Array.isArray(state?.knownSourceIds)
           ? state.knownSourceIds.map((value) => String(value || '')).filter(Boolean)
           : []
       };
     } catch (_) {
-      return { active: 0, known: 0, missing: 0, knownSourceIds: [] };
+      return { contactCapability: '', active: 0, known: 0, missing: 0, knownSourceIds: [] };
     }
   }
 
@@ -57,11 +60,6 @@
       return;
     }
 
-    if (syncId === lastSyncId && lastResult) {
-      reply(lastResult);
-      return;
-    }
-
     if (busy) return;
 
     busy = true;
@@ -69,6 +67,16 @@
     status.textContent = `Sincronizando ${snapshot.records.length} agendamento(s)…`;
 
     try {
+      const before = await loadContactState();
+      if (before.contactCapability !== CONTACT_CAPABILITY) {
+        lastSyncId = '';
+        lastResult = null;
+        throw new Error('O Portal precisa confirmar a atualização dos contatos antes de sincronizar.');
+      }
+      if (syncId === lastSyncId && lastResult) {
+        reply(lastResult);
+        return;
+      }
       const result = await auth.api('/api/agenda/sync', {
         method: 'POST',
         body: JSON.stringify({
@@ -78,9 +86,15 @@
           capturedAt: snapshot.capturedAt
         })
       });
-
+      if (result?.contactCapability !== CONTACT_CAPABILITY) {
+        throw new Error('A atualização dos contatos não foi confirmada pelo Portal.');
+      }
       const contactState = await loadContactState();
+      if (contactState.contactCapability !== CONTACT_CAPABILITY) {
+        throw new Error('A atualização dos contatos não foi confirmada pelo Portal.');
+      }
       const message = {
+        contactCapability: CONTACT_CAPABILITY,
         type: 'PORTAL_AGENDA_DIGSAUDE_RESULT',
         syncId,
         ok: true,
@@ -102,6 +116,7 @@
       reply(message);
     } catch (error) {
       const message = {
+        contactCapability: '',
         type: 'PORTAL_AGENDA_DIGSAUDE_RESULT',
         syncId,
         ok: false,
@@ -119,7 +134,11 @@
   });
 
   const initialContactState = await loadContactState();
+  if (!initialContactState.contactCapability) {
+    status.textContent = 'O Portal precisa confirmar a atualização dos contatos antes de sincronizar.';
+  }
   reply({
+    contactCapability: initialContactState.contactCapability,
     type: 'PORTAL_AGENDA_DIGSAUDE_READY',
     contactsAvailable: initialContactState.known,
     contactsMissing: initialContactState.missing,

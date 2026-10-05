@@ -6,6 +6,7 @@
   if (!user) return;
 
   const WHATSAPP_SUPPORT_NUMBER = '556781631815';
+  const CONTACT_CAPABILITY = 'patient-details-v2';
   const capacityRules = window.AgendaCapacity;
   const els = {
     userName: document.getElementById('portalUserName'),
@@ -32,6 +33,7 @@
   };
 
   const state = {
+    contactCapability: '',
     records: [],
     scope: 'all',
     justRead: new Set(),
@@ -42,6 +44,8 @@
       criticalGroups: []
     }
   };
+  let loadGeneration = 0;
+  let openingContact = false;
 
   els.userName.textContent = user.name || user.username || 'Usuário';
   els.userRole.textContent = window.PortalTools?.roleLabels?.[user.role] || user.jobTitle || user.role || '';
@@ -409,15 +413,13 @@
     actions.className = 'agenda-card-actions';
 
     const pastAppointment = isPastAppointment(record);
-    const whatsappUrl = record.active && !pastAppointment ? patientWhatsappUrl(record) : '';
-    const notify = whatsappUrl ? document.createElement('a') : document.createElement('button');
+    const whatsappUrl = state.contactCapability === CONTACT_CAPABILITY && record.active && !pastAppointment ? patientWhatsappUrl(record) : '';
+    const notify = document.createElement('button');
     notify.className = 'agenda-whatsapp-patient-button';
+    notify.type = 'button';
     if (whatsappUrl) {
-      notify.href = whatsappUrl;
-      notify.target = '_blank';
-      notify.rel = 'noopener noreferrer';
       notify.textContent = 'Avisar por WhatsApp';
-      notify.addEventListener('click', () => { markRead(record, true); });
+      notify.addEventListener('click', () => openVerifiedContact(record));
     } else {
       notify.type = 'button';
       notify.disabled = true;
@@ -496,12 +498,58 @@
     records.forEach((record) => els.list.appendChild(createCard(record)));
   }
 
+  function revokeContactAccess() {
+    state.contactCapability = '';
+    state.records = state.records.map((record) => ({ ...record, phone: '' }));
+    render();
+  }
+
+  async function openVerifiedContact(record) {
+    if (openingContact || state.contactCapability !== CONTACT_CAPABILITY) return;
+    openingContact = true;
+    let target;
+    try {
+      // Only an inert window is opened during the user gesture. No WhatsApp URL
+      // is assigned until a fresh authorized response confirms this exact card.
+      target = window.open('about:blank', '_blank');
+      if (!target) return;
+      target.opener = null;
+      const expected = JSON.stringify([record.sourceId, record.patient, record.requestedAt,
+        record.appointmentDate, record.appointmentTime, record.phone]);
+      const generation = loadGeneration + 1;
+      const loaded = await load();
+      const current = state.records.find((item) => item.sourceId === record.sourceId);
+      const actual = current && JSON.stringify([current.sourceId, current.patient, current.requestedAt,
+        current.appointmentDate, current.appointmentTime, current.phone]);
+      const url = current?.active && !isPastAppointment(current) ? patientWhatsappUrl(current) : '';
+      if (!loaded || generation !== loadGeneration || state.contactCapability !== CONTACT_CAPABILITY
+          || actual !== expected || !url || target.closed) {
+        target.close();
+        showStatus('O contato não foi confirmado. Atualize e confira o agendamento antes de tentar novamente.', 'error');
+        return;
+      }
+      target.location.replace(url);
+      markRead(current, true);
+    } catch (_) {
+      target?.close();
+      revokeContactAccess();
+      showStatus('Não foi possível confirmar o contato. Atualize a Agenda antes de tentar novamente.', 'error');
+    } finally {
+      openingContact = false;
+    }
+  }
+
   async function load() {
+    const generation = ++loadGeneration;
+    revokeContactAccess();
     els.refresh.disabled = true;
     showStatus('');
     try {
       const payload = await auth.api('/api/agenda', { method: 'GET' });
+      if (generation !== loadGeneration) return false;
+      state.contactCapability = payload?.contactCapability === CONTACT_CAPABILITY ? CONTACT_CAPABILITY : '';
       state.records = Array.isArray(payload?.records) ? payload.records : [];
+      if (!state.contactCapability) state.records = state.records.map((record) => ({ ...record, phone: '' }));
       state.justRead.clear();
       const lastSync = payload?.summary?.lastSyncAt || '';
       els.lastSync.textContent = lastSync
@@ -511,12 +559,16 @@
         ? `${payload?.summary?.active || 0} ativos · ${payload?.summary?.unread || 0} novos para você`
         : 'Aguardando primeira sincronização';
       render();
+      return state.contactCapability === CONTACT_CAPABILITY;
     } catch (error) {
+      if (generation !== loadGeneration) return false;
+      revokeContactAccess();
       els.list.innerHTML = '<div class="agenda-empty">Não foi possível carregar a Agenda.</div>';
       els.syncState.textContent = 'Falha ao consultar a Agenda';
       showStatus(error.message || 'Não foi possível carregar a Agenda.', 'error');
+      return false;
     } finally {
-      els.refresh.disabled = false;
+      if (generation === loadGeneration) els.refresh.disabled = false;
     }
   }
 

@@ -4,8 +4,8 @@
 // @version      1.2.5
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-1
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-1
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-2
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-contact-2
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -54,6 +54,7 @@
   let bridgeReadyReject = null;
   let bridgeReadyTimer = null;
   let sessionGeneration = 0;
+  let contactCapabilityVerified = false;
   const contactCache = new Map();
   const knownContactIds = new Set();
 
@@ -574,7 +575,7 @@
   }
 
   function sendSnapshot() {
-    if (!autoEnabled || !portalWindow || portalWindow.closed || !pendingSnapshot || !pendingSyncId) return;
+    if (!autoEnabled || !contactCapabilityVerified || !portalWindow || portalWindow.closed || !pendingSnapshot || !pendingSyncId) return;
     try {
       portalWindow.postMessage({
         type: 'PORTAL_AGENDA_DIGSAUDE_SYNC',
@@ -620,7 +621,7 @@
   }
 
   async function runAutomaticSync({ force = false } = {}) {
-    if (!autoEnabled || syncInFlight) return;
+    if (!autoEnabled || !contactCapabilityVerified || syncInFlight) return;
 
     if (!portalWindow || portalWindow.closed) {
       pauseAutomatic();
@@ -693,6 +694,7 @@
 
   function activateAutomaticSync() {
     sessionGeneration += 1;
+    contactCapabilityVerified = false;
     portalWindow = window.open(
       BRIDGE_URL,
       'portal-agenda-contact-bridge',
@@ -742,11 +744,24 @@
     runAutomaticSync({ force: true });
   }
 
+  function revokeContactCapability() {
+    contactCapabilityVerified = false;
+    contactCache.clear();
+    knownContactIds.clear();
+    lastFingerprint = '';
+    pauseAutomatic('O Portal precisa confirmar a atualização dos contatos. Reative após atualizar.');
+  }
+
   window.addEventListener('message', (event) => {
     if (event.origin !== PORTAL_ORIGIN) return;
     if (portalWindow && event.source !== portalWindow) return;
 
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
+      if (event.data.contactCapability !== CONTACT_VERSION) {
+        revokeContactCapability();
+        return;
+      }
+      contactCapabilityVerified = true;
       updateKnownContactIds(event.data?.knownSourceIds);
       if (bridgeReadyResolve) {
         bridgeReadyResolve();
@@ -763,6 +778,10 @@
 
     if (event.data?.type !== 'PORTAL_AGENDA_DIGSAUDE_RESULT') return;
     if (!pendingSyncId || event.data?.syncId !== pendingSyncId) return;
+    if (event.data.contactCapability !== CONTACT_VERSION) {
+      revokeContactCapability();
+      return;
+    }
 
     stopDeliveryRetry();
     syncInFlight = false;

@@ -88,5 +88,5 @@ test('cards com 2 de 2 salas recebem destaque amarelo completo', () => {
   assert.match(css, /background: #fff2ad/);
   assert.match(css, /border-color: #e0a400/);
   assert.match(html, /css\/agenda\.css\?v=20260916-5/);
-  assert.match(html, /js\/agenda\.js\?v=20261005-contact-1/);
+  assert.match(html, /js\/agenda\.js\?v=20261005-contact-2/);
 });

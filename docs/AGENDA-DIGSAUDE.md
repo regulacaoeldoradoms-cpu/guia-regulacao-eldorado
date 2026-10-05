@@ -136,7 +136,7 @@ No patch local de 05/10/2026, contatos legados não são considerados verificado
 O botão principal do card deixa de ser **Abrir no DigSaúde** e passa a ser **Avisar por WhatsApp**.
 
 Ao clicar:
-- o WhatsApp abre diretamente no número sincronizado do paciente;
+- a Agenda reconfirma a capacidade v2 do Worker e o contato da mesma ficha antes de atribuir o destino à janela; perda de capacidade, mudança ou revogação interrompem a abertura;
 - a mensagem é apenas preparada; o envio continua exigindo confirmação humana no WhatsApp;
 - o agendamento é marcado como visualizado para aquele usuário;
 - o local do atendimento não é incluído automaticamente, pois será informado em seguida pelo Técnico em Telemedicina.
@@ -232,3 +232,6 @@ A V3.4:
 
 A finalidade é operacional: preparar lembretes para consultas atuais e futuras sem gastar tempo enriquecendo retrospectivamente agendamentos antigos.
 
+### Compatibilidade de entrega e rollback — 05/10/2026
+
+O contrato `contactCapability: patient-details-v2` impede que frontend, ponte e coletor atualizados usem contatos de um Worker anterior. A perda da capacidade limpa caches e pausa a coleta; o botão não contém link navegável pré-carregado e revalida a mesma ficha antes de abrir um destino. O gate de deploy e seu rollback continuam intactos. Atualizar/reabrir clientes e coletor é necessário; links antigos já carregados não recebem essa proteção. Detalhes e testes em `AGENDA-CONTATO-COMPATIBILIDADE.md`.

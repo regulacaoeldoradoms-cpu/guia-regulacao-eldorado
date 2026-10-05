@@ -262,6 +262,7 @@ function contactState(records = []) {
     if (verifiedContactPhone(record)) knownSourceIds.push(sourceId);
   }
   return {
+    contactCapability: CONTACT_VERSION,
     active: active.length,
     known: knownSourceIds.length,
     missing: Math.max(0, active.length - knownSourceIds.length),
@@ -388,6 +389,7 @@ async function syncRecords(env, input, user) {
 
   const phoneReceived = normalized.filter((record) => normalizeBrazilPhone(record.phone)).length;
   return {
+    contactCapability: CONTACT_VERSION,
     synchronizedAt: now,
     received: normalized.length,
     totalCount: expectedTotal || normalized.length,
@@ -484,8 +486,9 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
       .filter((item) => item.sourceId)
       .sort(agendaSort);
     const active = records.filter((item) => item.active);
-    return json({
-      records,
+      return json({
+        contactCapability: CONTACT_VERSION,
+        records,
       summary: {
         active: active.length,
         unread: active.filter((item) => item.unread).length,
