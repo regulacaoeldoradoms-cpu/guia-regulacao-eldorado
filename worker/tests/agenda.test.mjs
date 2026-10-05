@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import './agenda-contact-diagnostics.cases.mjs';
 
 function read(path) {
   return fs.readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
