@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.6
+// @version      1.2.7
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-menu-1
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-menu-1
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-pending-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-pending-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -29,7 +29,9 @@
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
   const CONTACT_VERSION = 'patient-details-v2';
   const CONTACT_CONCURRENCY = 1;
-  const CONTACT_WINDOW_TIMEOUT_MS = 8 * 1000;
+    const CONTACT_WINDOW_TIMEOUT_MS = 8 * 1000;
+    const CONTACT_RETRY_DELAY_MS = 250;
+    const CONTACT_RETRY_CODES = ['navigation_timeout', 'dialog_timeout', 'field_unreadable', 'field_unavailable'];
   const BRIDGE_READY_TIMEOUT_MS = 15 * 1000;
 
   let portalWindow = null;
@@ -56,7 +58,79 @@
   let sessionGeneration = 0;
   let contactCapabilityVerified = false;
   const contactCache = new Map();
-  const knownContactIds = new Set();
+    const knownContactIds = new Set();
+    let contactDiagnostics = null;
+    const CONTACT_DIAGNOSTIC_CODES = ['navigation_failed', 'navigation_timeout', 'menu_unavailable', 'menu_timeout',
+      'dialog_timeout', 'field_unreadable', 'field_unavailable', 'normalization_rejected',
+        'ambiguous_phone', 'route_changed', 'document_changed', 'action_changed', 'record_changed', 'cancelled', 'unexpected_failure'];
+
+    function contactError(code, message) {
+      return Object.assign(new Error(message), { contactDiagnosticCode: code });
+    }
+
+    function contactDiagnosticCode(error) {
+      return CONTACT_DIAGNOSTIC_CODES.includes(error?.contactDiagnosticCode)
+        ? error.contactDiagnosticCode : 'unexpected_failure';
+    }
+
+    function diagnosticCount(value) {
+      return Number.isSafeInteger(value) && value >= 0 ? value : 0;
+    }
+
+    function safeContactDiagnostics(value = {}) {
+      const report = {};
+      for (const key of ['snapshotRows', 'declaredRows', 'uncapturedRows', 'alreadyKnown', 'pastUncollected',
+        'selected', 'attempted', 'readAttempts', 'retries', 'recovered', 'elapsedMsTotal', 'maxAttemptMs',
+        'collected', 'persisted', 'persistenceUnconfirmed', 'mirrorMissing']) {
+        report[key] = diagnosticCount(value[key]);
+      }
+      report.snapshotComplete = value.snapshotComplete === true;
+      report.persistence = ['not_attempted', 'pending', 'confirmed', 'unconfirmed', 'cancelled'].includes(value.persistence)
+        ? value.persistence : 'not_attempted';
+      report.outsideSnapshotMissing = Number.isSafeInteger(value.outsideSnapshotMissing) && value.outsideSnapshotMissing >= 0
+        ? value.outsideSnapshotMissing : null;
+      report.unclassifiedMirrorMissing = Number.isSafeInteger(value.unclassifiedMirrorMissing) && value.unclassifiedMirrorMissing >= 0
+        ? value.unclassifiedMirrorMissing : null;
+      report.failures = Object.fromEntries(CONTACT_DIAGNOSTIC_CODES.map(code => [code, diagnosticCount(value.failures?.[code])]));
+      report.attemptFailures = Object.fromEntries(CONTACT_DIAGNOSTIC_CODES.map(code => [code, diagnosticCount(value.attemptFailures?.[code])]));
+      report.maxFailureMs = Object.fromEntries(CONTACT_DIAGNOSTIC_CODES.map(code => [code, diagnosticCount(value.maxFailureMs?.[code])]));
+      return report;
+    }
+
+    function updateContactDiagnostics(value) {
+      contactDiagnostics = safeContactDiagnostics(value);
+      const node = document.getElementById?.('portal-agenda-contact-diagnostics');
+      if (node) node.textContent = 'Diagnóstico desta rodada (somente contagens):\n' + JSON.stringify(contactDiagnostics, null, 2);
+      return contactDiagnostics;
+    }
+
+    function finishContactDiagnostics(snapshot, result) {
+      if (!contactDiagnostics) return null;
+      const report = safeContactDiagnostics(contactDiagnostics);
+      report.persistence = result?.ok === true ? 'confirmed' : 'unconfirmed';
+      const records = Array.isArray(snapshot?.records) ? snapshot.records : [];
+      const known = new Set(Array.isArray(result?.knownSourceIds) ? result.knownSourceIds : []);
+      const collected = records.filter(record => record.contactVersion === CONTACT_VERSION && record.phone);
+      report.persisted = result?.ok === true ? collected.filter(record => known.has(record.sourceId)).length : 0;
+      report.persistenceUnconfirmed = Math.max(0, report.collected - report.persisted);
+      if (result?.ok === true) {
+        report.mirrorMissing = diagnosticCount(result.contactsMissing);
+        const snapshotIds = new Set(records.map(record => record.sourceId));
+        const total = diagnosticCount(result.contactsAvailable) + report.mirrorMissing;
+        // Without an acknowledged received count, outside-snapshot causes remain unknown.
+        if (result.received === records.length && snapshotIds.size === records.length
+          && total >= result.received && known.size === result.contactsAvailable) {
+          const knownOutside = [...known].filter(id => !snapshotIds.has(id)).length;
+          report.outsideSnapshotMissing = Math.max(0, total - result.received - knownOutside);
+          const missingInside = records.filter(record => !known.has(record.sourceId)).length;
+          report.unclassifiedMirrorMissing = Math.max(0, report.mirrorMissing - missingInside - report.outsideSnapshotMissing);
+        } else {
+          report.outsideSnapshotMissing = null;
+          report.unclassifiedMirrorMissing = report.mirrorMissing;
+        }
+      }
+      return updateContactDiagnostics(report);
+    }
 
   function compact(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -212,11 +286,17 @@
     return independent.length === 1 ? independent[0] : null;
   }
 
-  function phoneFromRoot(root) {
+  function readPatientPhone(root) {
     // The caller supplies only the visible patient dialog, never the consultation page.
-    if (!root) return '';
+    if (!root) return { phone: '', reason: 'field_unreadable' };
     const phones = new Set();
+    const fields = new Set();
+    let filled = false;
     const add = (node) => {
+      if (!node || fields.has(node)) return;
+      fields.add(node);
+      const isInput = /^(INPUT|TEXTAREA)$/.test(node.tagName || '');
+      filled ||= Boolean(String(isInput ? node.value ?? '' : node.textContent ?? '').trim());
       const phone = phoneFromNode(node);
       if (phone) phones.add(phone);
     };
@@ -242,7 +322,13 @@
       if (!wrapper) continue;
       for (const node of wrapper.querySelectorAll('input, textarea, output, dd, .fi-in-text-item')) add(node);
     }
-    return phones.size === 1 ? [...phones][0] : '';
+    if (phones.size === 1) return { phone: [...phones][0], reason: '' };
+    return { phone: '', reason: phones.size > 1 ? 'ambiguous_phone'
+      : !fields.size ? 'field_unreadable' : filled ? 'normalization_rejected' : 'field_unavailable' };
+  }
+
+  function phoneFromRoot(root) {
+    return readPatientPhone(root).phone;
   }
 
   function updateKnownContactIds(values) {
@@ -305,7 +391,7 @@
 
   function assertContactSession(contactWindow, generation) {
     if (generation !== sessionGeneration || !contactWindow || contactWindow.closed || portalWindow !== contactWindow) {
-      throw new Error('A coleta foi cancelada ou a janela auxiliar foi fechada.');
+      throw contactError('cancelled', 'A coleta foi cancelada ou a janela auxiliar foi fechada.');
     }
   }
 
@@ -317,7 +403,7 @@
     try {
       contactWindow.location = targetUrl;
     } catch (_) {
-      throw new Error('Não foi possível abrir a consulta na janela auxiliar.');
+      throw contactError('navigation_failed', 'Não foi possível abrir a consulta na janela auxiliar.');
     }
 
     const expectedUrl = new URL(targetUrl);
@@ -338,7 +424,7 @@
       } catch (_) {}
       await new Promise((resolve) => window.setTimeout(resolve, 160));
     }
-    throw new Error('Tempo excedido ao abrir a consulta.');
+    throw contactError('navigation_timeout', 'Tempo excedido ao abrir a consulta.');
   }
 
   async function extractContact(record, generation = sessionGeneration) {
@@ -354,32 +440,37 @@
     const startedAt = Date.now();
     let clicked = false;
     let openedMenu = null;
+    let failureCode = 'menu_unavailable';
     while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
       assertContactSession(frameWindow, generation);
       if (frameWindow.location.pathname !== expectedPath) {
-        throw new Error('A consulta carregada não corresponde ao agendamento.');
+        throw contactError('route_changed', 'A consulta carregada não corresponde ao agendamento.');
       }
       const root = frameWindow.document;
-      if (root !== consultationRoot) throw new Error('A consulta foi recarregada durante a coleta.');
+      if (root !== consultationRoot) throw contactError('document_changed', 'A consulta foi recarregada durante a coleta.');
       if (!clicked) {
         const action = patientAction(root);
         if (action) {
           if (openedMenu && action.closest?.('.fi-dropdown') !== openedMenu) {
-            throw new Error('A ação do paciente mudou durante a abertura do menu.');
+            throw contactError('action_changed', 'A ação do paciente mudou durante a abertura do menu.');
           }
           action.click();
           clicked = true;
+          failureCode = 'dialog_timeout';
         } else if (!openedMenu) {
           const menu = patientActionMenu(root);
           if (menu) {
             openedMenu = menu.dropdown;
+            failureCode = 'menu_timeout';
             menu.trigger.click();
           }
         }
       } else {
         const details = patientDetailsRoot(root);
         if (details) {
-          const phone = phoneFromRoot(details);
+          const reading = readPatientPhone(details);
+          const phone = reading.phone;
+          failureCode = reading.reason;
           if (phone) {
             contactCache.set(cacheKey, { phone, checkedAt: Date.now() });
             return phone;
@@ -388,7 +479,7 @@
       }
       await new Promise((resolve) => window.setTimeout(resolve, 180));
     }
-    throw new Error('Não foi possível verificar o telefone nos dados do paciente.');
+    throw contactError(failureCode, 'Não foi possível verificar o telefone nos dados do paciente.');
   }
 
   function localIsoToday() {
@@ -397,6 +488,56 @@
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  async function extractContactWithRetry(record, generation, diagnostic) {
+    const identity = JSON.stringify([record.sourceId, record.patient, record.requestedAt]);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const startedAt = Date.now();
+      diagnostic.readAttempts += 1;
+      try {
+        const phone = await extractContact(record, generation);
+        const elapsed = Math.max(0, Date.now() - startedAt);
+        diagnostic.elapsedMsTotal += elapsed;
+        diagnostic.maxAttemptMs = Math.max(diagnostic.maxAttemptMs, elapsed);
+        if (attempt && phone) diagnostic.recovered += 1;
+        return phone;
+      } catch (error) {
+        const code = contactDiagnosticCode(error);
+        const elapsed = Math.max(0, Date.now() - startedAt);
+        diagnostic.elapsedMsTotal += elapsed;
+        diagnostic.maxAttemptMs = Math.max(diagnostic.maxAttemptMs, elapsed);
+        diagnostic.attemptFailures[code] += 1;
+        diagnostic.maxFailureMs[code] = Math.max(diagnostic.maxFailureMs[code], elapsed);
+        if (attempt || !CONTACT_RETRY_CODES.includes(code)) throw error;
+
+        const frame = portalWindow;
+        assertContactSession(frame, generation);
+        let failedRoot;
+        try { failedRoot = frame.document; } catch (_) { throw contactError('route_changed', 'A origem da consulta mudou.'); }
+        const checkRetry = () => {
+          assertContactSession(frame, generation);
+          if (JSON.stringify([record.sourceId, record.patient, record.requestedAt]) !== identity) {
+            throw contactError('record_changed', 'A associação da ficha mudou antes da repetição.');
+          }
+          try {
+            if (frame.location.origin !== window.location.origin || frame.location.pathname !== new URL(consultationUrl(record.sourceId)).pathname) {
+              throw contactError('route_changed', 'A consulta mudou antes da repetição.');
+            }
+            if (frame.document !== failedRoot) throw contactError('document_changed', 'A consulta recarregou antes da repetição.');
+          } catch (stateError) {
+            if (stateError.contactDiagnosticCode) throw stateError;
+            throw contactError('route_changed', 'A origem da consulta mudou antes da repetição.');
+          }
+        };
+        checkRetry();
+        await new Promise(resolve => window.setTimeout(resolve, CONTACT_RETRY_DELAY_MS));
+        checkRetry();
+        diagnostic.retries += 1;
+        updateContactDiagnostics(diagnostic);
+        // extractContact performs a fresh navigation and all route/Document/action/dialog guards.
+      }
+    }
   }
 
   function contactEligible(record) {
@@ -421,12 +562,19 @@
     let cursor = 0;
     let found = 0;
     let failed = 0;
+    const diagnostic = safeContactDiagnostics({ snapshotRows: records.length, declaredRows: snapshot.totalCount,
+      uncapturedRows: Math.max(0, Number(snapshot.totalCount || 0) - records.length), snapshotComplete: snapshot.complete,
+      alreadyKnown: records.filter(record => knownContactIds.has(record.sourceId)).length,
+      pastUncollected: records.filter(record => !contactEligible(record) && !knownContactIds.has(record.sourceId)).length,
+      selected: targets.length });
+    updateContactDiagnostics(diagnostic);
 
     const runner = async () => {
       while (cursor < targets.length) {
         if (generation !== sessionGeneration) return;
         const index = cursor++;
         const record = targets[index];
+        diagnostic.attempted += 1;
         setButton(
           `Automático ativo · contatos ${index + 1}/${targets.length} · ${knownContactIds.size} já salvos…`,
           'working'
@@ -434,13 +582,16 @@
         record.contactVersion = CONTACT_VERSION;
         record.contactSourceId = record.sourceId;
         try {
-          record.phone = await extractContact(record, generation);
+          record.phone = await extractContactWithRetry(record, generation, diagnostic);
           if (record.phone) found += 1;
-          else failed += 1;
-        } catch (_) {
+          else { failed += 1; diagnostic.failures.field_unavailable += 1; }
+        } catch (error) {
           record.phone = '';
           failed += 1;
+          diagnostic.failures[contactDiagnosticCode(error)] += 1;
         }
+        diagnostic.collected = found;
+        updateContactDiagnostics(diagnostic);
       }
     };
 
@@ -620,6 +771,7 @@
     stopTimer = window.setTimeout(() => {
       stopDeliveryRetry();
       syncInFlight = false;
+      if (pendingSnapshot) finishContactDiagnostics(pendingSnapshot, { ok: false });
       pendingSnapshot = null;
       pendingFingerprint = '';
       pendingSyncId = '';
@@ -637,6 +789,9 @@
   function pauseAutomatic(reason = 'Automático pausado · clique para reativar') {
     sessionGeneration += 1;
     autoEnabled = false;
+    if (contactDiagnostics?.persistence === 'pending') {
+      updateContactDiagnostics({ ...contactDiagnostics, persistence: 'cancelled', persistenceUnconfirmed: contactDiagnostics.collected });
+    }
     stopAutomaticTimers();
     stopDeliveryRetry();
     bridgeReadyReject?.(new Error('A sincronização foi pausada.'));
@@ -685,6 +840,7 @@
       }
 
       pendingSnapshot = nextSnapshot;
+      updateContactDiagnostics({ ...contactDiagnostics, persistence: 'pending' });
       pendingFingerprint = nextFingerprint;
       pendingContactFailures = contactResult.failed;
       pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -701,6 +857,7 @@
       scheduleDeliveryRetry();
     } catch (error) {
       if (generation !== sessionGeneration) return;
+      if (pendingSnapshot) finishContactDiagnostics(pendingSnapshot, { ok: false });
       clearBridgeReadyWait();
       syncInFlight = false;
       lastCheckAt = Date.now();
@@ -815,6 +972,7 @@
     syncInFlight = false;
 
     if (event.data.ok) {
+      finishContactDiagnostics(pendingSnapshot, event.data);
       updateKnownContactIds(event.data?.knownSourceIds);
       lastFingerprint = pendingFingerprint;
       const coverage = contactCoverage(pendingSnapshot);
@@ -823,6 +981,7 @@
         coverage.missing ? 'error' : 'success'
       );
     } else {
+      finishContactDiagnostics(pendingSnapshot, event.data);
       setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
     }
 
@@ -891,7 +1050,12 @@
 
     const helper = document.createElement('div');
     helper.textContent = 'Verificação a cada 15 min enquanto o DigSaúde e a ponte do Portal estiverem abertos.';
-    helper.style.cssText = 'font:400 11px/1.4 Inter,system-ui,sans-serif;color:#758697;margin-bottom:10px;';
+      helper.style.cssText = 'font:400 11px/1.4 Inter,system-ui,sans-serif;color:#758697;margin-bottom:10px;';
+
+      const diagnostics = document.createElement('pre');
+      diagnostics.id = 'portal-agenda-contact-diagnostics';
+      diagnostics.style.cssText = 'font:11px/1.4 monospace;white-space:pre-wrap;max-height:200px;overflow:auto;';
+      diagnostics.textContent = 'Diagnóstico disponível após uma rodada; somente contagens, sem dados pessoais.';
 
     const action = document.createElement('button');
     action.id = ACTION_ID;
@@ -907,7 +1071,7 @@
     ].join(';');
     action.addEventListener('click', onActionClick);
 
-    details.append(title, status, helper, action);
+    details.append(title, status, helper, diagnostics, action);
 
     const element = document.createElement('button');
     element.id = BUTTON_ID;

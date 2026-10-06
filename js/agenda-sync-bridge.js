@@ -103,6 +103,7 @@
         unchanged: Number(result.unchanged || 0),
         deactivated: Number(result.deactivated || 0),
         phoneReceived: Number(result.phoneReceived || 0),
+        received: Number(result.received || 0),
         complete: result.complete === true,
         contactsAvailable: contactState.known,
         contactsMissing: contactState.missing,
