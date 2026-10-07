@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Aplicar apenas ao snapshot revisado, validar e devolver à branch isolada
+      - name: Aplicar apenas ao snapshot revisado e validar
         shell: bash
         run: |
           set -euo pipefail
@@ -29,7 +29,10 @@ jobs:
           node --check worker/tests/browser/chat-live-reception.cjs
           npm --prefix worker run check
           npm --prefix worker test
-          git rm -f -- .github/apply-chat-live-fix.cjs .github/workflows/prepare-chat-live-repair.yml
+          # GITHUB_TOKEN has content permission only. Workflow updates are performed
+          # separately through the authorized repository connector, not this job.
+          git restore -- .github/workflows
+          git rm -f -- .github/apply-chat-live-fix.cjs
           git add --all
           git diff --cached --check
           git diff --cached --stat
