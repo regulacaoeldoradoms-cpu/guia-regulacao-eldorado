@@ -224,10 +224,10 @@ test('chat interno acompanha o modo escuro sem superfícies claras residuais', (
   assert.match(css, /html\[data-portal-theme="dark"\] \.portal-chat-notification-card/);
   assert.match(css, /scrollbar-color:/);
 
-  assert.match(globalChat, /CHAT_CSS = '\/css\/portal-chat\.css\?v=20261007-chat-avatar-timeline-1'/);
+  assert.match(globalChat, /CHAT_CSS = '\/css\/portal-chat\.css\?v=20261007-chat-live-recovery-1'/);
   assert.match(globalChat, /stylesheet\(CHAT_CSS/);
-  assert.match(read('medico/index.html'), /portal-global-chat\.js\?v=20261007-chat-avatar-timeline-1/);
-  assert.match(read('recepcao/index.html'), /portal-global-chat\.js\?v=20261007-chat-avatar-timeline-1/);
+  assert.match(read('medico/index.html'), /portal-global-chat\.js\?v=20261007-chat-live-recovery-1/);
+  assert.match(read('recepcao/index.html'), /portal-global-chat\.js\?v=20261007-chat-live-recovery-1/);
 });
 
 test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {

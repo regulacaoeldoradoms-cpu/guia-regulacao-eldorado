@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261007-chat-avatar-timeline-1') return;
+  if (window.PortalChat?.version === '20261007-chat-live-recovery-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -44,6 +44,11 @@
   let lastContactsLoadedAt = 0;
   const unreadSnapshot = new Map();
   const messageCache = new Map();
+  // Only HTTP pages advance this cursor; a later WS event must not hide a missing ID.
+  const messageSyncCursors = new Map();
+  const messageSyncRequests = new Map();
+  const messageReadThrough = new Map();
+  const messageReadRequests = new Map();
   const messagePreloadRequests = new Map();
   const pendingMessages = new Map();
   const draftCache = new Map();
@@ -54,6 +59,7 @@
   const MESSAGE_HISTORY_PAGE_SIZE = 120;
   const MESSAGE_PRELOAD_PAGE_GUARD = 100;
   const CHAT_FALLBACK_POLL_MS = 4500;
+  const CHAT_RECONCILE_MS = 30000;
   const CHAT_CONTACTS_REALTIME_REFRESH_MS = 120000;
   const CHAT_CONTACTS_FALLBACK_REFRESH_MS = 30000;
   const CHAT_CONTACTS_MIN_REFRESH_MS = 15000;
@@ -130,8 +136,8 @@
 
   function updateRealtimeMode(connected) {
     realtimeConnected = Boolean(connected);
-    if (realtimeConnected) stopMessagePolling();
-    else if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
+    if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
+    else stopMessagePolling();
     updateAttentionButton();
     if (!realtimeStopped) restartContactsTimer();
   }
@@ -409,7 +415,9 @@
   function handleRealtimeMessage(message) {
     const id = Number(message?.id || 0);
     const sender = messageCacheKey(message?.fromUser);
-    if (!id || !sender || sender === currentUser?.username) return;
+    if (!Number.isInteger(id) || id <= 0 || !sender || sender === currentUser?.username) return;
+    if (message?.toUser && messageCacheKey(message.toUser) !== currentUser?.username) return;
+    if (messageCache.get(sender)?.messages?.some((item) => Number(item.id) === id)) return;
 
     const contact = contacts.find((item) => item.username === sender);
     if (!contact) {
@@ -428,15 +436,7 @@
       && activeContact?.username === sender;
 
     if (conversationVisible) {
-      appendMessages([message], false);
-      contact.unread = 0;
-      contact.firstUnreadId = 0;
-      unreadSnapshot.set(sender, 0);
-      renderContacts();
-      api('/api/chat/read', {
-        method: 'POST',
-        body: JSON.stringify({ with: sender, throughId: id })
-      }).catch(() => loadMessages(false));
+      syncVisibleConversation();
       return;
     }
 
@@ -447,7 +447,7 @@
     renderContacts();
     window.PortalInteractions?.emit?.('notification', { debounce: 900 });
     void showMessageNotification(contact, 1);
-    if (root?.classList.contains('open')) void markChatDelivered(true);
+    if (!document.hidden && root?.classList.contains('open')) void markChatDelivered(true);
   }
 
   function handleRealtimeEvent(payload) {
@@ -596,6 +596,10 @@
   function clearMessageMemory() {
     messageCacheGeneration += 1;
     messageCache.clear();
+    messageSyncCursors.clear();
+    messageSyncRequests.clear();
+    messageReadThrough.clear();
+    messageReadRequests.clear();
     messagePreloadRequests.clear();
     for (const entry of pendingMessages.values()) window.clearTimeout(entry?.fallbackTimer);
     pendingMessages.clear();
@@ -843,7 +847,9 @@
       if (generation !== messageCacheGeneration) return [];
       const page = Array.isArray(payload.messages) ? payload.messages : [];
       const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
-      replaceCachedMessages(key, page, lastMessageAt, { hasOlder: page.length >= pageSize });
+      mergeCachedMessages(key, page, lastMessageAt, {
+        hasOlder: Boolean(messageCache.get(key)?.hasOlder) || page.length >= pageSize
+      });
       return messageCache.get(key)?.messages || [];
     })()
       .catch(() => cached?.messages || [])
@@ -1446,8 +1452,10 @@
       const element = messageElement(message);
       element.dataset.messageId = String(message.id || '');
       if (clientId) element.dataset.clientId = clientId;
-      appendUnreadDividerBefore(box, null, id);
-      box.appendChild(element);
+      const before = id > 0 ? Array.from(box.querySelectorAll?.('.portal-chat-message[data-message-id]') || [])
+        .find((item) => Number(item.dataset.messageId || 0) > id) : null;
+      appendUnreadDividerBefore(box, before, id);
+      box.insertBefore(element, before || null);
       lastMessageId = Math.max(lastMessageId, id);
     });
     if (replace && activeContact) {
@@ -1492,6 +1500,7 @@
     const username = activeContact.username;
     const key = messageCacheKey(username);
     const cached = messageCache.get(key);
+    const generation = messageCacheGeneration;
     if (!cached?.hasOlder || !cached.messages?.length) return;
     const before = Number(cached.messages[0]?.id || 0);
     if (!before) return;
@@ -1502,12 +1511,12 @@
           `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&before=${before}&peek=1`,
           { method: 'GET' }
         );
-        if (!activeContact || activeContact.username !== username) return;
+        if (generation !== messageCacheGeneration || !activeContact || activeContact.username !== username) return;
         const page = Array.isArray(payload.messages) ? payload.messages : [];
         const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
         replaceCachedMessages(
           username,
-          [...page, ...(cached.messages || [])],
+          [...page, ...(messageCache.get(key)?.messages || [])],
           cached.lastMessageAt || '',
           { hasOlder: page.length >= pageSize }
         );
@@ -1521,37 +1530,82 @@
     return historyLoadPending;
   }
 
+  function conversationIsVisible(username = activeContact?.username) {
+    return Boolean(username && !document.hidden && activeContact?.username === username
+      && document.getElementById('portalChatRoot')?.classList.contains('open'));
+  }
+
+  function markVisibleConversationRead() {
+    const username = activeContact?.username;
+    if (!conversationIsVisible(username)) return;
+    const throughId = (messageCache.get(username)?.messages || []).reduce((highest, message) =>
+      message.fromUser === username ? Math.max(highest, Number(message.id || 0)) : highest, 0);
+    if (!throughId) return;
+    const contact = contacts.find((item) => item.username === username);
+    if (contact) { contact.unread = 0; contact.firstUnreadId = 0; }
+    unreadSnapshot.set(username, 0);
+    renderContacts();
+    if (Number(messageReadThrough.get(username) || 0) >= throughId || messageReadRequests.has(username)) return;
+    const generation = messageCacheGeneration;
+    const request = api('/api/chat/read', {
+      method: 'POST', body: JSON.stringify({ with: username, throughId })
+    }).then(() => {
+      if (generation === messageCacheGeneration) messageReadThrough.set(username, throughId);
+      return true;
+    }).catch(() => false).then((acknowledged) => {
+      if (messageReadRequests.get(username) !== request) return;
+      messageReadRequests.delete(username);
+      // A newer message may have arrived while its predecessor was being acknowledged.
+      if (acknowledged && generation === messageCacheGeneration && conversationIsVisible(username)) {
+        markVisibleConversationRead();
+      }
+    });
+    messageReadRequests.set(username, request);
+  }
+
+  function syncVisibleConversation() {
+    if (!conversationIsVisible()) return;
+    const cached = messageCache.get(activeContact.username);
+    if (cached) appendMessages(cached.messages, false);
+    markVisibleConversationRead();
+  }
+
   async function loadMessages(initial = false) {
     if (!activeContact) return;
     const username = activeContact.username;
-    try {
-      const after = initial ? 0 : lastMessageId;
-      const payload = await api(`/api/chat/messages?with=${encodeURIComponent(username)}&after=${after}`, { method: 'GET' });
-      if (!activeContact || activeContact.username !== username) return;
-      const messages = Array.isArray(payload.messages) ? payload.messages : [];
-      const contact = contacts.find((item) => item.username === username);
-      const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
-      if (initial && !activeUnreadBoundaryId && contact) {
-        activeUnreadBoundaryId = unreadBoundaryFor(contact, messages);
-      }
-      if (initial) {
-        replaceCachedMessages(username, messages, contact?.lastMessageAt || '', { hasOlder: messages.length >= pageSize });
-      } else {
+    if (messageSyncRequests.has(username)) return messageSyncRequests.get(username);
+    const generation = messageCacheGeneration;
+    // WS IDs are not a contiguous history checkpoint. An independent HTTP watermark
+    // recovers a lost event even after a later message (or our own ACK) was rendered.
+    const after = initial ? 0 : Number(messageSyncCursors.get(username) || 0);
+    const request = (async () => {
+      try {
+        const payload = await api('/api/chat/messages?with=' + encodeURIComponent(username) + '&after=' + after + '&peek=1', { method: 'GET' });
+        if (generation !== messageCacheGeneration || activeContact?.username !== username) return;
+        const messages = Array.isArray(payload.messages) ? payload.messages : [];
+        const contact = contacts.find((item) => item.username === username);
+        const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+        if (initial && !activeUnreadBoundaryId && contact) activeUnreadBoundaryId = unreadBoundaryFor(contact, messages);
+        // Merge with the CURRENT memory, never a snapshot captured before the request.
+        // Initial loads and reconnects cannot erase a newer WS message or older history.
         mergeCachedMessages(username, messages, contact?.lastMessageAt || '', {
-          hasOlder: messageCache.get(messageCacheKey(username))?.hasOlder || false
+          hasOlder: Boolean(messageCache.get(username)?.hasOlder) || (after === 0 && messages.length >= pageSize)
         });
+        messageSyncCursors.set(username, messages.reduce((highest, message) =>
+          Math.max(highest, Number(message.id || 0)), Number(messageSyncCursors.get(username) || 0)));
+        syncVisibleConversation();
+        applyReceiptState(payload.receipt);
+        renderContacts();
+      } catch (error) {
+        if (generation === messageCacheGeneration && conversationIsVisible(username)) {
+          showStatus(error.message || 'Não foi possível carregar as mensagens.');
+        }
+      } finally {
+        if (messageSyncRequests.get(username) === request) messageSyncRequests.delete(username);
       }
-      appendMessages(messages, initial);
-      applyReceiptState(payload.receipt);
-      if (contact) {
-        contact.unread = 0;
-        contact.firstUnreadId = 0;
-        unreadSnapshot.set(username, 0);
-      }
-      renderContacts();
-    } catch (error) {
-      showStatus(error.message || 'Não foi possível carregar as mensagens.');
-    }
+    })();
+    messageSyncRequests.set(username, request);
+    return request;
   }
 
   function stopMessagePolling() {
@@ -1561,12 +1615,10 @@
 
   function startMessagePolling() {
     stopMessagePolling();
-    if (realtimeConnected) return;
+    const interval = realtimeConnected ? CHAT_RECONCILE_MS : CHAT_FALLBACK_POLL_MS;
     messageTimer = window.setInterval(() => {
-      if (!realtimeConnected && !document.hidden && activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) {
-        loadMessages(false);
-      }
-    }, CHAT_FALLBACK_POLL_MS);
+      if (conversationIsVisible()) void loadMessages(false);
+    }, interval);
   }
 
   function restartContactsTimer() {
@@ -1602,8 +1654,10 @@
     updateConversationHeader();
     scheduleMessageDayRefresh();
     const renderedFromMemory = renderCachedConversation(contact);
+    if (!renderedFromMemory) appendMessages([], true);
+    syncVisibleConversation();
     void loadMessages(!renderedFromMemory);
-    if (!realtimeConnected) startMessagePolling();
+    startMessagePolling();
     const input = document.getElementById('portalChatInput');
     if (input) input.value = draftCache.get(contact.username) || '';
     queueChatSessionPersist();
@@ -2006,13 +2060,21 @@
         void connectRealtime();
         heartbeat(false);
         loadContacts();
-        if (activeContact && !realtimeConnected) loadMessages(false);
+        syncVisibleConversation();
+        if (conversationIsVisible()) void loadMessages(false);
       }
     });
 
     window.addEventListener('online', () => {
       realtimeStopped = false;
       void connectRealtime();
+      syncVisibleConversation();
+      if (conversationIsVisible()) void loadMessages(false);
+    });
+    window.addEventListener('pageshow', (event) => {
+      if (!event.persisted) return;
+      syncVisibleConversation();
+      if (conversationIsVisible()) void loadMessages(false);
     });
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
@@ -2061,7 +2123,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261007-chat-avatar-timeline-1',
+    version: '20261007-chat-live-recovery-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

@@ -32,7 +32,7 @@ const authenticatedModules = [
 test('chat global aparece em todos os módulos autenticados sem carga manual duplicada', () => {
   for (const path of authenticatedModules) {
     const html = read(path);
-    assert.match(html, /portal-global-chat\.js\?v=20261007-chat-avatar-timeline-1/, path);
+    assert.match(html, /portal-global-chat\.js\?v=20261007-chat-live-recovery-1/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat\.js\?v=/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat-switch-optimizer\.js\?v=/, path);
   }
@@ -88,8 +88,8 @@ test('bootstrap global exige sessão e preserva primeiro acesso', () => {
   assert.match(source, /regulacao\.portal\.session/);
   assert.match(source, /if \(!storedToken\(\)\) return null/);
   assert.match(source, /user\.mustChangePassword/);
-  assert.match(source, /portal-chat\.css\?v=20261007-chat-avatar-timeline-1/);
-  assert.match(source, /portal-chat\.js\?v=20261007-chat-avatar-timeline-1/);
+  assert.match(source, /portal-chat\.css\?v=20261007-chat-live-recovery-1/);
+  assert.match(source, /portal-chat\.js\?v=20261007-chat-live-recovery-1/);
   assert.match(source, /portal-chat-switch-optimizer\.js\?v=20260928-global-1/);
 });
 
@@ -102,8 +102,8 @@ test('componente global mantém autorização atual por cargo e amizade', () => 
 });
 
 test('chat e otimizador têm guarda de versão global', () => {
-  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261007-chat-avatar-timeline-1'/);
-  assert.match(read('js/portal-chat.js'), /version: '20261007-chat-avatar-timeline-1'/);
+  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261007-chat-live-recovery-1'/);
+  assert.match(read('js/portal-chat.js'), /version: '20261007-chat-live-recovery-1'/);
   assert.match(read('js/portal-chat-switch-optimizer.js'), /PortalChatSwitchOptimizer\?\.version === '20260928-global-1'/);
 });
 
