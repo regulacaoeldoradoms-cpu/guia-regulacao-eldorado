@@ -21,7 +21,7 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF_NAME" = 'fix/chat-live-recovery-20261007'
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git rev-parse HEAD^)" = '146fabd41a8e5112017d6a43b83bc681ce48f821'
+          test "$(git rev-parse HEAD:js/portal-chat.js)" = '7575f35616b66048cc5bd98d8b692dcfd465fbfd'
           PORTAL_CHAT_REPO="$PWD" node .github/apply-chat-live-fix.cjs
           node --check js/portal-chat.js
           node --check js/portal-global-chat.js
@@ -29,7 +29,7 @@ jobs:
           node --check worker/tests/browser/chat-live-reception.cjs
           npm --prefix worker run check
           npm --prefix worker test
-          git rm -- .github/apply-chat-live-fix.cjs .github/workflows/prepare-chat-live-repair.yml
+          git rm -f -- .github/apply-chat-live-fix.cjs .github/workflows/prepare-chat-live-repair.yml
           git add --all
           git diff --cached --check
           git diff --cached --stat
