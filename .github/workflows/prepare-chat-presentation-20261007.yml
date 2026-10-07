@@ -24,17 +24,20 @@ jobs:
           node-version: '24'
       - name: Conferir base e aplicar apenas as alterações aprovadas
         run: |
-          test "$(git rev-parse HEAD^)" = 'ceafe4da7af87f68d019759a87fe9aa6c6e51e4c'
+          test "$(git rev-parse HEAD^)" = '909b44cc0cbefae5c7630704844673322a31877c'
           node .github/prepare-chat-presentation-20261007.cjs
           node --check js/portal-chat.js
           node --check js/portal-global-chat.js
           node --check portal-sw.js
           npm --prefix worker run check
           npm --prefix worker test
-      - name: Registrar na branch de trabalho e remover a preparação temporária
+      - name: Registrar somente conteúdo na branch de trabalho
         run: |
-          node -e 'const fs=require("node:fs"),cp=require("node:child_process");const files=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/presentation-changed.json"));const r=cp.spawnSync("git",["add","--",...files],{stdio:"inherit"});process.exit(r.status ?? 1)'
-          git rm -- .github/prepare-chat-presentation-20261007.cjs .github/workflows/prepare-chat-presentation-20261007.yml
+          # GITHUB_TOKEN has contents:write, not workflows permission.
+          # The authorized connector will write the reviewed workflow separately.
+          git restore --source=HEAD -- .github/workflows/validate-portal-chat.yml
+          node -e 'const fs=require("node:fs"),cp=require("node:child_process");const files=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/presentation-changed.json")).filter(p=>!p.startsWith(".github/workflows/"));const r=cp.spawnSync("git",["add","--",...files],{stdio:"inherit"});process.exit(r.status ?? 1)'
+          test -z "$(git diff --cached --name-only -- .github/workflows/)"
           git diff --cached --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
