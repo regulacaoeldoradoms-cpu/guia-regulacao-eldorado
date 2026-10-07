@@ -1,0 +1,42 @@
+name: Preparar ajuste isolado do chat
+on:
+  push:
+    branches: ['fix/chat-avatar-timeline-20261007']
+    paths:
+      - '.github/prepare-chat-presentation-20261007.cjs'
+      - '.github/workflows/prepare-chat-presentation-20261007.yml'
+permissions:
+  contents: write
+concurrency:
+  group: prepare-chat-avatar-timeline-20261007
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.repository == 'regulacaoeldoradoms-cpu/guia-regulacao-eldorado' && github.ref == 'refs/heads/fix/chat-avatar-timeline-20261007'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Conferir base e aplicar apenas as alterações aprovadas
+        run: |
+          test "$(git rev-parse HEAD^)" = 'ceafe4da7af87f68d019759a87fe9aa6c6e51e4c'
+          node .github/prepare-chat-presentation-20261007.cjs
+          node --check js/portal-chat.js
+          node --check js/portal-global-chat.js
+          node --check portal-sw.js
+          npm --prefix worker run check
+          npm --prefix worker test
+      - name: Registrar na branch de trabalho e remover a preparação temporária
+        run: |
+          node -e 'const fs=require("node:fs"),cp=require("node:child_process");const files=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/presentation-changed.json"));const r=cp.spawnSync("git",["add","--",...files],{stdio:"inherit"});process.exit(r.status ?? 1)'
+          git rm -- .github/prepare-chat-presentation-20261007.cjs .github/workflows/prepare-chat-presentation-20261007.yml
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(chat): fotos nos dois temas e histórico por dia'
+          git push origin HEAD:refs/heads/fix/chat-avatar-timeline-20261007
