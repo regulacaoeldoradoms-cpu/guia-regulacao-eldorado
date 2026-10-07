@@ -30,14 +30,15 @@ jobs:
           node --test worker/tests/global-chat.test.mjs
           node --test worker/tests/chat-realtime.test.mjs
           node --test worker/tests/chat-attention*.test.mjs
+          node --test worker/tests/chat-presentation.test.mjs
       - name: Conferir integração profissional
         run: |
           test -f css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-body' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-contact:hover' css/portal-chat.css
           grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-message.mine' css/portal-chat.css
-          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20261002-attention-fix-1'" js/portal-global-chat.js
-          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20261002-attention-fix-1'" js/portal-global-chat.js
+          grep -q "CHAT_CSS = '/css/portal-chat.css?v=20261007-chat-avatar-timeline-1'" js/portal-global-chat.js
+          grep -q "CHAT_SCRIPT = '/js/portal-chat.js?v=20261007-chat-avatar-timeline-1'" js/portal-global-chat.js
           grep -q "CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1'" js/portal-global-chat.js
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
@@ -113,13 +114,15 @@ jobs:
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "version: '20261002-attention-fix-1'" js/portal-chat.js
+          grep -q "version: '20261007-chat-avatar-timeline-1'" js/portal-chat.js
           grep -q "PortalChatSwitchOptimizer" js/portal-chat-switch-optimizer.js
           grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q "id=\"portalChatProfileLink\"" js/portal-chat.js
           grep -Fq 'profile.href = `/perfil/?u=' js/portal-chat.js
-          grep -Fq "background-image:url('" js/portal-chat.js
-          ! grep -Fq 'background-image:url("${photo' js/portal-chat.js
+          grep -q 'portal-chat-avatar-image' js/portal-chat.js
+          grep -q 'portalChatHeaderAvatar' js/portal-chat.js
+          grep -q 'syncMessageDateDividers' js/portal-chat.js
+          grep -q 'portal-chat-date-divider' css/portal-chat.css
           test -f css/portal-chat-profile-link.css
           grep -q "portal-chat-present" js/medical-portal-nav.js
           ! grep -q "ensureChatAssets" js/medical-portal-nav.js
@@ -133,7 +136,7 @@ jobs:
             documentos/index.html agenda/index.html agenda/sync/index.html cidadao/index.html \
             conselho/painel/index.html admin/usuarios/index.html admin/monitoramento/index.html \
             admin/configuracao/index.html admin/social/index.html; do
-            grep -q "portal-global-chat.js?v=20261002-attention-fix-1" "$file"
+            grep -q "portal-global-chat.js?v=20261007-chat-avatar-timeline-1" "$file"
             ! grep -q "portal-chat.js?v=" "$file"
             ! grep -q "portal-chat-switch-optimizer.js?v=" "$file"
           done
@@ -147,3 +150,25 @@ jobs:
           grep -q "relationship.state = 'friends'" worker/portal-chat-v2.js
           grep -q "professionalContactAllowed" worker/portal-chat-v2.js
           grep -q "chatContactAllowed" worker/portal-chat-v2.js
+
+  browser-chat-presentation:
+    needs: validate-chat
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Preparar navegador isolado
+        run: |
+          npm install --prefix "$RUNNER_TEMP/chat-browser" --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          node "$RUNNER_TEMP/chat-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Fotos, temas, datas e paginação com dados fictícios
+        run: |
+          NODE_PATH="$RUNNER_TEMP/chat-browser/node_modules" PORTAL_CHAT_EVIDENCE_DIR="$RUNNER_TEMP/chat-presentation-evidence" node worker/tests/browser/chat-presentation.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chat-presentation-synthetic
+          path: ${{ runner.temp }}/chat-presentation-evidence
+          if-no-files-found: ignore
