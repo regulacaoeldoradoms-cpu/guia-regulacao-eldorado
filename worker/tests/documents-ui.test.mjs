@@ -177,7 +177,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20261003-documents-navigation-1'/);
+  assert.match(source, /CACHE_VERSION = '20261007-chat-avatar-timeline-1'/);
 });
 
 test('Fase 7E mantém raiz aquecida sem preload de pastas especiais', () => {

@@ -200,3 +200,20 @@ html[data-portal-theme="dark"] .portal-chat-emoji:focus-visible {
   }
   .portal-chat-tool-button { transition: none !important; }
 }
+
+/* Photos are content, not a CSS background: theme rules cannot erase them. */
+.portal-chat-avatar{position:relative;flex-shrink:0}
+.portal-chat-avatar-image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.portal-chat-header .portal-chat-header-avatar{width:40px;height:40px;min-width:40px;border-color:rgba(255,255,255,.4)}
+.portal-chat-header .portal-chat-header-avatar[hidden]{display:none!important}
+.portal-chat-header .portal-chat-icon-button{flex-shrink:0}
+body.mobile-home-mode .portal-chat-header .portal-chat-header-avatar{width:42px!important;height:42px!important;min-width:42px}
+.portal-chat-date-divider{width:100%;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0;color:#45677e;font-size:.73rem;font-weight:800;line-height:1.4}
+.portal-chat-date-divider::before,.portal-chat-date-divider::after{content:"";height:1px;flex:1;background:#c9dbe7}
+.portal-chat-date-divider>span{padding:4px 10px;border:1px solid #cfdee8;border-radius:999px;background:#e6eff5;white-space:nowrap}
+html[data-portal-theme="dark"] .portal-chat-date-divider{color:#c3d6e4}
+html[data-portal-theme="dark"] .portal-chat-date-divider::before,html[data-portal-theme="dark"] .portal-chat-date-divider::after{background:#2b4759}
+html[data-portal-theme="dark"] .portal-chat-date-divider>span{background:#142c3c;border-color:#355466}
+body.mobile-home-mode .portal-chat-date-divider{font-size:13px}
+.portal-chat-panel{grid-template-columns:minmax(0,1fr)}
+.portal-chat-header,.portal-chat-body,.portal-chat-view{min-width:0}
