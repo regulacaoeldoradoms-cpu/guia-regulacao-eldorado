@@ -333,8 +333,8 @@ Eventos em tempo real:
 
 Se WebSocket não puder conectar, o chat continua funcional por fallback HTTP: a
 conversa ativa sincroniza a cada 4,5 segundos e os contatos mantêm o ciclo de
-atualização anterior. Quando o canal em tempo real retorna, o polling de mensagens é
-interrompido automaticamente.
+atualização anterior. Quando o canal em tempo real retorna, o polling rápido dá lugar
+à reconciliação leve da conversa visível, descrita na correção de 07/10/2026 abaixo.
 
 A conversa ativa também exibe um separador **Novas mensagens** antes da primeira
 mensagem ainda não lida. O backend fornece o ID exato da primeira pendência de leitura
@@ -459,3 +459,33 @@ Alteração somente de apresentação: não modifica corpo, sent_at, ordem armaz
 recibos, transporte, autorização ou banco. Testes de datas/avatares integram o gate
 de chat; a conferência visual usa somente perfis e mensagens fictícios em navegador
 isolado, com temas claro/escuro e tamanhos desktop/mobile.
+
+## Recebimento sem reabrir a conversa — 07/10/2026
+
+O cliente deve apresentar mensagens novas na conversa já aberta, inclusive ao voltar
+à aba. O canal WebSocket continua primário e imediato. Foram reproduzidas duas falhas:
+mensagens recebidas com a aba oculta ficavam só na memória e uma resposta HTTP antiga
+podia substituir uma mensagem WebSocket mais nova. A foto e a linha do tempo não são
+a origem desses caminhos; ambos já existiam antes da alteração de apresentação.
+
+Regras da correção:
+
+- voltar à aba, recuperar a internet ou restaurar uma página pelo histórico reconcilia
+  os balões em memória imediatamente e busca o delta autorizado, sem fechar o painel;
+- respostas HTTP/preload/histórico são combinadas com a memória atual, não substituem
+  mensagens novas; os IDs preservam ordem e eliminam eventos duplicados;
+- um cursor por conversa avança somente por páginas HTTP confirmadas: um evento
+  WebSocket posterior ou ACK próprio não pode fazer a consulta pular um evento perdido;
+- com WebSocket conectado há uma consulta leve a cada 30 segundos somente para a
+  conversa aberta e a aba visível; desconectado permanece o fallback de 4,5 segundos;
+- leituras simultâneas da mesma conversa são agrupadas. Não há novo polling global do
+  diretório, nova persistência de conteúdo ou alteração do backend/D1;
+- sincronização usa peek=1 e só confirma leitura por throughId depois de apresentar os
+  balões na conversa visível; aba oculta não gera visualização. Recibos são agrupados
+  e uma mensagem nova durante um ACK pendente recebe confirmação posterior;
+- encerrar a sessão limpa cursores/estado e respostas antigas não repovoam a memória.
+
+Testes de recebimento usam duas sessões fictícias, cliente real e HTTP/WebSocket
+interceptados. Cobrem os dois temas e tamanhos desktop/mobile, recebimento em aba
+oculta, resposta inicial atrasada, perda de evento seguida de outro ID, duplicação e
+fallback. Isso não equivale a uma conversa real autenticada em produção.
