@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261002-attention-fix-1') return;
+  if (window.PortalChat?.version === '20261007-chat-avatar-timeline-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -22,6 +22,7 @@
   let chatSessionPersistTimer = null;
   let restoredChatSession = null;
   let historyLoadPending = null;
+  let messageDayTimer = null;
   let pendingSequence = 0;
   let activeUnreadBoundaryId = 0;
   let realtimeSocket = null;
@@ -902,7 +903,9 @@
 
   function parseServerDate(value) {
     if (!value) return null;
-    const parsed = new Date(`${String(value).replace(' ', 'T')}Z`);
+    const text = String(value).trim().replace(' ', 'T');
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/i.test(text)) return null;
+    const parsed = new Date(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(text) ? text : `${text}Z`);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 
@@ -1068,9 +1071,79 @@
     return ({ medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', admin: 'Desenvolvedor', cidadao: 'Cidadão' })[role] || role || '';
   }
 
-  function avatarStyle(contact) {
+  function avatarMarkup(contact) {
+    const fallback = initials(contact?.name || contact?.username).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     const photo = String(contact?.avatarDataUrl || '');
-    return photo ? `background-image:url('${photo.replace(/'/g, '%27')}')` : '';
+    // Match the profile API's raster-only data URL contract; never load arbitrary URLs.
+    const valid = photo.length <= 220000 && /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo);
+    return `<span class="portal-chat-avatar-initials">${fallback}</span>${valid ? `<img class="portal-chat-avatar-image" src="${photo}" alt="" decoding="async">` : ''}`;
+  }
+
+  function updateHeaderAvatar() {
+    const avatar = document.getElementById('portalChatHeaderAvatar');
+    if (!avatar) return;
+    avatar.hidden = !activeContact;
+    const markup = activeContact ? avatarMarkup(activeContact) : '';
+    if (avatar._portalChatMarkup !== markup) {
+      avatar._portalChatMarkup = markup;
+      avatar.innerHTML = markup;
+    }
+  }
+
+  function messageDayKey(date) {
+    if (!date || Number.isNaN(date.getTime())) return '';
+    return [String(date.getFullYear()).padStart(4, '0'), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  }
+
+  function messageDayLabel(date, now = new Date()) {
+    const key = messageDayKey(date);
+    if (!key) return 'Data não disponível';
+    if (key === messageDayKey(now)) return 'Hoje';
+    const yesterday = new Date(now.getTime());
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (key === messageDayKey(yesterday)) return 'Ontem';
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  function syncMessageDateDividers() {
+    const box = document.getElementById('portalChatMessages');
+    if (!box?.querySelectorAll) return;
+    const dividers = Array.from(box.querySelectorAll('[data-chat-date-divider]'));
+    const now = new Date();
+    let previousDay = '', used = 0;
+    // Reconcile separators only. Message nodes, receipts and the unread boundary stay intact.
+    for (const message of box.querySelectorAll('.portal-chat-message')) {
+      const date = parseServerDate(message.dataset.chatSentAt);
+      const day = messageDayKey(date) || 'unknown';
+      if (day === previousDay) continue;
+      previousDay = day;
+      const divider = dividers[used++] || document.createElement('div');
+      divider.className = 'portal-chat-date-divider';
+      divider.dataset.chatDateDivider = day;
+      divider.setAttribute('role', 'separator');
+      const label = messageDayLabel(date, now);
+      divider.setAttribute('aria-label', label);
+      divider.title = date ? date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : label;
+      let text = divider.querySelector('span');
+      if (!text) { text = document.createElement('span'); divider.appendChild(text); }
+      if (text.textContent !== label) text.textContent = label;
+      const previous = message.previousElementSibling;
+      const reference = previous?.hasAttribute('data-chat-unread-divider') ? previous : message;
+      if (divider.nextElementSibling !== reference) box.insertBefore(divider, reference);
+    }
+    for (const stale of dividers.slice(used)) stale.remove();
+  }
+
+  function scheduleMessageDayRefresh() {
+    window.clearTimeout(messageDayTimer);
+    messageDayTimer = null;
+    if (!activeContact || document.hidden) return;
+    const now = new Date(), nextDay = new Date(now.getTime());
+    nextDay.setHours(24, 0, 0, 50);
+    messageDayTimer = window.setTimeout(() => {
+      syncMessageDateDividers();
+      scheduleMessageDayRefresh();
+    }, Math.max(50, nextDay.getTime() - now.getTime()));
   }
 
   function showStatus(message) {
@@ -1235,7 +1308,7 @@
     const unread = Number(contact.unread || 0);
     const presenceText = contact.online ? 'online' : formatLastSeen(contact.lastSeen);
     return `<button class="portal-chat-contact" type="button" data-chat-user="${encodeURIComponent(contact.username)}">
-      <span class="portal-chat-avatar" style="${avatarStyle(contact)}">${contact.avatarDataUrl ? '' : initials(contact.name || contact.username)}</span>
+      <span class="portal-chat-avatar" aria-hidden="true">${avatarMarkup(contact)}</span>
       <span class="portal-chat-contact-main">
         <strong>${escapeText(contact.name || contact.username).replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</strong>
         <small>${escapeText(contact.jobTitle || roleLabel(contact.role)).replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</small>
@@ -1293,6 +1366,7 @@
   }
 
   function updateConversationHeader() {
+    updateHeaderAvatar();
     const name = document.getElementById('portalChatHeaderName');
     const status = document.getElementById('portalChatHeaderStatus');
     const profile = document.getElementById('portalChatProfileLink');
@@ -1309,6 +1383,7 @@
     const mine = message.fromUser === currentUser?.username;
     const element = document.createElement('div');
     element.className = `portal-chat-message ${mine ? 'mine' : 'theirs'}`;
+    element.dataset.chatSentAt = String(message.sentAt || '');
     const text = document.createElement('span');
     text.textContent = message.body || '';
     const time = document.createElement('span');
@@ -1386,6 +1461,7 @@
         box.appendChild(element);
       }
     }
+    syncMessageDateDividers();
     if (replace || nearBottom) box.scrollTop = box.scrollHeight;
   }
 
@@ -1393,6 +1469,7 @@
     const box = document.getElementById('portalChatMessages');
     if (!box || !Array.isArray(messages) || !messages.length) return;
     const previousHeight = box.scrollHeight;
+    const previousTop = box.scrollTop;
     const fragment = document.createDocumentFragment();
     messages.forEach((message) => {
       const id = Number(message?.id || 0);
@@ -1406,7 +1483,8 @@
       fragment.appendChild(element);
     });
     box.insertBefore(fragment, box.firstChild);
-    box.scrollTop += Math.max(0, box.scrollHeight - previousHeight);
+    syncMessageDateDividers();
+    box.scrollTop = previousTop + Math.max(0, box.scrollHeight - previousHeight);
   }
 
   async function loadOlderMessages() {
@@ -1522,6 +1600,7 @@
     document.getElementById('portalChatConversationView')?.classList.add('active');
     document.getElementById('portalChatBack').hidden = false;
     updateConversationHeader();
+    scheduleMessageDayRefresh();
     const renderedFromMemory = renderCachedConversation(contact);
     void loadMessages(!renderedFromMemory);
     if (!realtimeConnected) startMessagePolling();
@@ -1563,6 +1642,8 @@
     clearRemoteTyping();
     toggleEmojiPicker(false);
     activeContact = null;
+    updateHeaderAvatar();
+    scheduleMessageDayRefresh();
     activeUnreadBoundaryId = 0;
     lastMessageId = 0;
     stopMessagePolling();
@@ -1595,7 +1676,11 @@
       const replacement = messageElement(confirmed);
       replacement.dataset.messageId = String(confirmedId || '');
       if (confirmed.clientId) replacement.dataset.clientId = String(confirmed.clientId);
+      const box = document.getElementById('portalChatMessages');
+      const nearBottom = box && box.scrollHeight - box.scrollTop - box.clientHeight < 80;
       existing.replaceWith(replacement);
+      syncMessageDateDividers();
+      if (nearBottom) box.scrollTop = box.scrollHeight;
       lastMessageId = Math.max(lastMessageId, confirmedId);
     } else if (activeContact?.username === username) {
       appendMessages([confirmed], false);
@@ -1764,6 +1849,7 @@
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
+          <span class="portal-chat-avatar portal-chat-header-avatar" id="portalChatHeaderAvatar" aria-hidden="true" hidden></span>
           <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><span class="portal-chat-typing" id="portalChatTyping" aria-live="polite" hidden>digitando…</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
           <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">${ICONS.close}</button>
         </header>
@@ -1797,6 +1883,9 @@
         <div class="portal-chat-status" id="portalChatStatus" role="status" aria-live="polite"></div>
       </section>`;
     document.body.appendChild(root);
+    root.addEventListener('error', (event) => {
+      if (event.target?.classList?.contains('portal-chat-avatar-image')) event.target.remove();
+    }, true);
 
     document.getElementById('portalChatLauncher')?.addEventListener('click', () => {
       root.classList.add('open');
@@ -1894,9 +1983,8 @@
     if (!restoredContactsFresh) {
       await loadContacts(true);
     } else {
-      window.setTimeout(() => {
-        if (!document.hidden) void loadContacts(true);
-      }, 10000);
+      // Restore immediately, then refresh the authorized contacts/photos without the old 10s delay.
+      void loadContacts(true);
     }
     void heartbeat(true);
 
@@ -1908,7 +1996,9 @@
     restartContactsTimer();
 
     document.addEventListener('visibilitychange', () => {
+      scheduleMessageDayRefresh();
       if (!document.hidden) {
+        syncMessageDateDividers();
         const attention = deferredAttention;
         deferredAttention = null;
         if (attention) handleIncomingAttention(attention.username, attention.receivedAt);
@@ -1948,6 +2038,10 @@
     if (!persistChatSessionSnapshotNow()) void persistChatSessionSnapshot();
   });
   window.addEventListener('portal:session-cleared', () => {
+    window.clearTimeout(messageDayTimer);
+    messageDayTimer = null;
+    const avatar = document.getElementById('portalChatHeaderAvatar');
+    if (avatar) { avatar.hidden = true; avatar.innerHTML = ''; avatar._portalChatMarkup = ''; }
     realtimeStopped = true;
     deferredAttention = null;
     clearPendingAttention();
@@ -1967,7 +2061,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261002-attention-fix-1',
+    version: '20261007-chat-avatar-timeline-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

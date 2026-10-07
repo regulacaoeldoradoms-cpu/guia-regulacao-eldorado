@@ -199,8 +199,8 @@ jobs:
         run: |
           grep -q 'PROFESSIONAL_ROLES' worker/portal-chat-v2.js
           ! grep -q "'cidadao'" worker/portal-chat-v2.js
-          grep -q 'portal-global-chat.js?v=20261002-attention-fix-1' cidadao/index.html
-          grep -q 'portal-global-chat.js?v=20261002-attention-fix-1' conselho/painel/index.html
+          grep -q 'portal-global-chat.js?v=20261007-chat-avatar-timeline-1' cidadao/index.html
+          grep -q 'portal-global-chat.js?v=20261007-chat-avatar-timeline-1' conselho/painel/index.html
           ! grep -q 'portal-global-chat.js' cadastro/index.html
           ! grep -q 'portal-global-chat.js' conselho/index.html
           ! grep -q 'portal-chat.js?v=' cidadao/index.html

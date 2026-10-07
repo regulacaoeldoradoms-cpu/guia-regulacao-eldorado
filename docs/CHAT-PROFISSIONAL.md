@@ -428,3 +428,34 @@ Essa recusa não impede a conversa profissional.
 - `js/portal-chat.js` — gate cliente por cargo e link `Ver perfil`;
 - `css/portal-chat-profile-link.css` — apresentação responsiva do link;
 - `.github/workflows/validate-portal-chat.yml` — validações automáticas da integração, do chat profissional e do gate social cidadão↔cidadão.
+
+## Fotos e divisão cronológica da conversa — 07/10/2026
+
+Decisão aprovada: o cabeçalho da conversa aberta mostra a foto do interlocutor ao
+lado do nome. A lista e o cabeçalho usam a foto já autorizada por /api/chat/users,
+com iniciais como alternativa quando não existe foto ou o arquivo não pode ser
+exibido. A foto é um elemento img, separado do fundo: o degradê importante do tema
+escuro não pode apagá-la. Só são aceitos os mesmos data URLs raster JPEG, PNG e WebP
+limitados a 220000 caracteres da API de perfil. Não há novas URLs externas,
+permissões, upload ou requisições por avatar. Ao voltar à lista o avatar do cabeçalho
+é ocultado e ao encerrar a sessão é limpo. Snapshots privados continuam sem fotos;
+a revalidação de contatos ocorre em segundo plano imediatamente após restauração,
+sem o antigo atraso fixo de dez segundos.
+
+O histórico exibe uma divisão central no início de cada dia com mensagens:
+**Hoje**, **Ontem**, ou a data completa **DD/MM/AAAA**. Usa o mesmo fuso local do
+navegador já empregado no horário das mensagens; timestamps SQL sem fuso são UTC,
+e timestamps ISO com Z/offset mantêm seu fuso explícito. Datas inválidas não viram
+Hoje: recebem Data não disponível. As etiquetas relativas se atualizam na virada
+do dia e ao voltar à aba, sem buscar mensagens só para recalcular o texto.
+
+O marcador **Novas mensagens** permanece independente. Quando os dois coincidem,
+a ordem é data, Novas mensagens, primeiro balão não lido. Os divisores são
+reconciliados sem recriar os balões ao receber mensagens, confirmar envio otimista,
+reabrir a conversa ou carregar páginas antigas. A junção de duas páginas do mesmo
+dia não duplica o divisor e preserva a posição de leitura.
+
+Alteração somente de apresentação: não modifica corpo, sent_at, ordem armazenada,
+recibos, transporte, autorização ou banco. Testes de datas/avatares integram o gate
+de chat; a conferência visual usa somente perfis e mensagens fictícios em navegador
+isolado, com temas claro/escuro e tamanhos desktop/mobile.
