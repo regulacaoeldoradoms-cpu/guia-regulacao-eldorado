@@ -147,7 +147,7 @@ async function setup(page, mode = '') {
     if (name === '/estudos/') return route.fulfill({ contentType: 'text/html', body: (await readFile(path.join(root, 'estudos/index.html'), 'utf8')).replace(/<link rel="preconnect"[^>]*>/g, '') });
     if (name === '/js/auth-client.js') return route.fulfill({ contentType: 'text/javascript', body: auth });
     if (['/js/studies.js', '/js/studies-reader.js'].includes(name)) return route.fulfill({ contentType: 'text/javascript', body: await readFile(path.join(root, name.slice(1)), 'utf8') });
-    if (name.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: '' });
+    if (name.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: ["/js/studies-tables.js","/js/studies-feedback-focus.js","/js/studies-question-accessibility.js","/js/studies-reread-return.js","/js/studies-pending-navigation.js"].includes(name) ? await readFile(path.join(root, name.slice(1)), 'utf8') : '' });
     if (name.startsWith('/css/') && name.endsWith('.css')) return route.fulfill({ contentType: 'text/css', body: await readFile(path.join(root, name.slice(1)), 'utf8') });
     if (name.startsWith('/assets/')) return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>' });
     unexpected.push(name); return route.abort();
@@ -246,7 +246,7 @@ test('revisão envia seu ID na abertura e sua sessão na conclusão', async ({ p
 
 test('falha de abertura não permite pontuar, mas não bloqueia o ensino', async ({ page }) => {
   const {open,answer,clean}=await setup(page,'failStart');await open();
-  await expect(page.locator('#focusStatus')).toContainText('A rodada não foi registrada');await answer(0);
+  await expect(page.locator('#focusStatus')).toContainText('Não foi possível confirmar o registro desta rodada');await answer(0);
   expect(await page.evaluate(()=>window.__calls.filter(c=>c.route.endsWith('/attempts')).length)).toBe(0);
   await page.locator('#studyReadButton').click();await expect(page.locator('#lessonSections')).toContainText('Material sintético');clean();
 });

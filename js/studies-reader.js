@@ -62,6 +62,42 @@
           figure.append(step);
         }
         parent.append(figure);
+      } else if (block.type === 'boxplot') {
+        // Explicit minimum–maximum convention. No fences or inferred outliers.
+        const groups = block.groups;
+        if (!Number.isFinite(block.min) || !Number.isFinite(block.max) || block.min >= block.max
+          || !Array.isArray(groups) || !groups.length || groups.length > 10
+          || groups.some(group => {
+            const values = [group.min, group.q1, group.median, group.q3, group.max];
+            return values.some((value, index) => !Number.isFinite(value)
+              || value < block.min || value > block.max || (index > 0 && value < values[index - 1]));
+          })) return false;
+        const figure = make('figure', undefined, 'study-chart');
+        figure.append(make('figcaption', block.title), make('p', 'Bigodes no mínimo e máximo; escala em ' + block.unit + '. Valores também descritos abaixo.', 'study-reader-caption'));
+        const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const height = 75 + groups.length * 60;
+        svg.setAttribute('viewBox', '0 0 360 ' + height); svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', String(block.title));
+        const element = (tag, attrs, text) => {
+          const node = doc.createElementNS('http://www.w3.org/2000/svg', tag);
+          for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+          if (text !== undefined) node.textContent = String(text);
+          svg.append(node); return node;
+        };
+        const x = value => 40 + (value - block.min) / (block.max - block.min) * 285;
+        groups.forEach((group, index) => {
+          const y = 35 + index * 60;
+          element('text', { x: 8, y: y + 6 }, group.label);
+          element('line', { x1: x(group.min), x2: x(group.max), y1: y, y2: y, class: 'study-chart-line' });
+          element('rect', { x: x(group.q1), y: y - 13, width: x(group.q3) - x(group.q1), height: 26, fill: 'var(--reader-surface, #ffffff)', stroke: 'currentColor', 'stroke-width': 2 });
+          for (const value of [group.min, group.median, group.max]) element('line', { x1: x(value), x2: x(value), y1: y - 15, y2: y + 15, stroke: 'currentColor', 'stroke-width': 2 });
+          figure.append(make('p', group.label + ': mínimo ' + group.min + ', Q1 ' + group.q1 + ', mediana ' + group.median + ', Q3 ' + group.q3 + ', máximo ' + group.max + ' ' + block.unit + '.', 'study-reader-caption'));
+        });
+        for (let i = 0; i <= 4; i++) {
+          const value = block.min + (block.max - block.min) * i / 4;
+          element('text', { x: x(value), y: height - 18, 'text-anchor': 'middle' }, value.toLocaleString('pt-BR'));
+        }
+        figure.insertBefore(svg, figure.children[2] || null); parent.append(figure);
       } else if (block.type === 'line-chart') {
         const figure = make('figure', undefined, 'study-chart');
         figure.append(make('figcaption', block.title), make('p', `Horizontal: ${block.xLabel}. Vertical: ${block.yLabel}.`, 'study-reader-caption'));
@@ -357,7 +393,9 @@
     });
     el.studyFontSmaller.addEventListener('click', () => fontSize(-1));
     el.studyFontLarger.addEventListener('click', () => fontSize(1));
-    return Object.freeze({ mount, openSection, showReference });
+    return Object.freeze({ mount, openSection, showReference,
+      showPractice() { closeReference(); setView('practice'); }
+    });
   }
 
   window.StudyReader = Object.freeze({ create, partIndex, practiceProgress, renderContent });
