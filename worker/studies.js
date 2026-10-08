@@ -16,7 +16,7 @@ import {
   publicationSnapshot
 } from './studies-content/manifest.js';
 import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
-import { questionFeedbackById } from './studies-content/question-feedback-v1.js';
+import { projectStudyFeedback, confirmedStudyFeedback } from './study-feedback.js';
 import {
   StudyAssessmentError,
   ensureAssessmentSchema,
@@ -743,11 +743,9 @@ async function resumableStudySession(env, username) {
     if (!review || review.status !== 'pending' || Number(review.due) !== 1) return null;
   }
 
-  const answers = await env.AUTH_DB.prepare(`SELECT x.question_id
-    FROM study_round_answers x
-    JOIN study_attempts a ON a.attempt_id=x.attempt_id
-    WHERE x.session_id=? AND a.username=? AND a.topic_id=?
-    ORDER BY x.question_id`).bind(row.session_id, username, mission.topicId).all();
+  let answers;
+  try { answers = await confirmedStudyFeedback(env.AUTH_DB, username, mission, row.session_id); }
+  catch (error) { if (error instanceof StudyRoundError) return null; throw error; }
 
   return {
     sessionId: row.session_id,
@@ -756,7 +754,10 @@ async function resumableStudySession(env, username) {
     reviewId: row.review_id || null,
     startedAt: row.started_at,
     durationSeconds: Math.max(0, Number(row.duration_seconds || 0)),
-    answeredQuestionIds: (answers.results || []).map((item) => String(item.question_id || '')).filter(Boolean)
+    contentVersion: mission.contentVersion,
+    answerFeedbackProtocol: 1,
+    answeredQuestionIds: answers.map(item => item.questionId),
+    answerFeedback: answers
   };
 }
 
@@ -841,18 +842,12 @@ async function handleAttempt(request, env, user, origin) {
   const mastery = total ? Math.round((hits / total) * 1000) / 10 : 0;
   await upsertPracticeProgress(env, user.username, found.mission, mastery);
 
-  const pedagogicalFeedback = questionFeedbackById(found.question.id, found.question);
-  const reviewRefs = Array.isArray(found.mission.teaching?.questionCoverage?.[found.question.id])
-    ? found.mission.teaching.questionCoverage[found.question.id]
-    : [];
+  const feedback = projectStudyFeedback(found.mission, found.question, Number(body.selectedOption), correct);
 
   return json({
     correct,
     recorded: result.recorded,
-    correctOption: found.question.answer,
-    explanation: found.question.explanation,
-    selectedFeedback: correct ? '' : pedagogicalFeedback?.optionReasons?.[Number(body.selectedOption)] || '',
-    reviewRefs: reviewRefs.map((ref) => ({ missionId: ref.missionId, sectionId: ref.sectionId })),
+    ...feedback,
     masteryScore: mastery
   }, 200, origin);
 }

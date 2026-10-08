@@ -1,0 +1,12 @@
+/* Study tables and confirmed feedback focus, after shared reader CSS. */
+.study-page .study-table-scroll { max-width: 100%; min-width: 0; overscroll-behavior-x: contain; }
+.study-page .study-table-scroll:focus-visible { outline: 3px solid var(--reader-accent); outline-offset: -3px; }
+.study-page .study-content-table { width: auto; min-width: 100%; table-layout: auto; }
+.study-page .study-content-table th,
+.study-page .study-content-table td { min-width: 8ch; max-width: 32ch; overflow-wrap: normal; word-break: normal; }
+.study-page .study-table-hint { margin: 12px 0 4px; font-size: var(--study-reading-size, 1.125rem); line-height: 1.6; color: var(--reader-muted); }
+
+.study-page .study-feedback[role="region"]:focus { outline: 3px solid var(--reader-accent); outline-offset: 3px; }
+
+/* Study auth redirects must not start a cross-document transition. */
+@view-transition { navigation: none; }

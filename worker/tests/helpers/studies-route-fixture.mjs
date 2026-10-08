@@ -53,6 +53,12 @@ export async function fixture(t, options = {}) {
   });await assessments.evaluate();
   const questionFeedback=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies-content/question-feedback-v1.js',import.meta.url),'utf8'),{context});
   await questionFeedback.link(()=>{throw new Error('Import não esperado no feedback de questões');});await questionFeedback.evaluate();
+  const confirmedFeedback=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-feedback.js',import.meta.url),'utf8'),{context});
+  await confirmedFeedback.link(specifier=>{
+    if(specifier==='./study-rounds.js')return rounds;
+    if(specifier==='./studies-content/question-feedback-v1.js')return questionFeedback;
+    throw new Error('Import não previsto no feedback confirmado: '+specifier);
+  });await confirmedFeedback.evaluate();
   const route=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies.js',import.meta.url),'utf8'),{context});
   await route.link((specifier)=>{
     if(specifier==='./auth-management-flex.js')return auth;
@@ -60,6 +66,7 @@ export async function fixture(t, options = {}) {
     if(specifier==='./studies-content/curriculum-v1.js')return curriculum;
     if(specifier==='./studies-content/question-feedback-v1.js')return questionFeedback;
     if(specifier==='./study-rounds.js')return rounds;
+    if(specifier==='./study-feedback.js')return confirmedFeedback;
     if(specifier==='./study-assessments.js')return assessments;
     throw new Error(`Import não previsto: ${specifier}`);
   });

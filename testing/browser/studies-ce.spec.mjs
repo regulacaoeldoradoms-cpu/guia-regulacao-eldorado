@@ -55,7 +55,7 @@ async function setup(page, { theme = 'light', resume = false, username = 'wellyt
     if (file === '/ferramentas/') return route.fulfill({ contentType: 'text/html', body: '<p>Ferramentas sintéticas</p>' });
     if (file === '/js/auth-client.js') return route.fulfill({ contentType: 'text/javascript', body: auth });
     if (['/js/studies.js', '/js/studies-reader.js'].includes(file)) return route.fulfill({ contentType: 'text/javascript', body: await readFile(path.join(root, file.slice(1)), 'utf8') });
-    if (file.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: '' });
+    if (file.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: ["/js/studies-tables.js","/js/studies-feedback-focus.js","/js/studies-question-accessibility.js","/js/studies-reread-return.js","/js/studies-pending-navigation.js"].includes(file) ? await readFile(path.join(root, file.slice(1)), 'utf8') : '' });
     if (file.startsWith('/css/') && file.endsWith('.css')) return route.fulfill({ contentType: 'text/css', body: await readFile(path.join(root, file.slice(1)), 'utf8') });
     if (file.startsWith('/assets/')) return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"/>' });
     unexpected.push(file); return route.abort();
