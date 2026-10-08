@@ -3,7 +3,7 @@
 ## Estado em 08/10/2026
 
 PR #611, branch `feat/chat-groups-reviewed-20261008`.
-Base main conferida: `8e1a208bb924606a85aa4ada2397a81ae80011b5` (PR #609).
+Base main conferida: `4cb883e0a4a46a308c86cf6f4992c7c097df3c90` (PR #612).
 Versão `20261008-chat-groups-1`. Implementação concluída na candidata;
 integração e publicação ainda dependem dos gates finais da PR e do deploy seguro.
 Especificação: [CHAT-GRUPOS.md](CHAT-GRUPOS.md).
@@ -84,6 +84,14 @@ desktop/mobile), com 303 amigos fictícios, seleção preservada e candidato da
 última página alcançável. Evidência: `evidence-pagination-final/groups-browser.json`.
 Um pressuposto do teste de navegador sobre lista vazia foi atualizado à nova
 massa sintética; a exclusão do amigo exclusivo de outro admin foi preservada.
+
+Head `0bcffdb`: 62/62 checks aprovados, incluindo 834/834 Node e 216/216
+cenários visuais (120 comparações com base, zero endpoints inesperados).
+Antes do squash, main avançou para #612. Integração preserva integralmente seus
+15 arquivos; `estudos/index.html` difere da main somente na versão do bootstrap
+global do chat. Runtime do chat permanece idêntico ao head aprovado. Evidências
+locais intactas e checks #612 são reaproveitados no escopo; gates obrigatórios
+do novo head serão aguardados. Este registro ainda não comprova publicação.
 
 Conferir CI terminal e revisão do head final, integrar por squash somente após gates
 aprovados e publicar pelo [fluxo seguro existente](WORKER-SAFE-DEPLOY.md).

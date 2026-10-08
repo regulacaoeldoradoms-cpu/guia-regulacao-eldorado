@@ -16,7 +16,8 @@ import {
   publicationSnapshot
 } from './studies-content/manifest.js';
 import { curriculumSnapshot } from './studies-content/curriculum-v1.js';
-import { projectStudyFeedback, confirmedStudyFeedback } from './study-feedback.js';
+import { projectStudyFeedback, confirmedStudyFeedback, completedStudySummary } from './study-feedback.js';
+import { ensureReadingReceiptSchema, studyReadingReceipt, recordStudyReading } from './study-reading-receipts.js';
 import {
   StudyAssessmentError,
   ensureAssessmentSchema,
@@ -154,6 +155,7 @@ async function ensureStudySchema(env) {
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_sessions_user_finished ON study_sessions(username, finished_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_reviews_user_due ON study_reviews(username, status, due_at)').run();
     await ensureRoundSchema(db);
+    await ensureReadingReceiptSchema(db);
     await ensureAssessmentSchema(db);
     schemaReady.add(db);
     return true;
@@ -756,6 +758,7 @@ async function resumableStudySession(env, username) {
     durationSeconds: Math.max(0, Number(row.duration_seconds || 0)),
     contentVersion: mission.contentVersion,
     answerFeedbackProtocol: 1,
+    ...await studyReadingReceipt(env.AUTH_DB, username, mission, row.session_id),
     answeredQuestionIds: answers.map(item => item.questionId),
     answerFeedback: answers
   };
@@ -778,6 +781,7 @@ async function handleBootstrap(env, user, origin) {
     roundProtocol: 1,
     timeProtocol: 1,
     resumeProtocol: 1,
+    readingReceiptProtocol: 1,
     assessmentProtocol: 1,
     pedagogyProtocol: 1,
     errorPatternProtocol: 1,
@@ -952,6 +956,7 @@ async function handleComplete(request, pathname, env, user, origin) {
     passScore: Number(mission.passScore || 0) || undefined,
     xpGranted: xpGranted ? mission.xp : 0,
     newAchievements,
+    studySummary: await completedStudySummary(env.AUTH_DB, user.username, mission, body.sessionId),
     metrics: await metrics(env, user.username, progress)
   }, 200, origin);
 }
@@ -971,6 +976,7 @@ async function handleCompleteReview(request, pathname, env, user, origin) {
   return json({
     completed: true,
     xpGranted,
+    studySummary: await completedStudySummary(env.AUTH_DB, user.username, mission, body.sessionId),
     metrics: await metrics(env, user.username, progress),
     reviews: await dueReviewRows(env, user.username)
   }, 200, origin);
@@ -1055,33 +1061,7 @@ async function handleReadingComplete(pathname, env, user, origin) {
   const mission = missionById(row.mission_id);
   if (!mission) return json({ error: 'Conteúdo da sessão não encontrado.' }, 409, origin);
 
-  const current = await env.AUTH_DB.prepare(`SELECT coverage_state FROM study_topic_progress
-    WHERE username=? AND topic_id=? LIMIT 1`).bind(user.username, mission.topicId).first();
-  const previousCoverage = Math.max(0, Number(current?.coverage_state || 0));
-
-  if (row.mode === 'review' || previousCoverage >= 1) {
-    return json({
-      recorded: false,
-      coverageState: previousCoverage,
-      pedagogyProtocol: 1
-    }, 200, origin);
-  }
-
-  await env.AUTH_DB.prepare(`INSERT INTO study_topic_progress(
-      username, topic_id, coverage_state, mastery_score, content_version_seen, started_at
-    ) VALUES (?, ?, 1, 0, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(username, topic_id) DO UPDATE SET
-      coverage_state=MAX(study_topic_progress.coverage_state,1),
-      content_version_seen=MAX(study_topic_progress.content_version_seen,excluded.content_version_seen),
-      started_at=COALESCE(study_topic_progress.started_at,CURRENT_TIMESTAMP),
-      updated_at=CURRENT_TIMESTAMP`)
-    .bind(user.username, mission.topicId, mission.contentVersion).run();
-
-  return json({
-    recorded: true,
-    coverageState: 1,
-    pedagogyProtocol: 1
-  }, 200, origin);
+  return json(await recordStudyReading(env.AUTH_DB, user.username, mission, match[1]), 200, origin);
 }
 
 async function handleTimeCheckpoint(request, pathname, env, user, origin) {
