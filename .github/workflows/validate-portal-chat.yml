@@ -36,7 +36,7 @@ jobs:
           node --test worker/tests/chat-realtime.test.mjs
           node --test worker/tests/chat-attention*.test.mjs
           node --test worker/tests/chat-presentation.test.mjs
-          node --test worker/tests/chat-groups.test.mjs
+          node --test worker/tests/chat-groups.test.mjs worker/tests/chat-group-notification-payload.test.mjs
       - name: Conferir integração profissional
         run: |
           test -f css/portal-chat.css

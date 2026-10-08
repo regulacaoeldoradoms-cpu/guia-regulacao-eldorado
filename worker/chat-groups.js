@@ -134,7 +134,7 @@ async function group(env, user, id, pending = false) {
   if (!row) failure('GROUP_UNAVAILABLE', 'Este grupo não está disponível para sua conta.', 404);
   return row;
 }
-async function signals(env, id, sender, { extra = [], push = false, message = false } = {}) {
+async function signals(env, id, sender, { extra = [], push = false, message = false, pushTo = null } = {}) {
   const audience = rows(await env.AUTH_DB.prepare(`SELECT DISTINCT m.username,m.muted,m.state FROM portal_chat_group_members m
     JOIN auth_users u ON u.username = m.username AND u.active = 1
     JOIN social_users s ON s.auth_username = u.username AND s.suspended_at IS NULL
@@ -144,7 +144,7 @@ async function signals(env, id, sender, { extra = [], push = false, message = fa
   await Promise.allSettled([...new Set([...audience.map(m => m.username), ...extra])].map(async username => {
     await broadcastChatRealtime(env, username, { type: 'group-refresh', groupId: id });
     const member = audience.find(m => m.username === username);
-    if (push && member && !member.muted && username !== sender && (!message || member.state === 'member')) await notifyUserPush(env, username);
+    if (push && member && !member.muted && username !== sender && (!message || member.state === 'member') && (!pushTo || pushTo.includes(username))) await notifyUserPush(env, username);
   }));
 }
 function background(ctx, task) { if (ctx?.waitUntil) ctx.waitUntil(task.catch(() => {})); else return task; }
@@ -179,7 +179,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       const id = url.searchParams.get('groupId');
       let founder = user.username;
       if (id) { const current = await group(env,user,id); if (!['owner','admin'].includes(current.role) || current.closed) failure('GROUP_ADMIN_REQUIRED','Somente administradores podem convidar.',403); founder = current.creatorUsername; }
-      const list = rows(await query(env,user, `SELECT u.username,u.name,u.role,u.job_title AS jobTitle,u.avatar_data AS avatarDataUrl
+      const list = rows(await query(env,user, `SELECT u.username,u.name,u.role,u.job_title AS jobTitle
         FROM auth_users u JOIN social_users s ON s.auth_username=u.username,
           (SELECT ? AS creator_username) g
         WHERE EXISTS(SELECT 1 FROM actor) AND u.username<>g.creator_username
@@ -211,7 +211,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       ]);
       const found = await query(env,user, `SELECT g.id FROM portal_chat_groups g,actor WHERE g.creator_username=actor.username AND g.client_id=?`,body.clientId).first();
       if (!found) failure('GROUP_INVITATION_DENIED','Não foi possível criar. Confirme as amizades aceitas e o limite de grupos.',409);
-      if (created[0].meta?.changes) await background(ctx, signals(env,found.id,user.username,{push:true}));
+      if (created[0].meta?.changes) await background(ctx, signals(env,found.id,user.username,{push:true,pushTo:invited}));
       return reply({ group: await group(env,user,found.id) },created[0].meta?.changes ? 201 : 200);
     }
     const match = tail.match(/^\/([^/]+)(?:\/(members|invite|accept|decline|leave|close|settings|messages|receipt|info|avatar))?$/);
@@ -235,13 +235,21 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       const after = number(url.searchParams.get('after')), before = number(url.searchParams.get('before'));
       if (after && before) failure('GROUP_CURSOR_INVALID','Use apenas um marcador.');
       const messages = rows(await query(env,user, `SELECT * FROM (SELECT msg.id,msg.from_user AS fromUser,msg.client_id AS clientId,msg.body,msg.sent_at AS sentAt,
-        u.name AS senderName,u.role AS senderRole,u.job_title AS jobTitle,u.avatar_data AS avatarDataUrl
+        u.name AS senderName,u.role AS senderRole,u.job_title AS jobTitle
         FROM portal_chat_group_messages msg JOIN portal_chat_groups g ON g.id=msg.group_id
         JOIN portal_chat_group_members m ON m.group_id=g.id JOIN actor ON actor.username=m.username
         JOIN auth_users u ON u.username=msg.from_user
         WHERE g.id=? AND m.state='member' AND msg.id>m.joined_after AND msg.id>?
           ${before ? 'AND msg.id<?' : ''} ORDER BY msg.id ${after ? 'ASC' : 'DESC'} LIMIT ${GROUP_LIMITS.page}) ORDER BY id ASC`,id,after,...(before?[before]:[])).all());
-      return reply({ messages, pageSize: GROUP_LIMITS.page, group: current });
+      // Return each profile photo once per history page, never once per message.
+      // Revalidate the requesting member in this query as well as the message query.
+      const senders = messages.length ? rows(await query(env,user, `SELECT DISTINCT u.username,u.avatar_data AS avatarDataUrl
+        FROM auth_users u JOIN portal_chat_group_messages msg ON msg.from_user=u.username
+        JOIN portal_chat_groups g ON g.id=msg.group_id
+        JOIN portal_chat_group_members m ON m.group_id=g.id JOIN actor ON actor.username=m.username
+        WHERE g.id=? AND m.state='member' AND msg.id>m.joined_after
+          AND msg.id IN (SELECT value FROM json_each(?))`,id,JSON.stringify(messages.map(msg=>msg.id))).all()) : [];
+      return reply({ messages, senders, pageSize: GROUP_LIMITS.page, group: current });
     }
     if (action === 'info' && request.method === 'GET') {
       const mid = number(url.searchParams.get('messageId'));
@@ -259,7 +267,6 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
     if (request.method !== 'POST') failure('GROUP_UNAVAILABLE','Rota não encontrada.',404);
     const body = await input(request);
     if (action === 'messages') {
-      if (current.closed) failure('GROUP_CLOSED','Este grupo foi encerrado.',409);
       const text = typeof body.body === 'string' ? body.body.trim() : '';
       if (!text || text.length>GROUP_LIMITS.message || !CLIENT.test(body.clientId||'')) failure('GROUP_MESSAGE_INVALID','Digite uma mensagem de até 2.000 caracteres.');
       const result = await env.AUTH_DB.batch([
@@ -274,7 +281,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
         WHERE g.id=? AND ${ACCESS} AND msg.from_user=actor.username AND msg.client_id=?
           AND EXISTS(SELECT 1 FROM portal_chat_group_members self WHERE self.group_id=g.id
             AND self.username=actor.username AND self.state='member' AND msg.id>self.joined_after)`,id,body.clientId).first();
-      if (!message) failure('GROUP_SEND_REJECTED','O envio não foi autorizado. Confira o acesso e tente novamente.',409);
+      if (!message) failure(current.closed ? 'GROUP_CLOSED' : 'GROUP_SEND_REJECTED',current.closed ? 'Este grupo foi encerrado.' : 'O envio não foi autorizado. Confira o acesso e tente novamente.',409);
       if (result[0].meta?.changes) await background(ctx,signals(env,id,user.username,{push:true,message:true}));
       return reply({ message, duplicate: !result[0].meta?.changes },result[0].meta?.changes?201:200);
     }
@@ -314,6 +321,8 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
             OR NOT EXISTS ${FRIEND.replaceAll('candidate_name','candidate.value')}
             OR EXISTS(SELECT 1 FROM portal_chat_group_members m WHERE m.group_id=g.id AND m.username=candidate.value AND m.state IN ('invited','member')))`,JSON.stringify(invited),id,invited.length,JSON.stringify(invited)).run();
       if (!result.meta?.changes) failure('GROUP_INVITATION_DENIED','Convite recusado. Confira a amizade com o criador e os limites de participantes e grupos por conta.',409);
+      await background(ctx,signals(env,id,user.username,{push:true,pushTo:invited}));
+      return reply({ok:true});
     } else if (action === 'members') {
       if (!USER.test(body.username||'') || !['remove','promote','demote'].includes(body.action)) failure('GROUP_MEMBER_INVALID','Participante inválido.');
       const self = body.username === user.username;
@@ -338,7 +347,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
         if (!result.meta?.changes) failure('GROUP_ADMIN_REQUIRED','Somente administradores podem editar.',403);
       }
     } else failure('GROUP_UNAVAILABLE','Rota não encontrada.',404);
-    await background(ctx,signals(env,id,user.username,{extra:[user.username],push:action==='invite'}));
+    await background(ctx,signals(env,id,user.username,{extra:[user.username]}));
     return reply({ ok:true });
   } catch (error) {
     // Do not return SQL, content, identifiers or upstream exception details.

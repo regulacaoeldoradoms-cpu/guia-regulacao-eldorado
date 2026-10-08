@@ -108,10 +108,11 @@ run('grupo: repetição de criação e envio não duplica persistência',async f
   assert.equal((await f.env.AUTH_DB.prepare('SELECT COUNT(*) AS n FROM portal_chat_group_messages').first()).n,1);
 });
 run('grupo: arquivamento conserva histórico e impede mensagens/novos convites',async f=>{
-  const id=await f.create();const msg=await f.json('alpha','/'+id+'/messages',payload('Preservada'));
+  const id=await f.create(),body=payload('Preservada');const msg=await f.json('alpha','/'+id+'/messages',body);
   assert.equal((await f.json('alpha','/'+id+'/leave',{})).status,409);
   assert.equal((await f.json('alpha','/'+id+'/close',{})).status,200);
   assert.equal((await f.json('alpha','/'+id+'/messages')).messages[0].id,msg.message.id);
+  const retry=await f.json('alpha','/'+id+'/messages',body);assert.equal(retry.status,200);assert.equal(retry.message.id,msg.message.id);assert.equal(retry.duplicate,true);
   assert.equal((await f.json('alpha','/'+id+'/messages',payload('Bloqueada'))).status,409);
   assert.equal((await f.json('beta','/'+id+'/decline',{})).status,200);
   assert.equal((await f.json('alpha','/'+id+'/leave',{})).status,200);

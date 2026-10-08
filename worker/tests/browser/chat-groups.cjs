@@ -18,7 +18,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
  try{
  for(const theme of ['light','dark'])for(const mobile of [false,true]){
   const f=await groupFixture(),contexts=[],sockets=new Map(),pages={},errors=[];const name=theme+'-'+(mobile?'mobile':'desktop');
-  let failNextSend=false, holdPath='', releaseReply=null; const avatarReads=[];
+  let failNextSend=false, failAvatarFor='beta', holdPath='', releaseReply=null; const avatarReads=[];
   f.onEvent=(username,event)=>sockets.get(username)?.send(JSON.stringify(event));
   try{
    for(const username of ['alpha','beta','gamma']){
@@ -29,7 +29,10 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
      if(url.hostname==='group-fixture.test')return route.fulfill({contentType:'text/html',body:`<!doctype html><html data-portal-theme="${theme}"><head><meta charset="utf-8">${csp}<style>${styles}</style></head><body class="${mobile?'mobile-home-mode':''}"></body></html>`});
      if(url.origin!==endpoint)return route.abort();
      if(url.pathname.startsWith('/api/chat/groups')){
-      if(url.pathname.endsWith('/avatar'))avatarReads.push({username,path:url.pathname});
+      if(url.pathname.endsWith('/avatar')){
+       avatarReads.push({username,path:url.pathname});
+       if(username===failAvatarFor){failAvatarFor='';return route.fulfill({status:503,json:{error:'Falha sintética de foto'}});}
+      }
       if(method==='POST'&&url.pathname.endsWith('/messages')&&failNextSend){failNextSend=false;return route.fulfill({status:503,json:{error:'Falha sintética de rede'}});}
       const body=method==='GET'?undefined:JSON.parse(route.request().postData()||'{}');
       const response=await f.call(username,url.pathname.slice('/api/chat/groups'.length)+url.search,body);
@@ -72,6 +75,8 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
     await page.waitForSelector(`[data-group-open="${id}"]`);await page.locator(`[data-group-open="${id}"]`).click();
     await page.locator('[data-accept]').click();await page.waitForSelector('#portalChatGroupView.active');
    }
+   await b.waitForFunction(()=>document.querySelector('#portalChatHeaderAvatar img')?.naturalWidth>0);
+   assert.equal(avatarReads.filter(r=>r.username==='beta').length,2,'Transient avatar failure retries the same version');
    for(const [username,page] of Object.entries(pages)){
     await page.locator('#portalGroupInput').fill('Mensagem sintética de '+username);await page.locator('#portalGroupSend').click();
     for(const peer of Object.values(pages))await peer.waitForFunction(text=>document.getElementById('portalGroupMessages').textContent.includes(text),'Mensagem sintética de '+username);

@@ -114,3 +114,25 @@ versão estável. A imagem é obtida por uma rota privada de avatar, com revalid
 participação/convite e cache somente em memória por versão, até três buscas simultâneas.
 Enviar mensagens não muda a versão da imagem nem faz baixar todas as fotos novamente.
 Alterar o nome sem enviar outra foto preserva a imagem. Logout/desativação limpam o cache.
+Falha transitória ou resposta de outra versão libera o registro da foto para uma
+nova tentativa na próxima atualização, sem repetição imediata ilimitada.
+O seletor de amigos exibe nome e iniciais, sem transmitir fotos completas;
+a lista continua limitada aos amigos elegíveis do criador original.
+
+Encerrar o grupo impede mensagens novas, mas um retry idempotente pode confirmar
+uma mensagem já persistida no intervalo autorizado antes do encerramento. Isso evita
+marcar como perdida uma mensagem que foi entregue antes de a resposta se perder.
+
+### Convites e fotos dos participantes
+
+O push de um novo convite é restrito às contas incluídas nessa operação. Membros
+já aceitos e convidados antigos recebem apenas a atualização interna necessária,
+não um aviso externo por convites de terceiros. Convites recusados pelo servidor
+não disparam avisos.
+
+As mensagens do histórico não repetem imagens de perfil em cada linha. O envelope
+`senders` inclui uma foto por remetente da página; uma segunda consulta revalida
+sessão, participação e o intervalo das mensagens antes de entregar essas imagens.
+O cliente associa as imagens aos balões somente em memória. Uma página sem novas
+mensagens também não transmite fotos. Essa otimização é distinta do cache privado
+por versão da foto do próprio grupo.

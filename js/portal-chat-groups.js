@@ -22,12 +22,15 @@
       if (groupAvatars.get(task.id) !== task.record) continue;
       avatarLoading++;
       request('/' + task.id + '/avatar').then(payload => {
-        if (disposed || groupAvatars.get(task.id) !== task.record || payload.avatarVersion !== task.record.version) return;
+        if (disposed || groupAvatars.get(task.id) !== task.record) return;
+        if (payload.avatarVersion !== task.record.version) { groupAvatars.delete(task.id); return; }
         task.record.data = payload.avatarDataUrl || '';
         groups = groups.map(withAvatar);
         if (active?.id === task.id) { active.group = withAvatar(active.group); updateHeader(); }
         renderList();
-      }).catch(() => {}).finally(() => { avatarLoading--; queueAvatars([]); });
+      }).catch(() => {
+        if (groupAvatars.get(task.id) === task.record) groupAvatars.delete(task.id);
+      }).finally(() => { avatarLoading--; queueAvatars([]); });
     }
   }
   function clearAvatars() { groupAvatars.clear(); avatarQueue.length = 0; }
@@ -187,7 +190,8 @@
       if(version!==generation||active!==state||disposed)return;
       if(!Array.isArray(payload.messages)||!payload.group)throw Error('O servidor ainda não confirmou o grupo.');
       state.group=withAvatar({...state.group,...payload.group}); queueAvatars([state.group]); updateHeader();
-      for(const message of payload.messages){if(message.clientId)state.messages.delete(message.clientId);state.messages.set(message.id,message);}
+      const senderPhotos=new Map((payload.senders||[]).map(sender=>[sender.username,sender.avatarDataUrl||'']));
+      for(const message of payload.messages){if(message.clientId)state.messages.delete(message.clientId);state.messages.set(message.id,{...message,avatarDataUrl:senderPhotos.get(message.fromUser)||''});}
       if(before||!state.cursor)state.hasOlder=payload.messages.length>=payload.pageSize;
       if(!before)state.cursor=Math.max(state.cursor,...payload.messages.map(m=>m.id),0);
       renderMessages(older);
