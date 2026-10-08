@@ -119,7 +119,8 @@ async function check(name,run,options={}) {let p;try{p=await pair(options);await
       const m=await p.send('Mensagem oculta durante carregamento');p.release();await delay(180);
       assert.equal(p.reads.length,before);await p.beta.evaluate(()=>window.fixtureVisibility(true));
       await p.beta.waitForSelector('[data-message-id="' + m.id + '"]');
-      await delay(80);assert.ok(p.reads.some(r=>r.username==='beta'&&r.throughId===m.id));
+      for(let attempt=0;attempt<40&&!p.reads.some(r=>r.username==='beta'&&r.throughId===m.id);attempt++)await delay(50);
+      assert.ok(p.reads.some(r=>r.username==='beta'&&r.throughId===m.id));
     },{holdInitial:true});
     await check('visibility-burst-coalesces-inflight-history',async p=>{
       const count=()=>p.requests.filter(r=>r.username==='beta'&&r.path.endsWith('/messages')).length;

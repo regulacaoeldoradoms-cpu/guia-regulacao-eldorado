@@ -1,8 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
+
+test('snapshot individual restaura o marcador antes do evento atrasado sem duplicar não lidas', () => {
+  const client=read('js/portal-chat.js'),sw=read('portal-sw.js');
+  const between=(source,start,end)=>{const from=source.indexOf(start),to=source.indexOf(end,from);assert.ok(from>=0&&to>from);return source.slice(from,to);};
+  const context={document:{hidden:false,getElementById:()=>null},window:{},result:null};
+  runInNewContext(`
+    let activeContact=null,restoredChatSession=null,lastContactsLoadedAt=0,currentUser={username:'viewer'};
+    let contacts=[{username:'sender',unread:1,firstUnreadId:42,receivedThroughId:42}];
+    const directoryReceivedThrough=new Map([['sender',42]]),draftCache=new Map(),messageCache=new Map(),handledRealtimeMessages=new Set(),unreadSnapshot=new Map();
+    let notifications=0,merged=0;
+    const messageCacheKey=value=>String(value||''),processUnreadChanges=()=>{},renderContacts=()=>{},mergeCachedMessages=()=>merged++;
+    const showMessageNotification=()=>notifications++;
+    ${between(client,'  function snapshotForServiceWorker()', '  function postChatSessionSnapshot(')}
+    ${between(sw,'function safeChatUsername(', 'function safeChatMessage(')}
+    ${between(client,'  function hydrateChatSessionSnapshot(', '  function replaceCachedMessages(')}
+    ${between(client,'  function handleRealtimeMessage(', '  function handleRealtimeEvent(')}
+    const snapshot=snapshotForServiceWorker();
+    snapshot.contacts=snapshot.contacts.map(safeChatContact);snapshot.savedAt=Date.now();
+    directoryReceivedThrough.clear();contacts=[];hydrateChatSessionSnapshot(snapshot);
+    handleRealtimeMessage({id:42,fromUser:'sender',toUser:'viewer',sentAt:'2026-10-08 12:00:00'});
+    const afterDelayed=contacts[0].unread;
+    handleRealtimeMessage({id:43,fromUser:'sender',toUser:'viewer',sentAt:'2026-10-08 12:00:01'});
+    result={saved:snapshot.contacts[0].receivedThroughId,hydrated:directoryReceivedThrough.get('sender'),afterDelayed,afterNew:contacts[0].unread,notifications,merged};
+  `,context);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.result)),{saved:42,hydrated:42,afterDelayed:1,afterNew:2,notifications:1,merged:2});
+});
 
 const authenticatedModules = [
   'index.html',

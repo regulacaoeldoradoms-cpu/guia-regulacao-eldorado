@@ -669,7 +669,8 @@
         lastSeen: contact.lastSeen || null,
         lastMessageAt: contact.lastMessageAt || null,
         unread: Number(contact.unread || 0),
-        firstUnreadId: Number(contact.firstUnreadId || 0)
+        firstUnreadId: Number(contact.firstUnreadId || 0),
+        receivedThroughId: Number(directoryReceivedThrough.get(contact.username) || contact.receivedThroughId || 0)
       })),
       conversations: Array.from(messageCache.entries()).map(([username, entry]) => ({
         username,
@@ -774,6 +775,7 @@
         firstUnreadId: Number(contact?.firstUnreadId || 0),
         online: Boolean(contact?.online)
       })).filter((contact) => contact.username);
+      for (const contact of contacts) directoryReceivedThrough.set(contact.username, Number(contact.receivedThroughId || 0));
       lastContactsLoadedAt = Number(snapshot.savedAt || Date.now());
       processUnreadChanges(contacts);
       renderContacts();

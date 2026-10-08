@@ -17,8 +17,9 @@ sessão, participação e intervalo. Grupo não cria amizade nem acesso individu
 ## Revisão incorporada
 
 Convites notificam externamente somente novos convidados; mensagens notificam somente
-membros aceitos não silenciados. Histórico transmite uma foto por autor da página,
-com autorização revalidada, associada aos balões somente em memória.
+membros aceitos não silenciados. Histórico transmite metadados de foto por autor
+da página, com autorização revalidada. Cache privado carrega a imagem por versão
+e associa aos balões somente em memória, inclusive na sincronização incremental.
 Retry confirma mensagem já persistida no intervalo autorizado após encerramento;
 mensagens novas continuam negadas. Fotos do grupo usam rota privada e cache em memória
 por versão; falhas transitórias liberam nova tentativa na próxima atualização.
@@ -26,6 +27,8 @@ O seletor de amigos omite fotos completas e conserva a autorização do criador.
 Detalhes retornam metadados leves das fotos dos participantes, obtidas pela mesma
 fila/cache privado por grupo, conta e versão. A rota revalida o acesso e restringe
 fotos de convidados pendentes aos administradores.
+O marcador individual `receivedThroughId` é preservado/normalizado no snapshot do
+Service Worker e hidratado antes dos eventos realtime, evitando recontagem na retomada.
 
 Preload/contador individuais, fotos, datas, diálogos, reentrada, limites atômicos,
 logout e desativação foram preservados. A entrega concorrente #609, conteúdos de
@@ -34,11 +37,14 @@ estudo, bindings e gate seguro permanecem íntegros. Auxiliar temporário
 
 ## Evidências e limites
 
-Retomada local: **831 casos Node verificados** entre suíte ampla e confirmação
-focada; **31/31 focados de grupos**, sem falhas/skips na confirmação final;
+Retomada local: **832 casos Node verificados** entre suíte ampla e confirmação
+focada; **46/46 focados** (31 grupos + 15 integração/snapshot), sem falhas/skips;
 sintaxe afetada e diff sem erros; **4/4 Chromium** claro/escuro × desktop/mobile,
 três contas fictícias, incluindo recuperação de foto após HTTP 503 sintético e
 fotos de participantes preservadas com cache na reabertura dos detalhes.
+Recebimento individual: **15/15 Chromium** na retomada final. A espera do cenário
+de histórico oculto agora aguarda recibo observável por até dois segundos em vez
+de presumir resposta dentro de 80 ms; a asserção de autorização/leitura foi mantida.
 As três regressões preservadas e a nova de candidatos integram o gate existente
 em `chat-group-notification-payload.test.mjs`, junto à regressão dos detalhes
 privados, sem execução duplicada nesse gate.
@@ -47,8 +53,9 @@ Evidências: `final-resumed-all-tests.log`, `final-resumed-browser.log` e
 fora da árvore publicada. O teste novo teve expectativa ajustada de 404 para o
 403 vigente de sessão revogada; implementação não mudou após a suíte ampla.
 
-Reaproveitados para código individual inalterado: 15 cenários de recebimento e oito
-de apresentação; o CI final executa suas integrações. Backup anterior à sincronização:
+Reaproveitados oito cenários de apresentação do gate `a51bdd8`, pois a mudança de
+snapshot não altera fotos/datas/layout; o CI final executa suas integrações.
+Backup anterior à sincronização:
 `preserved-resume-20261008-093042/repo`. `resume-final-review.cjs` não foi reaplicado.
 Não foram usados contas reais, conversas reais ou dados de pacientes.
 

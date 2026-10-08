@@ -232,7 +232,12 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
         FROM portal_chat_group_members m JOIN auth_users u ON u.username=m.username
         JOIN portal_chat_groups g ON g.id=m.group_id
         WHERE g.id=? AND m.username=? AND ${ACCESS}
-          AND (m.state='member' OR (m.state='invited' AND ${ADMIN}))`,id,username).first();
+          AND (m.state='member' OR (m.state='invited' AND ${ADMIN})
+            OR EXISTS(SELECT 1 FROM portal_chat_group_messages msg
+              JOIN portal_chat_group_members viewer ON viewer.group_id=msg.group_id
+              JOIN actor ON actor.username=viewer.username
+              WHERE msg.group_id=g.id AND msg.from_user=m.username
+                AND viewer.state='member' AND msg.id>viewer.joined_after))`,id,username).first();
       if (!avatar) failure('GROUP_UNAVAILABLE','Participante indisponível.',404);
       return reply(avatar);
     }
@@ -255,7 +260,8 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
           ${before ? 'AND msg.id<?' : ''} ORDER BY msg.id ${after ? 'ASC' : 'DESC'} LIMIT ${GROUP_LIMITS.page}) ORDER BY id ASC`,id,after,...(before?[before]:[])).all());
       // Return each profile photo once per history page, never once per message.
       // Revalidate the requesting member in this query as well as the message query.
-      const senders = messages.length ? rows(await query(env,user, `SELECT DISTINCT u.username,u.avatar_data AS avatarDataUrl
+      const senders = messages.length ? rows(await query(env,user, `SELECT DISTINCT u.username,
+        (u.avatar_data <> '') AS avatarAvailable,u.avatar_version AS avatarVersion
         FROM auth_users u JOIN portal_chat_group_messages msg ON msg.from_user=u.username
         JOIN portal_chat_groups g ON g.id=msg.group_id
         JOIN portal_chat_group_members m ON m.group_id=g.id JOIN actor ON actor.username=m.username

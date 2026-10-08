@@ -135,8 +135,10 @@ não um aviso externo por convites de terceiros. Convites recusados pelo servido
 não disparam avisos.
 
 As mensagens do histórico não repetem imagens de perfil em cada linha. O envelope
-`senders` inclui uma foto por remetente da página; uma segunda consulta revalida
-sessão, participação e o intervalo das mensagens antes de entregar essas imagens.
-O cliente associa as imagens aos balões somente em memória. Uma página sem novas
-mensagens também não transmite fotos. Essa otimização é distinta do cache privado
-por versão da foto do próprio grupo.
+`senders` inclui disponibilidade/versão uma vez por remetente da página; uma segunda
+consulta revalida sessão, participação e intervalo antes de entregar esses metadados.
+O cache privado de participantes obtém a imagem uma vez por grupo, conta e versão,
+sem retransmitir a foto em cada sincronização incremental. A rota autoriza também
+autores que saíram quando há mensagens deles no intervalo visível ao solicitante.
+O cliente associa imagens aos balões somente em memória; páginas vazias não retornam
+remetentes. A foto do próprio grupo permanece em registro separado do mesmo cache.

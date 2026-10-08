@@ -23,8 +23,10 @@ run('grupo: histórico retorna uma foto por remetente, não uma cópia em cada m
   assert.equal(page.messages.length, 80);
   assert.ok(page.messages.every(m => m.avatarDataUrl === undefined));
   assert.equal(page.senders.length, 1); assert.equal(page.senders[0].username, 'alpha');
-  assert.equal(page.senders[0].avatarDataUrl, image);
-  assert.ok(JSON.stringify(page).length < image.length + 25000, 'Photo must not be repeated 80 times');
+  assert.equal(page.senders[0].avatarDataUrl, undefined);
+  assert.equal(page.senders[0].avatarAvailable, 1);
+  assert.ok(JSON.stringify(page).length < 25000, 'History must carry only photo metadata');
+  assert.equal((await f.json('beta', '/' + id + '/member-avatar?username=alpha')).avatarDataUrl, image);
   const empty = await f.json('beta', '/' + id + '/messages?after=' + page.messages.at(-1).id);
   assert.deepEqual(empty.messages, []); assert.deepEqual(empty.senders, []);
   assert.equal((await f.json('outsider', '/' + id + '/messages')).status, 404);
@@ -35,7 +37,7 @@ run('grupo: a busca de fotos do histórico revalida a participação', async f =
   await f.json('alpha', '/' + id + '/messages', {body:'Teste privado',clientId:'group-' + crypto.randomUUID()});
   let revoked = false;
   f.env.AUTH_DB.beforeQuery = sql => {
-    if (!revoked && sql.includes('SELECT DISTINCT u.username,u.avatar_data')) {
+    if (!revoked && sql.includes('SELECT DISTINCT u.username,')) {
       revoked = true;
       f.env.AUTH_DB.database.prepare("UPDATE portal_chat_group_members SET state='removed' WHERE group_id=? AND username='beta'").run(id);
     }
@@ -73,6 +75,10 @@ run('grupo: detalhes leves e fotos privadas revalidam acesso e visibilidade dos 
   assert.equal((await f.json('gamma', path + 'alpha')).status, 404);
   assert.equal((await f.json('outsider', path + 'alpha')).status, 404);
   assert.equal((await f.json('alpha', path + 'outsider')).status, 404);
+  await f.json('beta', '/' + id + '/messages', {body:'Autor sintético',clientId:'group-' + crypto.randomUUID()});
+  await f.json('beta', '/' + id + '/leave', {});
+  assert.equal((await f.json('alpha', path + 'beta')).avatarDataUrl, image, 'Authorized history keeps the departed sender photo');
+  await f.json('alpha', '/' + id + '/invite', {members:['beta']}); await f.json('beta', '/' + id + '/accept', {});
   assert.equal((await f.json('beta', path + 'alpha', undefined, {sessionVersion: 99})).status, 403);
   let revoked = false;
   f.env.AUTH_DB.beforeQuery = sql => {

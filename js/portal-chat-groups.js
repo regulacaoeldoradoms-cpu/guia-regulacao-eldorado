@@ -31,6 +31,8 @@
           if (active?.id === task.id) {
             const avatar = [...($('portalGroupSheet')?.querySelectorAll('[data-member-avatar]') || [])].find(node => node.dataset.memberAvatar === task.username);
             if (avatar) avatar.innerHTML = host.avatarMarkup({name:avatar.dataset.memberName,avatarDataUrl:task.record.data});
+            for (const message of active.messages.values()) if (message.fromUser === task.username) message.avatarDataUrl = task.record.data;
+            renderMessages();
           }
           return;
         }
@@ -199,8 +201,10 @@
       if(version!==generation||active!==state||disposed)return;
       if(!Array.isArray(payload.messages)||!payload.group)throw Error('O servidor ainda não confirmou o grupo.');
       state.group=withAvatar({...state.group,...payload.group}); queueAvatars([state.group]); updateHeader();
-      const senderPhotos=new Map((payload.senders||[]).map(sender=>[sender.username,sender.avatarDataUrl||'']));
+      const senders=(payload.senders||[]).map(sender=>({...sender,id:state.id}));
+      const senderPhotos=new Map(senders.map(sender=>[sender.username,withAvatar(sender).avatarDataUrl]));
       for(const message of payload.messages){if(message.clientId)state.messages.delete(message.clientId);state.messages.set(message.id,{...message,avatarDataUrl:senderPhotos.get(message.fromUser)||''});}
+      queueAvatars(senders);
       if(before||!state.cursor)state.hasOlder=payload.messages.length>=payload.pageSize;
       if(!before)state.cursor=Math.max(state.cursor,...payload.messages.map(m=>m.id),0);
       renderMessages(older);

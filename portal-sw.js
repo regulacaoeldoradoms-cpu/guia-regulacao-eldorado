@@ -402,7 +402,8 @@ function safeChatContact(contact) {
     lastSeen: contact?.lastSeen ? String(contact.lastSeen).slice(0, 40) : null,
     lastMessageAt: contact?.lastMessageAt ? String(contact.lastMessageAt).slice(0, 40) : null,
     unread: Math.max(0, Math.min(9999, Number(contact?.unread || 0))),
-    firstUnreadId: Math.max(0, Number(contact?.firstUnreadId || 0))
+    firstUnreadId: Math.max(0, Number(contact?.firstUnreadId || 0)),
+    receivedThroughId: Math.max(0, Number(contact?.receivedThroughId || 0))
   };
 }
 

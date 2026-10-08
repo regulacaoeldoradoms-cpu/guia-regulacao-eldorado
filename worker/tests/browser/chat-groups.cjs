@@ -83,9 +83,13 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
     for(const peer of Object.values(pages))await peer.waitForFunction(text=>document.getElementById('portalGroupMessages').textContent.includes(text),'Mensagem sintética de '+username);
    }
    for(const page of Object.values(pages))assert.equal(await page.locator('#portalGroupMessages [data-group-message]').count(),3,'One shared ordered history');
+   await a.waitForFunction(()=>[...document.querySelectorAll('#portalGroupMessages .portal-chat-avatar-image')].filter(img=>img.naturalWidth>0).length===3);
+   const senderReads=memberAvatarReads.filter(r=>r.username==='alpha').length;
+   assert.equal(senderReads,3,'Sender photos are fetched once per version');
    await a.locator('#portalGroupInput').fill('<img src=x onerror="window.fixtureXSS=true">');await a.locator('#portalGroupSend').click();
    await b.waitForFunction(()=>document.getElementById('portalGroupMessages').textContent.includes('onerror='));assert.equal(await b.evaluate(()=>window.fixtureXSS),undefined);
    await a.waitForFunction(()=>[...document.querySelectorAll('#portalGroupMessages .portal-chat-avatar-image')].filter(img=>img.naturalWidth>0).length>=3);
+   assert.equal(memberAvatarReads.filter(r=>r.username==='alpha').length,senderReads,'Incremental history reuses sender photos');
    await a.screenshot({path:path.join(evidence,'groups-chat-'+name+'.png')});
    const geometry=await a.locator('.portal-chat-panel').boundingBox();assert.ok(geometry.x>=0&&geometry.width<=(mobile?390:1440));
    assert.equal(avatarReads.filter(r=>r.username==='alpha').length,1,'Message refreshes reuse the same private avatar');
