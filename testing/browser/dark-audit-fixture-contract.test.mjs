@@ -37,7 +37,14 @@ test('agenda listing models the current contact capability',async()=>{
   assert.equal(JSON.parse(response.body).contactCapability,'patient-details-v2');
   assert.deepEqual(network.unexpected,[]);
 });
-for (const [path,method] of [['/api/chat/realtime/ticket','GET'],['/api/chat/realtime/tickets','POST'],['/api/agenda/contact-state','POST'],['/api/unknown','GET']]) test(`unmodeled ${method} ${path} still fails closed`,async()=>{
+test('group listing models enabled empty groups without forwarding requests',async()=>{
+  const {response,network,forwarded}=await fixtureRequest('/api/chat/groups');
+  assert.equal(response.status,200);
+  assert.deepEqual(JSON.parse(response.body),{enabled:true,groups:[],protocol:'groups-v1'});
+  assert.deepEqual(network.unexpected,[]);
+  assert.equal(forwarded,false);
+});
+for (const [path,method] of [['/api/chat/groups','POST'],['/api/chat/groups/unknown/messages','GET'],['/api/chat/realtime/ticket','GET'],['/api/chat/realtime/tickets','POST'],['/api/agenda/contact-state','POST'],['/api/unknown','GET']]) test(`unmodeled ${method} ${path} still fails closed`,async()=>{
   const {response,network,forwarded}=await fixtureRequest(path,method);
   assert.equal(response.status,503);
   assert.equal(JSON.parse(response.body).code,'AUDIT_FIXTURE_MISSING');

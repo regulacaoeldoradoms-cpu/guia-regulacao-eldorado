@@ -62,6 +62,14 @@ Não foram usados contas reais, conversas reais ou dados de pacientes.
 
 ## Próxima ação
 
+Gate visual `37788878828` falhou pela ausência de `GET /api/chat/groups` na
+fixture sintética: 192 registros de endpoint desconhecido; comparações registradas
+sem diferenças de DOM e com raster aprovado nos limites existentes. Imagens da
+execução examinadas. Modelada somente listagem vazia habilitada por GET; POST e
+subrotas continuam bloqueados. Contrato local: 13/13. Nenhum layout, limite de
+comparação ou proteção do gate alterado. Auditoria obrigatória será reexecutada
+no head corrigido; testes de chat aprovados são reaproveitados para runtime intacto.
+
 Conferir CI terminal e revisão do head final, integrar por squash somente após gates
 aprovados e publicar pelo [fluxo seguro existente](WORKER-SAFE-DEPLOY.md).
 Registrar na PR SHA integrado, builds Pages/Worker e verificação dos 27 arquivos
