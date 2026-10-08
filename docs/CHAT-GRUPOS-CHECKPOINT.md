@@ -16,12 +16,12 @@ sessão, participação e intervalo. Grupo não cria amizade nem acesso individu
 
 ## Revisão incorporada
 
-Convites notificam externamente somente novos convidados; mensagens notificam somente
-membros aceitos não silenciados. Histórico transmite metadados de foto por autor
-e mensagens invalidam somente membros aceitos; convites pendentes não recebem
-push nem sinais de mensagem. Recibos não transmitem invalidações. Convites e
-mudanças compartilhadas mantêm a audiência necessária. Regressão: 33/33 Node.
-da página, com autorização revalidada. Cache privado carrega a imagem por versão
+Convites notificam externamente somente novos convidados. Mensagens geram push
+somente para membros aceitos não silenciados e invalidações somente para membros
+aceitos; convites pendentes não recebem sinais de mensagem. Recibos não transmitem
+invalidações. Convites e mudanças compartilhadas mantêm a audiência necessária.
+Regressão: 33/33 Node. Histórico transmite metadados de foto por autor da página,
+com autorização revalidada. Cache privado carrega a imagem por versão
 e associa aos balões somente em memória, inclusive na sincronização incremental.
 Retry confirma mensagem já persistida no intervalo autorizado após encerramento;
 mensagens novas continuam negadas. Fotos do grupo usam rota privada e cache em memória
