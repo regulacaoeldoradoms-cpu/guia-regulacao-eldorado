@@ -499,5 +499,10 @@ Grupos só admitem amigos aceitos do criador original, com convite e aceite reva
 A corrida residual da PR #608 foi corrigida nesta entrega: deduplicação usa um conjunto
 limitado de eventos efetivamente tratados, não a presença da mensagem no cache HTTP.
 Assim, o primeiro evento apresenta/avisa uma mensagem pré-carregada; o segundo não duplica.
-Os dois cenários de preload antes do evento passam a integrar os 14 testes de recebimento
+Os dois cenários de preload antes do evento passam a integrar os 15 testes de recebimento
 individual no gate de navegador. Fotos, datas e o protocolo WebSocket individual são preservados.
+
+A revisão pré-publicação também separa o marcador de mensagens recebidas já observado
+no diretório (`receivedThroughId`) dos eventos WebSocket tratados. Uma entrega atrasada
+apresenta o conteúdo sem somar novamente uma mensagem já incluída no contador do
+servidor. O marcador usa o histórico recebido, mesmo após leitura, e é limpo no logout.

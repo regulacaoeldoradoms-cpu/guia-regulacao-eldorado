@@ -20,11 +20,11 @@ permanece separada do cache. O histórico individual e as permissões são prese
 
 ## Evidências locais da candidata
 
-- 822/822 testes Node aprovados, nenhum teste pulado, incluindo 24 dos grupos.
+- 823/823 testes Node aprovados, nenhum teste pulado, incluindo 24 dos grupos.
 - 4/4 combinações de grupo: claro/escuro × desktop/mobile, com três sessões fictícias,
   rotas reais sobre SQLite e HTTP/WebSocket interceptados. Incluem erro/retry,
   fotos raster, emoticon no cursor, resposta atrasada e limpeza ao desativar.
-- 14/14 cenários de recebimento individual, inclusive as duas corridas de preload.
+- 15/15 cenários de recebimento individual, inclusive as duas corridas de preload.
 - 8/8 cenários de apresentação individual: fotos, datas, paginação e virada do dia.
 - Capturas da interface foram examinadas. Não foram usadas conversas reais.
 

@@ -50,6 +50,7 @@
   const messageReadThrough = new Map();
   const messageReadRequests = new Map();
   const handledRealtimeMessages = new Set();
+  const directoryReceivedThrough = new Map();
   const messagePreloadRequests = new Map();
   const pendingMessages = new Map();
   const draftCache = new Map();
@@ -446,6 +447,9 @@
       return;
     }
 
+    // A directory snapshot can already include this event in its unread count.
+    // Still merge/render its message above; never recount or notify that receipt.
+    if (id <= Number(directoryReceivedThrough.get(sender) || 0)) return;
     const previousUnread = Number(contact.unread || 0);
     contact.unread = previousUnread + 1;
     if (!Number(contact.firstUnreadId || 0)) contact.firstUnreadId = id;
@@ -608,6 +612,7 @@
     messageReadThrough.clear();
     messageReadRequests.clear();
     handledRealtimeMessages.clear();
+    directoryReceivedThrough.clear();
     messagePreloadRequests.clear();
     for (const entry of pendingMessages.values()) window.clearTimeout(entry?.fallbackTimer);
     pendingMessages.clear();
@@ -1355,6 +1360,12 @@
       try {
         const payload = await api('/api/chat/users', { method: 'GET' });
         const nextContacts = Array.isArray(payload.users) ? payload.users : [];
+        for (const contact of nextContacts) {
+          directoryReceivedThrough.set(contact.username, Math.max(
+            Number(directoryReceivedThrough.get(contact.username) || 0),
+            Number(contact.receivedThroughId || 0)
+          ));
+        }
         processUnreadChanges(nextContacts);
         contacts = nextContacts;
         lastContactsLoadedAt = Date.now();

@@ -911,3 +911,19 @@ sqliteTest('moderação social não desativa sessão, cargo nem chat profissiona
   assert.equal(audit.action, 'report_suspend_user');
   assert.equal(audit.targetType, 'post');
 });
+
+
+sqliteTest('diretório do chat identifica recebimentos já incluídos no contador sem perder o marcador após leitura',async()=>{
+  const env=environment();
+  const sender=await register(env,'unread.sender','127.0.0.111');
+  const receiver=await register(env,'unread.receiver','127.0.0.112');
+  await env.AUTH_DB.prepare("UPDATE auth_users SET role='recepcao' WHERE username IN ('unread.sender','unread.receiver')").run();
+  const sent=await payload(await callChat(env,'/api/chat/messages',sender.token,{method:'POST',body:{to:'unread.receiver',body:'Mensagem sintética'}}));
+  const before=await payload(await callChat(env,'/api/chat/users',receiver.token));
+  const contact=before.users.find(u=>u.username==='unread.sender');
+  assert.equal(contact.unread,1);assert.equal(contact.receivedThroughId,sent.message.id);
+  await callChat(env,'/api/chat/read',receiver.token,{method:'POST',body:{with:'unread.sender',throughId:sent.message.id}});
+  const after=await payload(await callChat(env,'/api/chat/users',receiver.token));
+  assert.equal(after.users.find(u=>u.username==='unread.sender').unread,0);
+  assert.equal(after.users.find(u=>u.username==='unread.sender').receivedThroughId,sent.message.id);
+});
