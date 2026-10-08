@@ -215,3 +215,29 @@ run('grupo: limite de mensagens e criações não impede retry idempotente permi
   for(let n=0;n<4;n++)await f.create(['beta']);
   assert.equal((await f.json('alpha','',{name:'Excesso diário',description:'',members:['beta'],clientId:'group-'+crypto.randomUUID()})).status,409);
 });
+
+
+run('grupo: mensagens não geram push para convites ainda não aceitos',async f=>{
+  const id=await f.create();await f.json('beta','/'+id+'/accept',{});
+  const pushes=[];f.env.AUTH_DB.beforeQuery=(sql,values)=>{if(sql.includes('SELECT endpoint')&&sql.includes('FROM portal_push_subscriptions'))pushes.push(values[0]);};
+  await f.json('alpha','/'+id+'/messages',payload('Somente membros recebem push'));
+  assert.deepEqual(pushes,['beta']);
+  pushes.length=0;await f.friend('alpha','delta');await f.json('alpha','/'+id+'/invite',{members:['delta']});
+  assert.ok(pushes.includes('delta'),'Invitation still notifies its recipient');
+});
+run('grupo: listas são leves e fotos são privadas, versionadas e independentes das mensagens',async f=>{
+  const image='data:image/png;base64,'+Buffer.from('\x89PNG\r\n\x1a\nfixture','binary').toString('base64');
+  const id=await f.create(['beta'],{avatarDataUrl:image});
+  const first=(await f.json('alpha')).groups[0];
+  assert.equal(first.avatarAvailable,1);assert.equal(first.avatarDataUrl,undefined);assert.ok(first.avatarVersion);
+  assert.equal((await f.json('beta','/'+id+'/avatar')).avatarDataUrl,image);
+  assert.equal((await f.json('outsider','/'+id+'/avatar')).status,404);
+  await f.json('alpha','/'+id+'/messages',payload('Não altera versão da foto'));
+  assert.equal((await f.json('alpha')).groups[0].avatarVersion,first.avatarVersion);
+  await f.json('alpha','/'+id+'/settings',{name:'Nome alterado',description:''});
+  assert.equal((await f.json('alpha','/'+id+'/avatar')).avatarDataUrl,image);
+  assert.equal((await f.json('alpha')).groups[0].avatarVersion,first.avatarVersion);
+  await f.json('alpha','/'+id+'/settings',{name:'Sem foto',description:'',avatarDataUrl:''});
+  assert.equal((await f.json('alpha')).groups[0].avatarAvailable,0);
+  assert.notEqual((await f.json('alpha')).groups[0].avatarVersion,first.avatarVersion);
+});

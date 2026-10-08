@@ -22,13 +22,15 @@ novamente mensagens já incluídas pelo servidor. Histórico e permissões são 
 
 ## Evidências locais da candidata
 
-- 824/824 testes Node aprovados após conciliação com a PR #609, nenhum teste pulado,
-  incluindo 24 dos grupos e a regressão do contador; antes da conciliação, 823/823.
+- 826/826 testes Node aprovados após conciliação com a PR #609, nenhum teste pulado,
+  incluindo 26 dos grupos e a regressão do contador; antes da conciliação, 823/823.
 - 4/4 combinações de grupo: claro/escuro × desktop/mobile, com três sessões fictícias,
   rotas reais sobre SQLite e HTTP/WebSocket interceptados. Incluem erro/retry,
   fotos raster, emoticon no cursor, resposta atrasada e limpeza ao desativar.
 - 15/15 cenários de recebimento individual, inclusive preload e contador do diretório.
 - 8/8 cenários de apresentação individual: fotos, datas, paginação e virada do dia.
+- Revisão final cobre push somente para membros aceitos e avatar privado por versão,
+  sem repetir imagens grandes na listagem a cada mensagem.
 - Capturas da interface foram examinadas. Não foram usadas conversas reais.
 
 Os 26 arquivos da entrega concorrente da Missão Bancária foram preservados.

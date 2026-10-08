@@ -18,7 +18,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
  try{
  for(const theme of ['light','dark'])for(const mobile of [false,true]){
   const f=await groupFixture(),contexts=[],sockets=new Map(),pages={},errors=[];const name=theme+'-'+(mobile?'mobile':'desktop');
-  let failNextSend=false, holdPath='', releaseReply=null;
+  let failNextSend=false, holdPath='', releaseReply=null; const avatarReads=[];
   f.onEvent=(username,event)=>sockets.get(username)?.send(JSON.stringify(event));
   try{
    for(const username of ['alpha','beta','gamma']){
@@ -29,6 +29,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
      if(url.hostname==='group-fixture.test')return route.fulfill({contentType:'text/html',body:`<!doctype html><html data-portal-theme="${theme}"><head><meta charset="utf-8">${csp}<style>${styles}</style></head><body class="${mobile?'mobile-home-mode':''}"></body></html>`});
      if(url.origin!==endpoint)return route.abort();
      if(url.pathname.startsWith('/api/chat/groups')){
+      if(url.pathname.endsWith('/avatar'))avatarReads.push({username,path:url.pathname});
       if(method==='POST'&&url.pathname.endsWith('/messages')&&failNextSend){failNextSend=false;return route.fulfill({status:503,json:{error:'Falha sintética de rede'}});}
       const body=method==='GET'?undefined:JSON.parse(route.request().postData()||'{}');
       const response=await f.call(username,url.pathname.slice('/api/chat/groups'.length)+url.search,body);
@@ -81,6 +82,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
    await a.waitForFunction(()=>[...document.querySelectorAll('#portalGroupMessages .portal-chat-avatar-image')].filter(img=>img.naturalWidth>0).length>=3);
    await a.screenshot({path:path.join(evidence,'groups-chat-'+name+'.png')});
    const geometry=await a.locator('.portal-chat-panel').boundingBox();assert.ok(geometry.x>=0&&geometry.width<=(mobile?390:1440));
+   assert.equal(avatarReads.filter(r=>r.username==='alpha').length,1,'Message refreshes reuse the same private avatar');
    await a.locator('#portalGroupEmojiButton').click();await a.locator('#portalGroupInput').fill('ab');
    await a.locator('#portalGroupInput').evaluate(input=>input.setSelectionRange(1,1));
    await a.locator('[data-group-emoji="20"]').click();assert.equal(await a.locator('#portalGroupInput').inputValue(),'a👍b');

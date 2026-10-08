@@ -102,3 +102,15 @@ limites atômicos, convites privados, desativação e recibos.
 HTTP/WebSocket interceptados, temas claro/escuro e tamanhos desktop/mobile.
 O gate existente também mantém regressões de recebimento, fotos e datas individuais.
 Testes sintéticos não constituem uma conversa real autenticada em produção.
+
+## Revisão final de entrega e tráfego
+
+Mensagens novas notificam por Web Push somente membros que já aceitaram e não
+silenciaram o grupo. Convidados continuam recebendo seu aviso de convite, mas não
+um push por mensagem enquanto ainda não participaram.
+
+Listagem, histórico e detalhes retornam metadados leves da foto: disponibilidade e
+versão estável. A imagem é obtida por uma rota privada de avatar, com revalidação de
+participação/convite e cache somente em memória por versão, até três buscas simultâneas.
+Enviar mensagens não muda a versão da imagem nem faz baixar todas as fotos novamente.
+Alterar o nome sem enviar outra foto preserva a imagem. Logout/desativação limpam o cache.

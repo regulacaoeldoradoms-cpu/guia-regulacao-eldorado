@@ -4,12 +4,38 @@
   if (window.PortalChatGroups) return;
   let host, groups = [], active = null, disposed = false, generation = 0, connected = false;
   let refreshTimer, refreshPending, refreshAgain = false, lastRefresh = 0, filter = 'all';
-  const drafts = new Map(), delivered = new Map();
+  const drafts = new Map(), delivered = new Map(), groupAvatars = new Map();
+  const avatarQueue = []; let avatarLoading = 0;
+  function withAvatar(group) {
+    const cached = groupAvatars.get(group.id);
+    return { ...group, avatarDataUrl: group.avatarAvailable && cached?.version === group.avatarVersion ? cached.data || '' : '' };
+  }
+  function queueAvatars(items = groups) {
+    if (disposed) return;
+    for (const group of items) {
+      if (!group.avatarAvailable || groupAvatars.get(group.id)?.version === group.avatarVersion) continue;
+      const record = { version: group.avatarVersion, data: '' };
+      groupAvatars.set(group.id, record); avatarQueue.push({ id: group.id, record });
+    }
+    while (!disposed && avatarLoading < 3 && avatarQueue.length) {
+      const task = avatarQueue.shift();
+      if (groupAvatars.get(task.id) !== task.record) continue;
+      avatarLoading++;
+      request('/' + task.id + '/avatar').then(payload => {
+        if (disposed || groupAvatars.get(task.id) !== task.record || payload.avatarVersion !== task.record.version) return;
+        task.record.data = payload.avatarDataUrl || '';
+        groups = groups.map(withAvatar);
+        if (active?.id === task.id) { active.group = withAvatar(active.group); updateHeader(); }
+        renderList();
+      }).catch(() => {}).finally(() => { avatarLoading--; queueAvatars([]); });
+    }
+  }
+  function clearAvatars() { groupAvatars.clear(); avatarQueue.length = 0; }
   let lastSync = 0, sheetGeneration = 0, availabilityGeneration = 0;
   function disableGroups() {
     availabilityGeneration++;
     if (active) host.stopDirect(); else closeSheet();
-    groups = []; drafts.clear(); delivered.clear(); filter = 'all';
+    groups = []; drafts.clear(); delivered.clear(); clearAvatars(); filter = 'all';
     renderList(); $('portalGroupTabs').hidden = true; $('portalChatGroupsSection').hidden = true;
   }
   function roleLabel(member) {
@@ -160,7 +186,7 @@
       const payload=await request('/'+state.id+'/messages?'+(before?'before='+before:'after='+state.cursor));
       if(version!==generation||active!==state||disposed)return;
       if(!Array.isArray(payload.messages)||!payload.group)throw Error('O servidor ainda não confirmou o grupo.');
-      state.group={...state.group,...payload.group}; updateHeader();
+      state.group=withAvatar({...state.group,...payload.group}); queueAvatars([state.group]); updateHeader();
       for(const message of payload.messages){if(message.clientId)state.messages.delete(message.clientId);state.messages.set(message.id,message);}
       if(before||!state.cursor)state.hasOlder=payload.messages.length>=payload.pageSize;
       if(!before)state.cursor=Math.max(state.cursor,...payload.messages.map(m=>m.id),0);
@@ -230,8 +256,7 @@
       try {
         const data=new FormData(element),invited=data.getAll('members');
         if(!editing&&(!invited.length||invited.length>19))throw Error('Selecione de 1 a 19 amigos.');
-        const avatar=editing?state.group.avatarDataUrl||'':'';
-        const value=kind==='invite'?{members:invited}:{name:String(data.get('name')),description:String(data.get('description')),avatarDataUrl:data.get('photo')?.size?await photo(data.get('photo')):avatar,...(!editing?{members:invited,clientId}:{})};
+        const value=kind==='invite'?{members:invited}:{name:String(data.get('name')),description:String(data.get('description')),...(data.get('photo')?.size?{avatarDataUrl:await photo(data.get('photo'))}:!editing?{avatarDataUrl:''}:{}),...(!editing?{members:invited,clientId}:{})};
         if (!element.isConnected || disposed || dialogVersion !== sheetGeneration) return;
         const payload=await post(kind==='create'?'':'/'+id+(editing?'/settings':'/invite'),value);
         if(kind==='create'&&!payload.group?.id)throw Error('O servidor não confirmou a criação.');
@@ -252,7 +277,7 @@
     const popup=sheet('Dados do grupo','<p>Carregando participantes…</p>'), dialogVersion=sheetGeneration;
     try{
       const payload=await request('/'+state.id);if(active!==state||disposed||dialogVersion!==sheetGeneration||!popup.classList.contains('visible'))return;
-      state.group={...state.group,...payload.group};const admin=['owner','admin'].includes(state.group.role)&&!state.group.closed;
+      state.group=withAvatar({...state.group,...payload.group});queueAvatars([state.group]);const admin=['owner','admin'].includes(state.group.role)&&!state.group.closed;
       popup.querySelector('.portal-group-sheet-body').innerHTML=`<h3>${esc(state.group.name)}</h3><p>${esc(state.group.description)}</p><p class="portal-group-help">Criador original: ${esc(state.group.creatorUsername)}. Fazer parte deste grupo não cria amizades nem libera outras ferramentas.</p>
         <div class="portal-group-actions">${admin?'<button data-action="edit">Editar</button><button data-action="invite">Convidar amigos do criador</button>':''}<button data-action="mute">${state.group.muted?'Ativar avisos':'Silenciar'}</button></div>
         <h4>${admin?'Participantes e convites':'Participantes'}</h4>${payload.members.map(member=>`<div class="portal-group-member"><span class="portal-chat-avatar" aria-hidden="true">${host.avatarMarkup(member)}</span><span><strong>${esc(member.name||member.username)}</strong><small>${esc(roleLabel(member))} · ${member.state==='invited'?'Convidado':member.role==='owner'?'Criador':member.role==='admin'?'Administrador':'Participante'}</small></span>
@@ -281,7 +306,9 @@
         if(payload.enabled!==true||payload.protocol!=='groups-v1'){
           disableGroups(); return;
         }
-        groups=Array.isArray(payload.groups)?payload.groups:[];lastRefresh=Date.now();$('portalGroupTabs').hidden=false;renderList();
+        groups=(Array.isArray(payload.groups)?payload.groups:[]).map(withAvatar);
+        for (const id of groupAvatars.keys()) if (!groups.some(group=>group.id===id)) groupAvatars.delete(id);
+        lastRefresh=Date.now();$('portalGroupTabs').hidden=false;renderList();queueAvatars();
         if(active&&!groups.some(g=>g.id===active.id&&g.state==='member'))host.stopDirect();
         if(active&&!document.hidden)await sync();
         if(!document.hidden&&host.root.classList.contains('open')){
@@ -323,7 +350,7 @@
     popup.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();closeSheet();}if(event.key==='Tab'){const items=[...popup.querySelectorAll('button,input,textarea,a')].filter(el=>!el.disabled&&!el.hidden);const first=items[0],last=items.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){void refresh(true);}});
     window.addEventListener('online',()=>{void refresh(true);});
-    window.addEventListener('portal:session-cleared',()=>{disposed=true;generation++;clearInterval(refreshTimer);close();groups=[];drafts.clear();delivered.clear();section.replaceChildren();tabs.remove();popup.remove();});
+    window.addEventListener('portal:session-cleared',()=>{disposed=true;generation++;clearInterval(refreshTimer);close();groups=[];drafts.clear();delivered.clear();clearAvatars();section.replaceChildren();tabs.remove();popup.remove();});
     refreshTimer=setInterval(()=>{if(!disposed&&!document.hidden){if(active&&host.root.classList.contains('open')&&Date.now()-lastSync>(connected?30000:4400))void sync();if(Date.now()-lastRefresh>(connected?120000:30000))void refresh();}},4500);
     void refresh(true);
   }

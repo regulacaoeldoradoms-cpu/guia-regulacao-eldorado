@@ -35,12 +35,12 @@ const FRIEND = `(SELECT 1 FROM social_users founder
     AND founder.suspended_at IS NULL AND friend.suspended_at IS NULL
     AND eligible_user.role IN ('admin','medico','recepcao','coordenacao','telemedicina','cidadao') LIMIT 1)`;
 const GROUP_COLUMNS = `g.id, g.name, g.description, g.creator_username AS creatorUsername,
-  g.avatar_data AS avatarDataUrl, g.closed, g.created_at AS createdAt, g.updated_at AS updatedAt`;
+  (g.avatar_data <> '') AS avatarAvailable, g.avatar_version AS avatarVersion, g.closed, g.created_at AS createdAt, g.updated_at AS updatedAt`;
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS portal_chat_groups (
     id TEXT PRIMARY KEY, creator_username TEXT NOT NULL, client_id TEXT NOT NULL,
     name TEXT NOT NULL CHECK(length(name) BETWEEN 1 AND 80), description TEXT NOT NULL DEFAULT '',
-    avatar_data TEXT NOT NULL DEFAULT '', closed INTEGER NOT NULL DEFAULT 0 CHECK(closed IN (0,1)),
+    avatar_data TEXT NOT NULL DEFAULT '', avatar_version TEXT NOT NULL DEFAULT '', closed INTEGER NOT NULL DEFAULT 0 CHECK(closed IN (0,1)),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(creator_username, client_id))`,
   `CREATE TABLE IF NOT EXISTS portal_chat_group_members (
@@ -134,8 +134,8 @@ async function group(env, user, id, pending = false) {
   if (!row) failure('GROUP_UNAVAILABLE', 'Este grupo não está disponível para sua conta.', 404);
   return row;
 }
-async function signals(env, id, sender, { extra = [], push = false } = {}) {
-  const audience = rows(await env.AUTH_DB.prepare(`SELECT DISTINCT m.username,m.muted FROM portal_chat_group_members m
+async function signals(env, id, sender, { extra = [], push = false, message = false } = {}) {
+  const audience = rows(await env.AUTH_DB.prepare(`SELECT DISTINCT m.username,m.muted,m.state FROM portal_chat_group_members m
     JOIN auth_users u ON u.username = m.username AND u.active = 1
     JOIN social_users s ON s.auth_username = u.username AND s.suspended_at IS NULL
     WHERE m.group_id = ? AND m.state IN ('member','invited')`).bind(id).all());
@@ -144,7 +144,7 @@ async function signals(env, id, sender, { extra = [], push = false } = {}) {
   await Promise.allSettled([...new Set([...audience.map(m => m.username), ...extra])].map(async username => {
     await broadcastChatRealtime(env, username, { type: 'group-refresh', groupId: id });
     const member = audience.find(m => m.username === username);
-    if (push && member && !member.muted && username !== sender) await notifyUserPush(env, username);
+    if (push && member && !member.muted && username !== sender && (!message || member.state === 'member')) await notifyUserPush(env, username);
   }));
 }
 function background(ctx, task) { if (ctx?.waitUntil) ctx.waitUntil(task.catch(() => {})); else return task; }
@@ -194,15 +194,15 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       if (!CLIENT.test(body.clientId || '')) failure('GROUP_CLIENT_INVALID','Identificador inválido.');
       const id = crypto.randomUUID();
       const created = await env.AUTH_DB.batch([
-        query(env,user, `INSERT OR IGNORE INTO portal_chat_groups(id,creator_username,client_id,name,description,avatar_data)
-          SELECT ?,actor.username,?,?,?,? FROM actor
+        query(env,user, `INSERT OR IGNORE INTO portal_chat_groups(id,creator_username,client_id,name,description,avatar_data,avatar_version)
+          SELECT ?,actor.username,?,?,?,?,? FROM actor
           WHERE (SELECT COUNT(*) FROM portal_chat_group_members WHERE username=actor.username AND state IN ('member','invited'))<${GROUP_LIMITS.joined}
             AND (SELECT COUNT(*) FROM portal_chat_groups WHERE creator_username=actor.username AND closed=0)<${GROUP_LIMITS.owned}
             AND (SELECT COUNT(*) FROM portal_chat_groups WHERE creator_username=actor.username AND created_at>=datetime('now','-1 day'))<${GROUP_LIMITS.createsPerDay}
             AND NOT EXISTS(SELECT 1 FROM json_each(?) wanted, (SELECT actor.username AS creator_username) g
               WHERE wanted.value=actor.username
                 OR (SELECT COUNT(*) FROM portal_chat_group_members capacity WHERE capacity.username=wanted.value AND capacity.state IN ('member','invited'))>=${GROUP_LIMITS.joined}
-                OR NOT EXISTS ${FRIEND.replaceAll('candidate_name','wanted.value')})`, id,body.clientId,...meta,JSON.stringify(invited)),
+                OR NOT EXISTS ${FRIEND.replaceAll('candidate_name','wanted.value')})`, id,body.clientId,...meta,crypto.randomUUID(),JSON.stringify(invited)),
         query(env,user, `INSERT INTO portal_chat_group_members(group_id,username,role,state,joined_at)
           SELECT g.id,actor.username,'owner','member',CURRENT_TIMESTAMP FROM portal_chat_groups g,actor WHERE g.id=? AND g.creator_username=actor.username`,id),
         query(env,user, `INSERT INTO portal_chat_group_members(group_id,username,state)
@@ -214,9 +214,17 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       if (created[0].meta?.changes) await background(ctx, signals(env,found.id,user.username,{push:true}));
       return reply({ group: await group(env,user,found.id) },created[0].meta?.changes ? 201 : 200);
     }
-    const match = tail.match(/^\/([^/]+)(?:\/(members|invite|accept|decline|leave|close|settings|messages|receipt|info))?$/);
+    const match = tail.match(/^\/([^/]+)(?:\/(members|invite|accept|decline|leave|close|settings|messages|receipt|info|avatar))?$/);
     if (!match || !UUID.test(match[1])) failure('GROUP_UNAVAILABLE','Grupo não encontrado.',404);
-    const id = match[1], action = match[2] || '', current = await group(env,user,id,['accept','decline',''].includes(action));
+    const id = match[1], action = match[2] || '', current = await group(env,user,id,['accept','decline','','avatar'].includes(action));
+    if (action === 'avatar' && request.method === 'GET') {
+      const avatar = await query(env,user,`SELECT g.avatar_data AS avatarDataUrl, g.avatar_version AS avatarVersion
+        FROM portal_chat_groups g JOIN portal_chat_group_members m ON m.group_id=g.id
+        JOIN actor ON actor.username=m.username
+        WHERE g.id=? AND m.state IN ('member','invited')`,id).first();
+      if (!avatar) failure('GROUP_UNAVAILABLE','Grupo indisponível.',404);
+      return reply(avatar);
+    }
     if (!action && request.method === 'GET') {
       const people = current.state === 'member' ? rows(await query(env,user, `SELECT m.username,m.role,m.state,u.name,u.job_title AS jobTitle,u.role AS accountRole,u.avatar_data AS avatarDataUrl
         FROM portal_chat_group_members m JOIN auth_users u ON u.username=m.username JOIN portal_chat_groups g ON g.id=m.group_id
@@ -267,7 +275,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
           AND EXISTS(SELECT 1 FROM portal_chat_group_members self WHERE self.group_id=g.id
             AND self.username=actor.username AND self.state='member' AND msg.id>self.joined_after)`,id,body.clientId).first();
       if (!message) failure('GROUP_SEND_REJECTED','O envio não foi autorizado. Confira o acesso e tente novamente.',409);
-      if (result[0].meta?.changes) await background(ctx,signals(env,id,user.username,{push:true}));
+      if (result[0].meta?.changes) await background(ctx,signals(env,id,user.username,{push:true,message:true}));
       return reply({ message, duplicate: !result[0].meta?.changes },result[0].meta?.changes?201:200);
     }
     if (action === 'receipt') {
@@ -326,7 +334,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
         await query(env,user, `UPDATE portal_chat_group_members SET muted=? WHERE group_id=? AND username=(SELECT username FROM actor) AND state='member'`,body.muted?1:0,id).run();
       } else {
         const meta = details(body);
-        const result = await query(env,user, `UPDATE portal_chat_groups AS g SET name=?,description=?,avatar_data=?,updated_at=CURRENT_TIMESTAMP WHERE g.id=? AND g.closed=0 AND ${ADMIN}`,...meta,id).run();
+        const result = await query(env,user, `UPDATE portal_chat_groups AS g SET name=?,description=?,avatar_data=CASE WHEN ? THEN ? ELSE avatar_data END, avatar_version=CASE WHEN ? THEN ? ELSE avatar_version END,updated_at=CURRENT_TIMESTAMP WHERE g.id=? AND g.closed=0 AND ${ADMIN}`,meta[0],meta[1],Object.hasOwn(body,'avatarDataUrl')?1:0,meta[2],Object.hasOwn(body,'avatarDataUrl')?1:0,crypto.randomUUID(),id).run();
         if (!result.meta?.changes) failure('GROUP_ADMIN_REQUIRED','Somente administradores podem editar.',403);
       }
     } else failure('GROUP_UNAVAILABLE','Rota não encontrada.',404);
