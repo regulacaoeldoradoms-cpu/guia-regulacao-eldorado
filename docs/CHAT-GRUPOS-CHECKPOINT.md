@@ -51,7 +51,8 @@ privados, sem execução duplicada nesse gate.
 Evidências: `final-resumed-all-tests.log`, `final-resumed-browser.log` e
 `final-resumed-focused-tests.log` e `evidence-final-20261008/groups-browser.json`,
 fora da árvore publicada. O teste novo teve expectativa ajustada de 404 para o
-403 vigente de sessão revogada; implementação não mudou após a suíte ampla.
+403 vigente de sessão revogada. Resultados amplos são reaproveitados somente para
+partes inalteradas; os 46 focados cobrem a revisão final de fotos e snapshot.
 
 Reaproveitados oito cenários de apresentação do gate `a51bdd8`, pois a mudança de
 snapshot não altera fotos/datas/layout; o CI final executa suas integrações.
