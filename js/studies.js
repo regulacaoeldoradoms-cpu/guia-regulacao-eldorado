@@ -1,7 +1,14 @@
 'use strict';
 
 (async () => {
-  const auth = window.RegulationAuth;
+  const portalAuth = window.RegulationAuth;
+  let accessInvalidated = false;
+  const auth = { ...portalAuth, async api(...args) {
+    if (accessInvalidated) throw new Error('O acesso à sessão mudou. Reabra a página após autenticar.');
+    const result = await portalAuth.api(...args);
+    if (accessInvalidated) throw new Error('O acesso à sessão mudou. Reabra a página após autenticar.');
+    return result;
+  } };
   const user = await auth.requireRole([]);
   if (!user) return;
   if (String(user.username || '').toLowerCase() !== 'wellyton') {
@@ -15,6 +22,8 @@
     activeReview: null,
     answered: new Map(),
     sessionId: '',
+    readingConfirmed: false,
+    readingPending: false,
     doubt: false,
     generation: 0,
     leaving: false,
@@ -48,8 +57,35 @@
   $('portalUserName').textContent = user.name || user.username || 'Wellyton';
   $('portalUserRole').textContent = 'Missão Bancária';
   $('portalLogout')?.addEventListener('click', async () => {
+    invalidateStudyAccess();
     await auth.logout();
     location.replace('/login/');
+  });
+
+  function invalidateStudyAccess() {
+    if (accessInvalidated) return;
+    accessInvalidated = true;
+    ++state.generation;
+    clock?.reset();
+    window.StudyReadingBookmark?.clear(reader);
+    window.StudySessionSummary?.clear($('studyFocus'));
+    state.data = null; state.sessionId = ''; state.activeMission = null; state.activeReview = null;
+    state.readingConfirmed = false; state.readingPending = false;
+    state.answered.clear(); state.pendingAnswers.clear(); state.answerFailure = null;
+    state.activeAssessment = null; state.assessmentState = null;
+    state.assessmentAnswers.clear(); state.assessmentPending.clear();
+    $('studyReadingConfirmation')?.remove();
+    for (const id of ['questionList','lessonSections','sourceList','recallList','assessmentQuestionList',
+      'assessmentHistory','assessmentDiagnostics','assessmentReviewList','assessmentResultSummary']) $(id)?.replaceChildren();
+    for (const id of ['studyFocus','studyDashboard','studyAssessmentFocus','achievementToast']) {
+      const node = $(id); if (node) { node.hidden = true; node.inert = true; }
+    }
+    document.body.style.overflow = '';
+    status('O acesso à sessão mudou. Reabra a página após autenticar.');
+  }
+  window.addEventListener('portal:session-cleared', invalidateStudyAccess);
+  window.addEventListener('portal:session-ready', event => {
+    if (String(event.detail?.user?.username || '').toLowerCase() !== String(user.username).toLowerCase()) invalidateStudyAccess();
   });
 
   function formatHours(seconds) {
@@ -481,11 +517,13 @@
     const topbar = document.querySelector('.study-topbar');
     if (topbar) topbar.inert = false;
     await loadAssessmentState();
+    if (accessInvalidated) return;
     const target = $('startAssessment').disabled ? $('assessmentTitle') : $('startAssessment');
     target.focus?.({ preventScroll:true });
   }
 
   function renderDashboard() {
+    if (accessInvalidated) return;
     const data = state.data;
     if (!data) return;
     const m = data.metrics;
@@ -646,12 +684,14 @@
   }
 
   async function load() {
+    if (accessInvalidated) return;
     status('Carregando seu progresso...');
     try {
       state.data = await auth.api('/api/studies/bootstrap', { method: 'GET' });
       // O estado da avaliação é carregado antes de liberar a grade para impedir
       // uma janela de consulta entre o bootstrap e a descoberta de uma forma ativa.
       await loadAssessmentState(false);
+      if (accessInvalidated) return;
       renderDashboard();
       status(state.assessmentUnavailable
         ? 'Não foi possível confirmar o estado da avaliação independente. As aulas permanecem bloqueadas até a reconexão.'
@@ -772,6 +812,11 @@
     state.activeMission = mission;
     state.activeReview = review;
     state.sessionId = '';
+    state.readingConfirmed = false;
+    state.readingPending = false;
+    window.StudyReadingBookmark?.clear(reader);
+    window.StudySessionSummary?.clear($('studyFocus'));
+    $('studyReadingConfirmation')?.remove();
     clock?.reset();
     state.completing = false;
     state.pendingAnswers.clear();
@@ -827,6 +872,10 @@
     if (resumable.contentVersion !== undefined && Number(resumable.contentVersion) !== Number(mission.contentVersion)) return;
     const generation = enterFocus(mission, review);
     state.sessionId = resumable.sessionId;
+    state.readingConfirmed = state.data?.readingReceiptProtocol === 1 && resumable.readingReceiptProtocol === 1
+      && resumable.readingComplete === true && validReadingDate(resumable.readingConfirmedAt);
+    bindReadingPosition();
+    renderReadingConfirmation();
     restoreRoundAnswers(resumable.answeredQuestionIds, resumable.answerFeedbackProtocol === 1 ? resumable.answerFeedback : []);
     startTimer(state.data?.timeProtocol === 1 && state.data?.resumeProtocol === 1, resumable.durationSeconds || 0);
     status('Sessão recuperada. Continue de onde parou; o tempo anterior já confirmado foi preservado.', true);
@@ -864,6 +913,8 @@
       }
       if (!response.sessionId) throw new Error('Identificador da rodada não recebido.');
       state.sessionId = response.sessionId;
+      bindReadingPosition();
+      renderReadingConfirmation();
       startTimer(response.timeProtocol === 1);
       updateFocusProgress();
       status('', true);
@@ -962,18 +1013,54 @@
     else reader?.showReference(target, ref.sectionId, ref.wholeLesson === true);
   }
 
+  function validReadingDate(value) {
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$/.test(value)
+      && Number.isFinite(Date.parse(value.includes('T') ? value : value.replace(' ', 'T') + 'Z'));
+  }
+
+  function bindReadingPosition() {
+    const mission = state.activeMission;
+    if (!mission || state.activeReview || !state.sessionId || state.data?.readingReceiptProtocol !== 1) return;
+    window.StudyReadingBookmark?.bind(reader, { readingReceiptProtocol: 1, username: user.username.toLowerCase(),
+      missionId: mission.id, contentVersion: mission.contentVersion, sessionId: state.sessionId,
+      sectionIds: mission.sections?.map(section => section.id) || [], readingComplete: state.readingConfirmed });
+  }
+
+  function renderReadingConfirmation(failed = false) {
+    if (state.data?.readingReceiptProtocol !== 1 || !state.activeMission || state.activeReview) return;
+    let notice = $('studyReadingConfirmation');
+    if (!notice) { notice = document.createElement('p'); notice.id = 'studyReadingConfirmation';
+      notice.className = 'study-reader-caption'; notice.setAttribute('role', 'status');
+      $('studyPracticeTitle')?.after(notice); }
+    notice.textContent = state.readingConfirmed ? 'Conclusão da leitura confirmada nesta sessão.'
+      : state.readingPending ? 'Confirmando a conclusão da leitura...'
+      : failed ? 'Conclusão da leitura ainda não confirmada. Use Praticar para tentar novamente.'
+      : 'Conclusão da leitura ainda não confirmada nesta sessão.';
+  }
+
   async function markReadingComplete() {
     if (Number(state.data?.pedagogyProtocol || 0) !== 1) return;
-    if (!state.sessionId || !state.activeMission || state.activeReview || state.leaving) return;
+    if (!state.sessionId || !state.activeMission || state.activeReview || state.leaving || state.readingPending || state.readingConfirmed) return;
 
     const sessionId = state.sessionId;
     const generation = state.generation;
     const mission = state.activeMission;
+    state.readingPending = true;
+    renderReadingConfirmation();
     try {
       const receipt = await auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}/reading-complete`, {
         method: 'POST', body: '{}'
       });
       if (generation !== state.generation || sessionId !== state.sessionId) return;
+      if (state.data?.readingReceiptProtocol === 1) {
+        if (receipt.readingReceiptProtocol !== 1 || receipt.readingComplete !== true || !validReadingDate(receipt.readingConfirmedAt)) {
+          throw new Error('Confirmação de leitura inválida.');
+        }
+        state.readingConfirmed = true;
+        state.readingPending = false;
+        bindReadingPosition();
+        renderReadingConfirmation();
+      }
       if (!state.data.progress) state.data.progress = {};
       const previous = state.data.progress[mission.topicId] || {};
       state.data.progress[mission.topicId] = {
@@ -988,8 +1075,12 @@
       };
     } catch (_) {
       if (generation === state.generation && sessionId === state.sessionId) {
+        state.readingPending = false;
+        renderReadingConfirmation(true);
         status('A prática continua disponível, mas não foi possível registrar agora a conclusão da leitura.', true);
       }
+    } finally {
+      if (generation === state.generation && sessionId === state.sessionId) state.readingPending = false;
     }
   }
 
@@ -1074,11 +1165,13 @@
     if (state.leaving || !state.activeMission) return;
     state.leaving = true;
     ++state.generation;
+    window.StudyReadingBookmark?.clear(reader);
     const sessionId = state.sessionId;
     const durationSeconds = clock?.stop().durationSeconds || 0;
     state.sessionId = '';
     updateFocusProgress();
     const saved = await finishSession(sessionId, durationSeconds);
+    if (accessInvalidated) return;
     document.body.style.overflow = '';
     $('studyFocus').hidden = true;
     $('studyDashboard').hidden = false;
@@ -1089,6 +1182,7 @@
     state.pendingAnswers.clear();
     state.completing = false;
     await load();
+    if (accessInvalidated) return;
     state.leaving = false;
     if (!saved) status('Não foi possível confirmar o salvamento do tempo desta sessão. As respostas já registradas não foram apagadas.');
     const returnTarget = $('continueStudy').disabled ? $('studyGreeting') : $('continueStudy');
@@ -1111,6 +1205,13 @@
       const result = await auth.api(endpoint, { method: 'POST', body: JSON.stringify({ sessionId }) });
       if (generation !== state.generation || sessionId !== state.sessionId) return;
       if (result.newAchievements?.length) showAchievement(result.newAchievements[0]);
+      const summaryContext = { mission, sessionId, mode: review ? 'review' : mission.kind === 'boss' ? 'boss' : 'lesson' };
+      const summaryReady = result.completed === true && window.StudySessionSummary?.valid(result.studySummary, summaryContext);
+      if (summaryReady) {
+        clock?.stop();
+        reader?.showPractice();
+        window.StudySessionSummary.render($('studyFocus'), result.studySummary, summaryContext, leaveFocus);
+      }
       status(
         review
           ? `Revisão concluída. +${result.xpGranted || 0} XP.`
@@ -1119,7 +1220,7 @@
             : `Missão concluída. +${result.xpGranted || 0} XP.`,
         true
       );
-      setTimeout(() => {
+      if (!summaryReady) setTimeout(() => {
         if (generation === state.generation && sessionId === state.sessionId) leaveFocus();
       }, 900);
     } catch (error) {

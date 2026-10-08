@@ -59,6 +59,11 @@ export async function fixture(t, options = {}) {
     if(specifier==='./studies-content/question-feedback-v1.js')return questionFeedback;
     throw new Error('Import não previsto no feedback confirmado: '+specifier);
   });await confirmedFeedback.evaluate();
+  const readingReceipts=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-reading-receipts.js',import.meta.url),'utf8'),{context});
+  await readingReceipts.link(specifier=>{
+    if(specifier==='./study-rounds.js')return rounds;
+    throw new Error('Import não previsto na confirmação de leitura: '+specifier);
+  });await readingReceipts.evaluate();
   const route=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies.js',import.meta.url),'utf8'),{context});
   await route.link((specifier)=>{
     if(specifier==='./auth-management-flex.js')return auth;
@@ -67,6 +72,7 @@ export async function fixture(t, options = {}) {
     if(specifier==='./studies-content/question-feedback-v1.js')return questionFeedback;
     if(specifier==='./study-rounds.js')return rounds;
     if(specifier==='./study-feedback.js')return confirmedFeedback;
+    if(specifier==='./study-reading-receipts.js')return readingReceipts;
     if(specifier==='./study-assessments.js')return assessments;
     throw new Error(`Import não previsto: ${specifier}`);
   });
@@ -79,6 +85,6 @@ export async function fixture(t, options = {}) {
   }
   async function start(m=lesson,reviewId=null){const r=await call('sessions',{missionId:m.id,reviewId});assert.equal(r.status,201);return r.body.sessionId;}
   async function answer(m,id, choices=[]){for(let i=0;i<m.questions.length;i++){const r=await call('attempts',{sessionId:id,questionId:m.questions[i].id,selectedOption:choices[i]??0});assert.equal(r.status,200);}}
-  return {sql,call,start,answer,lesson,boss};
+  return {sql,db,call,start,answer,lesson,boss};
 }
 
