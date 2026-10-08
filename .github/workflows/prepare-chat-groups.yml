@@ -1,0 +1,48 @@
+name: Preparar implementação revisada dos grupos
+on:
+  push:
+    branches: [feat/chat-groups-reviewed-20261008]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/feat/chat-groups-reviewed-20261008'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Aplicar candidata revisada somente à branch isolada
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feat/chat-groups-reviewed-20261008'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = '954feb53575fbcbac4d8eccaef9d71516876f44b'
+          test "$(git hash-object .github/chat-groups-1.patch)" = 'cd455af4160080b1a3e3bc51157ffd9d9f006909'
+          test "$(git hash-object .github/chat-groups-2.patch)" = '00096e4821f2450aac9bc0042f6dd43f054d3c3f'
+          test "$(git hash-object .github/chat-groups-3.patch)" = '669d187f6671f1c22200b9b7013d951929cfe61c'
+          test "$(git hash-object .github/chat-groups-4.patch)" = 'e8dcf2f8f4c033b60e2187e4b72ad3171d757729'
+          git apply --check .github/chat-groups-{1,2,3,4}.patch
+          git apply .github/chat-groups-{1,2,3,4}.patch
+          node --check js/portal-chat-groups.js
+          node --check js/portal-chat.js
+          node --check js/portal-global-chat.js
+          node --check worker/chat-groups.js
+          node --check worker/chat-realtime-do.js
+          node --check portal-sw.js
+          npm --prefix worker run check
+          npm --prefix worker test
+          git rm -- .github/chat-groups-{1,2,3,4}.patch
+          git add --all
+          test -z "$(git diff --cached --name-only -- .github/workflows)"
+          git diff --cached --check
+          git diff --cached --stat
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(chat): grupos privados restritos aos amigos do criador'
+          test "$(git ls-remote origin refs/heads/feat/chat-groups-reviewed-20261008 | cut -f1)" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/feat/chat-groups-reviewed-20261008

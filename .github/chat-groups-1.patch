@@ -1,0 +1,412 @@
+diff --git a/admin/configuracao/index.html b/admin/configuracao/index.html
+--- a/admin/configuracao/index.html	
++++ b/admin/configuracao/index.html	
+@@ -59,6 +59,6 @@
+   <script src="/js/auth-client.js?v=20261001-v34-8"></script>
+   <script src="/js/portal-interactions.js?v=20260923-2"></script>
+   <script src="/js/system-readiness.js?v=20260910-2"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/admin/monitoramento/index.html b/admin/monitoramento/index.html
+--- a/admin/monitoramento/index.html	
++++ b/admin/monitoramento/index.html	
+@@ -60,6 +60,6 @@
+   <script src="/js/auth-client.js?v=20261001-v34-8"></script>
+   <script src="/js/portal-interactions.js?v=20260923-2"></script>
+   <script src="/js/usage-monitor-v2.js?v=20260815-1"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/admin/social/index.html b/admin/social/index.html
+--- a/admin/social/index.html	
++++ b/admin/social/index.html	
+@@ -15,5 +15,5 @@
+   <main class="social-shell"><div class="social-layout" style="grid-template-columns:minmax(0,880px) minmax(230px,1fr)"><section class="social-column"><div class="social-card"><div class="social-section-heading"><div><h1>Fila de denúncias sociais</h1><p>Ações afetam somente a Camada Social e ficam em auditoria técnica.</p></div><select class="social-select" id="moderationStatus" aria-label="Estado das denúncias" style="width:auto"><option value="open">Abertas</option><option value="resolved">Resolvidas</option><option value="dismissed">Descartadas</option></select></div><div id="moderationList"><div class="social-skeleton"></div></div><div class="social-card-pad"><button class="social-button secondary" id="moderationMore" type="button" hidden>Carregar mais</button></div></div><div class="social-status info" id="socialStatus" role="status" aria-live="polite" hidden></div></section><aside class="social-column social-sticky"><section class="social-card social-card-pad"><h2 style="margin:0 0 8px;font-size:.95rem">Escopo da moderação</h2><p style="margin:0;color:#667d90;font-size:.8rem;line-height:1.55">Ocultar conteúdo ou suspender participação social não desativa login, cargo, Telemedicina, Conselho nem ferramentas profissionais.</p></section><section class="social-card social-card-pad"><h2 style="margin:0 0 8px;font-size:.95rem">Migrações sociais</h2><div id="socialMigrationStatus" style="color:#667d90;font-size:.78rem;line-height:1.55">Carregando...</div></section></aside></div></main>
+ </div>
+ <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20261001-v34-8"></script><script src="/js/portal-interactions.js?v=20260923-2"></script><script src="/js/tools-catalog.js?v=20260910-2"></script><script src="/js/social-api.js?v=20260910-4"></script><script src="/js/social-navigation.js?v=20260922-2"></script><script src="/js/social-moderation.js?v=20260910-2"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body></html>
+diff --git a/admin/usuarios/index.html b/admin/usuarios/index.html
+--- a/admin/usuarios/index.html	
++++ b/admin/usuarios/index.html	
+@@ -124,6 +124,6 @@
+   <script src="/js/credential-input.js?v=20260812-1"></script>
+   <script src="/js/admin-users.js?v=20260928-v34-5"></script>
+   <script src="/js/admin-council-role-options.js?v=20260823-1544"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/agenda/index.html b/agenda/index.html
+--- a/agenda/index.html	
++++ b/agenda/index.html	
+@@ -131,6 +131,6 @@
+   <script src="/js/tools-catalog.js?v=20260916-1"></script>
+   <script src="/js/agenda-capacity.js?v=20260916-1"></script>
+   <script src="/js/agenda.js?v=20261005-contact-2"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/agenda/sync/index.html b/agenda/sync/index.html
+--- a/agenda/sync/index.html	
++++ b/agenda/sync/index.html	
+@@ -28,6 +28,6 @@
+   <script src="/js/auth-client.js?v=20261001-v34-8"></script>
+   <script src="/js/portal-interactions.js?v=20260923-2"></script>
+   <script src="/js/agenda-sync-bridge.js?v=20261005-pending-1"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/amigos/index.html b/amigos/index.html
+--- a/amigos/index.html	
++++ b/amigos/index.html	
+@@ -55,6 +55,6 @@
+     </main>
+   </div>
+   <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20261001-v34-8"></script><script src="/js/portal-interactions.js?v=20260923-2"></script><script src="/js/tools-catalog.js?v=20260910-2"></script><script src="/js/social-api.js?v=20260910-4"></script><script src="/js/social-navigation.js?v=20260922-2"></script><script src="/js/social-friends.js?v=20260911-1"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/cidadao/index.html b/cidadao/index.html
+--- a/cidadao/index.html	
++++ b/cidadao/index.html	
+@@ -210,6 +210,6 @@
+   <script src="/js/citizen-declaration.js?v=20260828-1420"></script>
+   <script src="/js/citizen-account-level.js?v=20260819-2"></script>
+   <script src="/js/citizen-mobile-app.js?v=20260828-1317"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/configuracoes/index.html b/configuracoes/index.html
+--- a/configuracoes/index.html	
++++ b/configuracoes/index.html	
+@@ -42,6 +42,6 @@
+     </main>
+   </div>
+   <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20261001-v34-8"></script><script src="/js/portal-interactions.js?v=20260923-2"></script><script src="/js/tools-catalog.js?v=20260910-2"></script><script src="/js/social-api.js?v=20260910-4"></script><script src="/js/social-navigation.js?v=20260922-2"></script><script src="/js/account-section-shell.js?v=20260910-1"></script><script src="/js/settings.js?v=20260923-1"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/conquistas/index.html b/conquistas/index.html
+--- a/conquistas/index.html	
++++ b/conquistas/index.html	
+@@ -26,6 +26,6 @@
+     </main>
+   </div>
+   <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20261001-v34-8"></script><script src="/js/portal-interactions.js?v=20260923-2"></script><script src="/js/tools-catalog.js?v=20260910-2"></script><script src="/js/social-api.js?v=20260910-4"></script><script src="/js/social-navigation.js?v=20260922-2"></script><script src="/js/account-levels.js?v=20260909-1"></script><script src="/js/account-section-shell.js?v=20260910-1"></script><script src="/js/achievements.js?v=20260926-study-2"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/conselho/painel/index.html b/conselho/painel/index.html
+--- a/conselho/painel/index.html	
++++ b/conselho/painel/index.html	
+@@ -215,6 +215,6 @@
+   <script src="/js/council-export.js?v=20260906-1"></script>
+   <script src="/js/council-export-signature.js?v=20260828-1815"></script>
+   <script src="/js/council-detail-mobile.js?v=20260827-1855"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/css/portal-chat.css b/css/portal-chat.css
+--- a/css/portal-chat.css	
++++ b/css/portal-chat.css	
+@@ -217,3 +217,69 @@
+ body.mobile-home-mode .portal-chat-date-divider{font-size:13px}
+ .portal-chat-panel{grid-template-columns:minmax(0,1fr)}
+ .portal-chat-header,.portal-chat-body,.portal-chat-view{min-width:0}
++
++/* Private groups: scoped to the chat, preserving individual conversations and modules. */
++.portal-chat:has(#portalGroupTabs:not([hidden])) .portal-chat-contacts{grid-template-rows:auto minmax(0,auto) minmax(0,1fr)}
++.portal-chat [hidden]{display:none!important}
++.portal-group-tabs{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:10px}
++.portal-group-tabs>div{display:flex;gap:3px}
++.portal-group-tabs button,.portal-group-sheet button,.portal-group-older{font:inherit;font-size:.76rem;line-height:1.4;border:1px solid #bfd4e4;border-radius:9px;background:#edf5fb;color:#185680;padding:8px 9px;cursor:pointer}
++.portal-group-tabs button[aria-pressed="true"]{background:#176fac;color:#fff;border-color:#176fac}
++.portal-group-tabs #portalGroupCreate{display:flex;align-items:center;gap:5px;font-weight:800}
++.portal-group-tabs svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
++.portal-group-tabs button:focus-visible,.portal-group-sheet button:focus-visible,.portal-group-info:focus-visible,.portal-group-older:focus-visible{outline:2px solid #279bd7;outline-offset:2px}
++.portal-group-list-section{overflow:auto;max-height:180px;border-bottom:1px solid #cddde9;padding:6px}
++.portal-group-list-section h3{font-size:.73rem;margin:0 9px 3px;color:#4b6d84}
++.portal-group-empty{font-size:.8rem;line-height:1.5;padding:10px 12px;margin:0;color:#57738a}
++.portal-chat.group-open #portalChatGroupView{grid-template-rows:auto minmax(0,1fr) auto}
++#portalChatGroupView:has(#portalGroupOlder[hidden]){grid-template-rows:minmax(0,1fr) auto}
++.portal-group-info{display:block!important;border:0;background:transparent;color:inherit;text-decoration:underline;font:inherit;font-size:.72rem;font-weight:700;cursor:pointer;padding:2px 0}
++.portal-group-info[hidden]{display:none!important}
++.portal-group-author{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:.72rem;font-weight:800;white-space:normal;color:#256288}
++.portal-group-author .portal-chat-avatar{width:23px;height:23px;font-size:.5rem;min-width:23px}
++.portal-group-message-info{font:inherit;font-size:.62rem;color:inherit;border:0;background:transparent;text-decoration:underline;cursor:pointer;padding:2px}
++.portal-group-sheet{display:none;position:absolute;inset:0;z-index:8;background:#fff;color:#17344f;grid-template-rows:auto minmax(0,1fr)}
++.portal-group-sheet.visible{display:grid}
++.portal-group-sheet>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-bottom:1px solid #d3e2ed;background:#eaf4fc}
++.portal-group-sheet>header>button{font-size:1.2rem;min-width:36px;padding:4px}
++.portal-group-sheet-body{overflow:auto;padding:15px;font-size:.83rem;line-height:1.5;overflow-wrap:anywhere}
++.portal-group-sheet h3{margin:0 0 8px}.portal-group-sheet h4{margin:15px 0 8px}
++.portal-group-sheet form{display:grid;gap:12px}
++.portal-group-sheet label{display:grid;gap:5px;font-weight:650}
++.portal-group-sheet input:not([type="checkbox"]),.portal-group-sheet textarea{min-width:0;width:100%;border:1px solid #bfd4e4;border-radius:8px;background:#fff;color:#17344f;font:inherit;padding:9px}
++.portal-group-sheet textarea{resize:vertical;min-height:66px;max-height:130px}
++.portal-group-sheet .portal-group-friend{display:flex;align-items:center;gap:8px;border-radius:8px;padding:7px;cursor:pointer;font-weight:500}
++.portal-group-friend input[type="checkbox"]{width:18px;height:18px;flex-shrink:0}
++.portal-group-friend .portal-chat-avatar,.portal-group-member .portal-chat-avatar{width:32px;height:32px;font-size:.65rem;flex-shrink:0}
++.portal-group-friends{max-height:220px;overflow:auto;border:1px solid #d3e2ed;border-radius:10px}
++.portal-group-friend:has(input:checked){background:#e3f3ff}
++.portal-group-help{color:#56748a;font-size:.77rem;margin-top:0}
++.portal-group-form-error{color:#a32635;margin:0}
++.portal-group-sheet button:disabled{opacity:.5;cursor:wait}
++.portal-group-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
++.portal-group-member{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #d3e2ed}
++.portal-group-member>span:nth-child(2){flex:1;min-width:100px}
++.portal-group-member small{display:block;font-size:.71rem;color:#56748a}
++.portal-group-member-actions{display:flex;flex-wrap:wrap;gap:5px}
++.portal-chat-status.visible{z-index:10}
++html[data-portal-theme="dark"] .portal-group-sheet{background:#102332;color:#e6eef5}
++html[data-portal-theme="dark"] .portal-group-sheet>header{background:#14344a;border-color:#355469}
++html[data-portal-theme="dark"] .portal-group-tabs button,html[data-portal-theme="dark"] .portal-group-sheet button,html[data-portal-theme="dark"] .portal-group-older{background:#143449;border-color:#355469;color:#c7e6fa}
++html[data-portal-theme="dark"] .portal-group-tabs button[aria-pressed="true"]{background:#1873ad;color:#fff}
++html[data-portal-theme="dark"] .portal-group-sheet input:not([type="checkbox"]),html[data-portal-theme="dark"] .portal-group-sheet textarea{background:#0c1e2c;color:#e6eef5;border-color:#355469}
++html[data-portal-theme="dark"] .portal-group-list-section,html[data-portal-theme="dark"] .portal-group-member,html[data-portal-theme="dark"] .portal-group-friends{border-color:#355469}
++html[data-portal-theme="dark"] .portal-group-help,html[data-portal-theme="dark"] .portal-group-member small,html[data-portal-theme="dark"] .portal-group-empty,html[data-portal-theme="dark"] .portal-group-list-section h3{color:#a8bfd0}
++html[data-portal-theme="dark"] .portal-group-author{color:#a6d9fa}
++html[data-portal-theme="dark"] .portal-group-friend:has(input:checked){background:#183e56}
++html[data-portal-theme="dark"] .portal-group-form-error{color:#ff9caa}
++@media(max-width:600px){.portal-group-sheet-body{font-size:.9rem}.portal-group-tabs button,.portal-group-sheet button{min-height:38px}.portal-group-friends{max-height:28vh}}
++
++/* Use all available contact-list space when one category is selected. */
++.portal-chat[data-group-filter="groups"] .portal-chat-contacts,
++.portal-chat[data-group-filter="people"] .portal-chat-contacts{grid-template-rows:auto minmax(0,1fr)}
++.portal-chat[data-group-filter="groups"] .portal-group-list-section{max-height:none;min-height:0}
++#portalGroupEmojis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
++.portal-group-message-info:disabled{cursor:wait;text-decoration:none;opacity:.7}
++
++#portalChatRoot[data-group-filter="groups"] #portalChatContactsView,
++#portalChatRoot[data-group-filter="people"] #portalChatContactsView{grid-template-rows:auto minmax(0,1fr)}
+diff --git a/docs/CHAT-GRUPOS-CHECKPOINT.md b/docs/CHAT-GRUPOS-CHECKPOINT.md
+new file mode 100644
+--- /dev/null	
++++ b/docs/CHAT-GRUPOS-CHECKPOINT.md	
+@@ -0,0 +1,41 @@
++# Grupos do chat — checkpoint V1
++
++## Implementação validada
++
++Versão `20261008-chat-groups-1`, baseada na main
++`954feb53575fbcbac4d8eccaef9d71516876f44b`.
++Branch de entrega: `feat/chat-groups-reviewed-20261008`.
++Regra permanente e funcionamento: [CHAT-GRUPOS.md](CHAT-GRUPOS.md).
++A documentação inicial da PR #610 foi incorporada e substituída por esta especificação.
++
++As pendências da revisão anterior foram tratadas: Reenviar distingue erro de envio
++pendente; respostas de diálogos antigos são descartadas; desativação nega operações
++e limpa a conversa; idempotência respeita reentrada; limites por conta são atômicos;
++convites pendentes são restritos à administração; saída do criador é explicitada;
++fotos, emoticons e espaço do filtro Grupos foram conferidos nos dois temas.
++
++O caso residual da PR #608 foi corrigido: a primeira entrega em tempo real não é
++ignorada quando o pré-carregamento já conhece a mensagem. A deduplicação de eventos
++permanece separada do cache. O histórico individual e as permissões são preservados.
++
++## Evidências locais da candidata
++
++- 822/822 testes Node aprovados, nenhum teste pulado, incluindo 24 dos grupos.
++- 4/4 combinações de grupo: claro/escuro × desktop/mobile, com três sessões fictícias,
++  rotas reais sobre SQLite e HTTP/WebSocket interceptados. Incluem erro/retry,
++  fotos raster, emoticon no cursor, resposta atrasada e limpeza ao desativar.
++- 14/14 cenários de recebimento individual, inclusive as duas corridas de preload.
++- 8/8 cenários de apresentação individual: fotos, datas, paginação e virada do dia.
++- Capturas da interface foram examinadas. Não foram usadas conversas reais.
++
++Os testes e suas evidências também integram o gate de CI existente. Testes sintéticos
++não equivalem a uma conversa real autenticada nem comprovam, sozinhos, publicação.
++
++## Publicação e continuidade
++
++Integrar somente depois do CI, da revisão de diff e de eventuais apontamentos.
++Usar exclusivamente o gate seguro existente, sem trocar bindings, segredos ou D1.
++Após a integração, registrar na PR de entrega o SHA, resultado de Pages/Worker,
++comparação dos arquivos públicos e healthchecks. Esse registro distingue a publicação
++do aceite no acesso real. Uma aba já aberta precisa de uma recarga para o novo cliente.
++O código desta versão não adiciona criptografia ponta a ponta, anexos ou chamadas.
+diff --git a/docs/CHAT-GRUPOS.md b/docs/CHAT-GRUPOS.md
+new file mode 100644
+--- /dev/null	
++++ b/docs/CHAT-GRUPOS.md	
+@@ -0,0 +1,104 @@
++# Grupos privados do chat
++
++Regra aprovada em 07/10/2026; implementação de 08/10/2026.
++Versão: `20261008-chat-groups-1`.
++O estado de publicação e as evidências ficam em [CHAT-GRUPOS-CHECKPOINT.md](CHAT-GRUPOS-CHECKPOINT.md).
++Relacionados: [chat individual](CHAT-PROFISSIONAL.md) e [gate seguro](WORKER-SAFE-DEPLOY.md).
++
++## Regra permanente do responsável
++
++Somente pessoas com amizade aceita e vigente com o **criador original** podem ser
++convidadas para o grupo. A mesma regra vale quando outro administrador faz o convite.
++Contato profissional, cargo, pedido pendente, amizade removida ou bloqueada não
++substituem a amizade aceita. O servidor revalida a condição na criação, no convite
++e no aceite, inclusive quando o relacionamento muda depois da seleção na tela.
++
++Os participantes não precisam ser amigos entre si. Compartilhar um grupo não cria
++amizades, não autoriza conversas individuais e não concede acesso profissional.
++A referência ao criador original é imutável e não acompanha a troca de administradores.
++
++## Experiência
++
++O painel global conserva as conversas individuais e acrescenta **Novo grupo** e os
++filtros **Todos / Pessoas / Grupos**. Nome, descrição e foto identificam cada grupo.
++As mensagens mostram remetente, foto, horário, divisões por dia e novas mensagens.
++Há emoticons no cursor, envio otimista, erro com **Reenviar**, histórico paginado,
++recibos individuais de recebimento/leitura e silenciamento dos avisos por conta.
++
++O convidado aceita ou recusa. Enquanto convidado, não recebe texto nem lista de
++participantes. Após aceitar, vê somente mensagens posteriores à entrada.
++Administradores podem editar dados, convidar, promover participantes e remover.
++Um administrador nomeado não pode remover/rebaixar outro administrador; o criador
++pode gerenciar esses administradores, mas não altera sua própria referência original.
++Membros comuns veem apenas participantes aceitos; convites pendentes são privados
++para administradores. A administração do grupo não dá privilégios no Portal.
++
++## Saída, revogação e histórico
++
++Sair ou ser removido encerra o acesso às rotas de conteúdo. A reentrada exige novo
++convite e aceite e inicia outro intervalo: mensagens anteriores e do período ausente
++não reaparecem. Um clientId antigo também não pode recuperar texto anterior à entrada.
++O último administrador precisa nomear outro ou encerrar o grupo antes de sair.
++Encerrar conserva o histórico para membros atuais, mas bloqueia novos envios/convites.
++
++Na V1, a saída do criador original é definitiva para ele: não há autoamizade nem
++transferência de fundador. A confirmação de saída informa essa limitação. Os demais
++administradores continuam sujeitos à lista de amigos do criador original. Não se
++implementa retorno privilegiado oculto ou mudança de referência para outro membro.
++
++Perder amizade depois de aceitar não remove silenciosamente um participante já
++admitido. Para revogar o grupo, um administrador deve removê-lo ou ele deve sair.
++A perda de amizade impede novos convites e aceites; não muda a autorização individual.
++Contas inativas, sessões revogadas e suspensões sociais não recebem acesso ao conteúdo.
++
++## Limites iniciais
++
++- 20 pessoas por grupo, incluindo convites pendentes.
++- 100 participações/convites por conta, incluindo grupos encerrados ainda presentes.
++  Sair ou recusar libera a vaga; a listagem não trunca grupos além da capacidade.
++- 20 grupos abertos por criador; até 5 criações nas últimas 24 horas.
++- Até 60 mensagens por minuto/remetente e 2.000 caracteres por mensagem.
++- Nome de até 80 caracteres; descrição de até 500; páginas de 80 mensagens.
++- Foto JPG, PNG ou WebP: navegador aceita até 5 MB, recorta e reduz para 160×160.
++  Servidor aceita apenas data URL raster limitada, com assinatura de formato validada.
++
++Limites de admissão e amizade são verificados na mesma instrução SQL de inclusão.
++Criação usa batch transacional; não deixa grupo parcial quando uma etapa falha.
++Repetição com o mesmo clientId é idempotente dentro do intervalo autorizado.
++
++## Arquitetura e privacidade
++
++`worker/chat-groups.js` acrescenta três tabelas ao D1: grupos, participações por
++intervalo e mensagens. Não modifica nem migra mensagens individuais. Índices e marcador
++`groups-v1` tornam a preparação aditiva e idempotente. Uma mensagem é persistida uma
++vez por grupo, sem uma cópia por participante.
++
++O WebSocket existente envia somente `group-refresh` com UUID do grupo. Nome, foto,
++remetente e texto não são colocados nesse evento. Cada consulta seguinte ao conteúdo
++revalida sessão, participação e intervalo no servidor. Não existe segundo socket.
++A conexão global recebe invalidações mesmo fora da Home; recuperação HTTP trabalha
++com a conversa visível e pausas quando a aba está oculta.
++
++Mensagens e rascunhos dos grupos ficam somente na memória da página. Não são gravados
++em localStorage, sessionStorage, IndexedDB ou Cache Storage. Fotos/HTML/JS públicos
++são separados do conteúdo privado das APIs, que usam no-store. Logout, revogação e
++desativação limpam o grupo ativo. Respostas antigas não substituem novos diálogos.
++
++A flag `CHAT_GROUPS_ENABLED` controla o recurso. Desligada, a listagem retorna capacidade
++indisponível; leitura específica e mutações são negadas, nunca confirmadas como sucesso.
++O desligamento não apaga tabelas nem dados. O gate de deploy seguro permanece intacto.
++
++Não anunciar criptografia ponta a ponta ou equivalência de segurança com WhatsApp.
++Não enviar dados de pacientes, documentos assistenciais ou manifestações pelo grupo.
++Áudios, chamadas, anexos, links públicos de entrada e chamada de atenção coletiva
++não fazem parte desta versão.
++
++## Validação
++
++`worker/tests/chat-groups.test.mjs` verifica as rotas com SQLite real em memória e
++contas fictícias, incluindo amizade do fundador, sessões, reentrada, idempotência,
++limites atômicos, convites privados, desativação e recibos.
++`worker/tests/browser/chat-groups.cjs` usa três sessões fictícias com as rotas reais,
++HTTP/WebSocket interceptados, temas claro/escuro e tamanhos desktop/mobile.
++O gate existente também mantém regressões de recebimento, fotos e datas individuais.
++Testes sintéticos não constituem uma conversa real autenticada em produção.
+diff --git a/docs/CHAT-PROFISSIONAL.md b/docs/CHAT-PROFISSIONAL.md
+--- a/docs/CHAT-PROFISSIONAL.md	
++++ b/docs/CHAT-PROFISSIONAL.md	
+@@ -489,3 +489,15 @@
+ interceptados. Cobrem os dois temas e tamanhos desktop/mobile, recebimento em aba
+ oculta, resposta inicial atrasada, perda de evento seguida de outro ID, duplicação e
+ fallback. Isso não equivale a uma conversa real autenticada em produção.
++
++## Grupos privados — implementação de 08/10/2026
++
++O chat passa a oferecer grupos privados no mesmo painel, sem mudar a autorização das
++conversas individuais. A regra completa e os limites ficam em [CHAT-GRUPOS.md](CHAT-GRUPOS.md).
++Grupos só admitem amigos aceitos do criador original, com convite e aceite revalidado.
++
++A corrida residual da PR #608 foi corrigida nesta entrega: deduplicação usa um conjunto
++limitado de eventos efetivamente tratados, não a presença da mensagem no cache HTTP.
++Assim, o primeiro evento apresenta/avisa uma mensagem pré-carregada; o segundo não duplica.
++Os dois cenários de preload antes do evento passam a integrar os 14 testes de recebimento
++individual no gate de navegador. Fotos, datas e o protocolo WebSocket individual são preservados.
+diff --git a/documentos/index.html b/documentos/index.html
+--- a/documentos/index.html	
++++ b/documentos/index.html	
+@@ -465,6 +465,6 @@
+   <script src="/js/document-viewer.js?v=20260922-3"></script>
+   <script src="/js/document-navigation.js?v=20261003-1"></script>
+   <script src="/js/documents.js?v=20261003-navigation-1"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/estudos/index.html b/estudos/index.html
+--- a/estudos/index.html	
++++ b/estudos/index.html	
+@@ -225,6 +225,6 @@
+   <script src="/js/studies-reader.js?v=20260930-mp-1"></script>
+   <script src="/js/studies-clock.js?v=20260928-resume-1"></script>
+   <script src="/js/studies.js?v=20260930-mp-1"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/ferramentas/index.html b/ferramentas/index.html
+--- a/ferramentas/index.html	
++++ b/ferramentas/index.html	
+@@ -51,6 +51,6 @@
+   <script src="/js/social-api.js?v=20260910-4"></script>
+   <script src="/js/social-navigation.js?v=20260922-2"></script>
+   <script src="/js/tools.js?v=20260910-2"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+diff --git a/index.html b/index.html
+--- a/index.html	
++++ b/index.html	
+@@ -144,6 +144,6 @@
+   <script src="/js/social-feed.js?v=20260910-1"></script>
+   <script src="/js/social-home.js?v=20260910-2"></script>
+   <script src="/js/home.js?v=20260917-3"></script>
+-  <script src="/js/portal-global-chat.js?v=20261007-chat-live-recovery-1" defer></script>
++  <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
+ </body>
+ </html>
+\ No newline at end of file
