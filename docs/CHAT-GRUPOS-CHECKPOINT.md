@@ -1,51 +1,75 @@
 # Grupos do chat — checkpoint V1
 
-## Implementação validada
+## Estado de entrega em 08/10/2026
 
-Versão `20261008-chat-groups-1`, desenvolvida sobre a main
-`954feb53575fbcbac4d8eccaef9d71516876f44b` e conciliada com
-`8e1a208bb924606a85aa4ada2397a81ae80011b5` (PR #609).
-Branch de entrega: `feat/chat-groups-reviewed-20261008`; PR #611.
-Regra permanente e funcionamento: [CHAT-GRUPOS.md](CHAT-GRUPOS.md).
-A documentação inicial da PR #610 foi incorporada e substituída por esta especificação.
+**Grupos ainda não integrados à main nem publicados.**
+PR de implementação: #611, branch `feat/chat-groups-reviewed-20261008`.
+Main conferida: `8e1a208bb924606a85aa4ada2397a81ae80011b5` (PR #609).
+Head de runtime conferido: `348f4d6c947f1e59e4cd94cc367a70a3e2b2e264`.
+Versão prevista: `20261008-chat-groups-1`.
+Regra e funcionamento: [CHAT-GRUPOS.md](CHAT-GRUPOS.md).
+A PR #610 contém apenas o registro inicial e foi substituída por esta implementação.
 
-As pendências da revisão anterior foram tratadas: Reenviar distingue erro de envio
-pendente; respostas de diálogos antigos são descartadas; desativação nega operações
-e limpa a conversa; idempotência respeita reentrada; limites por conta são atômicos;
-convites pendentes são restritos à administração; saída do criador é explicitada;
-fotos, emoticons e espaço do filtro Grupos foram conferidos nos dois temas.
+A cópia local está mais avançada que o runtime desta branch. O comentário
+#6059463452 na PR #611 registra a retomada após a reconexão do ambiente.
+Este commit altera apenas documentação; não publica as correções locais.
 
-O caso residual da PR #608 foi corrigido: a primeira entrega em tempo real não é
-ignorada quando o pré-carregamento já conhece a mensagem. A deduplicação de eventos
-permanece separada do cache. O marcador recebido do diretório também impede contar
-novamente mensagens já incluídas pelo servidor. Histórico e permissões são preservados.
+## Regra preservada
 
-## Evidências locais da candidata
+Somente amigos aceitos e vigentes do criador original podem ser convidados e
+aceitar entrada. Outros administradores não usam apenas os próprios amigos.
+Compartilhar grupo não cria amizade nem libera conversas individuais ou ferramentas.
+As verificações de sessão, participação e amizade continuam no servidor.
 
-- 826/826 testes Node aprovados após conciliação com a PR #609, nenhum teste pulado,
-  incluindo 26 dos grupos e a regressão do contador; antes da conciliação, 823/823.
-- 4/4 combinações de grupo: claro/escuro × desktop/mobile, com três sessões fictícias,
-  rotas reais sobre SQLite e HTTP/WebSocket interceptados. Incluem erro/retry,
-  fotos raster, emoticon no cursor, resposta atrasada e limpeza ao desativar.
-- 15/15 cenários de recebimento individual, inclusive preload e contador do diretório.
-- 8/8 cenários de apresentação individual: fotos, datas, paginação e virada do dia.
-- Revisão final cobre push somente para membros aceitos e avatar privado por versão,
-  sem repetir imagens grandes na listagem a cada mensagem.
-- Capturas da interface foram examinadas. Não foram usadas conversas reais.
+## Implementação e evidências anteriores
 
-Os 26 arquivos da entrega concorrente da Missão Bancária foram preservados.
-A página de estudos combina os scripts novos de estudo com a referência nova do chat;
-o wrangler conserva o preview isolado e acrescenta a flag dos grupos só na produção.
-Os demais arquivos de estudos não foram modificados por esta entrega.
+A candidata incorpora Novo grupo, filtros, fotos, convites com aceite, administração,
+recibos, silenciamento, saída, reentrada limitada e divisões por data.
+As pendências de Reenviar, diálogos antigos, desativação, intervalos de participação,
+limites, convites privados e emoticons já foram tratadas na cópia preservada.
+O caso residual de preload da PR #608 e a duplicação do contador também foram tratados.
+A conciliação com os 26 arquivos concorrentes da PR #609 foi preservada.
 
-Os testes e suas evidências também integram o gate de CI existente. Testes sintéticos
-não equivalem a uma conversa real autenticada nem comprovam, sozinhos, publicação.
+Evidências anteriores: 826/826 testes Node, 15/15 cenários de recebimento individual,
+8/8 de apresentação e 4/4 combinações de grupos. Não equivalem a aceite produtivo.
 
-## Publicação e continuidade
+## Avanço local desta retomada
 
-Integrar somente depois do CI, da revisão de diff e de eventuais apontamentos.
-Usar exclusivamente o gate seguro existente, sem trocar bindings, segredos ou D1.
-Após a integração, registrar na PR #611 o SHA, resultado de Pages/Worker,
-comparação dos arquivos públicos e healthchecks. Esse registro distingue a publicação
-do aceite no acesso real. Uma aba já aberta precisa de uma recarga para o novo cliente.
-O código desta versão não adiciona criptografia ponta a ponta, anexos ou chamadas.
+- `worker/chat-groups.js`: destinatários de push de convite limitados aos novos
+  convidados, preservando a invalidação realtime do grupo.
+- Histórico transmite a foto uma vez por remetente da página, em `senders`, não uma
+  cópia em cada mensagem. A consulta das imagens revalida sessão e participação.
+- `js/portal-chat-groups.js`: associa as fotos aos balões somente em memória.
+- Novo arquivo local `worker/tests/chat-group-notification-payload.test.mjs` contém
+  três regressões; os dois problemas foram reproduzidos antes da correção.
+- Resultado executado nesta retomada: **29/29 testes focados**, sem skips, sintaxe
+  aprovada e **4/4 combinações de grupos no navegador** com três contas fictícias.
+
+Evidências: `resume-final-tests.log`, `resume-browser.log` e
+`evidence-resumed/groups-browser.json`. Backup anterior em `before-final-review`.
+A pasta de desenvolvimento continua `portal-chat-groups-20261008/repo`.
+O script `resume-final-review.cjs` foi aplicado uma vez; não repetir.
+Nenhuma conta/conversa real ou banco produtivo foi usado.
+
+## Pendências antes do merge
+
+A ferramenta bloqueou a escrita de `stage-resumed-review.cjs` por não conseguir
+determinar o status de segurança. O empacotamento não foi executado e as correções
+locais acima não foram enviadas à branch. Não contornar esse bloqueio.
+
+Na próxima retomada autorizada, conferir novamente o estado e:
+
+1. Integrar as correções locais e os três testes ao gate existente, evitando
+   execução duplicada. Conferir também o ajuste local de retry após encerramento.
+2. Atualizar especificação e manifesto com o diff efetivo. A comparação anterior
+   parou em 48 arquivos na branch versus 47 no manifesto; não foi aprovada.
+3. Remover `.github/workflows/apply-group-avatar-review.yml`, auxiliar ainda presente
+   no head conferido, antes de integrar. Não carregar auxiliares temporários à main.
+4. Executar os gates do head final e conferir os apontamentos de revisão. Os dois
+   builds de preview encontrados no head não substituem o conjunto de validações.
+5. Integrar/publicar exclusivamente pelo gate seguro existente e verificar Pages,
+   Worker, arquivos públicos, realtime e barreira anônima/CORS das APIs.
+
+Preservar o trabalho pronto e reutilizar evidências ainda válidas. Não reconstruir
+os grupos nem repetir suítes intactas sem necessidade. Não anunciar publicação,
+criptografia ponta a ponta, anexos ou chamadas antes de existir evidência da entrega.
