@@ -47,7 +47,17 @@ export async function groupFixture({enabled=true}={}){
   }
   async function json(username,path='',body,overrides){const response=await call(username,path,body,overrides);return {status:response.status,...await response.json()};}
   async function create(invited=['beta','gamma'],extra={}){const result=await json('alpha','',{name:'Grupo sintético',description:'Somente testes',members:invited,clientId:'group-'+crypto.randomUUID(),...extra});if(!result.group)throw Error(JSON.stringify({result,sqlErrors:env.AUTH_DB.errors}));return result.group.id;}
-  const fixture={env,users,events,friend,call,json,create,onEvent:null,close:()=>env.AUTH_DB.database.close()};
+  async function addFriends(count){
+    const names=[];
+    for(let index=0;index<count;index++){
+      const username='page.friend.'+String(index).padStart(3,'0');names.push(username);
+      await env.AUTH_DB.prepare(`INSERT INTO auth_users(username,name,job_title,role,password_hash,password_salt,active,must_change_password,session_version,created_by,self_registered)
+        VALUES (?,?,'Teste','cidadao','synthetic-hash','synthetic-salt',1,0,1,'test',1)`).bind(username,'ZZ Pessoa Fictícia '+String(index).padStart(3,'0')).run();
+      await syncSocialUser(env,username);await friend('alpha',username);
+    }
+    return names;
+  }
+  const fixture={env,users,events,friend,call,json,create,addFriends,onEvent:null,close:()=>env.AUTH_DB.database.close()};
   await ensureGroupSchema(env);env.AUTH_DB.errors=[];
   return fixture;
 }

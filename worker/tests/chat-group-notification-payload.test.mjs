@@ -3,6 +3,25 @@ import test from 'node:test';
 import { groupFixture } from './helpers/chat-group-fixture.mjs';
 const run = (name, fn) => test(name, async () => { const f = await groupFixture(); try { await fn(f); } finally { f.close(); } });
 
+run('grupo: candidatos além dos 300 primeiros são paginados e continuam autorizados pelo criador', async f => {
+  const extra=await f.addFriends(301),first=await f.json('alpha','/friends');
+  assert.equal(first.friends.length,300);assert.equal(first.nextCursor,'300');
+  const last=await f.json('alpha','/friends?cursor='+first.nextCursor);
+  assert.equal(last.friends.length,3);assert.equal(last.nextCursor,null);
+  const all=[...first.friends,...last.friends].map(friend=>friend.username);
+  assert.equal(new Set(all).size,303);assert.ok(all.includes(extra.at(-1)));
+  assert.equal((await f.json('alpha','/friends?cursor=-1')).status,400);
+  const id=await f.create(['beta']);await f.json('beta','/'+id+'/accept',{});
+  await f.json('alpha','/'+id+'/members',{username:'beta',action:'promote'});
+  const adminLast=await f.json('beta','/friends?groupId='+id+'&cursor=300');
+  assert.ok(adminLast.friends.some(friend=>friend.username===extra.at(-1)));
+  assert.equal((await f.json('outsider','/friends?groupId='+id+'&cursor=300')).status,404);
+  await f.friend('alpha',extra.at(-1),'removed');
+  assert.equal((await f.json('beta','/'+id+'/invite',{members:[extra.at(-1)]})).status,409);
+  await f.friend('alpha',extra.at(-1));
+  assert.equal((await f.json('beta','/'+id+'/invite',{members:[extra.at(-1)]})).status,200);
+});
+
 run('grupo: silenciamento atualiza somente a própria conta, sem push ou fan-out', async f => {
   const id = await f.create(); await f.json('beta', '/' + id + '/accept', {});
   const pushes = [];

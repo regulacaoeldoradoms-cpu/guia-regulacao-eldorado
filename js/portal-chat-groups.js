@@ -257,16 +257,26 @@
     const editing=kind==='edit',clientId=uuid(),version=generation;
     const popup=sheet(kind==='create'?'Novo grupo':editing?'Editar grupo':'Convidar participantes',`<p class="portal-group-help">Somente amigos aceitos do criador original podem ser convidados.</p><form id="portalGroupForm">
       ${kind!=='invite'?`<label>Nome do grupo<input name="name" maxlength="80" required value="${esc(editing?state.group.name:'')}"></label><label>Descrição<textarea name="description" maxlength="500">${esc(editing?state.group.description:'')}</textarea></label><label>Foto do grupo<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>`:''}
-      ${!editing?'<input type="search" placeholder="Buscar amigo" aria-label="Buscar amigo" data-friend-search><div class="portal-group-friends">Carregando amigos…</div>':''}
+      ${!editing?'<input type="search" placeholder="Buscar amigo" aria-label="Buscar amigo" data-friend-search><div class="portal-group-friends">Carregando amigos…</div><button type="button" class="portal-chat-tool-button" data-friend-more hidden>Carregar mais amigos</button>':''}
       <p class="portal-group-form-error" role="alert"></p><button type="submit" ${editing?'':'disabled'}>${editing?'Salvar alterações':kind==='create'?'Criar e convidar':'Enviar convites'}</button></form>`);
     const dialogVersion=sheetGeneration;
     const element=popup.querySelector('form'),submit=element.querySelector('[type=submit]'),status=element.querySelector('[role=alert]');
     if(!editing){
-      try {const payload=await request('/friends'+(id?'?groupId='+encodeURIComponent(id):''));if(version!==generation||dialogVersion!==sheetGeneration||!element.isConnected)return;
-        const friends=payload.friends||[];element.querySelector('.portal-group-friends').innerHTML=friends.length?friends.map(friend=>`<label class="portal-group-friend"><input type="checkbox" name="members" value="${esc(friend.username)}"><span class="portal-chat-avatar" aria-hidden="true">${host.avatarMarkup(friend)}</span><span>${esc(friend.name||friend.username)}</span></label>`).join(''):'<p>Nenhum amigo elegível. Adicione amigos em <a href="/amigos/">Amigos</a> antes de convidar.</p>';
-        element.querySelector('[data-friend-search]').oninput=event=>{const term=event.target.value.toLowerCase();element.querySelectorAll('.portal-group-friend').forEach(label=>label.hidden=!label.textContent.toLowerCase().includes(term));};
-        submit.disabled=!friends.length;
-      }catch(error){status.textContent=errorText(error);}
+      const list=element.querySelector('.portal-group-friends'),more=element.querySelector('[data-friend-more]'),search=element.querySelector('[data-friend-search]'),seen=new Set();let cursor=null;
+      const filterFriends=()=>{const term=search.value.toLowerCase();list.querySelectorAll('.portal-group-friend').forEach(label=>label.hidden=!label.textContent.toLowerCase().includes(term));};
+      const loadFriends=async()=>{
+        more.disabled=true;status.textContent='';
+        try {const params=new URLSearchParams();if(id)params.set('groupId',id);if(cursor!==null)params.set('cursor',cursor);
+          const payload=await request('/friends'+(params.size?'?'+params:''));if(version!==generation||dialogVersion!==sheetGeneration||!element.isConnected)return;
+          if(!seen.size)list.innerHTML='';
+          const friends=(payload.friends||[]).filter(friend=>!seen.has(friend.username));friends.forEach(friend=>seen.add(friend.username));
+          list.insertAdjacentHTML('beforeend',friends.map(friend=>`<label class="portal-group-friend"><input type="checkbox" name="members" value="${esc(friend.username)}"><span class="portal-chat-avatar" aria-hidden="true">${host.avatarMarkup(friend)}</span><span>${esc(friend.name||friend.username)}</span></label>`).join(''));
+          if(!seen.size)list.innerHTML='<p>Nenhum amigo elegível. Adicione amigos em <a href="/amigos/">Amigos</a> antes de convidar.</p>';
+          cursor=payload.nextCursor??null;more.hidden=cursor===null;submit.disabled=!seen.size;filterFriends();
+        }catch(error){if(element.isConnected&&dialogVersion===sheetGeneration)status.textContent=errorText(error);}
+        finally{more.disabled=false;}
+      };
+      search.oninput=filterFriends;more.onclick=loadFriends;await loadFriends();
     }
     element.onsubmit=async event=>{
       event.preventDefault();submit.disabled=true;status.textContent='';

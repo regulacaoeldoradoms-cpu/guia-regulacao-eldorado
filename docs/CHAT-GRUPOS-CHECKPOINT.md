@@ -76,6 +76,15 @@ Metadados compartilhados continuam atualizando o grupo inteiro. Regressão cobre
 alternância repetida, isolamento, sessão revogada e atualização compartilhada.
 Validação afetada: 32/32 testes Node dos grupos, sem falhas/skips; diff aprovado.
 
+Revisão de candidatos: listagem agora paginada em 300 contas leves por página,
+com cursor validado e botão para carregar mais sem perder seleção/filtro.
+Cada página e o convite revalidam o criador original e as amizades vigentes.
+Validação final afetada: 33/33 Node dos grupos e 4/4 Chromium (claro/escuro,
+desktop/mobile), com 303 amigos fictícios, seleção preservada e candidato da
+última página alcançável. Evidência: `evidence-pagination-final/groups-browser.json`.
+Um pressuposto do teste de navegador sobre lista vazia foi atualizado à nova
+massa sintética; a exclusão do amigo exclusivo de outro admin foi preservada.
+
 Conferir CI terminal e revisão do head final, integrar por squash somente após gates
 aprovados e publicar pelo [fluxo seguro existente](WORKER-SAFE-DEPLOY.md).
 Registrar na PR SHA integrado, builds Pages/Worker e verificação dos 27 arquivos

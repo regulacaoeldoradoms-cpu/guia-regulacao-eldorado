@@ -177,6 +177,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
     }
     if (tail === '/friends' && request.method === 'GET') {
       const id = url.searchParams.get('groupId');
+      const cursor = number(url.searchParams.get('cursor'));
       let founder = user.username;
       if (id) { const current = await group(env,user,id); if (!['owner','admin'].includes(current.role) || current.closed) failure('GROUP_ADMIN_REQUIRED','Somente administradores podem convidar.',403); founder = current.creatorUsername; }
       const list = rows(await query(env,user, `SELECT u.username,u.name,u.role,u.job_title AS jobTitle
@@ -186,8 +187,8 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
           AND EXISTS ${FRIEND.replaceAll('candidate_name','u.username')}
           AND NOT EXISTS(SELECT 1 FROM portal_chat_group_members m WHERE m.group_id=? AND m.username=u.username AND m.state IN ('member','invited'))
           AND (?='' OR EXISTS(SELECT 1 FROM portal_chat_groups scoped WHERE scoped.id=? AND scoped.closed=0 AND ${ADMIN.replaceAll('g.id','scoped.id')}))
-        ORDER BY u.name,u.username LIMIT 300`, founder, id || '', id || '', id || '').all());
-      return reply({ friends: list });
+        ORDER BY u.name,u.username LIMIT 301 OFFSET ?`, founder, id || '', id || '', id || '',cursor).all());
+      return reply({ friends: list.slice(0,300), nextCursor:list.length>300?String(cursor+300):null });
     }
     if (!tail && request.method === 'POST') {
       const body = await input(request), invited = members(body.members), meta = details(body);

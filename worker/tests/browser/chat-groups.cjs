@@ -18,6 +18,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
  try{
  for(const theme of ['light','dark'])for(const mobile of [false,true]){
   const f=await groupFixture(),contexts=[],sockets=new Map(),pages={},errors=[];const name=theme+'-'+(mobile?'mobile':'desktop');
+  await f.addFriends(301);
   let failNextSend=false, failAvatarFor='beta', holdPath='', releaseReply=null; const avatarReads=[],memberAvatarReads=[];
   f.onEvent=(username,event)=>sockets.get(username)?.send(JSON.stringify(event));
   try{
@@ -66,6 +67,14 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
    await a.locator('#portalGroupForm textarea[name=description]').fill('Equipe de teste isolada');
    await a.locator('input[name=photo]').setInputFiles({name:'synthetic-group.png',mimeType:'image/png',buffer:Buffer.from(f.users.alpha.avatarDataUrl.split(',')[1],'base64')});
    await a.locator('input[name=members][value=beta]').check();await a.locator('input[name=members][value=gamma]').check();
+   await a.locator('[data-friend-more]').click();
+   await a.waitForSelector('input[name=members][value="page.friend.300"]');
+   assert.equal(await a.locator('input[name=members][value=beta]').isChecked(),true,'Pagination preserves selected invitations');
+   assert.equal(await a.locator('[data-friend-more]').isVisible(),false,'Last page completes the candidate list');
+   await a.locator('[data-friend-search]').fill('ZZ Pessoa Fictícia 300');
+   await a.locator('input[name=members][value="page.friend.300"]').check();
+   await a.locator('input[name=members][value="page.friend.300"]').uncheck();
+   await a.locator('[data-friend-search]').fill('');
    assert.equal(await a.locator('input[name=members][value=delta]').count(),0,'Only founder friends are selectable');
    await a.screenshot({path:path.join(evidence,'groups-create-'+name+'.png')});
    await a.locator('#portalGroupForm button[type=submit]').click();
@@ -124,7 +133,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
    await a.locator('[data-member=beta][data-member-action=promote]').click();await delay(100);
    await a.locator('[data-group-sheet-close]').click();
    await b.locator('#portalGroupInfo').click();await b.waitForSelector('[data-action=invite]');await b.locator('[data-action=invite]').click();
-   await b.waitForFunction(()=>document.querySelector('.portal-group-friends')?.textContent.includes('Nenhum amigo elegível'));
+   await b.waitForSelector('input[name=members][value="page.friend.000"]');
    assert.equal(await b.locator('input[name=members][value=delta]').count(),0,'Other admin cannot invite own friend');
    await b.locator('[data-group-sheet-close]').click();
    await c.evaluate(()=>window.fixtureVisible(false));
