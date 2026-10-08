@@ -20,6 +20,7 @@
     leaving: false,
     completing: false,
     pendingAnswers: new Set(),
+    answerFailure: null,
     assessmentState: null,
     assessmentUnavailable: false,
     activeAssessment: null,
@@ -30,6 +31,9 @@
 
   const $ = (id) => document.getElementById(id);
   const reader = window.StudyReader?.create($('studyFocus'), openReadingReference) || null;
+  window.StudyRereadReturn?.install(reader, $('studyFocus'), () =>
+    state.activeMission && !state.leaving && !state.completing
+      ? { missionId: state.activeMission.id, sessionId: state.sessionId, generation: state.generation } : null);
   const clock = window.StudyClock?.create({
     root: $('studyFocus'),
     send: (sessionId, durationSeconds) => auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}/checkpoint`, {
@@ -771,6 +775,7 @@
     clock?.reset();
     state.completing = false;
     state.pendingAnswers.clear();
+    state.answerFailure = null;
     state.answered.clear();
     state.doubt = false;
     $('studyTimer').textContent = '00:00';
@@ -780,11 +785,16 @@
     $('studyDashboard').hidden = true;
     $('studyFocus').hidden = false;
     document.body.style.overflow = 'hidden';
+    window.StudyPendingNavigation?.clear();
     renderMission(mission);
     return generation;
   }
 
-  function restoreRoundAnswers(questionIds = []) {
+  function restoreRoundAnswers(questionIds = [], receipts = []) {
+    const confirmed = new Map((Array.isArray(receipts) ? receipts : []).filter(item =>
+      item?.sessionId === state.sessionId && item.missionId === state.activeMission?.id
+      && Number(item.contentVersion) === Number(state.activeMission?.contentVersion)
+      && typeof item.correct === 'boolean').map(item => [item.questionId, item]));
     const valid = new Set(state.activeMission?.questions?.map((question) => question.id) || []);
     for (const questionId of Array.isArray(questionIds) ? questionIds : []) {
       if (!valid.has(questionId)) continue;
@@ -795,7 +805,14 @@
       const button = card.querySelector('[data-answer-question]');
       const feedback = card.querySelector('[data-feedback]');
       if (button) { button.disabled = true; button.textContent = 'Respondida'; }
-      if (feedback) {
+      const receipt = confirmed.get(questionId);
+      const question = state.activeMission.questions.find(item => item.id === questionId);
+      if (receipt && Number.isInteger(receipt.selectedOption) && receipt.selectedOption >= 0
+        && receipt.selectedOption < question.options.length) {
+        const selected = [...card.querySelectorAll('input')].find(input => Number(input.value) === receipt.selectedOption);
+        if (selected) selected.checked = true;
+        renderAttemptFeedback(card, questionId, receipt);
+      } else if (feedback) {
         feedback.hidden = false;
         feedback.className = 'study-feedback prior';
         feedback.textContent = 'Resposta já registrada nesta sessão. Continue de onde parou.';
@@ -807,11 +824,15 @@
   function resumeMission(entry = resumableMission()) {
     if (!entry || state.activeMission || state.leaving || state.assessmentUnavailable || state.assessmentState?.active) return;
     const { mission, review, resumable } = entry;
+    if (resumable.contentVersion !== undefined && Number(resumable.contentVersion) !== Number(mission.contentVersion)) return;
     const generation = enterFocus(mission, review);
     state.sessionId = resumable.sessionId;
-    restoreRoundAnswers(resumable.answeredQuestionIds);
+    restoreRoundAnswers(resumable.answeredQuestionIds, resumable.answerFeedbackProtocol === 1 ? resumable.answerFeedback : []);
     startTimer(state.data?.timeProtocol === 1 && state.data?.resumeProtocol === 1, resumable.durationSeconds || 0);
     status('Sessão recuperada. Continue de onde parou; o tempo anterior já confirmado foi preservado.', true);
+    window.StudyPendingNavigation?.offer(reader, $('studyFocus'), () =>
+      generation === state.generation && state.sessionId === resumable.sessionId && !state.leaving && !state.completing
+        ? { questions: mission.questions.map(q => q.id), confirmed: [...state.answered].filter(([, value]) => value !== 'history').map(([id]) => id), busy: state.pendingAnswers.size > 0 } : null);
     if (generation !== state.generation) return;
   }
 
@@ -837,7 +858,8 @@
       });
       if (generation !== state.generation) {
         // A abertura terminou depois de sair: encerrar somente a sessão antiga.
-        if (response.sessionId) await finishSession(response.sessionId, 0);
+        const recovered = response.sessionId === state.sessionId && state.activeMission?.id === mission.id;
+        if (response.sessionId && !recovered) await finishSession(response.sessionId, 0);
         return;
       }
       if (!response.sessionId) throw new Error('Identificador da rodada não recebido.');
@@ -849,7 +871,7 @@
       if (generation !== state.generation) return;
       state.sessionId = '';
       updateFocusProgress();
-      status('A rodada não foi registrada. Você pode ler a aula; saia e reabra para responder. ' + error.message, true);
+      status('Não foi possível confirmar o registro desta rodada. Recarregue a página ou saia e retome pelo painel para consultar o que foi gravado. ' + error.message, true);
     }
   }
 
@@ -915,7 +937,7 @@
     if (externalRefs.length) {
       const links = document.createElement('div'); links.className = 'study-feedback-review-links';
       for (const ref of externalRefs) {
-        const targetMission = state.data?.missions?.find((item) => item.id === ref.missionId);
+        const targetMission = readingReference(ref.missionId);
         const targetSection = targetMission?.sections?.find((item) => item.id === ref.sectionId);
         if (!targetMission || !targetSection) continue;
         const button = document.createElement('button'); button.type = 'button'; button.className = 'study-feedback-review';
@@ -926,9 +948,15 @@
     }
   }
 
+  // Optional read-only materials never enter the campaign, unlocks or round state.
+  function readingReference(id) {
+    return state.data?.missions?.find(item => item.id === id)
+      || state.data?.referenceMissions?.find(item => item.id === id);
+  }
+
   function openReadingReference(ref) {
     const current = state.activeMission;
-    const target = state.data?.missions?.find(item => item.id === ref.missionId);
+    const target = readingReference(ref.missionId);
     if (!current || !target || state.leaving || Number(target.order) > Number(current.order)) return;
     if (target.id === current.id) reader?.openSection(ref.sectionId);
     else reader?.showReference(target, ref.sectionId, ref.wholeLesson === true);
@@ -984,6 +1012,7 @@
       return;
     }
     const button = card.querySelector('[data-answer-question]');
+    const feedbackFocus = window.StudyFeedbackFocus?.capture(card, button);
     button.disabled = true;
     card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
     state.pendingAnswers.add(questionId);
@@ -998,6 +1027,11 @@
       card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
       button.textContent = 'Respondida';
       renderAttemptFeedback(card, questionId, result);
+      if (typeof result.correct === 'boolean') feedbackFocus?.confirm();
+      if (state.answerFailure?.questionId === questionId) {
+        if ($('focusStatus').textContent === state.answerFailure.message) status('', true);
+        state.answerFailure = null;
+      }
       updateFocusProgress();
     } catch (error) {
       if (generation !== state.generation || sessionId !== state.sessionId) return;
@@ -1005,8 +1039,17 @@
       button.textContent = 'Tentar registrar novamente';
       // A requisição pode ter sido gravada antes da perda da resposta: manter a
       // seleção e repetir o mesmo payload, sem criar uma segunda tentativa.
-      status(error.message || 'Não foi possível confirmar a resposta. Tente registrar novamente.', true);
+      const message = error.message || 'Não foi possível confirmar a resposta. Tente registrar novamente.';
+      state.answerFailure = { questionId, message };
+      const feedback = card.querySelector('[data-feedback]');
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.className = 'study-feedback prior';
+        feedback.textContent = 'Resposta ainda não confirmada. Sua escolha foi preservada para reenviar os mesmos dados. Use “Tentar registrar novamente” ou recarregue para consultar o que foi confirmado.';
+      }
+      status(message, true);
     } finally {
+      feedbackFocus?.cancel();
       if (generation === state.generation && sessionId === state.sessionId) {
         state.pendingAnswers.delete(questionId);
         updateFocusProgress();
@@ -1095,6 +1138,7 @@
   }
 
   $('studyPracticeButton')?.addEventListener('click', markReadingComplete);
+  $('studyStartPractice')?.addEventListener('click', markReadingComplete);
   $('leaveFocus').addEventListener('click', leaveFocus);
   $('completeMission').addEventListener('click', completeMission);
   $('leaveAssessment').addEventListener('click', leaveAssessment);

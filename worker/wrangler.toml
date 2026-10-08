@@ -115,3 +115,39 @@ database_name = "portal-regulacao-users"
 # Funções do Conselho são independentes: membro e presidente.
 # O Canal do Cidadão é uma capacidade transversal: toda conta ativa pode utilizá-lo em caráter pessoal,
 # sem substituir o perfil profissional principal nem conceder permissões institucionais adicionais.
+
+
+# PR609 isolated Preview; production settings above are preserved.
+# Synthetic empty D1 only; no production secrets, AI or third-party integrations.
+[previews.vars]
+ALLOWED_ORIGINS = "http://127.0.0.1:8777"
+CLOUDFLARE_AI_FALLBACK_ENABLED = "false"
+AUTH_ENFORCE_AI = "true"
+AUTH_REQUIRE_EMAIL_VERIFICATION = "true"
+AUTH_MIGRATE_LEGACY_ADMINS = "false"
+SOCIAL_BACKEND_ENABLED = "false"
+SOCIAL_HOME_ENABLED = "false"
+GMAIL_JUDICIAL_RECIPIENTS = ""
+GOOGLE_DRIVE_OAUTH_REDIRECT_URI = ""
+DOCUMENTS_PORTAL_RETURN_URL = ""
+DOCUMENTS_AI_ENABLED = "false"
+DOCUMENTS_AI_PROCESSING_ENABLED = "false"
+DOCUMENTS_AI_BACKGROUND_ENABLED = "false"
+DOCUMENTS_AI_FREE_ONLY = "true"
+DOCUMENTS_AI_FAST_VISION_ENABLED = "false"
+TITON_GEMINI_ENABLED = "false"
+TITON_GEMINI_COMPARISON_ENABLED = "false"
+DOCUMENTS_DRIVE_WRITE_ENABLED = "false"
+DOCUMENTS_HOMOLOGATION_ORIGIN = ""
+
+[previews.observability]
+enabled = false
+
+[[previews.d1_databases]]
+binding = "AUTH_DB"
+database_name = "portal-regulacao-studies-pr609-preview"
+database_id = "9c8dd34a-e6ae-48ea-8f4b-c1f3d1625eb0"
+
+[[previews.durable_objects.bindings]]
+name = "CHAT_REALTIME"
+class_name = "PortalChatRealtime"

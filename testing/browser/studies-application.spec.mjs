@@ -50,7 +50,7 @@ async function setup(page, theme = 'light', missingContent = false, missionId = 
     if (['/js/studies.js', '/js/studies-reader.js'].includes(name)) {
       return route.fulfill({ contentType: 'text/javascript', body: await readFile(path.join(root, name.slice(1)), 'utf8') });
     }
-    if (name.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: '' });
+    if (name.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: ["/js/studies-tables.js","/js/studies-feedback-focus.js","/js/studies-question-accessibility.js","/js/studies-reread-return.js","/js/studies-pending-navigation.js"].includes(name) ? await readFile(path.join(root, name.slice(1)), 'utf8') : '' });
     if (name.startsWith('/css/') && name.endsWith('.css')) {
       return route.fulfill({ contentType: 'text/css', body: await readFile(path.join(root, name.slice(1)), 'utf8') });
     }

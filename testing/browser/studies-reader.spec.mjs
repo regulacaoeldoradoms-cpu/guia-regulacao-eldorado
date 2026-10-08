@@ -65,7 +65,7 @@ async function setup(page, { theme = 'light', history = false, kind = 'lesson', 
       const body = missingReader && pathname.endsWith('studies-reader.js') ? '' : await readFile(path.join(root, pathname.slice(1)), 'utf8');
       return route.fulfill({ contentType: 'text/javascript', body });
     }
-    if (pathname.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: '' });
+    if (pathname.endsWith('.js')) return route.fulfill({ contentType: 'text/javascript', body: ["/js/studies-tables.js","/js/studies-feedback-focus.js","/js/studies-question-accessibility.js","/js/studies-reread-return.js","/js/studies-pending-navigation.js"].includes(pathname) ? await readFile(path.join(root, pathname.slice(1)), 'utf8') : '' });
     if (pathname.startsWith('/css/') && pathname.endsWith('.css')) {
       return route.fulfill({ contentType: 'text/css', body: await readFile(path.join(root, pathname.slice(1)), 'utf8') });
     }
