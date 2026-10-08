@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalChat?.version === '20261007-chat-live-recovery-1') return;
+  if (window.PortalChat?.version === '20261008-chat-groups-1') return;
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
@@ -49,6 +49,7 @@
   const messageSyncRequests = new Map();
   const messageReadThrough = new Map();
   const messageReadRequests = new Map();
+  const handledRealtimeMessages = new Set();
   const messagePreloadRequests = new Map();
   const pendingMessages = new Map();
   const draftCache = new Map();
@@ -107,7 +108,7 @@
       }
     }).then(async (response) => {
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || `Falha no chat (${response.status}).`);
+      if (!response.ok) throw Object.assign(new Error(payload.error || `Falha no chat (${response.status}).`), { status: response.status, code: payload.code });
       return payload;
     });
   }
@@ -136,6 +137,7 @@
 
   function updateRealtimeMode(connected) {
     realtimeConnected = Boolean(connected);
+    window.PortalChatGroups?.connection?.(realtimeConnected);
     if (activeContact && document.getElementById('portalChatRoot')?.classList.contains('open')) startMessagePolling();
     else stopMessagePolling();
     updateAttentionButton();
@@ -417,7 +419,8 @@
     const sender = messageCacheKey(message?.fromUser);
     if (!Number.isInteger(id) || id <= 0 || !sender || sender === currentUser?.username) return;
     if (message?.toUser && messageCacheKey(message.toUser) !== currentUser?.username) return;
-    if (messageCache.get(sender)?.messages?.some((item) => Number(item.id) === id)) return;
+    const eventKey = sender + ':' + id;
+    if (handledRealtimeMessages.has(eventKey)) return;
 
     const contact = contacts.find((item) => item.username === sender);
     if (!contact) {
@@ -425,6 +428,9 @@
       return;
     }
 
+    // A preload is not a handled event: the first event must still render/notify.
+    handledRealtimeMessages.add(eventKey);
+    if (handledRealtimeMessages.size > 1000) handledRealtimeMessages.delete(handledRealtimeMessages.values().next().value);
     mergeCachedMessages(sender, [message], message.sentAt || contact.lastMessageAt || '', {
       hasOlder: messageCache.get(sender)?.hasOlder || false
     });
@@ -452,6 +458,7 @@
 
   function handleRealtimeEvent(payload) {
     const type = String(payload?.type || '');
+    if (type === 'group-refresh') { window.PortalChatGroups?.event?.(payload); return; }
     if (type === 'ready' || type === 'pong') return;
     if (type === 'send-ack') {
       const clientId = String(payload?.clientId || '');
@@ -600,6 +607,7 @@
     messageSyncRequests.clear();
     messageReadThrough.clear();
     messageReadRequests.clear();
+    handledRealtimeMessages.clear();
     messagePreloadRequests.clear();
     for (const entry of pendingMessages.values()) window.clearTimeout(entry?.fallbackTimer);
     pendingMessages.clear();
@@ -1305,7 +1313,7 @@
   function updateLauncher() {
     const badge = document.getElementById('portalChatUnread');
     if (!badge) return;
-    const total = totalUnread();
+    const total = totalUnread() + (window.PortalChatGroups?.count?.() || 0);
     badge.textContent = total > 99 ? '99+' : String(total);
     badge.classList.toggle('visible', total > 0);
   }
@@ -1638,6 +1646,7 @@
   }
 
   function openConversation(contact, options = {}) {
+    window.PortalChatGroups?.close?.();
     saveActiveDraft();
     stopLocalTyping();
     clearRemoteTyping();
@@ -1691,6 +1700,7 @@
   }
 
   function closeConversation() {
+    window.PortalChatGroups?.close?.();
     saveActiveDraft();
     stopLocalTyping();
     clearRemoteTyping();
@@ -1937,6 +1947,7 @@
         <div class="portal-chat-status" id="portalChatStatus" role="status" aria-live="polite"></div>
       </section>`;
     document.body.appendChild(root);
+    window.PortalChatGroups?.mount?.({ root, api, user: currentUser, emojis: CHAT_EMOJIS, smileIcon: ICONS.smile, avatarMarkup, parseServerDate, messageDayLabel, formatTime, stopDirect: closeConversation, updateLauncher, showStatus });
     root.addEventListener('error', (event) => {
       if (event.target?.classList?.contains('portal-chat-avatar-image')) event.target.remove();
     }, true);
@@ -2123,7 +2134,7 @@
   });
 
   window.PortalChat = Object.freeze({
-    version: '20261007-chat-live-recovery-1',
+    version: '20261008-chat-groups-1',
     openByUsername: openChatByUsername,
     openByHandle: openChatByHandle,
     refreshContacts: loadContacts

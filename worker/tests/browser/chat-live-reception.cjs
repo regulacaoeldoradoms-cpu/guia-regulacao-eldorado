@@ -24,7 +24,7 @@ async function pair({theme='light', mobile=false, holdInitial=false, realtime=tr
       if(url.origin!==endpoint) return route.abort();
       requests.push({username,path:url.pathname,query:url.search,method});
       let body={ok:true};
-      if(url.pathname.endsWith('/users')) body={users:[{username:peer,name:'Perfil Fictício '+peer,role:'recepcao',online:true,unread:0,avatarDataUrl:'',lastMessageAt:''}]};
+      if(url.pathname.endsWith('/users')) body={users:[{username:peer,name:'Perfil Fictício '+peer,role:'recepcao',online:true,unread:0,avatarDataUrl:'',lastMessageAt:stored.at(-1)?.sentAt || ''}]};
       else if(url.pathname.endsWith('/ticket')) {if(!realtime)return route.fulfill({status:503,json:{error:'No realtime in fixture'}}); body={ticket:'fixture',protocol:'portal-chat-v1'};}
       else if(url.pathname.endsWith('/messages')&&method==='GET') {
         const after=Number(url.searchParams.get('after')||0);
@@ -130,6 +130,19 @@ async function check(name,run,options={}) {let p;try{p=await pair(options);await
       await p.beta.evaluate(()=>window.fixtureVisibility(true));await delay(100);
       await p.beta.locator('#portalChatClose').click();const closed=count();
       await p.beta.clock.runFor(31000);await delay(100);assert.equal(count(),closed);
+    });
+    for (const visible of [true,false]) await check('preload-before-ws-'+(visible?'open-conversation':'unread-badge'),async p=>{
+      if(!visible)await p.beta.locator('#portalChatClose').click();
+      const before=p.requests.filter(r=>r.username==='beta'&&r.path.endsWith('/messages')).length;
+      const m=p.save('alpha','beta','Mensagem pré-carregada antes do evento');
+      await p.beta.evaluate(()=>window.PortalChat.refreshContacts(true));
+      await p.beta.clock.runFor(1500);await delay(180);
+      assert.ok(p.requests.filter(r=>r.username==='beta'&&r.path.endsWith('/messages')).length>before,'Actual background preload must run');
+      p.inject(m);await delay(100);
+      if(visible)assert.equal(await p.beta.locator('[data-message-id="'+m.id+'"]').count(),1,'First WS event must present a preloaded message');
+      else assert.equal(await p.beta.locator('#portalChatUnread').textContent(),'1','Preloading is not an unread notification');
+      p.inject(m);await delay(80);
+      if(!visible)assert.equal(await p.beta.locator('#portalChatUnread').textContent(),'1','Second WS event remains deduplicated');
     });
     const report={browser:browser.version(),results};
     fs.writeFileSync(path.join(evidence,(process.env.CHAT_REPORT_NAME||'live-results')+'.json'),JSON.stringify(report,null,2));

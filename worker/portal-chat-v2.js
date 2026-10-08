@@ -5,6 +5,7 @@ import { decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
 import { ensureSocialSchema } from './social-schema.js';
+import { handleGroupRoute } from './chat-groups.js';
 import {
   broadcastChatRealtime,
   configureChatRealtimeContacts,
@@ -443,6 +444,10 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
   const username = normalizeUsername(user.username);
+
+  if (url.pathname === '/api/chat/groups' || url.pathname.startsWith('/api/chat/groups/')) {
+    return handleGroupRoute(request, env, user, origin, executionContext);
+  }
 
   if (url.pathname === '/api/chat/presence' && request.method === 'POST') {
     await touchPresence(env, username);

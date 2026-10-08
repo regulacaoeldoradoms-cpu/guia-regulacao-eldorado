@@ -23,6 +23,11 @@ function serverTimestamp() {
 function safeEvent(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const type = String(value.type || '').slice(0, 32);
+  if (type === 'group-refresh') {
+    const groupId = typeof value.groupId === 'string' ? value.groupId : '';
+    return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(groupId)
+      ? { type, groupId } : null;
+  }
   if (!['message', 'receipt', 'typing', 'presence', 'contact-refresh', 'attention'].includes(type)) return null;
   return { ...value, type };
 }
