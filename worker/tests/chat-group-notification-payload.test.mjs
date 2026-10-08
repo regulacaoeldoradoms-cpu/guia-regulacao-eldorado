@@ -57,3 +57,30 @@ run('grupo: candidatos omitem fotos completas e continuam restritos aos amigos d
   assert.deepEqual(adminCandidates.friends.map(u => u.username), ['gamma']);
   assert.ok(adminCandidates.friends.every(u => !Object.hasOwn(u, 'avatarDataUrl')));
 });
+
+run('grupo: detalhes leves e fotos privadas revalidam acesso e visibilidade dos convidados', async f => {
+  const image = 'data:image/png;base64,' + Buffer.alloc(120000).toString('base64');
+  await f.env.AUTH_DB.prepare("UPDATE auth_users SET avatar_data=?,avatar_version='fixture-v1'").bind(image).run();
+  const id = await f.create(); await f.json('beta', '/' + id + '/accept', {});
+  const details = await f.json('alpha', '/' + id);
+  assert.equal(details.members.length, 3);
+  assert.ok(details.members.every(m => m.avatarAvailable === 1 && m.avatarVersion === 'fixture-v1' && !Object.hasOwn(m, 'avatarDataUrl')));
+  assert.ok(JSON.stringify(details).length < 3000);
+  const path = '/' + id + '/member-avatar?username=';
+  assert.equal((await f.json('alpha', path + 'gamma')).avatarDataUrl, image);
+  assert.equal((await f.json('beta', path + 'alpha')).avatarDataUrl, image);
+  assert.equal((await f.json('beta', path + 'gamma')).status, 404, 'Pending invitees remain private to admins');
+  assert.equal((await f.json('gamma', path + 'alpha')).status, 404);
+  assert.equal((await f.json('outsider', path + 'alpha')).status, 404);
+  assert.equal((await f.json('alpha', path + 'outsider')).status, 404);
+  assert.equal((await f.json('beta', path + 'alpha', undefined, {sessionVersion: 99})).status, 403);
+  let revoked = false;
+  f.env.AUTH_DB.beforeQuery = sql => {
+    if (!revoked && sql.includes('SELECT u.avatar_data AS avatarDataUrl')) {
+      revoked = true;
+      f.env.AUTH_DB.database.prepare("UPDATE portal_chat_group_members SET state='removed' WHERE group_id=? AND username='beta'").run(id);
+    }
+  };
+  assert.equal((await f.json('beta', path + 'alpha')).status, 404);
+  assert.equal(revoked, true);
+});

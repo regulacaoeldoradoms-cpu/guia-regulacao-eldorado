@@ -18,7 +18,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
  try{
  for(const theme of ['light','dark'])for(const mobile of [false,true]){
   const f=await groupFixture(),contexts=[],sockets=new Map(),pages={},errors=[];const name=theme+'-'+(mobile?'mobile':'desktop');
-  let failNextSend=false, failAvatarFor='beta', holdPath='', releaseReply=null; const avatarReads=[];
+  let failNextSend=false, failAvatarFor='beta', holdPath='', releaseReply=null; const avatarReads=[],memberAvatarReads=[];
   f.onEvent=(username,event)=>sockets.get(username)?.send(JSON.stringify(event));
   try{
    for(const username of ['alpha','beta','gamma']){
@@ -29,6 +29,7 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
      if(url.hostname==='group-fixture.test')return route.fulfill({contentType:'text/html',body:`<!doctype html><html data-portal-theme="${theme}"><head><meta charset="utf-8">${csp}<style>${styles}</style></head><body class="${mobile?'mobile-home-mode':''}"></body></html>`});
      if(url.origin!==endpoint)return route.abort();
      if(url.pathname.startsWith('/api/chat/groups')){
+      if(url.pathname.endsWith('/member-avatar'))memberAvatarReads.push({username,path:url.pathname,member:url.searchParams.get('username')});
       if(url.pathname.endsWith('/avatar')){
        avatarReads.push({username,path:url.pathname});
        if(username===failAvatarFor){failAvatarFor='';return route.fulfill({status:503,json:{error:'Falha sintética de foto'}});}
@@ -108,6 +109,13 @@ async function until(test){for(let n=0;n<50;n++){if(test())return;await delay(30
    releaseReply();await delay(150);
    assert.equal(await a.locator('#portalGroupSheet header strong').textContent(),'Dados do grupo');
    assert.ok((await a.locator('#portalGroupSheet').textContent()).includes('Médico(a)'));
+   await a.waitForFunction(()=>[...document.querySelectorAll('#portalGroupSheet [data-member-avatar] img')].filter(img=>img.naturalWidth>0).length===3);
+   const memberReads=memberAvatarReads.filter(r=>r.username==='alpha').length;
+   assert.equal(memberReads,3,'Details load each profile separately once');
+   await a.locator('[data-group-sheet-close]').click();await a.locator('#portalGroupInfo').click();
+   await a.waitForSelector('[data-member=beta][data-member-action=promote]');
+   await a.waitForFunction(()=>[...document.querySelectorAll('#portalGroupSheet [data-member-avatar] img')].filter(img=>img.naturalWidth>0).length===3);
+   assert.equal(memberAvatarReads.filter(r=>r.username==='alpha').length,memberReads,'Reopening details reuses authorized version metadata and memory photos');
    await a.screenshot({path:path.join(evidence,'groups-members-'+name+'.png')});
    await a.locator('[data-member=beta][data-member-action=promote]').click();await delay(100);
    await a.locator('[data-group-sheet-close]').click();

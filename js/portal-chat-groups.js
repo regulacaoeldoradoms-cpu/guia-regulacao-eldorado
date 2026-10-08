@@ -6,30 +6,39 @@
   let refreshTimer, refreshPending, refreshAgain = false, lastRefresh = 0, filter = 'all';
   const drafts = new Map(), delivered = new Map(), groupAvatars = new Map();
   const avatarQueue = []; let avatarLoading = 0;
+  const avatarKey = item => item.username ? item.id + ':' + item.username : item.id;
   function withAvatar(group) {
-    const cached = groupAvatars.get(group.id);
+    const cached = groupAvatars.get(avatarKey(group));
     return { ...group, avatarDataUrl: group.avatarAvailable && cached?.version === group.avatarVersion ? cached.data || '' : '' };
   }
   function queueAvatars(items = groups) {
     if (disposed) return;
     for (const group of items) {
-      if (!group.avatarAvailable || groupAvatars.get(group.id)?.version === group.avatarVersion) continue;
+      const key = avatarKey(group);
+      if (!group.avatarAvailable || groupAvatars.get(key)?.version === group.avatarVersion) continue;
       const record = { version: group.avatarVersion, data: '' };
-      groupAvatars.set(group.id, record); avatarQueue.push({ id: group.id, record });
+      groupAvatars.set(key, record); avatarQueue.push({ id: group.id, username: group.username, key, record });
     }
     while (!disposed && avatarLoading < 3 && avatarQueue.length) {
       const task = avatarQueue.shift();
-      if (groupAvatars.get(task.id) !== task.record) continue;
+      if (groupAvatars.get(task.key) !== task.record) continue;
       avatarLoading++;
-      request('/' + task.id + '/avatar').then(payload => {
-        if (disposed || groupAvatars.get(task.id) !== task.record) return;
-        if (payload.avatarVersion !== task.record.version) { groupAvatars.delete(task.id); return; }
+      request('/' + task.id + (task.username ? '/member-avatar?username=' + encodeURIComponent(task.username) : '/avatar')).then(payload => {
+        if (disposed || groupAvatars.get(task.key) !== task.record) return;
+        if (payload.avatarVersion !== task.record.version) { groupAvatars.delete(task.key); return; }
         task.record.data = payload.avatarDataUrl || '';
+        if (task.username) {
+          if (active?.id === task.id) {
+            const avatar = [...($('portalGroupSheet')?.querySelectorAll('[data-member-avatar]') || [])].find(node => node.dataset.memberAvatar === task.username);
+            if (avatar) avatar.innerHTML = host.avatarMarkup({name:avatar.dataset.memberName,avatarDataUrl:task.record.data});
+          }
+          return;
+        }
         groups = groups.map(withAvatar);
         if (active?.id === task.id) { active.group = withAvatar(active.group); updateHeader(); }
         renderList();
       }).catch(() => {
-        if (groupAvatars.get(task.id) === task.record) groupAvatars.delete(task.id);
+        if (groupAvatars.get(task.key) === task.record) groupAvatars.delete(task.key);
       }).finally(() => { avatarLoading--; queueAvatars([]); });
     }
   }
@@ -284,9 +293,10 @@
       state.group=withAvatar({...state.group,...payload.group});queueAvatars([state.group]);const admin=['owner','admin'].includes(state.group.role)&&!state.group.closed;
       popup.querySelector('.portal-group-sheet-body').innerHTML=`<h3>${esc(state.group.name)}</h3><p>${esc(state.group.description)}</p><p class="portal-group-help">Criador original: ${esc(state.group.creatorUsername)}. Fazer parte deste grupo não cria amizades nem libera outras ferramentas.</p>
         <div class="portal-group-actions">${admin?'<button data-action="edit">Editar</button><button data-action="invite">Convidar amigos do criador</button>':''}<button data-action="mute">${state.group.muted?'Ativar avisos':'Silenciar'}</button></div>
-        <h4>${admin?'Participantes e convites':'Participantes'}</h4>${payload.members.map(member=>`<div class="portal-group-member"><span class="portal-chat-avatar" aria-hidden="true">${host.avatarMarkup(member)}</span><span><strong>${esc(member.name||member.username)}</strong><small>${esc(roleLabel(member))} · ${member.state==='invited'?'Convidado':member.role==='owner'?'Criador':member.role==='admin'?'Administrador':'Participante'}</small></span>
+        <h4>${admin?'Participantes e convites':'Participantes'}</h4>${payload.members.map(member=>`<div class="portal-group-member"><span class="portal-chat-avatar" data-member-avatar="${esc(member.username)}" data-member-name="${esc(member.name||member.username)}" aria-hidden="true">${host.avatarMarkup(withAvatar({...member,id:state.id}))}</span><span><strong>${esc(member.name||member.username)}</strong><small>${esc(roleLabel(member))} · ${member.state==='invited'?'Convidado':member.role==='owner'?'Criador':member.role==='admin'?'Administrador':'Participante'}</small></span>
           ${admin&&member.username!==host.user.username&&member.username!==state.group.creatorUsername&&(state.group.creatorUsername===host.user.username||member.role==='member')?`<div class="portal-group-member-actions"><button data-member="${esc(member.username)}" data-member-action="remove">Remover</button>${member.state==='member'?`<button data-member="${esc(member.username)}" data-member-action="${member.role==='admin'?'demote':'promote'}">${member.role==='admin'?'Retirar admin':'Tornar admin'}</button>`:''}</div>`:''}</div>`).join('')}
         <div class="portal-group-actions"><button data-action="leave">Sair do grupo</button>${admin?'<button data-action="close">Encerrar grupo</button>':''}</div>`;
+      queueAvatars(payload.members.map(member=>({...member,id:state.id})));
       popup.querySelectorAll('[data-action]').forEach(button=>button.onclick=async()=>{
         const action=button.dataset.action;if(['edit','invite'].includes(action))return form(action);
         if(action!=='mute'&&!window.confirm(action==='leave'?(state.group.creatorUsername===host.user.username?'Sair deste grupo? Seu acesso ao histórico será encerrado. Nesta versão, a saída do criador é definitiva; os outros administradores continuam gerenciando o grupo.':'Sair deste grupo? Seu acesso ao histórico será encerrado.'):'Encerrar o grupo para novas mensagens e convites?'))return;
@@ -311,7 +321,7 @@
           disableGroups(); return;
         }
         groups=(Array.isArray(payload.groups)?payload.groups:[]).map(withAvatar);
-        for (const id of groupAvatars.keys()) if (!groups.some(group=>group.id===id)) groupAvatars.delete(id);
+        for (const id of groupAvatars.keys()) if (!groups.some(group=>group.id===id.split(':')[0])) groupAvatars.delete(id);
         lastRefresh=Date.now();$('portalGroupTabs').hidden=false;renderList();queueAvatars();
         if(active&&!groups.some(g=>g.id===active.id&&g.state==='member'))host.stopDirect();
         if(active&&!document.hidden)await sync();

@@ -214,7 +214,7 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       if (created[0].meta?.changes) await background(ctx, signals(env,found.id,user.username,{push:true,pushTo:invited}));
       return reply({ group: await group(env,user,found.id) },created[0].meta?.changes ? 201 : 200);
     }
-    const match = tail.match(/^\/([^/]+)(?:\/(members|invite|accept|decline|leave|close|settings|messages|receipt|info|avatar))?$/);
+    const match = tail.match(/^\/([^/]+)(?:\/(members|invite|accept|decline|leave|close|settings|messages|receipt|info|avatar|member-avatar))?$/);
     if (!match || !UUID.test(match[1])) failure('GROUP_UNAVAILABLE','Grupo não encontrado.',404);
     const id = match[1], action = match[2] || '', current = await group(env,user,id,['accept','decline','','avatar'].includes(action));
     if (action === 'avatar' && request.method === 'GET') {
@@ -225,8 +225,20 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
       if (!avatar) failure('GROUP_UNAVAILABLE','Grupo indisponível.',404);
       return reply(avatar);
     }
+    if (action === 'member-avatar' && request.method === 'GET') {
+      const username = url.searchParams.get('username');
+      if (!USER.test(username || '')) failure('GROUP_MEMBER_INVALID','Participante inválido.');
+      const avatar = await query(env,user, `SELECT u.avatar_data AS avatarDataUrl,u.avatar_version AS avatarVersion
+        FROM portal_chat_group_members m JOIN auth_users u ON u.username=m.username
+        JOIN portal_chat_groups g ON g.id=m.group_id
+        WHERE g.id=? AND m.username=? AND ${ACCESS}
+          AND (m.state='member' OR (m.state='invited' AND ${ADMIN}))`,id,username).first();
+      if (!avatar) failure('GROUP_UNAVAILABLE','Participante indisponível.',404);
+      return reply(avatar);
+    }
     if (!action && request.method === 'GET') {
-      const people = current.state === 'member' ? rows(await query(env,user, `SELECT m.username,m.role,m.state,u.name,u.job_title AS jobTitle,u.role AS accountRole,u.avatar_data AS avatarDataUrl
+      const people = current.state === 'member' ? rows(await query(env,user, `SELECT m.username,m.role,m.state,u.name,u.job_title AS jobTitle,u.role AS accountRole,
+        (u.avatar_data <> '') AS avatarAvailable,u.avatar_version AS avatarVersion
         FROM portal_chat_group_members m JOIN auth_users u ON u.username=m.username JOIN portal_chat_groups g ON g.id=m.group_id
         WHERE g.id=? AND ${ACCESS} AND (m.state='member' OR (m.state='invited' AND ${ADMIN})) ORDER BY m.id`,id).all()) : [];
       return reply({ group: current, members: people });

@@ -118,6 +118,10 @@ Falha transitória ou resposta de outra versão libera o registro da foto para u
 nova tentativa na próxima atualização, sem repetição imediata ilimitada.
 O seletor de amigos exibe nome e iniciais, sem transmitir fotos completas;
 a lista continua limitada aos amigos elegíveis do criador original.
+Dados do grupo retornam somente disponibilidade/versão das fotos dos participantes.
+A mesma fila limitada e o cache em memória por grupo, conta e versão carregam as
+imagens por rota privada. Cada busca revalida sessão, participação e visibilidade:
+fotos de convites pendentes continuam restritas à administração.
 
 Encerrar o grupo impede mensagens novas, mas um retry idempotente pode confirmar
 uma mensagem já persistida no intervalo autorizado antes do encerramento. Isso evita

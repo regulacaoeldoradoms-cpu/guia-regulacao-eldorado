@@ -23,6 +23,9 @@ Retry confirma mensagem já persistida no intervalo autorizado após encerrament
 mensagens novas continuam negadas. Fotos do grupo usam rota privada e cache em memória
 por versão; falhas transitórias liberam nova tentativa na próxima atualização.
 O seletor de amigos omite fotos completas e conserva a autorização do criador.
+Detalhes retornam metadados leves das fotos dos participantes, obtidas pela mesma
+fila/cache privado por grupo, conta e versão. A rota revalida o acesso e restringe
+fotos de convidados pendentes aos administradores.
 
 Preload/contador individuais, fotos, datas, diálogos, reentrada, limites atômicos,
 logout e desativação foram preservados. A entrega concorrente #609, conteúdos de
@@ -31,13 +34,18 @@ estudo, bindings e gate seguro permanecem íntegros. Auxiliar temporário
 
 ## Evidências e limites
 
-Retomada local: **830/830 Node**, sem falhas/skips; **30/30 focados de grupos**;
+Retomada local: **831 casos Node verificados** entre suíte ampla e confirmação
+focada; **31/31 focados de grupos**, sem falhas/skips na confirmação final;
 sintaxe afetada e diff sem erros; **4/4 Chromium** claro/escuro × desktop/mobile,
-três contas fictícias, incluindo recuperação de foto após HTTP 503 sintético.
+três contas fictícias, incluindo recuperação de foto após HTTP 503 sintético e
+fotos de participantes preservadas com cache na reabertura dos detalhes.
 As três regressões preservadas e a nova de candidatos integram o gate existente
-em `chat-group-notification-payload.test.mjs`, sem execução duplicada nesse gate.
+em `chat-group-notification-payload.test.mjs`, junto à regressão dos detalhes
+privados, sem execução duplicada nesse gate.
 Evidências: `final-resumed-all-tests.log`, `final-resumed-browser.log` e
-`evidence-final-20261008/groups-browser.json`, fora da árvore publicada.
+`final-resumed-focused-tests.log` e `evidence-final-20261008/groups-browser.json`,
+fora da árvore publicada. O teste novo teve expectativa ajustada de 404 para o
+403 vigente de sessão revogada; implementação não mudou após a suíte ampla.
 
 Reaproveitados para código individual inalterado: 15 cenários de recebimento e oito
 de apresentação; o CI final executa suas integrações. Backup anterior à sincronização:
