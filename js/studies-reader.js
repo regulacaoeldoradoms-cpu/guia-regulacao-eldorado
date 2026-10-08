@@ -218,6 +218,10 @@
     let index = 0;
     let all = false;
     let active = false;
+    let view = 'lesson';
+    let positionObserver = null;
+    function position() { return active ? { sectionId: sections[index]?.id, all, view } : null; }
+    function notifyPosition() { positionObserver?.(position()); }
     let font = 0;
     const fontSizes = [1.125, 1.25, 1.375, 1.5];
     let referencePanel = null;
@@ -290,15 +294,18 @@
       el.studyPreviousPart.disabled = all || index === 0;
       el.studyNextPart.disabled = all || index === sections.length - 1;
       if (moveFocus) focusAt(nodes[all ? 0 : index]?.querySelector('h2'));
+      notifyPosition();
     }
 
-    function setView(view, moveFocus = true) {
+    function setView(nextView, moveFocus = true) {
       if (!active) return;
-      const reading = view !== 'practice';
+      const reading = nextView !== 'practice';
+      view = reading ? 'lesson' : 'practice';
       el.studyLessonPanel.hidden = !reading;
       el.studyPracticePanel.hidden = reading;
       el.studyReadButton.setAttribute('aria-pressed', String(reading));
       el.studyPracticeButton.setAttribute('aria-pressed', String(!reading));
+      notifyPosition();
       if (moveFocus) {
         const heading = reading
           ? el.lessonSections.children[all ? 0 : index]?.querySelector('h2')
@@ -327,6 +334,7 @@
     }
 
     function mount(mission) {
+      positionObserver = null;
       closeReference();
       sections = Array.isArray(mission?.sections) ? mission.sections : [];
       active = sections.length > 0;
@@ -393,7 +401,14 @@
     });
     el.studyFontSmaller.addEventListener('click', () => fontSize(-1));
     el.studyFontLarger.addEventListener('click', () => fontSize(1));
-    return Object.freeze({ mount, openSection, showReference,
+    return Object.freeze({ mount, openSection, showReference, position,
+      observePosition(callback) { positionObserver = typeof callback === 'function' ? callback : null; },
+      restorePosition(saved) {
+        if (!active || !saved || !['lesson', 'practice'].includes(saved.view) || typeof saved.all !== 'boolean') return false;
+        const found = sections.findIndex(section => section.id === saved.sectionId);
+        if (found < 0) return false;
+        index = found; all = saved.all; paintParts(); setView(saved.view, false); return true;
+      },
       showPractice() { closeReference(); setView('practice'); }
     });
   }
