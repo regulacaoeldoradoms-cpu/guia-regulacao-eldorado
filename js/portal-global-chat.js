@@ -1,14 +1,15 @@
 'use strict';
 
 (() => {
-  if (window.PortalGlobalChat?.version === '20261007-chat-live-recovery-1') return;
+  if (window.PortalGlobalChat?.version === '20261008-chat-groups-1') return;
 
-  const VERSION = '20261007-chat-live-recovery-1';
+  const VERSION = '20261008-chat-groups-1';
   const TOKEN_KEY = 'regulacao.portal.session';
   const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';
   const AUTH_CLIENT = '/js/auth-client.js?v=20261001-v34-8';
-  const CHAT_CSS = '/css/portal-chat.css?v=20261007-chat-live-recovery-1';
-  const CHAT_SCRIPT = '/js/portal-chat.js?v=20261007-chat-live-recovery-1';
+  const CHAT_CSS = '/css/portal-chat.css?v=20261008-chat-groups-1';
+  const CHAT_SCRIPT = '/js/portal-chat.js?v=20261008-chat-groups-1';
+  const GROUP_SCRIPT = '/js/portal-chat-groups.js?v=20261008-chat-groups-1';
   const CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1';
   let started = false;
   let running = null;
@@ -83,6 +84,7 @@
     if (!user || user.mustChangePassword) return false;
 
     await stylesheet(CHAT_CSS, 'portalGlobalChatStyle');
+    await script(GROUP_SCRIPT, 'PortalChatGroups', 'portalGlobalChatGroups');
     await script(CHAT_SCRIPT, 'PortalChat', 'portalGlobalChatScript');
     await script(CHAT_OPTIMIZER, 'PortalChatSwitchOptimizer', 'portalGlobalChatOptimizer');
     document.documentElement.dataset.portalGlobalChat = VERSION;

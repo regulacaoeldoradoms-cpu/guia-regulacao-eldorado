@@ -1,8 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), 'utf8');
+
+test('snapshot individual restaura o marcador antes do evento atrasado sem duplicar não lidas', () => {
+  const client=read('js/portal-chat.js'),sw=read('portal-sw.js');
+  const between=(source,start,end)=>{const from=source.indexOf(start),to=source.indexOf(end,from);assert.ok(from>=0&&to>from);return source.slice(from,to);};
+  const context={document:{hidden:false,getElementById:()=>null},window:{},result:null};
+  runInNewContext(`
+    let activeContact=null,restoredChatSession=null,lastContactsLoadedAt=0,currentUser={username:'viewer'};
+    let contacts=[{username:'sender',unread:1,firstUnreadId:42,receivedThroughId:42}];
+    const directoryReceivedThrough=new Map([['sender',42]]),draftCache=new Map(),messageCache=new Map(),handledRealtimeMessages=new Set(),unreadSnapshot=new Map();
+    let notifications=0,merged=0;
+    const messageCacheKey=value=>String(value||''),processUnreadChanges=()=>{},renderContacts=()=>{},mergeCachedMessages=()=>merged++;
+    const showMessageNotification=()=>notifications++;
+    ${between(client,'  function snapshotForServiceWorker()', '  function postChatSessionSnapshot(')}
+    ${between(sw,'function safeChatUsername(', 'function safeChatMessage(')}
+    ${between(client,'  function hydrateChatSessionSnapshot(', '  function replaceCachedMessages(')}
+    ${between(client,'  function handleRealtimeMessage(', '  function handleRealtimeEvent(')}
+    const snapshot=snapshotForServiceWorker();
+    snapshot.contacts=snapshot.contacts.map(safeChatContact);snapshot.savedAt=Date.now();
+    directoryReceivedThrough.clear();contacts=[];hydrateChatSessionSnapshot(snapshot);
+    handleRealtimeMessage({id:42,fromUser:'sender',toUser:'viewer',sentAt:'2026-10-08 12:00:00'});
+    const afterDelayed=contacts[0].unread;
+    handleRealtimeMessage({id:43,fromUser:'sender',toUser:'viewer',sentAt:'2026-10-08 12:00:01'});
+    result={saved:snapshot.contacts[0].receivedThroughId,hydrated:directoryReceivedThrough.get('sender'),afterDelayed,afterNew:contacts[0].unread,notifications,merged};
+  `,context);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.result)),{saved:42,hydrated:42,afterDelayed:1,afterNew:2,notifications:1,merged:2});
+});
 
 const authenticatedModules = [
   'index.html',
@@ -32,7 +59,7 @@ const authenticatedModules = [
 test('chat global aparece em todos os módulos autenticados sem carga manual duplicada', () => {
   for (const path of authenticatedModules) {
     const html = read(path);
-    assert.match(html, /portal-global-chat\.js\?v=20261007-chat-live-recovery-1/, path);
+    assert.match(html, /portal-global-chat\.js\?v=20261008-chat-groups-1/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat\.js\?v=/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat-switch-optimizer\.js\?v=/, path);
   }
@@ -88,8 +115,8 @@ test('bootstrap global exige sessão e preserva primeiro acesso', () => {
   assert.match(source, /regulacao\.portal\.session/);
   assert.match(source, /if \(!storedToken\(\)\) return null/);
   assert.match(source, /user\.mustChangePassword/);
-  assert.match(source, /portal-chat\.css\?v=20261007-chat-live-recovery-1/);
-  assert.match(source, /portal-chat\.js\?v=20261007-chat-live-recovery-1/);
+  assert.match(source, /portal-chat\.css\?v=20261008-chat-groups-1/);
+  assert.match(source, /portal-chat\.js\?v=20261008-chat-groups-1/);
   assert.match(source, /portal-chat-switch-optimizer\.js\?v=20260928-global-1/);
 });
 
@@ -102,8 +129,8 @@ test('componente global mantém autorização atual por cargo e amizade', () => 
 });
 
 test('chat e otimizador têm guarda de versão global', () => {
-  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261007-chat-live-recovery-1'/);
-  assert.match(read('js/portal-chat.js'), /version: '20261007-chat-live-recovery-1'/);
+  assert.match(read('js/portal-chat.js'), /PortalChat\?\.version === '20261008-chat-groups-1'/);
+  assert.match(read('js/portal-chat.js'), /version: '20261008-chat-groups-1'/);
   assert.match(read('js/portal-chat-switch-optimizer.js'), /PortalChatSwitchOptimizer\?\.version === '20260928-global-1'/);
 });
 

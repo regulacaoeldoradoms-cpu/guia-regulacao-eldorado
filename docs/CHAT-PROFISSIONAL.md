@@ -489,3 +489,20 @@ Testes de recebimento usam duas sessões fictícias, cliente real e HTTP/WebSock
 interceptados. Cobrem os dois temas e tamanhos desktop/mobile, recebimento em aba
 oculta, resposta inicial atrasada, perda de evento seguida de outro ID, duplicação e
 fallback. Isso não equivale a uma conversa real autenticada em produção.
+
+## Grupos privados — implementação de 08/10/2026
+
+O chat passa a oferecer grupos privados no mesmo painel, sem mudar a autorização das
+conversas individuais. A regra completa e os limites ficam em [CHAT-GRUPOS.md](CHAT-GRUPOS.md).
+Grupos só admitem amigos aceitos do criador original, com convite e aceite revalidado.
+
+A corrida residual da PR #608 foi corrigida nesta entrega: deduplicação usa um conjunto
+limitado de eventos efetivamente tratados, não a presença da mensagem no cache HTTP.
+Assim, o primeiro evento apresenta/avisa uma mensagem pré-carregada; o segundo não duplica.
+Os dois cenários de preload antes do evento passam a integrar os 15 testes de recebimento
+individual no gate de navegador. Fotos, datas e o protocolo WebSocket individual são preservados.
+
+A revisão pré-publicação também separa o marcador de mensagens recebidas já observado
+no diretório (`receivedThroughId`) dos eventos WebSocket tratados. Uma entrega atrasada
+apresenta o conteúdo sem somar novamente uma mensagem já incluída no contador do
+servidor. O marcador usa o histórico recebido, mesmo após leitura, e é limpo no logout.

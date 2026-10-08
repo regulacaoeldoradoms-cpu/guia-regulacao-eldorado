@@ -86,6 +86,9 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/chat/read' && request.method() === 'POST') data = {ok:true,readThroughId:0};
     else if (url.pathname === '/api/chat/presence') data = {ok:true};
     else if (url.pathname === '/api/chat/users') data = {users:[auditFriend]};
+    // The global panel now lists groups on every authenticated route. Keep this
+    // preservation scenario empty; group interactions have their own fixture.
+    else if (url.pathname === '/api/chat/groups' && request.method() === 'GET') data = {enabled:true,groups:[],protocol:'groups-v1'};
     else if (url.pathname === '/api/chat/messages') data = {messages:[{id:1,fromUser:auditFriend.username,body:'MENSAGEM FICTÍCIA RECEBIDA',sentAt:'2026-09-24T12:00:00Z'},{id:2,fromUser:user.username,body:'MENSAGEM FICTÍCIA ENVIADA',sentAt:'2026-09-24T12:01:00Z'}]};
     else if (url.pathname === '/api/telemedicina/dashboard') data = { today:'2026-09-24', actor:{ admin:true }, patients:[auditPatient], followups:[auditFollowup], counts:{ total:1, pending:1, due:1 } };
     else if (/^\/api\/telemedicina\/patients\/[^/]+$/.test(url.pathname)) data = { patient:auditPatient, followups:[auditFollowup], events:[] };

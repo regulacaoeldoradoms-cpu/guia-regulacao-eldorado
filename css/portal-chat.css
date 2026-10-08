@@ -217,3 +217,69 @@ html[data-portal-theme="dark"] .portal-chat-date-divider>span{background:#142c3c
 body.mobile-home-mode .portal-chat-date-divider{font-size:13px}
 .portal-chat-panel{grid-template-columns:minmax(0,1fr)}
 .portal-chat-header,.portal-chat-body,.portal-chat-view{min-width:0}
+
+/* Private groups: scoped to the chat, preserving individual conversations and modules. */
+.portal-chat:has(#portalGroupTabs:not([hidden])) .portal-chat-contacts{grid-template-rows:auto minmax(0,auto) minmax(0,1fr)}
+.portal-chat [hidden]{display:none!important}
+.portal-group-tabs{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.portal-group-tabs>div{display:flex;gap:3px}
+.portal-group-tabs button,.portal-group-sheet button,.portal-group-older{font:inherit;font-size:.76rem;line-height:1.4;border:1px solid #bfd4e4;border-radius:9px;background:#edf5fb;color:#185680;padding:8px 9px;cursor:pointer}
+.portal-group-tabs button[aria-pressed="true"]{background:#176fac;color:#fff;border-color:#176fac}
+.portal-group-tabs #portalGroupCreate{display:flex;align-items:center;gap:5px;font-weight:800}
+.portal-group-tabs svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.portal-group-tabs button:focus-visible,.portal-group-sheet button:focus-visible,.portal-group-info:focus-visible,.portal-group-older:focus-visible{outline:2px solid #279bd7;outline-offset:2px}
+.portal-group-list-section{overflow:auto;max-height:180px;border-bottom:1px solid #cddde9;padding:6px}
+.portal-group-list-section h3{font-size:.73rem;margin:0 9px 3px;color:#4b6d84}
+.portal-group-empty{font-size:.8rem;line-height:1.5;padding:10px 12px;margin:0;color:#57738a}
+.portal-chat.group-open #portalChatGroupView{grid-template-rows:auto minmax(0,1fr) auto}
+#portalChatGroupView:has(#portalGroupOlder[hidden]){grid-template-rows:minmax(0,1fr) auto}
+.portal-group-info{display:block!important;border:0;background:transparent;color:inherit;text-decoration:underline;font:inherit;font-size:.72rem;font-weight:700;cursor:pointer;padding:2px 0}
+.portal-group-info[hidden]{display:none!important}
+.portal-group-author{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:.72rem;font-weight:800;white-space:normal;color:#256288}
+.portal-group-author .portal-chat-avatar{width:23px;height:23px;font-size:.5rem;min-width:23px}
+.portal-group-message-info{font:inherit;font-size:.62rem;color:inherit;border:0;background:transparent;text-decoration:underline;cursor:pointer;padding:2px}
+.portal-group-sheet{display:none;position:absolute;inset:0;z-index:8;background:#fff;color:#17344f;grid-template-rows:auto minmax(0,1fr)}
+.portal-group-sheet.visible{display:grid}
+.portal-group-sheet>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-bottom:1px solid #d3e2ed;background:#eaf4fc}
+.portal-group-sheet>header>button{font-size:1.2rem;min-width:36px;padding:4px}
+.portal-group-sheet-body{overflow:auto;padding:15px;font-size:.83rem;line-height:1.5;overflow-wrap:anywhere}
+.portal-group-sheet h3{margin:0 0 8px}.portal-group-sheet h4{margin:15px 0 8px}
+.portal-group-sheet form{display:grid;gap:12px}
+.portal-group-sheet label{display:grid;gap:5px;font-weight:650}
+.portal-group-sheet input:not([type="checkbox"]),.portal-group-sheet textarea{min-width:0;width:100%;border:1px solid #bfd4e4;border-radius:8px;background:#fff;color:#17344f;font:inherit;padding:9px}
+.portal-group-sheet textarea{resize:vertical;min-height:66px;max-height:130px}
+.portal-group-sheet .portal-group-friend{display:flex;align-items:center;gap:8px;border-radius:8px;padding:7px;cursor:pointer;font-weight:500}
+.portal-group-friend input[type="checkbox"]{width:18px;height:18px;flex-shrink:0}
+.portal-group-friend .portal-chat-avatar,.portal-group-member .portal-chat-avatar{width:32px;height:32px;font-size:.65rem;flex-shrink:0}
+.portal-group-friends{max-height:220px;overflow:auto;border:1px solid #d3e2ed;border-radius:10px}
+.portal-group-friend:has(input:checked){background:#e3f3ff}
+.portal-group-help{color:#56748a;font-size:.77rem;margin-top:0}
+.portal-group-form-error{color:#a32635;margin:0}
+.portal-group-sheet button:disabled{opacity:.5;cursor:wait}
+.portal-group-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.portal-group-member{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid #d3e2ed}
+.portal-group-member>span:nth-child(2){flex:1;min-width:100px}
+.portal-group-member small{display:block;font-size:.71rem;color:#56748a}
+.portal-group-member-actions{display:flex;flex-wrap:wrap;gap:5px}
+.portal-chat-status.visible{z-index:10}
+html[data-portal-theme="dark"] .portal-group-sheet{background:#102332;color:#e6eef5}
+html[data-portal-theme="dark"] .portal-group-sheet>header{background:#14344a;border-color:#355469}
+html[data-portal-theme="dark"] .portal-group-tabs button,html[data-portal-theme="dark"] .portal-group-sheet button,html[data-portal-theme="dark"] .portal-group-older{background:#143449;border-color:#355469;color:#c7e6fa}
+html[data-portal-theme="dark"] .portal-group-tabs button[aria-pressed="true"]{background:#1873ad;color:#fff}
+html[data-portal-theme="dark"] .portal-group-sheet input:not([type="checkbox"]),html[data-portal-theme="dark"] .portal-group-sheet textarea{background:#0c1e2c;color:#e6eef5;border-color:#355469}
+html[data-portal-theme="dark"] .portal-group-list-section,html[data-portal-theme="dark"] .portal-group-member,html[data-portal-theme="dark"] .portal-group-friends{border-color:#355469}
+html[data-portal-theme="dark"] .portal-group-help,html[data-portal-theme="dark"] .portal-group-member small,html[data-portal-theme="dark"] .portal-group-empty,html[data-portal-theme="dark"] .portal-group-list-section h3{color:#a8bfd0}
+html[data-portal-theme="dark"] .portal-group-author{color:#a6d9fa}
+html[data-portal-theme="dark"] .portal-group-friend:has(input:checked){background:#183e56}
+html[data-portal-theme="dark"] .portal-group-form-error{color:#ff9caa}
+@media(max-width:600px){.portal-group-sheet-body{font-size:.9rem}.portal-group-tabs button,.portal-group-sheet button{min-height:38px}.portal-group-friends{max-height:28vh}}
+
+/* Use all available contact-list space when one category is selected. */
+.portal-chat[data-group-filter="groups"] .portal-chat-contacts,
+.portal-chat[data-group-filter="people"] .portal-chat-contacts{grid-template-rows:auto minmax(0,1fr)}
+.portal-chat[data-group-filter="groups"] .portal-group-list-section{max-height:none;min-height:0}
+#portalGroupEmojis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.portal-group-message-info:disabled{cursor:wait;text-decoration:none;opacity:.7}
+
+#portalChatRoot[data-group-filter="groups"] #portalChatContactsView,
+#portalChatRoot[data-group-filter="people"] #portalChatContactsView{grid-template-rows:auto minmax(0,1fr)}

@@ -5,6 +5,7 @@ import { decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
 import { ensureSocialSchema } from './social-schema.js';
+import { handleGroupRoute } from './chat-groups.js';
 import {
   broadcastChatRealtime,
   configureChatRealtimeContacts,
@@ -194,6 +195,8 @@ async function professionalContacts(env, currentUsername) {
         WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
         WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread,
+      COALESCE((SELECT MAX(m4.id) FROM portal_chat_messages m4
+        WHERE m4.to_user = ? AND m4.from_user = u.username), 0) AS receivedThroughId,
       COALESCE((SELECT MIN(m3.id) FROM portal_chat_messages m3
         WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
     FROM auth_users u
@@ -201,7 +204,7 @@ async function professionalContacts(env, currentUsername) {
     ${socialJoin}
     WHERE u.active = 1 AND u.username <> ? AND u.role IN ('medico','recepcao','coordenacao','admin')
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
+    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
   return users.filter((candidate) => PROFESSIONAL_ROLES.has(candidate.role)).map((item) => ({
     username: item.username,
@@ -214,7 +217,8 @@ async function professionalContacts(env, currentUsername) {
     lastSeen: item.lastSeen || null,
     lastMessageAt: item.lastMessageAt || null,
     unread: Number(item.unread || 0),
-    firstUnreadId: Number(item.firstUnreadId || 0)
+    firstUnreadId: Number(item.firstUnreadId || 0),
+    receivedThroughId: Number(item.receivedThroughId || 0)
   }));
 }
 
@@ -231,6 +235,8 @@ async function socialFriendContacts(env, currentUsername, options = {}) {
         WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
         WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread,
+      COALESCE((SELECT MAX(m4.id) FROM portal_chat_messages m4
+        WHERE m4.to_user = ? AND m4.from_user = u.username), 0) AS receivedThroughId,
       COALESCE((SELECT MIN(m3.id) FROM portal_chat_messages m3
         WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
     FROM social_users viewer
@@ -244,7 +250,7 @@ async function socialFriendContacts(env, currentUsername, options = {}) {
     WHERE viewer.auth_username = ? AND viewer.suspended_at IS NULL
       AND friend.suspended_at IS NULL AND u.active = 1${citizenOnlyClause}
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
+    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
   return users.filter((item) => CHAT_ROLES.has(item.role)).map((item) => ({
     username: item.username,
@@ -257,7 +263,8 @@ async function socialFriendContacts(env, currentUsername, options = {}) {
     lastSeen: item.lastSeen || null,
     lastMessageAt: item.lastMessageAt || null,
     unread: Number(item.unread || 0),
-    firstUnreadId: Number(item.firstUnreadId || 0)
+    firstUnreadId: Number(item.firstUnreadId || 0),
+    receivedThroughId: Number(item.receivedThroughId || 0)
   }));
 }
 
@@ -443,6 +450,10 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
   const username = normalizeUsername(user.username);
+
+  if (url.pathname === '/api/chat/groups' || url.pathname.startsWith('/api/chat/groups/')) {
+    return handleGroupRoute(request, env, user, origin, executionContext);
+  }
 
   if (url.pathname === '/api/chat/presence' && request.method === 'POST') {
     await touchPresence(env, username);
