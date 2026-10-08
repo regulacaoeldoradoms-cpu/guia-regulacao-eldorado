@@ -14,6 +14,21 @@ import { attachApplications } from './application-registry.js';
 import { MP_MISSIONS, MP_SOURCES } from './banking-markets-policy-v1.js';
 import { PC_MISSIONS, PC_SOURCES } from './banking-products-credit-v1.js';
 import { CE_MISSIONS, CE_SOURCES } from './banking-capital-exchange-v1.js';
+import { DP_MISSIONS, DP_SOURCES } from './banking-digital-payments-v1.js';
+import { RE_MISSIONS, RE_SOURCES } from './portuguese-rewriting-v1.js';
+import { CP_MISSIONS, CP_SOURCES } from './portuguese-pronouns-v1.js';
+import { SM_MISSIONS, SM_SOURCES } from './portuguese-semantics-v1.js';
+import { CR_MISSIONS, CR_SOURCES } from './portuguese-crase-v1.js';
+import { RG_MISSIONS, RG_SOURCES } from './portuguese-regency-v1.js';
+import { CN_MISSIONS, CN_SOURCES } from './portuguese-concordance-v1.js';
+import { PU_MISSIONS, PU_SOURCES } from './portuguese-punctuation-v1.js';
+import { CF_MISSIONS, CF_SOURCES } from './portuguese-syntax-foundation-v1.js';
+import { HF_MISSIONS, HF_SOURCES } from './portuguese-hyphen-v1.js';
+import { OL_MISSIONS, OL_SOURCES } from './portuguese-spelling-letters-v1.js';
+import { OA_MISSIONS, OA_SOURCES } from './portuguese-accentuation-v1.js';
+import { PT_MISSIONS, PT_SOURCES } from './portuguese-text-v1.js';
+import { LP_MISSIONS, LP_SOURCES } from './portuguese-reading-v1.js';
+import { IS_MISSIONS, IS_SOURCES } from './banking-institution-specific-v1.js';
 import {
   publishedCatalog,
   publicationSnapshot as buildPublicationSnapshot,
@@ -23,13 +38,28 @@ import {
 const activeMpMissions = publishedCatalog(MP_MISSIONS);
 const activePcMissions = publishedCatalog(PC_MISSIONS);
 const activeCeMissions = publishedCatalog(CE_MISSIONS);
+const activeDpMissions = publishedCatalog(DP_MISSIONS);
+const activeIsMissions = publishedCatalog(IS_MISSIONS);
+const activeLpMissions = publishedCatalog(LP_MISSIONS);
+const activePtMissions = publishedCatalog(PT_MISSIONS);
+const activeOaMissions = publishedCatalog(OA_MISSIONS);
+const activeOlMissions = publishedCatalog(OL_MISSIONS);
+const activeHfMissions = publishedCatalog(HF_MISSIONS);
+const activeReMissions = publishedCatalog(RE_MISSIONS);
+const activeCpMissions = publishedCatalog(CP_MISSIONS);
+const activeSmMissions = publishedCatalog(SM_MISSIONS);
+const activeCrMissions = publishedCatalog(CR_MISSIONS);
+const activeRgMissions = publishedCatalog(RG_MISSIONS);
+const activeCnMissions = publishedCatalog(CN_MISSIONS);
+const activePuMissions = publishedCatalog(PU_MISSIONS);
+const activeCfMissions = publishedCatalog(CF_MISSIONS);
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
   ...OPERATORS_INSURANCE_SOURCES, ...(activeMpMissions.length ? MP_SOURCES : []),
-  ...(activePcMissions.length ? PC_SOURCES : []), ...(activeCeMissions.length ? CE_SOURCES : [])
+  ...(activePcMissions.length ? PC_SOURCES : []), ...(activeCeMissions.length ? CE_SOURCES : []), ...(activeDpMissions.length ? DP_SOURCES : []), ...(activeIsMissions.length ? IS_SOURCES : []), ...(activeLpMissions.length ? LP_SOURCES : []), ...(activePtMissions.length ? PT_SOURCES : []), ...(activeOaMissions.length ? OA_SOURCES : []), ...(activeOlMissions.length ? OL_SOURCES : []), ...(activeHfMissions.length ? HF_SOURCES : []), ...(activeCfMissions.length ? CF_SOURCES : []), ...(activePuMissions.length ? PU_SOURCES : []), ...(activeCnMissions.length ? CN_SOURCES : []), ...(activeRgMissions.length ? RG_SOURCES : []), ...(activeCrMissions.length ? CR_SOURCES : []), ...(activeSmMissions.length ? SM_SOURCES : []), ...(activeCpMissions.length ? CP_SOURCES : []), ...(activeReMissions.length ? RE_SOURCES : [])
 ]);
 export const PLANNED_MISSIONS = Object.freeze([
-  ...BASE_PLANNED_MISSIONS, ...[...activeMpMissions, ...activePcMissions, ...activeCeMissions].map(mission => Object.freeze({ id: mission.id, status: 'published' }))
+  ...BASE_PLANNED_MISSIONS, ...[...activeMpMissions, ...activePcMissions, ...activeCeMissions, ...activeDpMissions, ...activeIsMissions, ...activeLpMissions, ...activePtMissions, ...activeOaMissions, ...activeOlMissions, ...activeHfMissions, ...activeCfMissions, ...activePuMissions, ...activeCnMissions, ...activeRgMissions, ...activeCrMissions, ...activeSmMissions, ...activeCpMissions, ...activeReMissions].map(mission => Object.freeze({ id: mission.id, status: 'published' }))
 ]);
 
 const INTRO_IDS = Object.freeze([
@@ -110,7 +140,7 @@ function teachMission(mission) {
 }
 
 export const PUBLISHED_MISSIONS = publishedCatalog(
-  [...BASE_MISSIONS.map(teachMission).map(attachApplications), ...MP_MISSIONS, ...PC_MISSIONS, ...CE_MISSIONS]
+  [...BASE_MISSIONS.map(teachMission).map(attachApplications), ...MP_MISSIONS, ...PC_MISSIONS, ...CE_MISSIONS, ...DP_MISSIONS, ...IS_MISSIONS, ...LP_MISSIONS, ...PT_MISSIONS, ...OA_MISSIONS, ...OL_MISSIONS, ...HF_MISSIONS, ...CF_MISSIONS, ...PU_MISSIONS, ...CN_MISSIONS, ...RG_MISSIONS, ...CR_MISSIONS, ...SM_MISSIONS, ...CP_MISSIONS, ...RE_MISSIONS]
 );
 
 export const publicationSnapshot = (progress = {}) =>
