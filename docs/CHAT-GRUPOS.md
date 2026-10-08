@@ -1,6 +1,7 @@
 # Grupos do chat — regra de inclusão
 
-Status: decisão de produto registrada; grupos ainda não implementados por este documento.
+Status: decisão de produto registrada; grupos ainda não publicados.
+Implementação e validações: [checkpoint atual](CHAT-GRUPOS-CHECKPOINT.md).
 Data da decisão: 07/10/2026.
 Base técnica conferida: main em `954feb53575fbcbac4d8eccaef9d71516876f44b`.
 Documento relacionado: [Chat profissional e social](CHAT-PROFISSIONAL.md).
@@ -33,29 +34,29 @@ qualquer administrador que venha a ser nomeado posteriormente.
 - A seleção de candidatos não deverá expor a terceiros a lista completa de
   amigos do criador fora do escopo estritamente autorizado da administração.
 
-## Pontos ainda não decididos
+## Detalhamento posterior
 
-A regra acima trata de novas inclusões. Ainda devem ser definidos: quem poderá
-criar e administrar grupos; entrada direta ou convite com aceite; visibilidade
-do histórico anterior à entrada; efeito de desfazer amizade ou bloquear após
-a entrada; saída ou desativação do criador; e eventual transferência de gestão.
-Não implementar remoção automática de membros nem trocar a referência de
-amizade para outro administrador sem uma decisão explícita sobre esses casos.
-As demais funcionalidades sugeridas na conversa são propostas, não entregas.
+Após a autorização de desenvolvimento, foram adotados convites com aceite,
+histórico a partir da entrada, revogação de acesso após saída/remoção e limites
+iniciais de uso. O checkpoint diferencia o que já foi implementado em ambiente
+isolado, os testes executados e os ajustes ainda necessários antes da publicação.
+A referência de amizade não será transferida para outro administrador.
 
-## Critérios de validação a implementar
+## Critérios de validação
 
 Verificar inclusão com amizade aceita, recusa sem amizade ou com pedido pendente,
 recusa após revogação entre seleção e confirmação, ausência de exceção por cargo,
 e impossibilidade de um administrador usar apenas a própria lista de amigos.
 Validar também que dois amigos distintos do criador possam participar sem
 amizade entre si e sem ganhar autorização de contato individual por esse fato.
+Resultados executados e limites estão no checkpoint, não devem ser inferidos
+a partir desta lista de requisitos.
 
 ## Estado e limites deste registro
 
-Alteração exclusivamente documental em branch separada, sem modificar a main,
-o runtime, o banco de dados ou as permissões atuais. Nenhum grupo foi criado.
-Antes da implementação, conferir novamente o código e as pendências do chat,
-incluindo o caso residual de pré-carregamento e primeiro evento registrado na
-PR #608. O aceite de funcionamento relatado pelo responsável não equivale à
-correção técnica desse caso específico.
+Esta branch e a PR #610 permanecem documentais, em rascunho. A implementação
+funcional está preservada no ambiente de desenvolvimento, não na main.
+Nenhum grupo real foi criado e nenhum dado produtivo foi alterado por esta etapa.
+A correção residual de pré-carregamento da PR #608 passou nos testes locais,
+mas também não foi publicada. Antes de retomar, ler o checkpoint e reconferir
+os arquivos e a main para preservar alterações concorrentes.
