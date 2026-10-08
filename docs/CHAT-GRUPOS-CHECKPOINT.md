@@ -18,6 +18,9 @@ sessão, participação e intervalo. Grupo não cria amizade nem acesso individu
 
 Convites notificam externamente somente novos convidados; mensagens notificam somente
 membros aceitos não silenciados. Histórico transmite metadados de foto por autor
+e mensagens invalidam somente membros aceitos; convites pendentes não recebem
+push nem sinais de mensagem. Recibos não transmitem invalidações. Convites e
+mudanças compartilhadas mantêm a audiência necessária. Regressão: 33/33 Node.
 da página, com autorização revalidada. Cache privado carrega a imagem por versão
 e associa aos balões somente em memória, inclusive na sincronização incremental.
 Retry confirma mensagem já persistida no intervalo autorizado após encerramento;
@@ -89,7 +92,8 @@ Head `0bcffdb`: 62/62 checks aprovados, incluindo 834/834 Node e 216/216
 cenários visuais (120 comparações com base, zero endpoints inesperados).
 Antes do squash, main avançou para #612. Integração preserva integralmente seus
 15 arquivos; `estudos/index.html` difere da main somente na versão do bootstrap
-global do chat. Runtime do chat permanece idêntico ao head aprovado. Evidências
+global do chat. Essa resolução preservou o runtime aprovado; a revisão posterior
+restringiu a audiência de invalidações de mensagens, validada nos 33 testes. Evidências
 locais intactas e checks #612 são reaproveitados no escopo; gates obrigatórios
 do novo head serão aguardados. Este registro ainda não comprova publicação.
 

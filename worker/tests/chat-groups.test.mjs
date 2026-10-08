@@ -218,13 +218,19 @@ run('grupo: limite de mensagens e criações não impede retry idempotente permi
 });
 
 
-run('grupo: mensagens não geram push para convites ainda não aceitos',async f=>{
+run('grupo: mensagens não geram push ou invalidação para convites ainda não aceitos',async f=>{
   const id=await f.create();await f.json('beta','/'+id+'/accept',{});
   const pushes=[];f.env.AUTH_DB.beforeQuery=(sql,values)=>{if(sql.includes('SELECT endpoint')&&sql.includes('FROM portal_push_subscriptions'))pushes.push(values[0]);};
-  await f.json('alpha','/'+id+'/messages',payload('Somente membros recebem push'));
+  f.events.length=0;
+  const sent=await f.json('alpha','/'+id+'/messages',payload('Somente membros recebem push'));
   assert.deepEqual(pushes,['beta']);
+  assert.deepEqual(f.events.map(item=>item.username).sort(),['alpha','beta']);
+  f.events.length=0;
+  await f.json('beta','/'+id+'/receipt',{kind:'delivered',throughId:sent.message.id});
+  assert.deepEqual(f.events,[],'Receipts do not invalidate pending invitations either');
   pushes.length=0;await f.friend('alpha','delta');await f.json('alpha','/'+id+'/invite',{members:['delta']});
   assert.ok(pushes.includes('delta'),'Invitation still notifies its recipient');
+  assert.deepEqual(f.events.map(item=>item.username).sort(),['alpha','beta','delta','gamma'],'Invitation state still invalidates the full group');
 });
 run('grupo: listas são leves e fotos são privadas, versionadas e independentes das mensagens',async f=>{
   const image='data:image/png;base64,'+Buffer.from('\x89PNG\r\n\x1a\nfixture','binary').toString('base64');

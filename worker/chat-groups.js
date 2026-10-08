@@ -138,7 +138,7 @@ async function signals(env, id, sender, { extra = [], push = false, message = fa
   const audience = rows(await env.AUTH_DB.prepare(`SELECT DISTINCT m.username,m.muted,m.state FROM portal_chat_group_members m
     JOIN auth_users u ON u.username = m.username AND u.active = 1
     JOIN social_users s ON s.auth_username = u.username AND s.suspended_at IS NULL
-    WHERE m.group_id = ? AND m.state IN ('member','invited')`).bind(id).all());
+    WHERE m.group_id = ? AND m.state ${message ? "='member'" : "IN ('member','invited')"}`).bind(id).all());
   // Events contain invalidation only, never content or identities. Every subsequent
   // content read revalidates membership/session; an in-flight removal cannot leak text.
   await Promise.allSettled([...new Set([...audience.map(m => m.username), ...extra])].map(async username => {
