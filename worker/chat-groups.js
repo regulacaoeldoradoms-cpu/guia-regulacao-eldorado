@@ -359,6 +359,9 @@ export async function handleGroupRoute(request, env, user, origin, ctx) {
     } else if (action === 'settings') {
       if (Object.keys(body).length===1 && typeof body.muted==='boolean') {
         await query(env,user, `UPDATE portal_chat_group_members SET muted=? WHERE group_id=? AND username=(SELECT username FROM actor) AND state='member'`,body.muted?1:0,id).run();
+        // This preference is private. Refresh only this account's other tabs.
+        await background(ctx,broadcastChatRealtime(env,user.username,{type:'group-refresh',groupId:id}));
+        return reply({ ok:true });
       } else {
         const meta = details(body);
         const result = await query(env,user, `UPDATE portal_chat_groups AS g SET name=?,description=?,avatar_data=CASE WHEN ? THEN ? ELSE avatar_data END, avatar_version=CASE WHEN ? THEN ? ELSE avatar_version END,updated_at=CURRENT_TIMESTAMP WHERE g.id=? AND g.closed=0 AND ${ADMIN}`,meta[0],meta[1],Object.hasOwn(body,'avatarDataUrl')?1:0,meta[2],Object.hasOwn(body,'avatarDataUrl')?1:0,crypto.randomUUID(),id).run();

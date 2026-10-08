@@ -70,6 +70,12 @@ subrotas continuam bloqueados. Contrato local: 13/13. Nenhum layout, limite de
 comparação ou proteção do gate alterado. Auditoria obrigatória será reexecutada
 no head corrigido; testes de chat aprovados são reaproveitados para runtime intacto.
 
+Revisão posterior: silenciamento transmite invalidação somente para a própria
+conta (incluindo suas outras abas), sem push ou fan-out a membros/convidados.
+Metadados compartilhados continuam atualizando o grupo inteiro. Regressão cobre
+alternância repetida, isolamento, sessão revogada e atualização compartilhada.
+Validação afetada: 32/32 testes Node dos grupos, sem falhas/skips; diff aprovado.
+
 Conferir CI terminal e revisão do head final, integrar por squash somente após gates
 aprovados e publicar pelo [fluxo seguro existente](WORKER-SAFE-DEPLOY.md).
 Registrar na PR SHA integrado, builds Pages/Worker e verificação dos 27 arquivos

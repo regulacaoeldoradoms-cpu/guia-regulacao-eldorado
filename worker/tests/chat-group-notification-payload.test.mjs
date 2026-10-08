@@ -3,6 +3,26 @@ import test from 'node:test';
 import { groupFixture } from './helpers/chat-group-fixture.mjs';
 const run = (name, fn) => test(name, async () => { const f = await groupFixture(); try { await fn(f); } finally { f.close(); } });
 
+run('grupo: silenciamento atualiza somente a própria conta, sem push ou fan-out', async f => {
+  const id = await f.create(); await f.json('beta', '/' + id + '/accept', {});
+  const pushes = [];
+  f.env.AUTH_DB.beforeQuery = (sql, values) => { if (sql.includes('FROM portal_push_subscriptions')) pushes.push(values[0]); };
+  for (const muted of [true, false, true]) {
+    f.events.length = 0;
+    assert.equal((await f.json('beta', '/' + id + '/settings', {muted})).status, 200);
+    assert.deepEqual(f.events, [{username:'beta',event:{type:'group-refresh',groupId:id}}]);
+    assert.equal((await f.json('beta')).groups[0].muted, Number(muted));
+    assert.equal((await f.json('alpha')).groups[0].muted, 0);
+  }
+  assert.deepEqual(pushes, []);
+  f.events.length = 0;
+  for (const account of ['gamma', 'outsider']) assert.equal((await f.json(account, '/' + id + '/settings', {muted:true})).status, 404);
+  assert.equal((await f.json('beta', '/' + id + '/settings', {muted:false}, {sessionVersion:99})).status, 403);
+  assert.deepEqual(f.events, []);
+  assert.equal((await f.json('alpha', '/' + id + '/settings', {name:'Nome compartilhado',description:''})).status, 200);
+  assert.deepEqual(f.events.map(e => e.username).sort(), ['alpha', 'beta', 'gamma']);
+});
+
 run('grupo: convite avisa somente novas contas convidadas, não membros ou convites antigos', async f => {
   const id = await f.create(); await f.json('beta', '/' + id + '/accept', {});
   await f.friend('alpha', 'delta'); const pushes = [];
