@@ -1,0 +1,40 @@
+name: Aplicar revisão delimitada do contador do chat
+on:
+  push:
+    branches: [feat/chat-groups-reviewed-20261008]
+    paths: [.github/workflows/prepare-group-counter.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/feat/chat-groups-reviewed-20261008'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Aplicar e validar somente a revisão preparada
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = 'bdcf5e21b85443fb9108ec40287c1d6bc94740c9'
+          test "$(git hash-object .github/unread-review.patch)" = '1471ea8ba2308f233c9a3113c00c60e59ae74f49'
+          git apply --check .github/unread-review.patch
+          git apply .github/unread-review.patch
+          node --check js/portal-chat.js
+          node --check worker/portal-chat-v2.js
+          npm --prefix worker run check
+          npm --prefix worker test
+          git rm -- .github/unread-review.patch
+          git add --all
+          test -z "$(git diff --cached --name-only -- .github/workflows)"
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(chat): não recontar recebimento já observado no diretório'
+          test "$(git ls-remote origin refs/heads/feat/chat-groups-reviewed-20261008 | cut -f1)" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/feat/chat-groups-reviewed-20261008

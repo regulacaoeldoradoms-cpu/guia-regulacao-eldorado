@@ -1,0 +1,198 @@
+diff --git a/docs/CHAT-GRUPOS-CHECKPOINT.md b/docs/CHAT-GRUPOS-CHECKPOINT.md
+--- a/docs/CHAT-GRUPOS-CHECKPOINT.md	
++++ b/docs/CHAT-GRUPOS-CHECKPOINT.md	
+@@ -20,11 +20,11 @@
+ 
+ ## Evidências locais da candidata
+ 
+-- 822/822 testes Node aprovados, nenhum teste pulado, incluindo 24 dos grupos.
++- 823/823 testes Node aprovados, nenhum teste pulado, incluindo 24 dos grupos.
+ - 4/4 combinações de grupo: claro/escuro × desktop/mobile, com três sessões fictícias,
+   rotas reais sobre SQLite e HTTP/WebSocket interceptados. Incluem erro/retry,
+   fotos raster, emoticon no cursor, resposta atrasada e limpeza ao desativar.
+-- 14/14 cenários de recebimento individual, inclusive as duas corridas de preload.
++- 15/15 cenários de recebimento individual, inclusive as duas corridas de preload.
+ - 8/8 cenários de apresentação individual: fotos, datas, paginação e virada do dia.
+ - Capturas da interface foram examinadas. Não foram usadas conversas reais.
+ 
+diff --git a/docs/CHAT-PROFISSIONAL.md b/docs/CHAT-PROFISSIONAL.md
+--- a/docs/CHAT-PROFISSIONAL.md	
++++ b/docs/CHAT-PROFISSIONAL.md	
+@@ -499,5 +499,10 @@
+ A corrida residual da PR #608 foi corrigida nesta entrega: deduplicação usa um conjunto
+ limitado de eventos efetivamente tratados, não a presença da mensagem no cache HTTP.
+ Assim, o primeiro evento apresenta/avisa uma mensagem pré-carregada; o segundo não duplica.
+-Os dois cenários de preload antes do evento passam a integrar os 14 testes de recebimento
++Os dois cenários de preload antes do evento passam a integrar os 15 testes de recebimento
+ individual no gate de navegador. Fotos, datas e o protocolo WebSocket individual são preservados.
++
++A revisão pré-publicação também separa o marcador de mensagens recebidas já observado
++no diretório (`receivedThroughId`) dos eventos WebSocket tratados. Uma entrega atrasada
++apresenta o conteúdo sem somar novamente uma mensagem já incluída no contador do
++servidor. O marcador usa o histórico recebido, mesmo após leitura, e é limpo no logout.
+diff --git a/js/portal-chat.js b/js/portal-chat.js
+--- a/js/portal-chat.js	
++++ b/js/portal-chat.js	
+@@ -50,6 +50,7 @@
+   const messageReadThrough = new Map();
+   const messageReadRequests = new Map();
+   const handledRealtimeMessages = new Set();
++  const directoryReceivedThrough = new Map();
+   const messagePreloadRequests = new Map();
+   const pendingMessages = new Map();
+   const draftCache = new Map();
+@@ -446,6 +447,9 @@
+       return;
+     }
+ 
++    // A directory snapshot can already include this event in its unread count.
++    // Still merge/render its message above; never recount or notify that receipt.
++    if (id <= Number(directoryReceivedThrough.get(sender) || 0)) return;
+     const previousUnread = Number(contact.unread || 0);
+     contact.unread = previousUnread + 1;
+     if (!Number(contact.firstUnreadId || 0)) contact.firstUnreadId = id;
+@@ -608,6 +612,7 @@
+     messageReadThrough.clear();
+     messageReadRequests.clear();
+     handledRealtimeMessages.clear();
++    directoryReceivedThrough.clear();
+     messagePreloadRequests.clear();
+     for (const entry of pendingMessages.values()) window.clearTimeout(entry?.fallbackTimer);
+     pendingMessages.clear();
+@@ -1355,6 +1360,12 @@
+       try {
+         const payload = await api('/api/chat/users', { method: 'GET' });
+         const nextContacts = Array.isArray(payload.users) ? payload.users : [];
++        for (const contact of nextContacts) {
++          directoryReceivedThrough.set(contact.username, Math.max(
++            Number(directoryReceivedThrough.get(contact.username) || 0),
++            Number(contact.receivedThroughId || 0)
++          ));
++        }
+         processUnreadChanges(nextContacts);
+         contacts = nextContacts;
+         lastContactsLoadedAt = Date.now();
+diff --git a/worker/portal-chat-v2.js b/worker/portal-chat-v2.js
+--- a/worker/portal-chat-v2.js	
++++ b/worker/portal-chat-v2.js	
+@@ -195,6 +195,8 @@
+         WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
+       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
+         WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread,
++      COALESCE((SELECT MAX(m4.id) FROM portal_chat_messages m4
++        WHERE m4.to_user = ? AND m4.from_user = u.username), 0) AS receivedThroughId,
+       COALESCE((SELECT MIN(m3.id) FROM portal_chat_messages m3
+         WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
+     FROM auth_users u
+@@ -202,7 +204,7 @@
+     ${socialJoin}
+     WHERE u.active = 1 AND u.username <> ? AND u.role IN ('medico','recepcao','coordenacao','admin')
+     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
+-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
++    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
+   const users = await decorateTelemedicineUsers(env, result.results || []);
+   return users.filter((candidate) => PROFESSIONAL_ROLES.has(candidate.role)).map((item) => ({
+     username: item.username,
+@@ -215,7 +217,8 @@
+     lastSeen: item.lastSeen || null,
+     lastMessageAt: item.lastMessageAt || null,
+     unread: Number(item.unread || 0),
+-    firstUnreadId: Number(item.firstUnreadId || 0)
++    firstUnreadId: Number(item.firstUnreadId || 0),
++    receivedThroughId: Number(item.receivedThroughId || 0)
+   }));
+ }
+ 
+@@ -232,6 +235,8 @@
+         WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
+       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
+         WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread,
++      COALESCE((SELECT MAX(m4.id) FROM portal_chat_messages m4
++        WHERE m4.to_user = ? AND m4.from_user = u.username), 0) AS receivedThroughId,
+       COALESCE((SELECT MIN(m3.id) FROM portal_chat_messages m3
+         WHERE m3.to_user = ? AND m3.from_user = u.username AND m3.read_at IS NULL), 0) AS firstUnreadId
+     FROM social_users viewer
+@@ -245,7 +250,7 @@
+     WHERE viewer.auth_username = ? AND viewer.suspended_at IS NULL
+       AND friend.suspended_at IS NULL AND u.active = 1${citizenOnlyClause}
+     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
+-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
++    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername, currentUsername).all();
+   const users = await decorateTelemedicineUsers(env, result.results || []);
+   return users.filter((item) => CHAT_ROLES.has(item.role)).map((item) => ({
+     username: item.username,
+@@ -258,7 +263,8 @@
+     lastSeen: item.lastSeen || null,
+     lastMessageAt: item.lastMessageAt || null,
+     unread: Number(item.unread || 0),
+-    firstUnreadId: Number(item.firstUnreadId || 0)
++    firstUnreadId: Number(item.firstUnreadId || 0),
++    receivedThroughId: Number(item.receivedThroughId || 0)
+   }));
+ }
+ 
+diff --git a/worker/tests/browser/chat-live-reception.cjs b/worker/tests/browser/chat-live-reception.cjs
+--- a/worker/tests/browser/chat-live-reception.cjs	
++++ b/worker/tests/browser/chat-live-reception.cjs	
+@@ -11,7 +11,7 @@
+ fs.mkdirSync(evidence,{recursive:true});
+ const results = [], delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+ let browser;
+-async function pair({theme='light', mobile=false, holdInitial=false, realtime=true}={}) {
++async function pair({theme='light', mobile=false, holdInitial=false, realtime=true, serverCounts=false}={}) {
+   let sequence=10, drop=false, silent=false, release=null;
+   const stored=[], clients=new Map(), contexts=[], reads=[], errors=[], requests=[];
+   async function make(username, peer) {
+@@ -24,7 +24,10 @@
+       if(url.origin!==endpoint) return route.abort();
+       requests.push({username,path:url.pathname,query:url.search,method});
+       let body={ok:true};
+-      if(url.pathname.endsWith('/users')) body={users:[{username:peer,name:'Perfil Fictício '+peer,role:'recepcao',online:true,unread:0,avatarDataUrl:'',lastMessageAt:stored.at(-1)?.sentAt || ''}]};
++      if(url.pathname.endsWith('/users')) body={users:[{username:peer,name:'Perfil Fictício '+peer,role:'recepcao',online:true,unread:0,avatarDataUrl:'',lastMessageAt:stored.at(-1)?.sentAt || '',...(serverCounts?{
++        receivedThroughId:Math.max(0,...stored.filter(m=>m.toUser===username&&m.fromUser===peer).map(m=>m.id)),
++        unread:stored.filter(m=>m.toUser===username&&m.fromUser===peer&&m.id>Math.max(0,...reads.filter(r=>r.username===username&&r.with===peer).map(r=>r.throughId||0))).length
++      }:{})}]};
+       else if(url.pathname.endsWith('/ticket')) {if(!realtime)return route.fulfill({status:503,json:{error:'No realtime in fixture'}}); body={ticket:'fixture',protocol:'portal-chat-v1'};}
+       else if(url.pathname.endsWith('/messages')&&method==='GET') {
+         const after=Number(url.searchParams.get('after')||0);
+@@ -144,6 +147,17 @@
+       p.inject(m);await delay(80);
+       if(!visible)assert.equal(await p.beta.locator('#portalChatUnread').textContent(),'1','Second WS event remains deduplicated');
+     });
++    await check('directory-count-before-delayed-event-is-not-counted-twice',async p=>{
++      await p.beta.locator('#portalChatClose').click();
++      const m=p.save('alpha','beta','Contada antes do evento');
++      await p.beta.evaluate(()=>window.PortalChat.refreshContacts(true));
++      await p.beta.clock.runFor(1500);await delay(150);
++      assert.equal(await p.beta.locator('#portalChatUnread').textContent(),'1');
++      p.inject(m);await delay(100);
++      assert.equal(await p.beta.locator('#portalChatUnread').textContent(),'1');
++      await p.beta.locator('#portalChatLauncher').click();await p.beta.locator('[data-chat-user="alpha"]').click();
++      await p.beta.waitForSelector('[data-message-id="'+m.id+'"]');
++    },{serverCounts:true});
+     const report={browser:browser.version(),results};
+     fs.writeFileSync(path.join(evidence,(process.env.CHAT_REPORT_NAME||'live-results')+'.json'),JSON.stringify(report,null,2));
+     console.log(JSON.stringify(report,null,2));if(results.some(r=>!r.ok))process.exitCode=1;
+diff --git a/worker/tests/social-backend.test.mjs b/worker/tests/social-backend.test.mjs
+--- a/worker/tests/social-backend.test.mjs	
++++ b/worker/tests/social-backend.test.mjs	
+@@ -911,3 +911,19 @@
+   assert.equal(audit.action, 'report_suspend_user');
+   assert.equal(audit.targetType, 'post');
+ });
++
++
++sqliteTest('diretório do chat identifica recebimentos já incluídos no contador sem perder o marcador após leitura',async()=>{
++  const env=environment();
++  const sender=await register(env,'unread.sender','127.0.0.111');
++  const receiver=await register(env,'unread.receiver','127.0.0.112');
++  await env.AUTH_DB.prepare("UPDATE auth_users SET role='recepcao' WHERE username IN ('unread.sender','unread.receiver')").run();
++  const sent=await payload(await callChat(env,'/api/chat/messages',sender.token,{method:'POST',body:{to:'unread.receiver',body:'Mensagem sintética'}}));
++  const before=await payload(await callChat(env,'/api/chat/users',receiver.token));
++  const contact=before.users.find(u=>u.username==='unread.sender');
++  assert.equal(contact.unread,1);assert.equal(contact.receivedThroughId,sent.message.id);
++  await callChat(env,'/api/chat/read',receiver.token,{method:'POST',body:{with:'unread.sender',throughId:sent.message.id}});
++  const after=await payload(await callChat(env,'/api/chat/users',receiver.token));
++  assert.equal(after.users.find(u=>u.username==='unread.sender').unread,0);
++  assert.equal(after.users.find(u=>u.username==='unread.sender').receivedThroughId,sent.message.id);
++});
