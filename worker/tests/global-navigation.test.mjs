@@ -7,7 +7,7 @@ const read = (path) => readFileSync(new URL('../../' + path, import.meta.url), '
 test('Barra Global usa a camada comum do Portal e sessão existente', () => {
   const interactions = read('js/portal-interactions.js');
   const bootstrap = read('js/portal-global-navigation.js');
-  assert.match(interactions, /portal-global-navigation\.js\?v=20260928-2/);
+  assert.match(interactions, /portal-global-navigation\.js\?v=20261009-pets-1/);
   assert.match(bootstrap, /\.portal-topbar, \.site-header/);
   assert.match(bootstrap, /AUTH_CONFIG/);
   assert.match(bootstrap, /AUTH_CLIENT/);
@@ -27,7 +27,7 @@ test('desktop mantém os seis elementos definidos para a Barra Global', () => {
   }
   assert.match(navigation, /if \(socialAvailable\)/);
   assert.doesNotMatch(navigation, /if \(active\('\/'\) && socialAvailable\)/);
-  assert.match(navigation, /version: '20260928-2'/);
+  assert.match(navigation, /version: '20261009-pets-1'/);
   assert.match(navigation, /has-global-user-search/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/"\]/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/ferramentas\/"\]/);
@@ -37,9 +37,9 @@ test('desktop mantém os seis elementos definidos para a Barra Global', () => {
 
 test('Service Worker aquece a versão nova sem alterar os endpoints sociais', () => {
   const sw = read('portal-sw.js');
-  assert.match(sw, /CACHE_VERSION = '20261008-chat-groups-1'/);
-  assert.match(sw, /portal-global-navigation\.js\?v=20260928-2/);
-  assert.match(sw, /social-navigation\.js\?v=20260928-2/);
+  assert.match(sw, /CACHE_VERSION = '20261009-pets-1'/);
+  assert.match(sw, /portal-global-navigation\.js\?v=20261009-pets-1/);
+  assert.match(sw, /social-navigation\.js\?v=20261009-pets-1/);
   assert.match(sw, /social-api\.js\?v=20260910-4/);
 });
 
@@ -57,6 +57,6 @@ test('cabeçalhos próprios do Guia Médico e Fontes técnicas entram na cobertu
 test('Telemedicina carrega a Barra Global diretamente e renova a camada comum', () => {
   const html = read('telemedicina/index.html');
   assert.match(html, /portal-interactions\.js\?v=20260923-2/);
-  assert.match(html, /portal-global-navigation\.js\?v=20260928-2/);
-  assert.equal((html.match(/portal-global-navigation\.js\?v=20260928-2/g) || []).length, 1);
+  assert.match(html, /portal-global-navigation\.js\?v=20261009-pets-1/);
+  assert.equal((html.match(/portal-global-navigation\.js\?v=20261009-pets-1/g) || []).length, 1);
 });

@@ -37,7 +37,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /social\.css\?v=20260922-2/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260910-4/);
-    assert.match(html, /social-navigation\.js\?v=20260922-2/);
+    assert.match(html, /social-navigation\.js\?v=20261009-pets-1/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -111,7 +111,7 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(index, /<a href="\/configuracoes\/">Configurações<\/a>/);
   assert.match(index, /<a href="\/conquistas\/">Conquistas<\/a>/);
   assert.doesNotMatch(index, />Ver meu perfil<|>Amigos e pedidos<|>Notificações sociais<|>Privacidade social</);
-  assert.match(index, /social-navigation\.js\?v=20260922-2/);
+  assert.match(index, /social-navigation\.js\?v=20261009-pets-1/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /\/js\/social-home\.js\?v=20260910-2/);
   const socialHome = read('js/social-home.js');

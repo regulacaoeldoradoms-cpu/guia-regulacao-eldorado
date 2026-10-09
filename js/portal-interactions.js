@@ -1178,7 +1178,7 @@
     mountUtilityUi();
     if (document.querySelector('.portal-topbar, .site-header')) {
       const globalNav = document.createElement('script');
-      globalNav.src = '/js/portal-global-navigation.js?v=20260928-2';
+      globalNav.src = '/js/portal-global-navigation.js?v=20261009-pets-1';
       globalNav.async = false;
       globalNav.dataset.portalGlobalNavigationLoader = 'true';
       document.head.appendChild(globalNav);

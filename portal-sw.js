@@ -1,7 +1,7 @@
 'use strict';
 
-// Renova os assets do chat para fotos nos dois temas e divisores por data.
-const CACHE_VERSION = '20261008-chat-groups-1';
+// Renova a integração de mascotes e evita reutilizar assets da versão anterior.
+const CACHE_VERSION = '20261009-pets-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -43,7 +43,7 @@ let chatSessionGeneration = 0;
 
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
-  '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/estudos/', '/medico/', '/protocolo/',
+  '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/mascotes/', '/conta/', '/estudos/', '/medico/', '/protocolo/',
   '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
   '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
   '/admin/configuracao/', '/admin/social/'
@@ -71,8 +71,8 @@ const CORE_RESOURCES = Object.freeze([
   '/js/login-opening.js?v=20260918-1',
   '/js/login.js?v=20260917-3',
   '/vendor/pdf-lib/pdf-lib.min.js',
-  '/js/social-navigation.js?v=20260928-2',
-  '/js/portal-global-navigation.js?v=20260928-2',
+  '/js/social-navigation.js?v=20261009-pets-1',
+  '/js/portal-global-navigation.js?v=20261009-pets-1',
   '/js/social-api.js?v=20260910-4',
   '/css/social-notification-panel.css?v=20260910-1',
   '/js/portal-interactions.js?v=20260923-2',

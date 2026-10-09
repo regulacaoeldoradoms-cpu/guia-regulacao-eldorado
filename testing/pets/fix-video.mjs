@@ -1,0 +1,1 @@
+import fs from 'node:fs';const url=new URL('./browser.mjs',import.meta.url);let s=fs.readFileSync(url,'utf8');s=s.replace("import {chromium} from 'playwright';","");s=s.replace("const browser=await chromium.launch","const {chromium}=await import('playwright');\nconst browser=await chromium.launch");fs.writeFileSync(url,s);
