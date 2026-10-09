@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.7
+// @version      1.2.8
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-pending-1
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261005-pending-1
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261009-navigation-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261009-navigation-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -408,7 +408,7 @@
 
     const expectedUrl = new URL(targetUrl);
     const startedAt = Date.now();
-    while (Date.now() - startedAt < CONTACT_WINDOW_TIMEOUT_MS) {
+    while (true) {
       assertContactSession(contactWindow, generation);
       try {
         const currentUrl = new URL(contactWindow.location.href);
@@ -422,6 +422,8 @@
           return { root, frameWindow: contactWindow };
         }
       } catch (_) {}
+      // A background tab can resume polling after the deadline; inspect current guarded readiness first.
+      if (Date.now() - startedAt >= CONTACT_WINDOW_TIMEOUT_MS) break;
       await new Promise((resolve) => window.setTimeout(resolve, 160));
     }
     throw contactError('navigation_timeout', 'Tempo excedido ao abrir a consulta.');
