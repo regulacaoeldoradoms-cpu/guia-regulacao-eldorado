@@ -41,4 +41,4 @@ const server=http.createServer(async(req,res)=>{
   const data=fs.readFileSync(target);res.writeHead(200,{'Content-Type':types[path.extname(target)]||'application/octet-stream','Cache-Control':'no-store'});res.end(data);
  }catch(e){res.writeHead(500);res.end('Synthetic preview error: '+e.message);}
 });
-server.listen(8793,'127.0.0.1',()=>console.log('Synthetic persistent preview http://127.0.0.1:8793/mascotes/?demo=a — only loopback, no production credentials'));
+server.listen(Number(process.env.PETS_PREVIEW_PORT)||8793,'127.0.0.1',()=>console.log('Synthetic persistent preview http://127.0.0.1:'+server.address().port+'/mascotes/?demo=a — only loopback, no production credentials'));

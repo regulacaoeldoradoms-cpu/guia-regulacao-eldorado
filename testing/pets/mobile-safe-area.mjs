@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 const {chromium}=createRequire(import.meta.url)('playwright');
+const preview=process.env.PETS_PREVIEW_URL||'http://127.0.0.1:8793';
 const out=process.env.PETS_ARTIFACT_DIR||new URL('./artifacts/mobile-safe-area/',import.meta.url).pathname;
 fs.mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.PETS_BROWSER_EXECUTABLE||'/usr/bin/chromium',headless:true});
@@ -27,12 +28,12 @@ function assertSafe(g){
  const cat=g.figures.find(e=>e.name==='pet-cat');assert.equal(cat.width,128);assert.equal(cat.height,96);
 }
 try{
- await page.request.post('http://127.0.0.1:8793/__fixture',{data:{reset:true}});
- await page.goto('http://127.0.0.1:8793/mascotes/?demo=a');await page.waitForFunction(()=>window.PortalPets);
+ await page.request.post(preview+'/__fixture',{data:{reset:true}});
+ await page.goto(preview+'/mascotes/?demo=a');await page.waitForFunction(()=>window.PortalPets);
  await page.evaluate(async()=>{const s=window.PortalPets;const p=await s.api.command('adopt',{typeId:'cat',variant:'gray',expectedPetRevision:s.runtime.state.petRevision});s.runtime.update(p.state);});
- await page.request.post('http://127.0.0.1:8793/__fixture',{data:{account:'a',balance:60}});
+ await page.request.post(preview+'/__fixture',{data:{account:'a',balance:60}});
  await page.evaluate(async()=>{const s=window.PortalPets;await s.runtime.refresh();let p=await s.api.command('purchase',{itemId:'bed-cloud',catalogVersion:s.catalog.version});s.runtime.update(p.state);p=await s.api.command('placement',{itemId:'bed-cloud',x:.95,y:.9,expectedPetRevision:s.runtime.state.petRevision,expectedPlacementRevision:s.runtime.state.placementRevision});s.runtime.update(p.state);});
- await page.request.post('http://127.0.0.1:8793/__fixture',{data:{account:'a',hunger:80,thirst:85}});
+ await page.request.post(preview+'/__fixture',{data:{account:'a',hunger:80,thirst:85}});
  await page.evaluate(()=>window.PortalPets.runtime.refresh());
  for(const [width,height]of [[320,700],[390,844],[600,844],[844,390],[1280,900]]){
   await page.setViewportSize({width,height});await page.locator('#petHabitat').scrollIntoViewIfNeeded();
@@ -49,8 +50,7 @@ try{
  await page.locator('#petStart').focus();await page.setViewportSize({width:390,height:500});await page.waitForTimeout(100);assertSafe(await geometry());note('short viewport while editing preferences does not overlay controls',{});
  await page.setViewportSize({width:390,height:844});await page.locator('#petHabitat').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(out,'mobile-safe-area.png')});
  await page.evaluate(()=>{window.RegulationAuth.clearSession();});await page.waitForFunction(()=>!window.PortalPets);assert.equal(await page.locator('.pet-stage').count(),0);assert.equal(await page.locator('#petHabitat').isVisible(),false);note('session clear removes the scene and hides the reserved host',{});
- await page.goto('http://127.0.0.1:8793/ferramentas/?demo=a');await page.waitForFunction(()=>window.PortalPets?.runtime.state.pet);await page.locator('.pet-habitat').scrollIntoViewIfNeeded();
- assert.equal(await page.locator('.pet-care-link').isVisible(),true);const outside=await page.locator('.pet-stage').evaluate(e=>({position:getComputedStyle(e).position,withinMain:!!e.closest('main')}));assert.equal(outside.position,'relative');assert.equal(outside.withinMain,true);await page.locator('.pet-care-link').click();await page.waitForURL('**/mascotes/');await page.getByRole('button',{name:'Dar água · grátis'}).waitFor();note('other portal pages reserve space and expose a working care link',outside);
+ await page.goto(preview+'/ferramentas/?demo=a');await page.waitForFunction(()=>window.PortalPets?.runtime.state.pet);assert.equal(await page.getByRole('link',{name:'Mascotes',exact:true}).first().isVisible(),true);const outside=await page.locator('.pet-stage').evaluate(e=>({position:getComputedStyle(e).position,withinBody:e.parentElement===document.body}));assert.equal(outside.position,'fixed');assert.equal(outside.withinBody,true);await page.getByRole('link',{name:'Mascotes',exact:true}).first().click();await page.waitForURL('**/mascotes/');await page.getByRole('button',{name:'Dar água · grátis'}).waitFor();note('other modules use a viewport companion with navigation to dedicated care',outside);
  assert.deepEqual(errors,[]);note('no uncaught browser errors',{});
  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({checks,errors},null,2)+'\n');
 }catch(error){fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({checks,errors,failure:error.stack},null,2));await page.screenshot({path:path.join(out,'failure.png'),fullPage:true}).catch(()=>{});throw error;}

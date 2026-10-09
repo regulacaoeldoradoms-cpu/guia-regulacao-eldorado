@@ -62,6 +62,11 @@ jobs:
         working-directory: testing/browser
         run: npx playwright test --config playwright-dark-audit.config.mjs
 
+      - name: Verificar mascote global e continuidade entre módulos
+        env:
+          PETS_GLOBAL_ARTIFACT_DIR: testing/browser/test-results-dark-audit/pets-global
+        run: node testing/pets/global-navigation.cjs
+
       - name: Resumir resultados disponíveis
         if: always()
         working-directory: testing/browser
