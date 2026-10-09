@@ -36,4 +36,5 @@ async function mount(){
 window.addEventListener('portal:session-cleared',clear);
 window.addEventListener('portal:session-ready',()=>{if(current&&!current.api.valid())clear();mount();});
 export async function petSession(){await mount();return current;}
+window.PortalHomeReady?.then?.(ready=>{if(ready&&current?.api.valid())navigation(true);});
 mount();
