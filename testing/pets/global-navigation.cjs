@@ -13,6 +13,7 @@ const checks=[],petErrors=[],mutations=[];
  const server=http.createServer(async(req,res)=>{
   try{
    const url=new URL(req.url,'http://127.0.0.1');res.setHeader('Cache-Control','no-store');
+   if(url.pathname==='/home-race.html'){res.setHeader('Content-Type','text/html');return res.end('<!doctype html><html><head><script src="/js/auth-config.js"></script><script src="/js/auth-client.js"></script><script>window.PortalHomeReady=new Promise(resolve=>window.finishPetHome=resolve);</script><script type="module" src="/js/pets-bootstrap.js"></script></head><body><header class="portal-topbar">Synthetic Home</header><main id="homeLoading">Loading</main></body></html>');}
    if(url.pathname.startsWith('/api/pets/')){
     if(req.method==='POST')mutations.push(url.pathname);let body='';for await(const chunk of req)body+=chunk;
     const response=await router(new Request(url,{method:req.method,headers:req.headers,...(['GET','HEAD'].includes(req.method)?{}:{body})}),{PETS_ENABLED:'true',AUTH_DB:f.db});
@@ -37,6 +38,7 @@ const checks=[],petErrors=[],mutations=[];
  async function state(){await page.waitForFunction(()=>window.PortalPets?.runtime.state.pet?.variant==='gray');assert.equal(await page.locator('.pet-stage').count(),1);return page.evaluate(()=>window.PortalPets.runtime.state);}
  async function geometry(){return page.locator('.pet-stage').evaluate(e=>{const r=e.getBoundingClientRect();return {position:getComputedStyle(e).position,events:getComputedStyle(e).pointerEvents,top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:innerWidth,height:innerHeight,global:e.classList.contains('pet-stage-global')};});}
  try{
+  await page.goto(origin+'/home-race.html');await state();await page.evaluate(()=>{document.getElementById('homeLoading').hidden=true;const nav=document.createElement('nav');nav.className='social-side-links';document.body.append(nav);window.finishPetHome(true);});await page.waitForFunction(()=>document.querySelector('.social-side-links a[href="/mascotes/"]')?.textContent==='Mascotes');assert.equal(await page.locator('.pet-stage').count(),1);assert.equal(await page.locator('.pet-stage').evaluate(e=>e.parentElement===document.body&&!e.closest('[hidden]')),true);note('late Home sidebar gets Mascotes after loading without duplicating the companion',{});
   await page.goto(origin+'/mascotes/');await state();assert.equal((await geometry()).position,'relative');note('care page keeps its inline habitat',{});
   for(const route of ['/ferramentas/','/medico/','/recepcao/','/agenda/','/telemedicina/','/documentos/','/cidadao/','/estudos/','/perfil/','/amigos/','/notificacoes/','/seguranca/','/configuracoes/','/conquistas/','/admin/usuarios/','/admin/monitoramento/','/admin/configuracao/','/admin/social/','/conselho/painel/','/protocolo/','/']){
    await page.goto(origin+route);const s=await state();assert.deepEqual(s.pet,original.pet);assert.deepEqual(s.preferences,original.preferences);
