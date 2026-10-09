@@ -337,14 +337,19 @@ try {
           overflow: visible
             .filter(
               (e) =>
-                e.getBoundingClientRect().right > innerWidth + 0.1 &&
+                (e.getBoundingClientRect().right > innerWidth + 0.1 || e.scrollWidth > e.clientWidth + 2) &&
                 getComputedStyle(e).position !== "fixed",
             )
             .slice(0, 10)
             .map((e) => ({
               tag: e.tagName,
               class: e.className,
+              id: e.id,
               right: Math.round(e.getBoundingClientRect().right),
+              width: e.getBoundingClientRect().width,
+              scrollWidth: e.scrollWidth,
+              clientWidth: e.clientWidth,
+              whiteSpace: getComputedStyle(e).whiteSpace,
             })),
           resources: performance.getEntriesByType("resource").map((e) => ({
             name: new URL(e.name).pathname,
