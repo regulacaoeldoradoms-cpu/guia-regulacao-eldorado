@@ -14,18 +14,8 @@ export class PetRuntime{
   if(this.ownsHabitat){
    // A companion follows the viewport on every module. Only the care page owns an inline habitat.
    this.root.classList.add('pet-stage-global');this.habitat=this.root;document.body.append(this.root);
-   this.controls=document.createElement('nav');this.controls.className='pet-global-controls';this.controls.setAttribute('aria-label','Controles do mascote');
-   const care=document.createElement('a');care.href='/mascotes/';care.textContent='Cuidar';care.setAttribute('aria-label','Cuidar do mascote');
-   this.hideButton=document.createElement('button');this.hideButton.type='button';this.hideButton.textContent='Ocultar';this.hideButton.setAttribute('aria-label','Ocultar mascote');
-   this.controls.append(care,this.hideButton);document.body.append(this.controls);
   }else this.habitat.append(this.root);
   this.controller=new AbortController();const signal=this.controller.signal;
-  this.hideButton?.addEventListener('click',async()=>{
-   if(this.hideButton.disabled||this.closed)return;this.hideButton.disabled=true;
-   try{const result=await this.api.command('preferences',{expectedRevision:this.state.revision,...this.state.preferences,visible:false});if(!this.closed)this.update(result.state);}
-   catch{if(!this.closed)this.hideButton.textContent='Tentar ocultar';}
-   finally{if(!this.closed)this.hideButton.disabled=false;}
-  },{signal});
   const mark=event=>{if(event.isTrusted)this.lastInteraction=performance.now();};
   for(const event of ['pointerdown','keydown','wheel','touchstart'])document.addEventListener(event,mark,{passive:true,signal});
   window.addEventListener('resize',()=>this.layout(),{signal});window.visualViewport?.addEventListener('resize',()=>this.layout(),{signal});
@@ -38,10 +28,19 @@ export class PetRuntime{
   this.timer=setInterval(()=>this.sample(),60000);this.layout();this.start();
  }
  update(s){this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();}
- close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();this.controls?.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
+ close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
  safeRect(){
   // Both scenes use the same logical grid and scale; the global scene follows the viewport.
   const width=this.root.clientWidth||176,height=this.root.clientHeight||224;
+  if(this.ownsHabitat){
+   let ceiling=0;const sceneTop=this.root.getBoundingClientRect().top;
+   for(const header of document.querySelectorAll('.portal-topbar,.site-header,.social-global-nav')){
+    const rect=header.getBoundingClientRect();
+    if(rect.width&&rect.height&&rect.top<=sceneTop+120&&rect.bottom>sceneTop)ceiling=Math.max(ceiling,rect.bottom-sceneTop);
+   }
+   const bottom=Math.max(104,height-24);
+   return {left:88,right:Math.max(88,width-88),top:Math.min(bottom,ceiling+104),bottom};
+  }
   return {left:88,right:Math.max(88,width-88),top:164,bottom:Math.max(164,height-24)};
  }
  layout(){
@@ -54,8 +53,7 @@ export class PetRuntime{
     const rect=nav.getBoundingClientRect();
     if(rect.width&&rect.height&&rect.top<floor&&rect.bottom>=top+height-20)floor=rect.top-12;
    }
-   this.root.style.left=left+'px';this.root.style.top=Math.max(top,floor-224)+'px';this.root.style.width=width+'px';
-   this.controls.style.left=(left+Math.max(8,width-208))+'px';this.controls.style.top=(Math.max(top,floor-224)+8)+'px';
+   this.root.style.left=left+'px';this.root.style.top=top+'px';this.root.style.width=width+'px';this.root.style.height=Math.max(104,floor-top)+'px';
   }
   const r=this.safeRect();this.bounds=r;this.x=Math.max(r.left,Math.min(r.right,this.x));this.y=Math.max(r.top,Math.min(r.bottom,this.y));
   const placement=this.previewPlacement||this.state.placement;
@@ -63,7 +61,7 @@ export class PetRuntime{
   if(this.bedPoint&&this.action==='sleep'){this.x=this.bedPoint.x;this.y=this.bedPoint.y-12;}
   if(this.bedPoint&&this.goingToBed)this.target={x:this.bedPoint.x,y:this.bedPoint.y-12};
   else if(this.target)this.target={x:Math.max(r.left,Math.min(r.right,this.target.x)),y:Math.max(r.top,Math.min(r.bottom,this.target.y))};
-  this.bed.hidden=!placement; if(placement){
+  this.bed.hidden=this.ownsHabitat||!placement; if(placement){
    this.bed.style.left=(this.bedPoint.x-80)+'px';this.bed.style.top=(this.bedPoint.y-40)+'px';drawBed(this.bed.getContext('2d'),placement.itemId);
   }
   this.render();
@@ -85,7 +83,7 @@ export class PetRuntime{
   const durations={walk:7000,run:3500,sit:1100,lick:6000,lie:1200,roll:1200,belly:6000,wake:1400,stretch:3000,idle:5000};
   this.until=now+(durations[this.action]||5000);
   if(['walk','run'].includes(this.action)){
-   const r=this.bounds;this.target={x:Math.max(r.left,Math.min(r.right,this.x+(Math.random()-.5)*300)),y:this.y};
+   const r=this.bounds;this.target=this.ownsHabitat?{x:r.left+(r.right-r.left)*Math.random(),y:r.top+(r.bottom-r.top)*Math.random()}:{x:Math.max(r.left,Math.min(r.right,this.x+(Math.random()-.5)*300)),y:this.y};
   }
  }
  async rest(){
@@ -106,8 +104,8 @@ export class PetRuntime{
   finally{this.sampling=false;}
  }
  render(){
-  const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible;this.habitat.hidden=this.root.hidden;
-  if(this.controls)this.controls.hidden=this.root.hidden;
+  const modalOpen=this.ownsHabitat&&[...document.querySelectorAll('dialog[open],[aria-modal="true"]')].some(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0;});
+  const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible||modalOpen;this.habitat.hidden=this.root.hidden;
   const motion=s.preferences.motionEnabled&&!this.reduced.matches;
   const alert=s.thirst>=70?'Estou com sede. Água é gratuita.':s.hunger>=70?'Estou com fome. Comida é gratuita.':s.dirt>=70?'Hora de um banho. Higiene básica é gratuita.':'';
   this.root.dataset.alert=s.thirst>=70?'thirst':s.hunger>=70?'hunger':'';
@@ -117,7 +115,7 @@ export class PetRuntime{
   drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
   this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-88)+'px';
   this.cat.style.transform=this.facing===-1?'scaleX(-1)':'';
-  this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=this.ownsHabitat?'60px':'12px';
+  this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=(this.ownsHabitat?Math.max(8,this.y-150):12)+'px';
  }
  start(){
   cancelAnimationFrame(this.frame);if(this.closed||document.hidden||!this.state.pet||!this.state.preferences.visible)return;
