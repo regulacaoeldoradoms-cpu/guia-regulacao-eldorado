@@ -1,43 +1,30 @@
-# Checkpoint local dos mascotes
+# Checkpoint dos mascotes
 
-Correção global em andamento sobre a produção `493d37628b7f38807be724dee740422643f21c05`. A implementação anterior inseria o mascote no primeiro `main`, incluindo `homeLoading` que depois ficava oculto, e criava um painel no fluxo dos demais módulos. Agora o acompanhante monta diretamente no `body`, acompanha a viewport sem capturar cliques, anda nos dois eixos da viewport e mantém cuidados/ocultar e o habitat em painel somente na galeria. Flags, banco, conta, economia e preferências existentes são preservados; ocultar exige ação explícita na área dedicada.
+Produção confirmada em `491ae932ca96a019c3909a0f6becaee16ea48b9e`: PRs #616/#617 publicadas, 33/33 checks do merge aprovados. Cada head passou 29/29 gates, incluindo 218 cenários gerais e 37 verificações do acompanhante. Gato transparente diretamente no body, movimento nos dois eixos, escala 128 × 96 px, navegação Mascotes e 42 falas fixas. Cuidados/loja/cama/visibilidade ficam na página dedicada. QA real confirmou versão ativa e DOM em Home/Ferramentas/Estudos/Documentos; a janela original tinha viewport zerada, depois uma viewport de teste 1440 × 900 confirmou aparência sem quadro, movimento em dois eixos, reload/ida e volta com o mesmo gato e clique atravessando a camada. Override removido. Nenhum balão apareceu durante a amostragem; aparência dos balões não confirmada ao vivo. Conta e gato reais não foram alterados.
 
-Validação sintética: a versão publicada reproduziu a falha; a correção percorre módulos autenticados, Home após ocultar o carregador, navegação/histórico/recarga, viewports móveis, animação, movimento reduzido, impressão, ocultação persistida e troca de conta. O service worker usa `20261009-pets-global-4`. O aviso sobre valor das moedas foi removido por solicitação explícita; regras técnicas da economia permanecem iguais. CI e publicação desta correção ainda pendentes. Fontes históricas do checkpoint do PC continuam preservadas; os scripts de instalação/correção históricos não foram executados.
+## Etapa em rascunho: sete vidas e potinho
 
-Correções de reconciliação: estilos compartilhados da página, versões dos carregadores e cache do portal, limpeza da interface na troca de conta, cancelamento de requisições da sessão anterior e `.gitignore` dos artefatos locais. `cache-session.cjs` acrescenta validação com SQLite em memória, duas contas fictícias e servidor restrito a loopback. Ele bloqueia requisições externas e testa a atualização do service worker real da base para a cópia atual.
+Branch `preparation/mascotes-sete-vidas`, baseada na produção acima. Não autorizada para merge/deploy. Nenhuma nova migration, flag, credencial ou permissão; campos adicionais no JSON existente do dono, persistidos pela mesma transação CAS e recibos idempotentes. GET somente projeta o estado legado, sem gravar.
 
-Validação realizada no executor com Node 24, SQLite embutido, Playwright já disponível e Chromium do sistema. Nenhuma dependência foi instalada. Os scripts históricos `install`, `fix-*`, `integrate` e `video-setup` foram preservados como fontes do checkpoint; não foram executados durante a reconciliação.
+Parâmetros centralizados em `worker/pet-life-rules.js`:
 
-Para repetir apenas o teste de cache e sessões, com as ferramentas já disponíveis:
+| Parâmetro | Proposta desta etapa |
+| --- | --- |
+| Vidas iniciais | 7 |
+| Comida cheia até vazia | 8 horas de cuidados ativos |
+| Comida vazia | perda de 1 vida por hora crítica |
+| Água cheia até vazia | 4 horas de cuidados ativos |
+| Água vazia | perda de 1 vida por 30 minutos críticos |
+| Potinho cheio | 48 horas de proteção, depois consumo normal de 4 horas |
+| Preço base proposto | 20 moedas de atividade; multiplicador de preços existente permanece |
+| Encher potinho | gratuito; reinicia proteção, não recupera vidas |
 
-```sh
-PETS_BROWSER_EXECUTABLE=/usr/bin/chromium PETS_CACHE_ARTIFACT_DIR=/tmp/pets-cache-evidence node testing/pets/cache-session.cjs
-```
+O relógio exige amostras aceitas pelo servidor: uso ativo, aba dona do lease, expediente configurado e necessidades sem pausa. Fechado/offline, fora do expediente, folgas, férias, abas concorrentes ou intervalos expirados não consomem; não há catchup. Fome/sede têm contadores críticos independentes. Perdas simultâneas se somam e são limitadas às vidas restantes. Alimentar/dar água zeram somente seu contador de necessidade e seu contador crítico; nunca devolvem vidas. Cuidados manuais cortam o intervalo anterior apenas da necessidade cuidada.
 
-O preview original usa `serve.mjs` e `browser.mjs`; configure `PETS_PREVIEW_DB`, `PETS_ARTIFACT_DIR`, `PETS_BROWSER_EXECUTABLE` e `PETS_DISABLE_VIDEO=1` para manter banco e evidências fora do checkout. O servidor de preview usa somente `127.0.0.1:8793` e sessões fictícias. Nunca publique esse servidor.
+Gatos antigos conservam aparência, necessidades, preferência, moedas, inventário e conquistas. Recebem 7 vidas, sem período crítico anterior: a primeira mutação válida inicia o relógio; consultas não debitam tempo nem vidas. Morte fica persistida e oculta o acompanhante; care/placement são recusados. Só depois da morte uma nova adoção cria um gato com sete vidas, preservando registros de mortes, recibos, inventário e conquista única. Potinho já comprado fica disponível para encher gratuitamente na nova adoção.
 
-Antes de qualquer ativação: revisar e aceitar o patch consolidado; autorizar explicitamente o destino e a publicação; aplicar `worker/migrations/pets-v1.sql` ao `AUTH_DB` aprovado e validar o esquema; confirmar autenticação real, isolamento de duas contas e idempotência nesse ambiente; habilitar a flag somente no destino autorizado. A publicação do Worker deve cumprir `docs/WORKER-SAFE-DEPLOY.md`. Nenhum desses passos remotos foi autorizado ou executado nesta etapa.
+Dez cenários novos de navegador em `lives.cjs` e 37 existentes em `global-navigation.cjs`, 910/910 testes completos do Worker, 89 contratos afetados, nove cenários de cache/sessão. SQLite em memória e duas contas fictícias; requisições externas bloqueadas. Testes do domínio usam todas as fronteiras de 8h/4h/48h e intervalos críticos; integração cobre legado, GET sem escrita, lease/pausa/offline, cuidado manual, replays, rollback transacional, concorrência, morte, nova adoção e isolamento. O CI mantém a auditoria geral sem relaxar gates e acrescenta os cenários de vidas. Artefatos locais em `/workspace/scratch/mascotes-vidas/` não entram no repositório.
 
-Limites: os testes locais usam SQLite e autenticação sintética, não D1 remoto nem contas reais. A suíte de 851 testes foi aprovada antes das correções finais de cache/sessão; depois delas passaram 130 testes pertinentes, os 13 cenários originais de navegador e os nove cenários adicionais de cache/sessão. Consulte `validation.json` e as evidências do pacote para o resultado final.
+Scripts históricos `install`, `fix-*`, `integrate` e `video-setup` são fontes do checkpoint original; não foram executados. Nenhuma dependência instalada neste executor. Testes usam Node 24/SQLite e Playwright/Chromium já disponíveis.
 
-Correção da revisão visual: gato, alerta e cama ocupam uma cena de 224 px reservada no fluxo da página, com escala de 128 × 96 px para o gato. Em Mascotes, essa cena fica antes das necessidades e dos cuidados; nos demais módulos, um link de 44 px leva aos cuidados. Não há sobreposição sobre conteúdo, controles ou navegação. A posição da cama é normalizada dentro da cena e se ajusta ao redimensionamento; gato dormindo acompanha a cama. A animação do gato permanece ativa. Com o stylesheet de mascotes ativo, a navegação nativa por snapshots fica desativada para evitar rejeições de transição entre páginas; os movimentos do gato continuam independentes.
-
-A Home carrega o companheiro de forma opcional depois de estar pronta. Foi retirado o script extra do HTML da Home, que fazia a transição de login rejeitar a resposta. A lista exata de scripts autorizados em `js/login-home-transition.js` permanece intacta; um teste novo verifica todos os scripts do HTML real contra ela. Payloads incompletos não criam uma cena órfã.
-
-Validação da correção: 111 testes unitários pertinentes; 14 cenários existentes da Home em desktop/mobile; 13 cenários originais de mascotes; nove cenários de cache/sessão; 13 verificações novas da área segura (320, 390, 600, 844 e 1280 px, quatro cantos da cama, movimento, cuidados, posição, viewport curta, troca de sessão e link entre módulos). Nenhuma dependência instalada. Evidências da correção ficam fora do checkout, em `/workspace/scratch/mascotes-mobile-fix/` neste executor.
-
-CI do primeiro commit do PR #613: a suíte completa do Worker passou com 851/851 e o gate com 29/29; a auditoria de vídeo encontrou a regressão de Home acima, agora corrigida e validada localmente. Os resultados do CI do commit de correção devem ser consultados antes de qualquer aceite. As duas auditorias amplas são acompanhadas sem disparar repetição local de suítes intactas.
-
-Produção: `main` permaneceu em `c10773f`; o check externo do primeiro commit aponta explicitamente para um preview da branch. A comparação adicional dos arquivos públicos do domínio produtivo foi bloqueada pela conectividade deste executor, portanto não se declara verificação direta do tráfego/versionamento do Worker. Não houve alteração de configuração, secrets, grants, workflows, migração, promoção ou merge.
-
-As quatro imagens antigas e os resultados exatos das transferências falhas foram preservados em `/workspace/scratch/mascotes-previa-visual/`. Todas falharam antes de finalizar a Library; não há IDs de Library confirmados. `transfer-recovery.json` identifica as reservas de upload, sem expor URLs. O helper atual não oferece retomada por ID de sessão; não foi trocada a rota iniciada nem repetido envio incerto. Novas capturas locais refletem a área segura corrigida.
-
-Correção da auditoria visual: a fixture modela somente os três GETs exatos de mascotes com a resposta real de flag desativada (503); mutações e endpoints desconhecidos continuam bloqueados. O servidor sintético permite a nova página `/mascotes/`. Como essa página não existe na base, ela recebe auditoria de superfícies light/dark/print, enquanto as páginas existentes continuam comparadas à base sem rebaseline ou mudança de limiares. Navegação e seção de conquistas de mascotes só são criadas após resposta válida da função habilitada e removidas ao encerrar a sessão. A página segue as variáveis do tema real do portal, inclusive alertas.
-
-Verificações adicionais: 120 testes focados (incluem 21 contratos da fixture), 13 cenários originais de mascotes, nove de cache/sessão e 13 de área segura aprovados após as correções. Superfícies da página com gato, cama e alerta ativos em dark não apresentaram superfícies claras indevidas. A conquista habilitada e a remoção dos links/conquista ao sair também foram verificadas com conta fictícia. O pacote Library v1 corresponde ao checkpoint de validação anterior; não substitui o diff atualizado do PR.
-
-Comparação focada final: 20/20 cenários de superfícies e preservação da base aprovados em desktop/mobile para Home, Ferramentas, Conquistas e Mascotes. Evidência: `dark-focus-final.log` no diretório externo de validação.
-
-Diagnóstico da falha de raster do CI `93d0db16`: 217/218 cenários passaram; `/medico/` desktop/light diferiu em 5.538 pixels, delta máximo 3, região x906–1204/y905–994, apesar de snapshots computados e erros iguais. A região coincide com o launcher de IA e seu halo desfocado; a causa de raster ainda não foi comprovada. O caso local passou com PNGs idênticos, usando Chromium 151, enquanto o CI usa Chromium 140. Downloads de artefatos/versão equivalente ficaram bloqueados; não foram contornados.
-
-O relatório JSON agora incorpora recortes exatos atual/base e uma máscara dos pixels diferentes somente quando o gate de raster falha. O recorte acrescenta margem de 24 px, preserva os bytes RGBA originais e limita o tamanho diagnóstico; o gate, os limiares, a captura, a cobertura e os estilos não mudam. Validação local verificou fidelidade dos pixels, máscara, limites nas bordas e rejeição original para delta de três níveis. Isso melhora a coleta de evidência e não declara a falha anterior corrigida.
+Próxima ação: revisar diff/PR e gates do head final; confirmar preço e perdas simultâneas antes de autorização específica para produção. Publicação futura deve cumprir `docs/WORKER-SAFE-DEPLOY.md`, preservar AUTH_DB e bindings/secrets. Rollback conservador desabilita mascotes pelo fluxo seguro e preserva tabelas/estado, inclusive vidas e histórico; não usar código antigo para reabrir adoções ou apagar mortes.

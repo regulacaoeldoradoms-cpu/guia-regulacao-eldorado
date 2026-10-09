@@ -67,6 +67,11 @@ jobs:
           PETS_GLOBAL_ARTIFACT_DIR: testing/browser/test-results-dark-audit/pets-global
         run: node testing/pets/global-navigation.cjs
 
+      - name: Verificar sete vidas, potinho e adoção após morte
+        env:
+          PETS_LIVES_ARTIFACT_DIR: testing/browser/test-results-dark-audit/pets-lives
+        run: node testing/pets/lives.cjs
+
       - name: Resumir resultados disponíveis
         if: always()
         working-directory: testing/browser

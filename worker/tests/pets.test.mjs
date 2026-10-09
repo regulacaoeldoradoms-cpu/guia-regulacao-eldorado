@@ -11,12 +11,12 @@ test('adoption/replay preserve one active cat and exact achievement',async()=>{
  assert.equal(a.state.pet.typeId,'cat');assert.deepEqual(a.receipt,b.receipt);assert.equal(a.state.revision,b.state.revision);
  const rows=f.sql.prepare('SELECT * FROM pet_achievements').all();assert.equal(rows.length,1);assert.equal(rows[0].title,'Cuidar de 7 vidas não é fácil');f.close();
 });
-test('payload conflict and switching do not reset needs or achievements',async()=>{
+test('payload conflict and a second live adoption cannot reset the cat or achievements',async()=>{
  const f=fixture(),input=adoption();await persistPetCommand(f.db,f.user,'adopt',input);
  await assert.rejects(persistPetCommand(f.db,f.user,'adopt',{...input,variant:'gray'}),{code:'IDEMPOTENCY_CONFLICT'});
  const switched=await persistPetCommand(f.db,f.user,'adopt',adoption('gray',1));
- assert.equal(switched.state.pet.variant,'gray');assert.equal(switched.state.petRevision,2);assert.equal(f.sql.prepare('SELECT count(*) AS n FROM pet_achievements').get().n,1);
- const stale=await persistPetCommand(f.db,f.user,'care',{operationId:id(),action:'food',expectedPetRevision:1});assert.equal(stale.receipt.code,'PET_REVISION_CONFLICT');f.close();
+ assert.equal(switched.receipt.code,'PET_ALREADY_ADOPTED');assert.equal(switched.state.pet.variant,'ginger');assert.equal(switched.state.petRevision,1);assert.equal(f.sql.prepare('SELECT count(*) AS n FROM pet_achievements').get().n,1);
+ const stale=await persistPetCommand(f.db,f.user,'care',{operationId:id(),action:'food',expectedPetRevision:0});assert.equal(stale.receipt.code,'PET_REVISION_CONFLICT');f.close();
 });
 test('no adoption means no shop/care; basics do not cost coins',async()=>{
  const f=fixture();const denied=await persistPetCommand(f.db,f.user,'purchase',{operationId:id(),itemId:'bed-cloud',catalogVersion:PET_VERSION});assert.equal(denied.receipt.code,'PET_REQUIRED');

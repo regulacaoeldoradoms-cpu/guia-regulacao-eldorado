@@ -7,7 +7,8 @@ let session,selected=null,busy=false,initializing=false,bound=false,pageEpoch=0,
 function resetPage(){
  pageEpoch++;session=null;selected=null;busy=false;pageToken=null;
  for(const id of ['petHome','petShop','petSettings'])$(id).hidden=true;
- for(const id of ['petNeeds','petItems','petGallery','petDays'])$(id).replaceChildren();
+ for(const id of ['petNeeds','petItems','petGallery','petDays','petLives'])$(id).replaceChildren();
+ $('petLifeStatus').textContent='';
  for(const id of ['petWallet','petAchievement','petProposal'])$(id).textContent='';
  $('petPlacement').hidden=true;$('petPreferences').reset();delete $('petPreferences').dataset.editing;
  $('petAdopt').disabled=true;message('Entre na sua conta para carregar o mascote.');
@@ -17,14 +18,20 @@ async function command(kind,input,success){
  if(busy||!session||!session.api.valid())return;const owner=session,generation=pageEpoch;busy=true;document.querySelectorAll('.pet-page button').forEach(b=>b.disabled=true);
  try{const result=await owner.api.command(kind,input);if(session!==owner||generation!==pageEpoch)return;owner.runtime.update(result.state);message(success);}
  catch(e){if(session!==owner||generation!==pageEpoch)return;message(e.message,true);await owner.runtime.refresh();}
- finally{if(session===owner&&generation===pageEpoch){busy=false;render();if(selected)$('petAdopt').disabled=false;}}
+ finally{if(session===owner&&generation===pageEpoch){busy=false;render();}}
 }
 function render(){
  if(!session||!session.api.valid())return;const s=session.runtime.state,c=session.catalog;
+ const dead=s.life?.deadAt!=null,living=Boolean(s.pet&&!dead),lives=s.life?.lives??7;
  for(const id of ['petHome','petShop','petSettings'])$(id).hidden=!s.pet;
+ $('petLives').replaceChildren();$('petLives').setAttribute('aria-label',lives+' de 7 vidas');
+ for(let i=0;i<7;i++){const heart=node('span','','pet-heart');heart.dataset.filled=String(i<lives);heart.setAttribute('aria-hidden','true');$('petLives').append(heart);}
+ const rules=s.rules.life||c.rules.life;
+ $('petLifeStatus').textContent=dead?'Seu gato perdeu as sete vidas. A história e o inventário ficam guardados. Você pode adotar outro na galeria.':
+  rules?'Comida cheia dura '+rules.foodSeconds/3600+' horas de cuidados ativos; água, '+rules.waterSeconds/3600+'. Sem comida: 1 vida a cada '+rules.hungerLifeSeconds/3600+' hora. Sem água: 1 vida a cada '+rules.thirstLifeSeconds/60+' minutos. Fora do expediente, com necessidades pausadas ou Portal fechado, o tempo para.':'A atualização dos cuidados está chegando. Recarregue a página em instantes.';
  $('petNeeds').replaceChildren();
- for(const [key,label] of [['hunger','Fome'],['thirst','Sede'],['dirt','Sujeira']]){
-  const block=node('div',label+': '+Math.round(s[key])+'%'),meter=node('meter');meter.min=0;meter.max=100;meter.value=s[key];meter.setAttribute('aria-label',label);block.append(meter);$('petNeeds').append(block);
+ for(const [key,label] of [['hunger','Comida'],['thirst','Água'],['dirt','Limpeza']]){
+  const value=100-s[key],block=node('div',label+': '+Math.round(value)+'%'),meter=node('meter');meter.min=0;meter.max=100;meter.value=value;meter.setAttribute('aria-label',label);block.append(meter);$('petNeeds').append(block);
  }
  $('petAchievement').textContent='Conquista: Cuidar de 7 vidas não é fácil';
  $('petWallet').textContent=s.balance+' moedas · '+s.daily.coins+'/'+s.rules.dailyCap+' moedas obtidas hoje';
@@ -35,11 +42,16 @@ function render(){
   const buy=node('button','Comprar');buy.disabled=busy||s.balance<item.price||Boolean(item.unique&&owned);
   buy.addEventListener('click',()=>command('purchase',{itemId:item.id,catalogVersion:c.version},'Item comprado.'));card.append(buy);
   if(owned&&item.kind==='bed'){
-   const place=node('button','Colocar caminha');place.disabled=busy;place.addEventListener('click',()=>command('placement',{itemId:item.id,x:.25,y:.85,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placementRevision},'Caminha colocada.'));card.append(place);
+   const place=node('button','Colocar caminha');place.disabled=busy||dead;place.addEventListener('click',()=>command('placement',{itemId:item.id,x:.25,y:.85,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placementRevision},'Caminha colocada.'));card.append(place);
   }
   if(owned&&item.kind==='accessory'){
-   const wear=node('button',s.collar===item.id?'Guardar coleira':'Usar coleira');wear.disabled=busy;
+   const wear=node('button',s.collar===item.id?'Guardar coleira':'Usar coleira');wear.disabled=busy||dead;
    wear.addEventListener('click',()=>command('care',{action:'collar',itemId:s.collar===item.id?null:item.id,expectedPetRevision:s.petRevision},'Acessório atualizado.'));card.append(wear);
+  }
+  if(item.kind==='water-bowl'){
+   card.append(node('p','Ao comprar, o potinho fica cheio e protege a água por '+rules.bowlProtectionSeconds/3600+' horas de cuidados ativos. Depois, a água leva mais '+rules.waterSeconds/3600+' horas para acabar.'));
+   if(owned){const fill=node('button','Encher potinho · grátis');fill.disabled=busy||dead;fill.addEventListener('click',()=>command('care',{action:'fill-bowl',expectedPetRevision:s.petRevision},'Potinho cheio por mais 48 horas de cuidados ativos.'));card.append(fill);
+    card.append(node('p','Proteção restante: '+Math.ceil((s.life?.bowlProtectionSeconds||0)/3600)+' horas de cuidados ativos.'));}
   }
   $('petItems').append(card);
  }
@@ -53,11 +65,11 @@ function render(){
    const time=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');$('petStart').value=time(schedule.start);$('petEnd').value=time(schedule.end);}
  }
  $('petProposal').textContent='Proposta inicial configurável: 1 moeda por '+s.rules.secondsPerCoin/60+' minutos de uso ativo, até '+s.rules.dailyCap+' por dia. A aba aberta sem interação não conta. Preços da loja também são propostas.';
- document.querySelectorAll('[data-care]').forEach(b=>b.disabled=busy||(b.dataset.care==='special-bath'&&!s.inventory['bath-special']));
- $('petAdopt').disabled=busy||!selected;
- $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy);
+ document.querySelectorAll('[data-care]').forEach(b=>b.disabled=busy||dead||(b.dataset.care==='special-bath'&&!s.inventory['bath-special']));
+ $('petAdopt').disabled=busy||!selected||living;
+ $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||living);
  $('petPreferences').querySelector('button').disabled=busy;
- $('petPlacement').querySelectorAll('button').forEach(b=>b.disabled=busy);
+ $('petPlacement').querySelectorAll('button').forEach(b=>b.disabled=busy||dead);
 }
 async function initialize(){
  if(initializing)return;initializing=true;const generation=pageEpoch;pageToken=window.RegulationAuth?.getToken?.()||null;
@@ -86,7 +98,7 @@ async function initialize(){
  });
  window.addEventListener('portal:pets-updated',render);
  }
- render();message('Escolha seu companheiro.');
+ render();message(session.runtime.state.pet&&session.runtime.state.life?.deadAt==null?'Seu gato está com você.':'Escolha seu companheiro.');
  }finally{initializing=false;if(generation!==pageEpoch&&window.RegulationAuth?.getToken?.())initialize();}
 }
 window.addEventListener('portal:session-cleared',resetPage);
