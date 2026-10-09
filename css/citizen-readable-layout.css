@@ -208,6 +208,12 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
+  body.citizen-readable-layout .pet-page > header {
+    overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout .pet-page > header h1 {
+    font-size: 1.5rem;
+  }
   body.citizen-readable-layout .pet-page :is(select, input[type="time"]) {
     min-width: 0;
   }
