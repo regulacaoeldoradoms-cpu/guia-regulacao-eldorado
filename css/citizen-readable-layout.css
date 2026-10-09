@@ -404,6 +404,37 @@
     min-width: 0;
     overflow-wrap: anywhere;
   }
+  body.citizen-readable-layout
+    .portal-chat-panel
+    :is(.portal-chat-body, .portal-chat-view) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-width: 0;
+  }
+  body.citizen-readable-layout
+    .portal-chat-panel
+    :is(
+      .portal-chat-search-wrap,
+      .portal-chat-header-main,
+      .portal-group-tabs,
+      .portal-chat-notification-card
+    ) {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout .portal-chat-panel :is(input, textarea) {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  body.citizen-readable-layout .portal-chat-header-main :is(strong, span) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  html[data-portal-theme="dark"]
+    body.citizen-readable-layout
+    .social-action:not(.active) {
+    color: var(--portal-theme-text);
+  }
 }
 
 @media (max-width: 900px) and (max-height: 500px) {

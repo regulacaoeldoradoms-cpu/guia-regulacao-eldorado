@@ -39,7 +39,7 @@ for (const row of rows) {
       );
       assert.ok(
         state.scrollWidth <= state.clientWidth + 1,
-        `${name}: ${state.name} inner overflow ${state.scrollWidth}/${state.clientWidth}`,
+        `${name}: ${state.name} inner overflow ${state.scrollWidth}/${state.clientWidth}: ${JSON.stringify(state.overflow)}`,
       );
     }
   }

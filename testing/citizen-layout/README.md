@@ -38,6 +38,8 @@ A barra **permanece fixa embaixo**. Nesta proposta, seis destinos ficam visívei
 
 O cabeçalho deixa de comprimir marca/conta numa linha; abas de manifestações ficam empilhadas; campos e legendas usam tamanho legível; botões de ordenação do perfil passam a linhas próprias. Cartões e progresso da conta refluem. O formulário distribui fechar/título e os passos sem invadir a largura. Com altura reduzida, cabeçalhos de formulário deixam de ser sticky para não cobrir campos.
 
+No tema escuro, ações sociais ainda não ativadas reutilizam o token existente de texto para melhorar legibilidade; estado ativo e cores semânticas não são redesenhados. Dez telas escuras em 390 px também foram verificadas com fixture e seus pixels inspecionados.
+
 As regras novas são condicionadas à classe de apresentação do cidadão e a `max-width:900px`. Permissões, endpoints, operações, dados, paleta semântica, cores de tipo/privacidade/status, ícones funcionais e estados são preservados. A Home importa a apresentação pelo controlador já autorizado, sem ampliar a lista exata de scripts da transição pós-login. A ativação separada em `account-section-shell.js` aplica o mesmo estilo à página Mascotes sem editar os arquivos concorrentes. O observador ajusta espaço da barra conforme sua altura e troca a entrada Mascotes criada pelos scripts existentes. Não há dependência ou serviço novo em produção.
 
 ## Evidência e reprodução
