@@ -26,7 +26,11 @@ export class PetRuntime{
   this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.reduced.addEventListener('change',()=>{this.render();this.start();},{signal});
   this.timer=setInterval(()=>this.sample(),60000);this.layout();this.start();
  }
- update(s){this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();}
+ update(s){
+  if(s.revision<this.state.revision)return; // A delayed response cannot revive an older life state.
+  if(s.petRevision!==this.state.petRevision){this.queue=[];this.until=0;this.goingToBed=false;this.target=null;this.action='idle';}
+  this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();
+ }
  close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
  safeRect(){
   // Both scenes use the same logical grid and scale; the global scene follows the viewport.
@@ -86,7 +90,7 @@ export class PetRuntime{
   }
  }
  async rest(){
-  if(this.resting||this.closed)return;this.resting=true;
+  if(this.resting||this.closed||this.state.life?.deadAt!=null)return;this.resting=true;
   try{const result=await this.api.command('care',{action:'rest',expectedPetRevision:this.state.petRevision});if(!this.closed)this.update(result.state);}
   catch{}finally{this.resting=false;}
  }
@@ -104,7 +108,7 @@ export class PetRuntime{
  }
  render(){
   const modalOpen=this.ownsHabitat&&[...document.querySelectorAll('dialog[open],[aria-modal="true"]')].some(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0;});
-  const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible||modalOpen;this.habitat.hidden=this.root.hidden;
+  const s=this.state;this.root.hidden=!s.pet||s.life?.deadAt!=null||!s.preferences.visible||modalOpen;this.habitat.hidden=this.root.hidden;
   const motion=s.preferences.motionEnabled&&!this.reduced.matches;
   const alert=s.thirst>=70?'Estou com sede. Água é gratuita.':s.hunger>=70?'Estou com fome. Comida é gratuita.':s.dirt>=70?'Hora de um banho. Higiene básica é gratuita.':'';
   this.needsAlert=alert;
@@ -118,7 +122,7 @@ export class PetRuntime{
   this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=(this.ownsHabitat?Math.max(8,this.y-150):12)+'px';
  }
  start(){
-  cancelAnimationFrame(this.frame);if(this.closed||document.hidden||!this.state.pet||!this.state.preferences.visible)return;
+  cancelAnimationFrame(this.frame);if(this.closed||document.hidden||!this.state.pet||this.state.life?.deadAt!=null||!this.state.preferences.visible)return;
   const tick=now=>{
    if(this.closed||document.hidden||!this.state.preferences.visible)return;
    if(now-this.lastPaint>=80){

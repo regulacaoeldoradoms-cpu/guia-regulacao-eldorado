@@ -1,11 +1,12 @@
 'use strict';
 import {petCatalog} from './pet-catalog.js';
+import {initializePetLives,advancePetLives,feedPetLives,waterPetLives,fillPetWaterBowl} from './pet-lives.js';
 export class PetError extends Error {
  constructor(code,message,status=400){super(message);this.code=code;this.status=status;}
 }
 const fail=(code,message,status=400)=>{throw new PetError(code,message,status);};
 export function initialPetState(){
- return {pet:null,petRevision:0,hunger:0,thirst:0,dirt:0,awakeSeconds:0,sleepUntil:0,
+ return {pet:null,petRevision:0,life:null,deathHistory:[],hunger:0,thirst:0,dirt:0,awakeSeconds:0,sleepUntil:0,
   inventory:{},placement:null,placementRevision:0,collar:null,
   preferences:{visible:true,motionEnabled:true,needsPaused:true,schedule:null},
   daily:{key:'',seconds:0,coins:0},activity:null};
@@ -14,6 +15,7 @@ function revision(actual,expected){
  if(!Number.isInteger(expected)||expected!==actual)fail('PET_REVISION_CONFLICT','O mascote mudou em outra aba. Atualize e tente novamente.',409);
 }
 function requirePet(s){if(!s.pet)fail('PET_REQUIRED','Adote um mascote primeiro.',403);}
+function requireLiving(s){requirePet(s);if(s.life.deadAt!==null)fail('PET_DEAD','Seu gato perdeu as sete vidas. Você pode adotar outro na galeria.',409);}
 function dayKey(now,tz){
  return new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now*1000));
 }
@@ -36,14 +38,16 @@ export function validateSchedule(v){
 }
 export function applyPetCommand(current,balance,kind,input,now,env={}){
  const s=structuredClone(current),catalog=petCatalog(env),rules=catalog.rules;
+ if(s.pet)initializePetLives(s,now);
  let nextBalance=balance,delta=0,achievement=null,detail={};
  if(kind==='adopt'){
   revision(s.petRevision,input.expectedPetRevision);
   const type=catalog.types.find(t=>t.id===input.typeId);
   if(!type||!type.variants.includes(input.variant))fail('PET_TYPE_UNAVAILABLE','Mascote indisponível.');
-  if(s.pet?.typeId!==type.id||s.pet?.variant!==input.variant){
-   s.pet={typeId:type.id,variant:input.variant};s.petRevision++;s.activity=null;
-  }
+  if(s.pet&&s.life.deadAt===null)fail('PET_ALREADY_ADOPTED','Você já tem um gato. Uma nova adoção fica disponível depois que ele perder as sete vidas.',409);
+  s.pet={typeId:type.id,variant:input.variant};s.petRevision++;s.activity=null;
+  s.hunger=0;s.thirst=0;s.dirt=0;s.awakeSeconds=0;s.sleepUntil=0;s.life=null;
+  initializePetLives(s,now);
   achievement={typeId:type.id,title:type.achievement};
  }else if(kind==='preferences'){
   if(input.expectedRevision!==input.actualRevision)fail('PET_REVISION_CONFLICT','Preferências alteradas em outra aba.',409);
@@ -63,9 +67,10 @@ export function applyPetCommand(current,balance,kind,input,now,env={}){
   if(nextBalance<item.price)fail('INSUFFICIENT_COINS','Você ainda não tem moedas suficientes.',409);
   if((s.inventory[item.id]||0)>=99)fail('INVENTORY_LIMIT','Limite de itens atingido.',409);
   nextBalance-=item.price;delta=-item.price;s.inventory[item.id]=(s.inventory[item.id]||0)+1;
+  if(item.kind==='water-bowl'&&s.life.deadAt===null){s.life.waterBowl=item.id;fillPetWaterBowl(s,now);}
   detail={itemId:item.id,price:item.price};
  }else if(kind==='placement'){
-  requirePet(s);revision(s.petRevision,input.expectedPetRevision);
+  requireLiving(s);revision(s.petRevision,input.expectedPetRevision);
   if(input.expectedPlacementRevision!==s.placementRevision)fail('PLACEMENT_CONFLICT','A cama foi movida em outra aba.',409);
   if(input.itemId===null){s.placement=null;s.placementRevision++;}
   else{
@@ -75,9 +80,12 @@ export function applyPetCommand(current,balance,kind,input,now,env={}){
    s.placement={itemId:item.id,x:input.x,y:input.y,revision:++s.placementRevision};
   }
  }else if(kind==='care'){
-  requirePet(s);revision(s.petRevision,input.expectedPetRevision);
-  if(input.action==='food')s.hunger=0;
-  else if(input.action==='water')s.thirst=0;
+  requireLiving(s);revision(s.petRevision,input.expectedPetRevision);
+  if(input.action==='food')feedPetLives(s,now);
+  else if(input.action==='water')waterPetLives(s,now);
+  else if(input.action==='fill-bowl'){
+   if(!fillPetWaterBowl(s,now))fail('ITEM_NOT_OWNED','Compre e use o potinho antes de enchê-lo.',403);
+  }
   else if(input.action==='wash')s.dirt=0;
   else if(input.action==='rest'){
    if(s.awakeSeconds>=rules.sleepAfterSeconds&&!s.sleepUntil)s.sleepUntil=now+rules.sleepSeconds;
@@ -108,12 +116,11 @@ export function applyPetCommand(current,balance,kind,input,now,env={}){
   s.daily.seconds=Math.min(rules.dailyCap*rules.secondsPerCoin,s.daily.seconds+credited);
   delta=Math.max(0,Math.min(rules.dailyCap-s.daily.coins,Math.floor(s.daily.seconds/rules.secondsPerCoin)-before));
   s.daily.coins+=delta;nextBalance+=delta;
-  let needsSeconds=0;
+  const careTicks=[];
   if(!s.preferences.needsPaused&&s.preferences.schedule)
-   for(let t=now-elapsed+1;t<=now;t++)if(withinSchedule(t,s.preferences.schedule))needsSeconds++;
-  s.hunger=Math.min(100,s.hunger+needsSeconds*70/(rules.hungerHours*3600));
-  s.thirst=Math.min(100,s.thirst+needsSeconds*70/(rules.thirstHours*3600));
-  s.dirt=Math.min(100,s.dirt+needsSeconds*70/(rules.dirtHours*3600));
+   for(let t=now-elapsed+1;t<=now;t++)if(withinSchedule(t,s.preferences.schedule))careTicks.push(t);
+  advancePetLives(s,careTicks);
+  if(s.life.deadAt===null)s.dirt=Math.min(100,s.dirt+careTicks.length*70/(rules.dirtHours*3600));
   if(s.sleepUntil){
    if(now>=s.sleepUntil){s.awakeSeconds=0;s.sleepUntil=0;}
   }else s.awakeSeconds=Math.min(rules.sleepAfterSeconds,s.awakeSeconds+elapsed);
@@ -125,5 +132,6 @@ export function applyPetCommand(current,balance,kind,input,now,env={}){
 }
 export function publicPetState(state,balance,revision,now,env={}){
  const {activity,...safe}=structuredClone(state);
+ if(safe.pet)initializePetLives(safe,now); // Read-only projection; persistence happens only in an accepted command.
  return {...safe,balance,revision,serverTime:now,rules:petCatalog(env).rules};
 }

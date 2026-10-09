@@ -17,8 +17,8 @@ try{
   await page.evaluate(()=>{document.getElementById('petAdopt').click();document.getElementById('petAdopt').click();});
   await page.waitForFunction(()=>window.PortalPets.runtime.state.pet?.variant==='ginger');assert.equal(adoptRequests,1);note('selection is not adoption; repeated click gives one request');
  }
- await page.getByRole('button',{name:'Gato cinza',exact:true}).click();await page.locator('#petAdopt').click();await page.waitForFunction(()=>window.PortalPets.runtime.state.pet.variant==='gray');note('switch works after first adoption');
- await page.reload();await page.waitForFunction(()=>window.PortalPets?.runtime.state.pet?.variant==='gray');note('account state persists across close/reload');
+ assert.equal(await page.getByRole('button',{name:'Gato cinza',exact:true}).isDisabled(),true);assert.equal(await page.locator('#petAdopt').isDisabled(),true);note('one living cat prevents a second adoption');
+ await page.reload();await page.waitForFunction(()=>window.PortalPets?.runtime.state.pet?.variant==='ginger');note('account state persists across close/reload');
  await page.request.post('http://127.0.0.1:8793/__fixture',{data:{account:'a',balance:60}});
  await page.evaluate(()=>window.PortalPets.runtime.refresh());
  const bed=page.locator('.pet-item').filter({has:page.getByRole('heading',{name:'Caminha nuvem',exact:true})});

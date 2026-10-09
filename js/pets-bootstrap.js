@@ -1,6 +1,6 @@
 'use strict';
 import {PetApi} from './pets-api.js';
-import {PetRuntime} from './pets-runtime.js?v=pets-speech-cycle-7';
+import {PetRuntime} from './pets-runtime.js?v=pets-combined-v8';
 import {petSpeechForSession} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
 let current=null,running=null,epoch=0;
 function navigation(enabled){
@@ -28,7 +28,7 @@ async function mount(){
    if(!payload?.state||!Array.isArray(catalog?.types)||!Array.isArray(catalog?.items)){api.close();return;}
    const speech=await petSpeechForSession(api.token);
    if(generation!==epoch||!api.valid()){api.close();return;}
-   if(!document.getElementById('petsStyles')){const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=pets-global-v4';document.head.append(css);}
+   if(!document.getElementById('petsStyles')){const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=pets-combined-v8';document.head.append(css);}
    const runtime=new PetRuntime(api,payload.state,s=>window.dispatchEvent(new CustomEvent('portal:pets-updated',{detail:{state:s}})),speech);
    current={api,runtime,catalog};window.PortalPets=current;navigation(true);return current;
   }catch{api.close();}

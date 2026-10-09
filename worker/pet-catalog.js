@@ -1,5 +1,6 @@
 'use strict';
-export const PET_VERSION = 'pets-v1-proposal-1';
+import {PET_LIFE_RULES} from './pet-life-rules.js';
+export const PET_VERSION = 'pets-v2-seven-lives-1';
 export const PET_TYPES = Object.freeze([
  { id: 'cat', name: 'Gato', achievement: 'Cuidar de 7 vidas não é fácil', variants: ['ginger','gray'] }
 ]);
@@ -7,6 +8,7 @@ export const PET_ITEMS = Object.freeze([
  { id:'bed-cloud', name:'Caminha nuvem', kind:'bed', price:30, unique:true },
  { id:'bed-moss', name:'Caminha jardim', kind:'bed', price:40, unique:true },
  { id:'collar-blue', name:'Coleira azul', kind:'accessory', price:20, unique:true },
+ { id:'water-bowl', name:'Potinho de água', kind:'water-bowl', price:PET_LIFE_RULES.bowlPrice, unique:true },
  { id:'bath-special', name:'Banho de espuma especial', kind:'bath', price:5, unique:false }
 ]);
 // Economic/need defaults are proposals. No money, paid APIs or productivity telemetry.
@@ -18,8 +20,9 @@ export function petRules(env={}) {
   proposed:true, secondsPerCoin:integer(env.PETS_SECONDS_PER_COIN,300,60,3600),
   dailyCap:integer(env.PETS_DAILY_CAP,12,0,100),
   idleSeconds:60, sampleSeconds:60, leaseSeconds:90,
-  hungerHours:integer(env.PETS_HUNGER_HOURS,4,1,24),
-  thirstHours:integer(env.PETS_THIRST_HOURS,3,1,24),
+  hungerHours:PET_LIFE_RULES.foodSeconds/3600,
+  thirstHours:PET_LIFE_RULES.waterSeconds/3600,
+  life:PET_LIFE_RULES,
   dirtHours:integer(env.PETS_DIRT_HOURS,6,1,48),
   sleepAfterSeconds:2700, sleepSeconds:45, dayTimezone:'America/Campo_Grande'
  };
