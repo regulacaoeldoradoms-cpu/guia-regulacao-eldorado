@@ -1,0 +1,87 @@
+[
+  {
+    "original": "assets/canal-cidadao-icon.png",
+    "candidate": "testing/citizen-layout/asset-candidates/canal-cidadao-icon.webp",
+    "sourceBytes": 1461693,
+    "candidateBytes": 63050,
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "candidateSize": [
+      256,
+      256
+    ],
+    "sourceFormat": "PNG RGBA",
+    "candidateFormat": "WebP lossless after resize",
+    "license": "No explicit asset license found in checkout"
+  },
+  {
+    "original": "assets/nivel-prata.png",
+    "candidate": "testing/citizen-layout/asset-candidates/nivel-prata.webp",
+    "sourceBytes": 1373110,
+    "candidateBytes": 36284,
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "candidateSize": [
+      256,
+      256
+    ],
+    "sourceFormat": "PNG RGBA",
+    "candidateFormat": "WebP lossless after resize",
+    "license": "No explicit asset license found in checkout"
+  },
+  {
+    "original": "assets/Fechar-icon.png",
+    "candidate": "testing/citizen-layout/asset-candidates/Fechar-icon.webp",
+    "sourceBytes": 1040664,
+    "candidateBytes": 36966,
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "candidateSize": [
+      256,
+      256
+    ],
+    "sourceFormat": "PNG RGBA",
+    "candidateFormat": "WebP lossless after resize",
+    "license": "No explicit asset license found in checkout"
+  },
+  {
+    "original": "assets/nivel-ouro.png",
+    "candidate": "testing/citizen-layout/asset-candidates/nivel-ouro.webp",
+    "sourceBytes": 1545036,
+    "candidateBytes": 48000,
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "candidateSize": [
+      256,
+      256
+    ],
+    "sourceFormat": "PNG RGBA",
+    "candidateFormat": "WebP lossless after resize",
+    "license": "No explicit asset license found in checkout"
+  },
+  {
+    "original": "assets/nivel-bronze.png",
+    "candidate": "testing/citizen-layout/asset-candidates/nivel-bronze.webp",
+    "sourceBytes": 1478896,
+    "candidateBytes": 45228,
+    "sourceSize": [
+      1254,
+      1254
+    ],
+    "candidateSize": [
+      256,
+      256
+    ],
+    "sourceFormat": "PNG RGBA",
+    "candidateFormat": "WebP lossless after resize",
+    "license": "No explicit asset license found in checkout"
+  }
+]

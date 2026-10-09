@@ -1,0 +1,992 @@
+[
+  {
+    "route": "/",
+    "width": 320,
+    "url": "http://127.0.0.1:4179/",
+    "title": "Início | Portal da Regulação",
+    "controls": [
+      {
+        "text": "Sair",
+        "class": "portal-button ghost",
+        "font": 16,
+        "width": 55,
+        "height": 48
+      },
+      {
+        "text": "Texto da publicação",
+        "class": "sr-only",
+        "font": 18,
+        "width": 1,
+        "height": 1
+      },
+      {
+        "text": "Publicar",
+        "class": "social-button primary",
+        "font": 16,
+        "width": 136,
+        "height": 64
+      },
+      {
+        "text": "Editar",
+        "class": "social-button secondary",
+        "font": 16,
+        "width": 70,
+        "height": 44
+      },
+      {
+        "text": "Excluir",
+        "class": "social-button danger",
+        "font": 16,
+        "width": 76,
+        "height": 44
+      },
+      {
+        "text": "Publicação fictícia para conferir leitura e b",
+        "class": "social-post-body",
+        "font": 18,
+        "width": 268,
+        "height": 54
+      },
+      {
+        "text": "Curtir · 0",
+        "class": "social-action",
+        "font": 16,
+        "width": 133,
+        "height": 64
+      },
+      {
+        "text": "Comentários · 0",
+        "class": "social-action",
+        "font": 16,
+        "width": 133,
+        "height": 64
+      },
+      {
+        "text": "Mostrar atalhos",
+        "class": "",
+        "font": 16,
+        "width": 127,
+        "height": 48
+      },
+      {
+        "text": "Início",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 87,
+        "height": 62
+      },
+      {
+        "text": "Amigos",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 87,
+        "height": 62
+      },
+      {
+        "text": "Ferramentas",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 130,
+        "height": 62
+      },
+      {
+        "text": "Avisos0",
+        "class": "social-mobile-nav-link social-notification-trigger",
+        "font": 16,
+        "width": 87,
+        "height": 62
+      },
+      {
+        "text": "Perfil",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 87,
+        "height": 62
+      },
+      {
+        "text": "Mascotes",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 130,
+        "height": 62
+      },
+      {
+        "text": "Abrir chat interno",
+        "class": "portal-chat-launcher",
+        "font": 0,
+        "width": 142,
+        "height": 70
+      }
+    ],
+    "geometry": [
+      {
+        "selector": ".portal-topbar",
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 174.5,
+        "font": "18px"
+      },
+      {
+        "selector": ".portal-main",
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "font": "18px"
+      },
+      {
+        "selector": ".social-shell",
+        "x": 0,
+        "y": 174.5,
+        "width": 320,
+        "height": 974.75,
+        "font": "21px"
+      }
+    ],
+    "palette": [],
+    "citizenCards": [
+      "/cidadao/"
+    ],
+    "paw": {
+      "svg": true,
+      "label": "Mascotes",
+      "text": ""
+    },
+    "viewport": 320,
+    "scrollWidth": 320,
+    "bodyClass": "portal-page mobile-home-mode citizen-readable-layout has-social-navigation",
+    "smallText": [
+      {
+        "tag": "DIV",
+        "class": "portal-profile-avatar",
+        "text": "CF",
+        "size": "12.48px"
+      },
+      {
+        "tag": "DIV",
+        "class": "social-avatar",
+        "text": "CF",
+        "size": "11.52px"
+      }
+    ],
+    "smallTargets": [],
+    "overflow": [],
+    "resources": [
+      {
+        "name": "/js/portal-performance.js",
+        "bytes": 12614,
+        "duration": 25
+      },
+      {
+        "name": "/js/auth-client.js",
+        "bytes": 17245,
+        "duration": 39
+      },
+      {
+        "name": "/css/portal.css",
+        "bytes": 9230,
+        "duration": 28
+      },
+      {
+        "name": "/css/profile-account-link.css",
+        "bytes": 1328,
+        "duration": 28
+      },
+      {
+        "name": "/css/portal-chat.css",
+        "bytes": 27050,
+        "duration": 29
+      },
+      {
+        "name": "/css/home-loading.css",
+        "bytes": 960,
+        "duration": 28
+      },
+      {
+        "name": "/css/home-mobile.css",
+        "bytes": 12200,
+        "duration": 29
+      },
+      {
+        "name": "/css/home-chat-button.css",
+        "bytes": 7419,
+        "duration": 29
+      },
+      {
+        "name": "/js/portal-theme.js",
+        "bytes": 2436,
+        "duration": 37
+      },
+      {
+        "name": "/js/portal-pwa.js",
+        "bytes": 19646,
+        "duration": 17
+      },
+      {
+        "name": "/css/portal-interactions.css",
+        "bytes": 81988,
+        "duration": 13
+      },
+      {
+        "name": "/css/social.css",
+        "bytes": 37294,
+        "duration": 20
+      },
+      {
+        "name": "/css/social-notification-panel.css",
+        "bytes": 5130,
+        "duration": 20
+      },
+      {
+        "name": "/css/home-desktop-scale.css",
+        "bytes": 6122,
+        "duration": 20
+      },
+      {
+        "name": "/css/citizen-readable-layout.css",
+        "bytes": 13209,
+        "duration": 20
+      },
+      {
+        "name": "/css/portal-pwa.css",
+        "bytes": 2649,
+        "duration": 24
+      },
+      {
+        "name": "/assets/portal-regulacao-header_512x512.png",
+        "bytes": 224519,
+        "duration": 14
+      },
+      {
+        "name": "/js/auth-config.js",
+        "bytes": 1514,
+        "duration": 15
+      },
+      {
+        "name": "/js/portal-interactions.js",
+        "bytes": 50769,
+        "duration": 9
+      },
+      {
+        "name": "/js/tools-catalog.js",
+        "bytes": 8340,
+        "duration": 5
+      },
+      {
+        "name": "/js/social-api.js",
+        "bytes": 22517,
+        "duration": 5
+      },
+      {
+        "name": "/js/social-navigation.js",
+        "bytes": 26956,
+        "duration": 4
+      },
+      {
+        "name": "/js/social-feed.js",
+        "bytes": 21061,
+        "duration": 10
+      },
+      {
+        "name": "/js/social-home.js",
+        "bytes": 6023,
+        "duration": 5
+      },
+      {
+        "name": "/js/home.js",
+        "bytes": 4949,
+        "duration": 4
+      },
+      {
+        "name": "/js/citizen-layout.js",
+        "bytes": 2573,
+        "duration": 6
+      },
+      {
+        "name": "/js/portal-global-chat.js",
+        "bytes": 4330,
+        "duration": 7
+      },
+      {
+        "name": "/js/portal-chat-groups.js",
+        "bytes": 34428,
+        "duration": 10
+      },
+      {
+        "name": "/js/portal-global-navigation.js",
+        "bytes": 5835,
+        "duration": 8
+      },
+      {
+        "name": "/api/social/config",
+        "bytes": 0,
+        "duration": 4
+      },
+      {
+        "name": "/js/portal-chat.js",
+        "bytes": 89717,
+        "duration": 33
+      },
+      {
+        "name": "/api/social/relationships",
+        "bytes": 0,
+        "duration": 24
+      },
+      {
+        "name": "/js/pets-bootstrap.js",
+        "bytes": 2605,
+        "duration": 29
+      },
+      {
+        "name": "/api/social/me",
+        "bytes": 0,
+        "duration": 20
+      },
+      {
+        "name": "/api/social/feed",
+        "bytes": 0,
+        "duration": 20
+      },
+      {
+        "name": "/assets/canal-cidadao-icon.png",
+        "bytes": 1461693,
+        "duration": 20
+      },
+      {
+        "name": "/js/pets-api.js",
+        "bytes": 1087,
+        "duration": 14
+      },
+      {
+        "name": "/js/pets-runtime.js",
+        "bytes": 10086,
+        "duration": 15
+      },
+      {
+        "name": "/js/pet-phrases.js",
+        "bytes": 6447,
+        "duration": 14
+      },
+      {
+        "name": "/api/auth/me",
+        "bytes": 0,
+        "duration": 5
+      },
+      {
+        "name": "/js/portal-chat-switch-optimizer.js",
+        "bytes": 1718,
+        "duration": 8
+      },
+      {
+        "name": "/css/portal-chat-profile-link.css",
+        "bytes": 357,
+        "duration": 11
+      },
+      {
+        "name": "/api/chat/groups",
+        "bytes": 0,
+        "duration": 6
+      },
+      {
+        "name": "/js/pet-cat-frames.js",
+        "bytes": 3861,
+        "duration": 10
+      },
+      {
+        "name": "/assets/portal-regulacao-header_512x512.png",
+        "bytes": 224519,
+        "duration": 7
+      },
+      {
+        "name": "/api/pets/me",
+        "bytes": 0,
+        "duration": 4
+      },
+      {
+        "name": "/api/pets/catalog",
+        "bytes": 0,
+        "duration": 4
+      },
+      {
+        "name": "/css/pets.css",
+        "bytes": 4563,
+        "duration": 11
+      },
+      {
+        "name": "/api/auth/security",
+        "bytes": 0,
+        "duration": 3
+      }
+    ],
+    "calls": [
+      "/",
+      "/js/portal-performance.js?v=20260923-1",
+      "/js/auth-client.js?v=20261001-v34-8",
+      "/css/portal.css?v=20260816-5",
+      "/css/profile-account-link.css?v=20260814-1",
+      "/css/portal-chat.css?v=20260923-1",
+      "/css/home-loading.css?v=20260909-1",
+      "/css/home-mobile.css?v=20260909-1",
+      "/css/home-chat-button.css?v=20260906-1",
+      "/js/portal-theme.js?v=20260923-1",
+      "/js/portal-pwa.js?v=20260922-3",
+      "/css/portal-interactions.css?v=20260924-dark-final-1",
+      "/css/social.css?v=20260922-2",
+      "/css/social-notification-panel.css?v=20260910-1",
+      "/css/home-desktop-scale.css?v=20260910-2",
+      "/css/citizen-readable-layout.css?v=20261009-1",
+      "/css/portal-pwa.css?v=20260910-2",
+      "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
+      "/js/auth-config.js?v=20260815-1",
+      "/js/portal-interactions.js?v=20260923-2",
+      "/js/tools-catalog.js?v=20260925-study-1",
+      "/js/social-api.js?v=20260910-4",
+      "/js/social-navigation.js?v=20261009-pets-1",
+      "/js/social-feed.js?v=20260910-1",
+      "/js/social-home.js?v=20260910-2",
+      "/js/home.js?v=20261009-citizen-layout-1",
+      "/js/citizen-layout.js?v=20261009-1",
+      "/js/portal-global-chat.js?v=20261008-chat-groups-1",
+      "/js/portal-chat-groups.js?v=20261008-chat-groups-1",
+      "/js/portal-global-navigation.js?v=20261009-pets-1",
+      "/api/social/config",
+      "/js/portal-chat.js?v=20261008-chat-groups-1",
+      "/js/pets-bootstrap.js",
+      "/api/social/relationships?type=friends",
+      "/api/social/me",
+      "/api/social/feed",
+      "/assets/canal-cidadao-icon.png?v=20260817-1",
+      "/js/pets-api.js",
+      "/js/pets-runtime.js?v=pets-speech-cycle-7",
+      "/js/pet-phrases.js?v=pet-phrases-20261009-cycle-1",
+      "/js/portal-chat-switch-optimizer.js?v=20260928-global-1",
+      "/api/auth/me",
+      "/css/portal-chat-profile-link.css?v=20260906-2",
+      "/api/chat/groups",
+      "/js/pet-cat-frames.js",
+      "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
+      "/api/pets/me",
+      "/api/pets/catalog",
+      "/css/pets.css?v=pets-global-v4",
+      "/api/auth/security",
+      "/api/chat/groups",
+      "/api/chat/delivery",
+      "/api/chat/users",
+      "/js/portal-observability.js?v=20260921-2"
+    ],
+    "errors": [],
+    "states": [
+      {
+        "name": "chat",
+        "overflow": [],
+        "opened": true,
+        "x": 8,
+        "y": 8,
+        "right": 312,
+        "bottom": 746,
+        "viewport": 320,
+        "height": 900,
+        "chatAboveCompanion": true,
+        "scrollWidth": 302,
+        "clientWidth": 302,
+        "notificationActionReachable": true
+      }
+    ]
+  },
+  {
+    "route": "/",
+    "width": 390,
+    "url": "http://127.0.0.1:4179/",
+    "title": "Início | Portal da Regulação",
+    "controls": [
+      {
+        "text": "Sair",
+        "class": "portal-button ghost",
+        "font": 16,
+        "width": 55,
+        "height": 48
+      },
+      {
+        "text": "Texto da publicação",
+        "class": "sr-only",
+        "font": 18,
+        "width": 1,
+        "height": 1
+      },
+      {
+        "text": "Publicar",
+        "class": "social-button primary",
+        "font": 16,
+        "width": 136,
+        "height": 64
+      },
+      {
+        "text": "Editar",
+        "class": "social-button secondary",
+        "font": 16,
+        "width": 70,
+        "height": 44
+      },
+      {
+        "text": "Excluir",
+        "class": "social-button danger",
+        "font": 16,
+        "width": 76,
+        "height": 44
+      },
+      {
+        "text": "Publicação fictícia para conferir leitura e b",
+        "class": "social-post-body",
+        "font": 18,
+        "width": 338,
+        "height": 54
+      },
+      {
+        "text": "Curtir · 0",
+        "class": "social-action",
+        "font": 16,
+        "width": 168,
+        "height": 64
+      },
+      {
+        "text": "Comentários · 0",
+        "class": "social-action",
+        "font": 16,
+        "width": 168,
+        "height": 64
+      },
+      {
+        "text": "Mostrar atalhos",
+        "class": "",
+        "font": 16,
+        "width": 127,
+        "height": 48
+      },
+      {
+        "text": "Início",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 107,
+        "height": 62
+      },
+      {
+        "text": "Amigos",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 107,
+        "height": 62
+      },
+      {
+        "text": "Ferramentas",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 160,
+        "height": 62
+      },
+      {
+        "text": "Avisos0",
+        "class": "social-mobile-nav-link social-notification-trigger",
+        "font": 16,
+        "width": 107,
+        "height": 62
+      },
+      {
+        "text": "Perfil",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 107,
+        "height": 62
+      },
+      {
+        "text": "Mascotes",
+        "class": "social-mobile-nav-link",
+        "font": 16,
+        "width": 160,
+        "height": 62
+      },
+      {
+        "text": "Abrir chat interno",
+        "class": "portal-chat-launcher",
+        "font": 0,
+        "width": 142,
+        "height": 70
+      }
+    ],
+    "geometry": [
+      {
+        "selector": ".portal-topbar",
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 158,
+        "font": "18px"
+      },
+      {
+        "selector": ".portal-main",
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "font": "18px"
+      },
+      {
+        "selector": ".social-shell",
+        "x": 0,
+        "y": 158,
+        "width": 390,
+        "height": 943.25,
+        "font": "21px"
+      }
+    ],
+    "palette": [],
+    "citizenCards": [
+      "/cidadao/"
+    ],
+    "paw": {
+      "svg": true,
+      "label": "Mascotes",
+      "text": ""
+    },
+    "viewport": 390,
+    "scrollWidth": 390,
+    "bodyClass": "portal-page mobile-home-mode citizen-readable-layout has-social-navigation",
+    "smallText": [
+      {
+        "tag": "DIV",
+        "class": "portal-profile-avatar",
+        "text": "CF",
+        "size": "12.48px"
+      },
+      {
+        "tag": "DIV",
+        "class": "social-avatar",
+        "text": "CF",
+        "size": "11.52px"
+      }
+    ],
+    "smallTargets": [],
+    "overflow": [],
+    "resources": [
+      {
+        "name": "/js/portal-performance.js",
+        "bytes": 12614,
+        "duration": 25
+      },
+      {
+        "name": "/js/auth-client.js",
+        "bytes": 17245,
+        "duration": 26
+      },
+      {
+        "name": "/css/portal.css",
+        "bytes": 9230,
+        "duration": 26
+      },
+      {
+        "name": "/css/profile-account-link.css",
+        "bytes": 1328,
+        "duration": 32
+      },
+      {
+        "name": "/css/portal-chat.css",
+        "bytes": 27050,
+        "duration": 33
+      },
+      {
+        "name": "/css/home-loading.css",
+        "bytes": 960,
+        "duration": 33
+      },
+      {
+        "name": "/css/home-mobile.css",
+        "bytes": 12200,
+        "duration": 35
+      },
+      {
+        "name": "/css/home-chat-button.css",
+        "bytes": 7419,
+        "duration": 35
+      },
+      {
+        "name": "/js/portal-theme.js",
+        "bytes": 2436,
+        "duration": 35
+      },
+      {
+        "name": "/js/portal-pwa.js",
+        "bytes": 19646,
+        "duration": 17
+      },
+      {
+        "name": "/css/portal-interactions.css",
+        "bytes": 81988,
+        "duration": 16
+      },
+      {
+        "name": "/css/social.css",
+        "bytes": 37294,
+        "duration": 19
+      },
+      {
+        "name": "/css/social-notification-panel.css",
+        "bytes": 5130,
+        "duration": 25
+      },
+      {
+        "name": "/css/home-desktop-scale.css",
+        "bytes": 6122,
+        "duration": 27
+      },
+      {
+        "name": "/css/citizen-readable-layout.css",
+        "bytes": 13209,
+        "duration": 27
+      },
+      {
+        "name": "/css/portal-pwa.css",
+        "bytes": 2649,
+        "duration": 25
+      },
+      {
+        "name": "/assets/portal-regulacao-header_512x512.png",
+        "bytes": 224519,
+        "duration": 9
+      },
+      {
+        "name": "/js/auth-config.js",
+        "bytes": 1514,
+        "duration": 8
+      },
+      {
+        "name": "/js/portal-interactions.js",
+        "bytes": 50769,
+        "duration": 9
+      },
+      {
+        "name": "/js/tools-catalog.js",
+        "bytes": 8340,
+        "duration": 7
+      },
+      {
+        "name": "/js/social-api.js",
+        "bytes": 22517,
+        "duration": 4
+      },
+      {
+        "name": "/js/social-navigation.js",
+        "bytes": 26956,
+        "duration": 6
+      },
+      {
+        "name": "/js/social-feed.js",
+        "bytes": 21061,
+        "duration": 4
+      },
+      {
+        "name": "/js/social-home.js",
+        "bytes": 6023,
+        "duration": 5
+      },
+      {
+        "name": "/js/home.js",
+        "bytes": 4949,
+        "duration": 3
+      },
+      {
+        "name": "/js/citizen-layout.js",
+        "bytes": 2573,
+        "duration": 5
+      },
+      {
+        "name": "/js/portal-global-chat.js",
+        "bytes": 4330,
+        "duration": 6
+      },
+      {
+        "name": "/api/social/config",
+        "bytes": 0,
+        "duration": 3
+      },
+      {
+        "name": "/js/portal-chat-groups.js",
+        "bytes": 34428,
+        "duration": 8
+      },
+      {
+        "name": "/js/portal-global-navigation.js",
+        "bytes": 5835,
+        "duration": 7
+      },
+      {
+        "name": "/js/portal-chat.js",
+        "bytes": 89717,
+        "duration": 29
+      },
+      {
+        "name": "/api/social/relationships",
+        "bytes": 0,
+        "duration": 19
+      },
+      {
+        "name": "/js/pets-bootstrap.js",
+        "bytes": 2605,
+        "duration": 25
+      },
+      {
+        "name": "/api/social/me",
+        "bytes": 0,
+        "duration": 20
+      },
+      {
+        "name": "/api/social/feed",
+        "bytes": 0,
+        "duration": 19
+      },
+      {
+        "name": "/assets/canal-cidadao-icon.png",
+        "bytes": 1461693,
+        "duration": 29
+      },
+      {
+        "name": "/js/pets-api.js",
+        "bytes": 1087,
+        "duration": 19
+      },
+      {
+        "name": "/js/pets-runtime.js",
+        "bytes": 10086,
+        "duration": 20
+      },
+      {
+        "name": "/js/pet-phrases.js",
+        "bytes": 6447,
+        "duration": 25
+      },
+      {
+        "name": "/api/auth/me",
+        "bytes": 0,
+        "duration": 8
+      },
+      {
+        "name": "/js/portal-chat-switch-optimizer.js",
+        "bytes": 1718,
+        "duration": 16
+      },
+      {
+        "name": "/css/portal-chat-profile-link.css",
+        "bytes": 357,
+        "duration": 12
+      },
+      {
+        "name": "/api/chat/groups",
+        "bytes": 0,
+        "duration": 6
+      },
+      {
+        "name": "/js/pet-cat-frames.js",
+        "bytes": 3861,
+        "duration": 8
+      },
+      {
+        "name": "/assets/portal-regulacao-header_512x512.png",
+        "bytes": 224519,
+        "duration": 7
+      },
+      {
+        "name": "/api/pets/me",
+        "bytes": 0,
+        "duration": 3
+      },
+      {
+        "name": "/api/pets/catalog",
+        "bytes": 0,
+        "duration": 4
+      },
+      {
+        "name": "/css/pets.css",
+        "bytes": 4563,
+        "duration": 7
+      },
+      {
+        "name": "/api/auth/security",
+        "bytes": 0,
+        "duration": 2
+      }
+    ],
+    "calls": [
+      "/",
+      "/js/portal-performance.js?v=20260923-1",
+      "/js/auth-client.js?v=20261001-v34-8",
+      "/css/portal.css?v=20260816-5",
+      "/css/profile-account-link.css?v=20260814-1",
+      "/css/portal-chat.css?v=20260923-1",
+      "/css/home-loading.css?v=20260909-1",
+      "/css/home-mobile.css?v=20260909-1",
+      "/css/home-chat-button.css?v=20260906-1",
+      "/js/portal-theme.js?v=20260923-1",
+      "/js/portal-pwa.js?v=20260922-3",
+      "/css/portal-interactions.css?v=20260924-dark-final-1",
+      "/css/social.css?v=20260922-2",
+      "/css/social-notification-panel.css?v=20260910-1",
+      "/css/home-desktop-scale.css?v=20260910-2",
+      "/css/citizen-readable-layout.css?v=20261009-1",
+      "/css/portal-pwa.css?v=20260910-2",
+      "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
+      "/js/auth-config.js?v=20260815-1",
+      "/js/portal-interactions.js?v=20260923-2",
+      "/js/tools-catalog.js?v=20260925-study-1",
+      "/js/social-api.js?v=20260910-4",
+      "/js/social-navigation.js?v=20261009-pets-1",
+      "/js/social-feed.js?v=20260910-1",
+      "/js/social-home.js?v=20260910-2",
+      "/js/home.js?v=20261009-citizen-layout-1",
+      "/js/citizen-layout.js?v=20261009-1",
+      "/js/portal-global-chat.js?v=20261008-chat-groups-1",
+      "/api/social/config",
+      "/js/portal-chat-groups.js?v=20261008-chat-groups-1",
+      "/js/portal-global-navigation.js?v=20261009-pets-1",
+      "/js/portal-chat.js?v=20261008-chat-groups-1",
+      "/js/pets-bootstrap.js",
+      "/api/social/relationships?type=friends",
+      "/api/social/me",
+      "/api/social/feed",
+      "/assets/canal-cidadao-icon.png?v=20260817-1",
+      "/js/pets-api.js",
+      "/js/pets-runtime.js?v=pets-speech-cycle-7",
+      "/js/pet-phrases.js?v=pet-phrases-20261009-cycle-1",
+      "/js/portal-chat-switch-optimizer.js?v=20260928-global-1",
+      "/api/auth/me",
+      "/css/portal-chat-profile-link.css?v=20260906-2",
+      "/api/chat/groups",
+      "/js/pet-cat-frames.js",
+      "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
+      "/api/pets/me",
+      "/api/pets/catalog",
+      "/css/pets.css?v=pets-global-v4",
+      "/api/auth/security",
+      "/api/chat/groups",
+      "/api/chat/delivery",
+      "/api/chat/users",
+      "/js/portal-observability.js?v=20260921-2"
+    ],
+    "errors": [],
+    "states": [
+      {
+        "name": "chat",
+        "overflow": [],
+        "opened": true,
+        "x": 8,
+        "y": 8,
+        "right": 382,
+        "bottom": 746,
+        "viewport": 390,
+        "height": 900,
+        "chatAboveCompanion": true,
+        "scrollWidth": 372,
+        "clientWidth": 372,
+        "notificationActionReachable": true
+      }
+    ]
+  }
+]

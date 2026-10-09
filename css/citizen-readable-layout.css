@@ -136,6 +136,7 @@
     font-size: 1.25rem !important;
   }
   body.citizen-readable-layout.portal-page .social-mobile-nav {
+    background: var(--portal-theme-surface, #fff);
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
     grid-auto-flow: row !important;
@@ -164,6 +165,9 @@
     bottom: calc(
       var(--citizen-bottom-space, 160px) + env(safe-area-inset-bottom)
     ) !important;
+  }
+  body.citizen-readable-layout .portal-chat.open {
+    z-index: 12001;
   }
   body.citizen-readable-layout .portal-chat-panel {
     position: fixed;

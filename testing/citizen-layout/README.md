@@ -79,6 +79,10 @@ Tamanhos de arquivos públicos do checkout, não estimativas de transferência c
 
 Prioridade secundária sugerida: formatos/resoluções menores mantendo pixel/cores, revisão do carregamento de assets dos diálogos e coleta real de CWV/LCP/INP em ambiente autorizado. Assets não foram reprocessados neste lote; a camada nova adiciona cerca de 14 KB de CSS/JS crus. Requests/tempos da fixture local com cache desativado não representam rede móvel nem Core Web Vitals de produção. Cache global não foi reescrito.
 
+## Comparações adicionais
+
+[VISUAL-REVIEW.md](VISUAL-REVIEW.md) reúne screenshots da barra atual e duas alternativas de uma linha, chat acima do mascote, dimensões/proveniência dos cinco assets e candidatos WebP de 229.528 bytes totais (96,67% menores em disco). Alternativas e candidatos ainda não estão ligados ao portal. A escolha de navegação permanece pendente de revisão.
+
 ## Limites e entrega
 
 As duas screenshots reais da Library não puderam ser materializadas neste executor: preparação resolvida, download falhou e uma repetição limitada também falhou. Elas não foram inspecionadas localmente nem copiadas para fixtures/repo. Foram vistos os pixels das capturas locais sintéticas antes e depois. Consulta anônima ao domínio também retornou bloqueio de rede (403 do ambiente); nenhuma análise ao vivo foi alegada.

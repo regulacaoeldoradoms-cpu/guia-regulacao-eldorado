@@ -185,6 +185,23 @@ try {
       });
       await page.goto(`http://127.0.0.1:${port}` + route);
       await page.waitForTimeout(300);
+      if (process.env.NAV_REVIEW) {
+        const mode = process.env.NAV_REVIEW;
+        if (!["icons", "scroll"].includes(mode)) throw Error("Unknown nav review");
+        await page.addStyleTag({ content: mode === "icons" ? `
+          body.citizen-readable-layout.portal-page .social-mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:0!important;min-height:0!important;height:auto!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;height:52px;overflow:visible;position:relative}
+          .social-mobile-nav-link>span:not(.social-nav-icon):not(.social-nav-badge){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+        ` : `
+          body.citizen-readable-layout.portal-page .social-mobile-nav{display:flex!important;gap:4px!important;overflow-x:auto!important;overflow-y:hidden!important;min-height:0!important;height:auto!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav-link{flex:0 0 auto!important;min-width:72px!important;min-height:62px!important;padding:6px 10px!important;white-space:nowrap!important;overflow-wrap:normal!important}
+        ` });
+        await page.evaluate(() => document.querySelectorAll(".social-mobile-nav-link").forEach(link => {
+          const label = link.getAttribute("aria-label") || link.textContent.trim();
+          link.setAttribute("aria-label", label); link.title = label;
+        }));
+        await page.waitForTimeout(100);
+      }
       if (process.env.TEXT_SCALE === "2")
         await page.evaluate(() => {
           const elements = [...document.querySelectorAll("body *")];
@@ -333,6 +350,9 @@ try {
         calls,
         errors,
       });
+      if (process.env.NAV_REVIEW || process.env.REVIEW_CAPTURES) {
+        await page.locator(".social-mobile-nav").screenshot({path: `/tmp/citizen-nav-${process.env.NAV_REVIEW || "two-rows"}-${width}${process.env.TEXT_SCALE === "2" ? "-text200" : ""}.png`});
+      }
       if ([320, 390, 1440].includes(width))
         await page.screenshot({
           path: `/tmp/citizen-${path.basename(output, ".json")}-${route === "/" ? "home" : route.split("/")[1]}-${width}.png`,
@@ -372,6 +392,9 @@ try {
                 bottom: r.bottom,
                 viewport: innerWidth,
                 height: innerHeight,
+                chatAboveCompanion: e.classList.contains("portal-chat-panel") && document.querySelector(".pet-stage-global")
+                  ? Number(getComputedStyle(e.closest(".portal-chat")).zIndex) > Number(getComputedStyle(document.querySelector(".pet-stage-global")).zIndex)
+                  : null,
                 scrollWidth: e.scrollWidth,
                 clientWidth: e.clientWidth,
               };
@@ -436,6 +459,8 @@ try {
           await page.locator("#portalChatLauncher").click();
           await page.waitForTimeout(300);
           await snapshot("chat");
+          if (process.env.REVIEW_CAPTURES)
+            await page.screenshot({path: `/tmp/citizen-chat-review-${width}.png`});
           const notificationButton = page.locator("#portalChatEnableNotifications");
           if (await notificationButton.isVisible()) {
             await notificationButton.scrollIntoViewIfNeeded();
@@ -444,6 +469,8 @@ try {
               const panel = button.closest(".portal-chat-panel").getBoundingClientRect();
               return action.top >= panel.top && action.bottom <= panel.bottom && action.left >= panel.left && action.right <= panel.right;
             });
+            if (process.env.REVIEW_CAPTURES)
+              await page.screenshot({path: `/tmp/citizen-chat-review-scroll-${width}.png`});
           }
         }
         results.at(-1).states = states;

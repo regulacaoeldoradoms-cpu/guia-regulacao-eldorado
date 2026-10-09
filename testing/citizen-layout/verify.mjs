@@ -32,6 +32,8 @@ for (const row of rows) {
     ))
       assert.ok(target.height >= 44, `${name}: navigation touch target`);
     for (const state of row.states || []) {
+      if (state.chatAboveCompanion !== null && state.chatAboveCompanion !== undefined)
+        assert.ok(state.chatAboveCompanion, `${name}: chat readable above floating companion`);
       if (state.notificationActionReachable !== undefined)
         assert.ok(state.notificationActionReachable, `${name}: notification action reachable by scrolling`);
       assert.ok(state.opened, `${name}: ${state.name} opens`);
