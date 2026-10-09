@@ -46,3 +46,5 @@ Próxima implementação de velocidade: ligar variantes apenas nos clientes cida
 `REVIEW_CAPTURES=1` grava a barra atual e o chat; `NAV_REVIEW=icons` ou `scroll` ou `compact` injeta apenas a alternativa no harness. Execute com `ROUTES=/ WIDTHS=320,390`. `review-nav.mjs` monta as duas comparações a partir de `/tmp/citizen-nav-*.png`; `review-assets.mjs` lê somente os cinco assets locais e seus candidatos, sem rede. O workflow publica as capturas como artefatos.
 
 Candidatos foram criados por ImageMagick: `magick assets/NOME.png -resize 256x256 -define webp:lossless=true testing/citizen-layout/asset-candidates/NOME.webp`. Revisão de pixels não prova todos os DPRs/aparelhos. O mapa de acessos e a matriz geral estão em [README.md](README.md).
+
+Cache: `account-section-shell.js` recebe referência versionada nova somente na página Mascotes. O SW existente mantém assets versionados; HTML usa atualização em segundo plano. Uma sessão já em cache pode precisar de uma nova navegação após receber o HTML atualizado. O PR preserva o cache global e as versões `pets-combined-v8`.

@@ -1,6 +1,6 @@
 # Layout legível para cidadão
 
-Base atual: `01535782ef41ccf42ce9c4fc3ef8d3b4466f78ab` (main com #618 e #619). Medidas iniciais e comparação de desktop/paleta foram coletadas em `bd7dad38`; estilos profissionais não foram alterados pela reconciliação. Branch `perf/cidadao-diagnostico`, worktree `/workspace/cidadao-perf`. O primeiro diagnóstico usou `491ae932`; a comparação final usa a base atual. Nenhum arquivo do runtime, cache ou página de mascotes foi editado. #618 está integrado na base; esta preparação preserva sua implementação, além das falas de #619.
+Base atual: `01535782ef41ccf42ce9c4fc3ef8d3b4466f78ab` (main com #618 e #619). Medidas iniciais e comparação de desktop/paleta foram coletadas em `bd7dad38`; estilos profissionais não foram alterados pela reconciliação. Branch `perf/cidadao-diagnostico`, worktree `/workspace/cidadao-perf`. O primeiro diagnóstico usou `491ae932`; a comparação final usa a base atual. Runtime e cache de mascotes foram preservados; na página Mascotes, somente a versão da referência ao shell da conta mudou. #618 está integrado na base; esta preparação preserva sua implementação, além das falas de #619.
 
 ## Escopo comprovado no código
 
@@ -81,7 +81,7 @@ Prioridade secundária sugerida: formatos/resoluções menores mantendo pixel/co
 
 ## Reconciliação com #618
 
-Rebase sem conflitos sobre `01535782`; diff relativo ao novo main mantém `pets-runtime.js`, `pets-bootstrap.js`, `pet-phrases.js`, `css/pets.css`, `/mascotes/` e `portal-sw.js` sem alterações deste PR. Home e as três alternativas foram retestadas em 320/390 px; chat ampliado e Mascotes usam a fixture atual de sete vidas. Capturas de navegação e chat foram atualizadas na nova base. CI anterior tinha 25/26 workflows aprovados e somente auditoria escura ativa; seu monitor foi encerrado porque o head foi substituído.
+Rebase sem conflitos sobre `01535782`; diff relativo ao novo main mantém `pets-runtime.js`, `pets-bootstrap.js`, `pet-phrases.js`, `css/pets.css` e `portal-sw.js` sem alterações deste PR; `/mascotes/` muda somente a versão da referência ao shell da conta. Home e as três alternativas foram retestadas em 320/390 px; chat ampliado e Mascotes usam a fixture atual de sete vidas. Capturas de navegação e chat foram atualizadas na nova base. CI anterior tinha 25/26 workflows aprovados e somente auditoria escura ativa; seu monitor foi encerrado porque o head foi substituído.
 
 ## Comparações adicionais
 
@@ -92,3 +92,5 @@ Rebase sem conflitos sobre `01535782`; diff relativo ao novo main mantém `pets-
 As duas screenshots reais da Library não puderam ser materializadas neste executor: preparação resolvida, download falhou e uma repetição limitada também falhou. Elas não foram inspecionadas localmente nem copiadas para fixtures/repo. Foram vistos os pixels das capturas locais sintéticas antes e depois. Consulta anônima ao domínio também retornou bloqueio de rede (403 do ambiente); nenhuma análise ao vivo foi alegada.
 
 Próximo gate: CI do head final e revisão visual da barra em uma linha com nomes. Rebase sobre o main que integrou #618 concluído; conferir a base novamente antes de publicação. Login/cadastro, acessos condicionais e aparelhos reais continuam recortes adicionais, não declarados concluídos. Publicação exige coordenação da versão de cache com a tarefa de mascotes e os gates usuais; nenhuma alteração de cache, merge ou deploy foi executada aqui.
+
+Cache: `account-section-shell.js` recebe referência versionada nova somente na página Mascotes. O SW existente mantém assets versionados; HTML usa atualização em segundo plano. Uma sessão já em cache pode precisar de uma nova navegação após receber o HTML atualizado. O PR preserva o cache global e as versões `pets-combined-v8`.
