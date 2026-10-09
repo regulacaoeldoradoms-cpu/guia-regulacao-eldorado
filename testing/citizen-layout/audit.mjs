@@ -187,11 +187,14 @@ try {
       await page.waitForTimeout(300);
       if (process.env.NAV_REVIEW) {
         const mode = process.env.NAV_REVIEW;
-        if (!["icons", "scroll"].includes(mode)) throw Error("Unknown nav review");
+        if (!["icons", "scroll", "compact"].includes(mode)) throw Error("Unknown nav review");
         await page.addStyleTag({ content: mode === "icons" ? `
           body.citizen-readable-layout.portal-page .social-mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:0!important;min-height:0!important;height:auto!important}
           body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;height:52px;overflow:visible;position:relative}
           .social-mobile-nav-link>span:not(.social-nav-icon):not(.social-nav-badge){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+        ` : mode === "compact" ? `
+          body.citizen-readable-layout.portal-page .social-mobile-nav{grid-template-columns:minmax(44px,1fr) minmax(48px,1.1fr) minmax(86px,1.9fr) repeat(3,minmax(44px,1fr))!important;gap:1px!important;padding-left:2px!important;padding-right:2px!important;min-height:0!important;height:auto!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;padding:6px 0!important;font-size:14px!important;white-space:nowrap!important;overflow-wrap:normal!important}
         ` : `
           body.citizen-readable-layout.portal-page .social-mobile-nav{display:flex!important;gap:4px!important;overflow-x:auto!important;overflow-y:hidden!important;min-height:0!important;height:auto!important}
           body.citizen-readable-layout.portal-page .social-mobile-nav-link{flex:0 0 auto!important;min-width:72px!important;min-height:62px!important;padding:6px 10px!important;white-space:nowrap!important;overflow-wrap:normal!important}
@@ -201,6 +204,14 @@ try {
           link.setAttribute("aria-label", label); link.title = label;
         }));
         await page.waitForTimeout(100);
+        if (mode === "compact") {
+          const fits = await page.evaluate(() => [...document.querySelectorAll(".social-mobile-nav-link")].every(link => {
+            const target=link.getBoundingClientRect();
+            const label=link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)")?.getBoundingClientRect();
+            return target.width>=44 && target.height>=44 && target.left>=0 && target.right<=innerWidth && (!label || (label.left>=target.left-1 && label.right<=target.right+1));
+          }));
+          if (!fits) throw Error("Compact navigation label or touch target does not fit");
+        }
       }
       if (process.env.TEXT_SCALE === "2")
         await page.evaluate(() => {

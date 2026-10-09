@@ -4,7 +4,7 @@ import {chromium} from '../browser/node_modules/playwright/index.mjs';
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 try{
  for(const width of [320,390]){
-  const modes=[['two-rows','Atual: duas linhas','Seis destinos e nomes visíveis a 16 px. Maior altura.'],['icons','Alternativa: uma linha de ícones','Seis alvos visíveis ≥44 px, nomes acessíveis e tooltip. Os nomes não ficam visíveis na barra.'],['scroll','Alternativa: uma linha com nomes','Nomes completos a 16 px, sem quebrar Ferramentas. Exige deslizar para encontrar os demais destinos.']];
+  const modes=[['two-rows','Atual: duas linhas','Seis destinos e nomes visíveis a 16 px. Maior altura.'],['compact','Alternativa: uma linha, nomes a 14 px','Seis destinos visíveis e alvos ≥44 px; Ferramentas inteiro. Texto menor, sem renomear destinos.'],['icons','Alternativa: uma linha de ícones','Seis alvos visíveis ≥44 px, nomes acessíveis e tooltip. Os nomes não ficam visíveis na barra.'],['scroll','Alternativa: uma linha com nomes','Nomes completos a 16 px, sem quebrar Ferramentas. Exige deslizar para encontrar os demais destinos.']];
   let cards='';
   for(const [mode,title,note] of modes){
    const image=await fs.readFile(`/tmp/citizen-nav-${mode}-${width}.png`);
