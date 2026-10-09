@@ -1,10 +1,11 @@
 'use strict';
 import {drawCat,drawBed} from './pet-cat-frames.js';
-const phrases=['Uma pausa também faz bem.','Miau. Que bom estar por aqui.','Minha água está sempre por perto.','Vou cuidar da minha patinha.'];
+import {nextPetPhrase} from './pet-phrases.js';
 export class PetRuntime{
  constructor(api,state,onChange=()=>{}){
   this.api=api;this.state=state;this.onChange=onChange;this.closed=false;this.action='idle';this.queue=[];this.until=0;this.x=150;this.y=innerHeight-130;
   this.tabId=crypto.randomUUID();this.sequence=0;this.leaseToken='';this.lastInteraction=0;this.eligibleBefore=false;this.frame=0;this.lastPaint=0;this.nextBubble=performance.now()+45000;
+  this.recentPhrases=[];
   this.root=document.createElement('div');this.root.className='pet-stage';this.root.setAttribute('aria-hidden','true');
   this.cat=document.createElement('canvas');this.cat.width=64;this.cat.height=48;this.cat.className='pet-cat';
   this.bed=document.createElement('canvas');this.bed.width=80;this.bed.height=30;this.bed.className='pet-bed';
@@ -132,7 +133,7 @@ export class PetRuntime{
       if(d>2){this.x+=dx/d*Math.min(d,speed*dt);this.y+=dy/d*Math.min(d,speed*dt);this.facing=dx<0?-1:1;}
       else if(this.goingToBed){this.goingToBed=false;this.action='sleep';this.until=now+45000;this.rest();}
      }
-     if(now>=this.nextBubble){this.phrase=phrases[Math.floor(Math.random()*phrases.length)];this.bubbleUntil=now+4500;this.nextBubble=now+45000+Math.random()*30000;}
+     if(now>=this.nextBubble){this.phrase=nextPetPhrase(this.recentPhrases);this.recentPhrases=[...this.recentPhrases,this.phrase].slice(-5);this.bubbleUntil=now+4500;this.nextBubble=now+45000+Math.random()*30000;}
     }
     this.render();
    }
