@@ -42,6 +42,13 @@ test('manual feeding cuts off only food time before that care; water continues i
  r=applyPetCommand(r.state,0,'activity',{...sample(tab,2,token),sessionVersion:1},t+60);
  assert.equal(r.state.life.foodSeconds,20);assert.equal(r.state.life.waterSeconds,60);assert.equal(r.state.life.lives,7);
 });
+test('giving ordinary water never suspends the independent pot protection clock',()=>{
+ const t=1791540000,tab=id();let s=initialPetState();s.pet={typeId:'cat',variant:'gray'};s.inventory['water-bowl']=1;initializePetLives(s,t);s.life.bowlProtectionSeconds=rules.bowlProtectionSeconds;s.preferences.needsPaused=false;s.preferences.schedule=allDay;
+ let r=applyPetCommand(s,0,'activity',{...sample(tab,1),sessionVersion:1},t);const token=r.result.leaseToken;
+ r=applyPetCommand(r.state,0,'care',{action:'water',expectedPetRevision:0},t+40);
+ r=applyPetCommand(r.state,0,'activity',{...sample(tab,2,token),sessionVersion:1},t+60);
+ assert.equal(r.state.life.bowlProtectionSeconds,rules.bowlProtectionSeconds-60);assert.equal(r.state.thirst,0);
+});
 test('pot purchase equips/fills once; free refill replays cannot reset protection twice',async()=>{
  let now=1791540000;const f=fixture({clock:()=>now});try{
   await persistPetCommand(f.db,f.user,'adopt',adopt());f.sql.prepare('UPDATE pet_accounts SET balance=50').run();

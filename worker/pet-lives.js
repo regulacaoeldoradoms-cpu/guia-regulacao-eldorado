@@ -5,7 +5,7 @@ export function initializePetLives(state, now) {
  if (state.life?.version === 1) return false;
  state.life = {
   version: 1, lives: rules.lives, deadAt: null, startedAt: now, lastCareAt: now,
-  foodAfter: now, waterAfter: now,
+  foodAfter: now, waterAfter: now, bowlAfter: now,
   foodSeconds: Math.round(need(state.hunger) * rules.foodSeconds / 100),
   waterSeconds: Math.round(need(state.thirst) * rules.waterSeconds / 100),
   hungerCriticalSeconds: 0, thirstCriticalSeconds: 0,
@@ -29,15 +29,15 @@ export function advancePetLives(state, careTicks) {
     life.hungerCriticalSeconds -= rules.hungerLifeSeconds; lost++;
    }
   } else if (tick > life.foodAfter) life.foodSeconds++;
-  if (tick <= life.waterAfter) { /* Do not charge an earlier interval against a fresh refill. */ }
-  else if (life.waterBowl && life.bowlProtectionSeconds > 0) {
-   life.bowlProtectionSeconds--; life.waterSeconds = 0; life.thirstCriticalSeconds = 0;
-  } else if (life.waterSeconds >= rules.waterSeconds) {
+  if (life.waterBowl && life.bowlProtectionSeconds > 0) {
+   if (tick > life.bowlAfter) life.bowlProtectionSeconds--;
+   life.waterSeconds = 0; life.thirstCriticalSeconds = 0;
+  } else if (tick > life.waterAfter && life.waterSeconds >= rules.waterSeconds) {
    life.thirstCriticalSeconds++;
    if (life.thirstCriticalSeconds >= rules.thirstLifeSeconds) {
     life.thirstCriticalSeconds -= rules.thirstLifeSeconds; lost++;
    }
-  } else life.waterSeconds++;
+  } else if (tick > life.waterAfter) life.waterSeconds++;
   // Independent critical clocks: simultaneous causes add, always clamped at zero.
   life.lives = Math.max(0, life.lives - lost);
   state.hunger = Math.min(100, life.foodSeconds * 100 / rules.foodSeconds);
@@ -67,5 +67,6 @@ export function waterPetLives(state, now = state.life.lastCareAt) {
 export function fillPetWaterBowl(state, now = state.life.lastCareAt) {
  if (!state.life.waterBowl || !waterPetLives(state, now)) return false;
  state.life.bowlProtectionSeconds = rules.bowlProtectionSeconds;
+ state.life.bowlAfter = Math.max(state.life.bowlAfter, state.life.lastCareAt, now);
  return true;
 }
