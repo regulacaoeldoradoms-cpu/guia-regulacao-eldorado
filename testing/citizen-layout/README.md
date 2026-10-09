@@ -28,7 +28,7 @@ Prioridade acordada: layout de celular, legibilidade e simplicidade; velocidade 
 | --- | --- | --- |
 | Largura rolável do Canal | 379 px | 320 px |
 | Conteúdo interno do formulário | 339 px em painel de 304 px | 304 / 304 px |
-| Navegação fora da Home | 10,4 px | 14 px |
+| Navegação fora da Home | 10,4 px | 16 px |
 | Editar / Excluir post | 11,52 px | 16 px |
 | Mostrar atalhos | 11,52 px; label 15 px de altura | 16 px; label 48 px |
 | Subir / Descer no perfil | 11,52 px; botão 36 px | 16 px; botão 48 px |
@@ -38,7 +38,7 @@ A barra **permanece fixa embaixo**. Nesta proposta, seis destinos ficam visívei
 
 O cabeçalho deixa de comprimir marca/conta numa linha; abas de manifestações ficam empilhadas; campos e legendas usam tamanho legível; botões de ordenação do perfil passam a linhas próprias. Cartões e progresso da conta refluem. O formulário distribui fechar/título e os passos sem invadir a largura. Com altura reduzida, cabeçalhos de formulário deixam de ser sticky para não cobrir campos.
 
-As regras novas são condicionadas à classe de apresentação do cidadão e a `max-width:900px`. Permissões, endpoints, operações, dados, paleta semântica, cores de tipo/privacidade/status, ícones funcionais e estados são preservados. A ativação separada em `account-section-shell.js` aplica o mesmo estilo à página Mascotes sem editar os arquivos concorrentes. O observador ajusta espaço da barra conforme sua altura e troca a entrada Mascotes criada pelos scripts existentes. Não há dependência ou serviço novo em produção.
+As regras novas são condicionadas à classe de apresentação do cidadão e a `max-width:900px`. Permissões, endpoints, operações, dados, paleta semântica, cores de tipo/privacidade/status, ícones funcionais e estados são preservados. A Home importa a apresentação pelo controlador já autorizado, sem ampliar a lista exata de scripts da transição pós-login. A ativação separada em `account-section-shell.js` aplica o mesmo estilo à página Mascotes sem editar os arquivos concorrentes. O observador ajusta espaço da barra conforme sua altura e troca a entrada Mascotes criada pelos scripts existentes. Não há dependência ou serviço novo em produção.
 
 ## Evidência e reprodução
 
@@ -48,7 +48,7 @@ Conta, perfil, post, gato e protocolo são inteiramente fictícios. HTTP externo
 - Texto 200%: dez rotas em 320 px passaram. Fixture dobra tamanhos computados de texto e mede refluxo; não equivale a todos os mecanismos de zoom do sistema operacional.
 - Detalhe fictício: cinco tamanhos passaram, mais revisão a 200% em 320 px.
 - Janela reduzida: formulário focalizado com viewport menor e landscape, dois cenários passaram. Simulação de altura, não teclado físico/IME de aparelho real.
-- 33 contratos existentes afetados passaram; sintaxe e `git diff --check` passaram.
+- 902 testes completos do Worker passaram após ajuste de carregamento da Home; sintaxe e `git diff --check` passaram. Abertura real pós-login com fixture cidadão passou em dois projetos (desktop/mobile): mesmo documento, sem flash/reinicialização; lista exata de scripts preservada.
 - `evidence.json` guarda medidas sanitizadas. Imagens e JSON completos locais estão em `/tmp/citizen-*`. Workflow `validate-citizen-layout.yml` repete a matriz, texto ampliado e detalhes com artefatos, sem deploy.
 
 ```bash

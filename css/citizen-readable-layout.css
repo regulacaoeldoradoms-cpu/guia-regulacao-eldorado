@@ -137,7 +137,7 @@
   }
   body.citizen-readable-layout.portal-page .social-mobile-nav {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
     grid-auto-flow: row !important;
     grid-auto-columns: auto !important;
     gap: 4px;
@@ -150,7 +150,7 @@
     min-width: 0 !important;
     min-height: 62px !important;
     padding: 6px 2px !important;
-    font-size: 0.875rem !important;
+    font-size: 1rem !important;
     line-height: 1.25 !important;
     overflow-wrap: anywhere;
   }
@@ -399,6 +399,10 @@
   body.citizen-readable-layout .account-achievement span {
     font-size: 1rem !important;
     line-height: 1.5;
+  }
+  body.citizen-readable-layout :is(.portal-brand-copy, .portal-brand h1) {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
