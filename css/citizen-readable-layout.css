@@ -1,6 +1,6 @@
 /* Citizen presentation only. Keep existing semantic colors, icons and states.
    Desktop and professional modules retain their current styles. */
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
   body.citizen-readable-layout {
     font-size: 1.125rem;
     line-height: 1.5;
@@ -492,7 +492,7 @@
   }
 }
 
-@media (max-width: 900px) and (max-height: 500px) {
+@media screen and (max-width: 900px) and (max-height: 500px) {
   body.citizen-readable-layout
     :is(#newManifestationModal, #manifestationDetailModal)
     .citizen-modal-head {
