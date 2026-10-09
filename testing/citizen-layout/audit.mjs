@@ -348,7 +348,7 @@ try {
                 overflow: [...e.querySelectorAll("*")]
                   .filter((n) => {
                     const a = n.getBoundingClientRect();
-                    return a.width && a.right > r.right + 2;
+                    return a.width && (a.right > r.right + 2 || n.scrollWidth > n.clientWidth + 2);
                   })
                   .slice(0, 12)
                   .map((n) => ({
@@ -357,6 +357,8 @@ try {
                     id: n.id,
                     width: n.getBoundingClientRect().width,
                     right: n.getBoundingClientRect().right,
+                    scrollWidth: n.scrollWidth,
+                    clientWidth: n.clientWidth,
                   })),
                 opened: true,
                 x: r.x,
