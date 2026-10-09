@@ -197,7 +197,7 @@ try {
           body.citizen-readable-layout.portal-page .social-mobile-nav-link{flex:0 0 auto!important;min-width:72px!important;min-height:62px!important;padding:6px 10px!important;white-space:nowrap!important;overflow-wrap:normal!important}
         ` });
         await page.evaluate(() => document.querySelectorAll(".social-mobile-nav-link").forEach(link => {
-          const label = link.getAttribute("aria-label") || link.textContent.trim();
+          const label = link.getAttribute("aria-label") || link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)")?.textContent.trim() || link.textContent.trim();
           link.setAttribute("aria-label", label); link.title = label;
         }));
         await page.waitForTimeout(100);
