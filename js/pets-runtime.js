@@ -11,14 +11,24 @@ export class PetRuntime{
   this.bubble=document.createElement('span');this.bubble.className='pet-bubble';this.root.append(this.bed,this.cat,this.bubble);
   this.habitat=document.getElementById('petHabitat');this.ownsHabitat=!this.habitat;
   if(this.ownsHabitat){
-   this.habitat=document.createElement('section');this.habitat.className='pet-habitat';this.habitat.setAttribute('aria-label','Seu mascote');
-   const care=document.createElement('a');care.className='pet-care-link';care.href='/mascotes/';care.textContent='Cuidar do mascote';
-   this.habitat.append(this.root,care);(document.querySelector('main')||document.body).prepend(this.habitat);
+   // A companion follows the viewport on every module. Only the care page owns an inline habitat.
+   this.root.classList.add('pet-stage-global');this.habitat=this.root;document.body.append(this.root);
+   this.controls=document.createElement('nav');this.controls.className='pet-global-controls';this.controls.setAttribute('aria-label','Controles do mascote');
+   const care=document.createElement('a');care.href='/mascotes/';care.textContent='Cuidar';care.setAttribute('aria-label','Cuidar do mascote');
+   this.hideButton=document.createElement('button');this.hideButton.type='button';this.hideButton.textContent='Ocultar';this.hideButton.setAttribute('aria-label','Ocultar mascote');
+   this.controls.append(care,this.hideButton);document.body.append(this.controls);
   }else this.habitat.append(this.root);
   this.controller=new AbortController();const signal=this.controller.signal;
+  this.hideButton?.addEventListener('click',async()=>{
+   if(this.hideButton.disabled||this.closed)return;this.hideButton.disabled=true;
+   try{const result=await this.api.command('preferences',{expectedRevision:this.state.revision,...this.state.preferences,visible:false});if(!this.closed)this.update(result.state);}
+   catch{if(!this.closed)this.hideButton.textContent='Tentar ocultar';}
+   finally{if(!this.closed)this.hideButton.disabled=false;}
+  },{signal});
   const mark=event=>{if(event.isTrusted)this.lastInteraction=performance.now();};
   for(const event of ['pointerdown','keydown','wheel','touchstart'])document.addEventListener(event,mark,{passive:true,signal});
   window.addEventListener('resize',()=>this.layout(),{signal});window.visualViewport?.addEventListener('resize',()=>this.layout(),{signal});
+  window.visualViewport?.addEventListener('scroll',()=>this.layout(),{signal});
   this.observer=new ResizeObserver(()=>this.layout());this.observer.observe(this.root);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(this.frame);this.sample(false);}else{this.lastPaint=0;this.refresh();this.start();}},{signal});
   window.addEventListener('pagehide',()=>{this.sample(false);cancelAnimationFrame(this.frame);},{signal});
@@ -27,13 +37,25 @@ export class PetRuntime{
   this.timer=setInterval(()=>this.sample(),60000);this.layout();this.start();
  }
  update(s){this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();}
- close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
+ close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();this.controls?.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
  safeRect(){
-  // Coordinates belong to a reserved scene in document flow, never to page content.
+  // Both scenes use the same logical grid and scale; the global scene follows the viewport.
   const width=this.root.clientWidth||176,height=this.root.clientHeight||224;
   return {left:88,right:Math.max(88,width-88),top:164,bottom:Math.max(164,height-24)};
  }
  layout(){
+  if(this.ownsHabitat){
+   const viewport=window.visualViewport;
+   const width=viewport?.width||innerWidth,height=viewport?.height||innerHeight;
+   const left=viewport?.offsetLeft||0,top=viewport?.offsetTop||0;
+   let floor=top+height-12;
+   for(const nav of document.querySelectorAll('.social-mobile-nav')){
+    const rect=nav.getBoundingClientRect();
+    if(rect.width&&rect.height&&rect.top<floor&&rect.bottom>=top+height-20)floor=rect.top-12;
+   }
+   this.root.style.left=left+'px';this.root.style.top=Math.max(top,floor-224)+'px';this.root.style.width=width+'px';
+   this.controls.style.left=(left+Math.max(8,width-208))+'px';this.controls.style.top=(Math.max(top,floor-224)+8)+'px';
+  }
   const r=this.safeRect();this.bounds=r;this.x=Math.max(r.left,Math.min(r.right,this.x));this.y=Math.max(r.top,Math.min(r.bottom,this.y));
   const placement=this.previewPlacement||this.state.placement;
   this.bedPoint=placement?{x:r.left+(r.right-r.left)*placement.x,y:r.top+(r.bottom-r.top)*placement.y}:null;
@@ -84,6 +106,7 @@ export class PetRuntime{
  }
  render(){
   const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible;this.habitat.hidden=this.root.hidden;
+  if(this.controls)this.controls.hidden=this.root.hidden;
   const motion=s.preferences.motionEnabled&&!this.reduced.matches;
   const alert=s.thirst>=70?'Estou com sede. Água é gratuita.':s.hunger>=70?'Estou com fome. Comida é gratuita.':s.dirt>=70?'Hora de um banho. Higiene básica é gratuita.':'';
   this.root.dataset.alert=s.thirst>=70?'thirst':s.hunger>=70?'hunger':'';
@@ -93,13 +116,14 @@ export class PetRuntime{
   drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
   this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-88)+'px';
   this.cat.style.transform=this.facing===-1?'scaleX(-1)':'';
-  this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top='12px';
+  this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=this.ownsHabitat?'60px':'12px';
  }
  start(){
   cancelAnimationFrame(this.frame);if(this.closed||document.hidden||!this.state.pet||!this.state.preferences.visible)return;
   const tick=now=>{
    if(this.closed||document.hidden||!this.state.preferences.visible)return;
    if(now-this.lastPaint>=80){
+    if(this.ownsHabitat&&(!this.lastLayout||now-this.lastLayout>=500)){this.lastLayout=now;this.layout();}
     const dt=Math.min(.12,(now-this.lastPaint)/1000||.08);this.lastPaint=now;
     if(this.state.preferences.motionEnabled&&!this.reduced.matches){
      if(!this.until||now>=this.until){if(this.queue.length)this.advance(now);else this.choose(now);}

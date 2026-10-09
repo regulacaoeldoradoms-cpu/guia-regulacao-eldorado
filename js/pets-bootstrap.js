@@ -25,7 +25,7 @@ async function mount(){
    const [payload,catalog]=await Promise.all([api.get('me'),api.get('catalog')]);
    if(generation!==epoch||!api.valid()){api.close();return;}
    if(!payload?.state||!Array.isArray(catalog?.types)||!Array.isArray(catalog?.items)){api.close();return;}
-   if(!document.getElementById('petsStyles')){const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=pets-v3';document.head.append(css);}
+   if(!document.getElementById('petsStyles')){const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=pets-global-v4';document.head.append(css);}
    const runtime=new PetRuntime(api,payload.state,s=>window.dispatchEvent(new CustomEvent('portal:pets-updated',{detail:{state:s}})));
    current={api,runtime,catalog};window.PortalPets=current;navigation(true);return current;
   }catch{api.close();}

@@ -124,6 +124,11 @@
       if (window.PortalSocial?.getConfig) config = await window.PortalSocial.getConfig(8000);
     } catch (_) {}
     navigation.mount(user, config || {});
+    // Authenticated public guides also share the account companion, independently of social availability.
+    import('/js/pets-bootstrap.js').then(async (pets) => {
+      const session = await pets.petSession();
+      session?.runtime.layout();
+    }).catch(() => {});
     document.documentElement.dataset.portalGlobalNavigation = 'v1';
     return true;
   }
