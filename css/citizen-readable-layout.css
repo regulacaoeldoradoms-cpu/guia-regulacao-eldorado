@@ -45,6 +45,15 @@
     max-width: none !important;
     min-width: 0;
   }
+  body.citizen-readable-layout .portal-user-meta {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout .portal-user-meta span {
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+  }
   body.citizen-readable-layout .portal-user-meta strong,
   body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile
     .portal-user-meta
