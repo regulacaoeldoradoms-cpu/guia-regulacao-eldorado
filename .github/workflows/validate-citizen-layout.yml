@@ -56,7 +56,6 @@ jobs:
         run: |
           REVIEW_CAPTURES=1 node testing/citizen-layout/audit.mjs /tmp/citizen-nav-current.json
           NAV_REVIEW=icons node testing/citizen-layout/audit.mjs /tmp/citizen-nav-icons.json
-          NAV_REVIEW=compact node testing/citizen-layout/audit.mjs /tmp/citizen-nav-compact.json
           NAV_REVIEW=scroll node testing/citizen-layout/audit.mjs /tmp/citizen-nav-scroll.json
           node testing/citizen-layout/review-nav.mjs
       - uses: actions/upload-artifact@v4

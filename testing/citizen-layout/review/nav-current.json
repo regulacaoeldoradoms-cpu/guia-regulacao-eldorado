@@ -2,8 +2,14 @@
   {
     "route": "/",
     "width": 320,
-    "url": "http://127.0.0.1:4179/",
+    "url": "http://127.0.0.1:4180/",
     "title": "Início | Portal da Regulação",
+    "navigation": {
+      "rows": 1,
+      "reflow": false,
+      "targetsFit": true,
+      "labelsFit": true
+    },
     "controls": [
       {
         "text": "Sair",
@@ -71,44 +77,44 @@
       {
         "text": "Início",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 87,
-        "height": 62
+        "font": 14,
+        "width": 44,
+        "height": 58
       },
       {
         "text": "Amigos",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 87,
-        "height": 62
+        "font": 14,
+        "width": 49,
+        "height": 58
       },
       {
         "text": "Ferramentas",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 130,
-        "height": 62
+        "font": 14,
+        "width": 84,
+        "height": 58
       },
       {
         "text": "Avisos0",
         "class": "social-mobile-nav-link social-notification-trigger",
-        "font": 16,
-        "width": 87,
-        "height": 62
+        "font": 14,
+        "width": 45,
+        "height": 58
       },
       {
         "text": "Perfil",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 87,
-        "height": 62
+        "font": 14,
+        "width": 45,
+        "height": 58
       },
       {
         "text": "Mascotes",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 130,
-        "height": 62
+        "font": 14,
+        "width": 45,
+        "height": 58
       },
       {
         "text": "Abrir chat interno",
@@ -171,97 +177,138 @@
       }
     ],
     "smallTargets": [],
-    "overflow": [],
+    "overflow": [
+      {
+        "tag": "LABEL",
+        "class": "sr-only",
+        "id": "",
+        "right": 26,
+        "width": 1,
+        "scrollWidth": 167,
+        "clientWidth": 1,
+        "whiteSpace": "nowrap"
+      },
+      {
+        "tag": "A",
+        "class": "",
+        "id": "",
+        "right": 218,
+        "width": 120,
+        "scrollWidth": 153,
+        "clientWidth": 120,
+        "whiteSpace": "nowrap"
+      },
+      {
+        "tag": "SPAN",
+        "class": "social-button-icon",
+        "id": "",
+        "right": 64,
+        "width": 19,
+        "scrollWidth": 27,
+        "clientWidth": 19,
+        "whiteSpace": "normal"
+      },
+      {
+        "tag": "SPAN",
+        "class": "social-button-icon",
+        "id": "",
+        "right": 187,
+        "width": 19,
+        "scrollWidth": 27,
+        "clientWidth": 19,
+        "whiteSpace": "normal"
+      }
+    ],
     "resources": [
       {
         "name": "/js/portal-performance.js",
         "bytes": 12614,
-        "duration": 25
+        "duration": 29
       },
       {
         "name": "/js/auth-client.js",
         "bytes": 17245,
-        "duration": 39
+        "duration": 42
       },
       {
         "name": "/css/portal.css",
         "bytes": 9230,
-        "duration": 28
+        "duration": 38
       },
       {
         "name": "/css/profile-account-link.css",
         "bytes": 1328,
-        "duration": 28
+        "duration": 37
       },
       {
         "name": "/css/portal-chat.css",
         "bytes": 27050,
-        "duration": 29
+        "duration": 39
       },
       {
         "name": "/css/home-loading.css",
         "bytes": 960,
-        "duration": 28
+        "duration": 38
       },
       {
         "name": "/css/home-mobile.css",
         "bytes": 12200,
-        "duration": 29
+        "duration": 47
       },
       {
         "name": "/css/home-chat-button.css",
         "bytes": 7419,
-        "duration": 29
+        "duration": 47
       },
       {
         "name": "/js/portal-theme.js",
         "bytes": 2436,
-        "duration": 37
+        "duration": 47
       },
       {
         "name": "/js/portal-pwa.js",
         "bytes": 19646,
-        "duration": 17
+        "duration": 28
       },
       {
         "name": "/css/portal-interactions.css",
         "bytes": 81988,
-        "duration": 13
+        "duration": 22
       },
       {
         "name": "/css/social.css",
         "bytes": 37294,
-        "duration": 20
+        "duration": 21
       },
       {
         "name": "/css/social-notification-panel.css",
         "bytes": 5130,
-        "duration": 20
+        "duration": 21
       },
       {
         "name": "/css/home-desktop-scale.css",
         "bytes": 6122,
-        "duration": 20
+        "duration": 22
       },
       {
         "name": "/css/citizen-readable-layout.css",
-        "bytes": 13209,
-        "duration": 20
+        "bytes": 14139,
+        "duration": 23
       },
       {
         "name": "/css/portal-pwa.css",
         "bytes": 2649,
-        "duration": 24
+        "duration": 22
       },
       {
         "name": "/assets/portal-regulacao-header_512x512.png",
         "bytes": 224519,
-        "duration": 14
+        "duration": 9
       },
       {
         "name": "/js/auth-config.js",
         "bytes": 1514,
-        "duration": 15
+        "duration": 12
       },
       {
         "name": "/js/portal-interactions.js",
@@ -281,12 +328,12 @@
       {
         "name": "/js/social-navigation.js",
         "bytes": 26956,
-        "duration": 4
+        "duration": 5
       },
       {
         "name": "/js/social-feed.js",
         "bytes": 21061,
-        "duration": 10
+        "duration": 6
       },
       {
         "name": "/js/social-home.js",
@@ -296,22 +343,22 @@
       {
         "name": "/js/home.js",
         "bytes": 4949,
-        "duration": 4
+        "duration": 5
       },
       {
         "name": "/js/citizen-layout.js",
-        "bytes": 2573,
+        "bytes": 3972,
         "duration": 6
       },
       {
         "name": "/js/portal-global-chat.js",
         "bytes": 4330,
-        "duration": 7
+        "duration": 6
       },
       {
         "name": "/js/portal-chat-groups.js",
         "bytes": 34428,
-        "duration": 10
+        "duration": 12
       },
       {
         "name": "/js/portal-global-navigation.js",
@@ -321,32 +368,67 @@
       {
         "name": "/api/social/config",
         "bytes": 0,
-        "duration": 4
+        "duration": 23
       },
       {
         "name": "/js/portal-chat.js",
         "bytes": 89717,
-        "duration": 33
+        "duration": 27
       },
       {
         "name": "/api/social/relationships",
         "bytes": 0,
-        "duration": 24
+        "duration": 12
       },
       {
         "name": "/js/pets-bootstrap.js",
-        "bytes": 2605,
-        "duration": 29
+        "bytes": 2604,
+        "duration": 17
       },
       {
         "name": "/api/social/me",
         "bytes": 0,
-        "duration": 20
+        "duration": 9
       },
       {
         "name": "/api/social/feed",
         "bytes": 0,
-        "duration": 20
+        "duration": 9
+      },
+      {
+        "name": "/api/auth/me",
+        "bytes": 0,
+        "duration": 6
+      },
+      {
+        "name": "/js/portal-chat-switch-optimizer.js",
+        "bytes": 1718,
+        "duration": 10
+      },
+      {
+        "name": "/js/pets-api.js",
+        "bytes": 1087,
+        "duration": 7
+      },
+      {
+        "name": "/js/pets-runtime.js",
+        "bytes": 10408,
+        "duration": 9
+      },
+      {
+        "name": "/js/pet-phrases.js",
+        "bytes": 6447,
+        "duration": 9
+      },
+      {
+        "name": "/css/portal-chat-profile-link.css",
+        "bytes": 357,
+        "duration": 6
+      },
+      {
+        "name": "/api/chat/groups",
+        "bytes": 0,
+        "duration": 3
       },
       {
         "name": "/assets/canal-cidadao-icon.png",
@@ -354,69 +436,34 @@
         "duration": 20
       },
       {
-        "name": "/js/pets-api.js",
-        "bytes": 1087,
-        "duration": 14
-      },
-      {
-        "name": "/js/pets-runtime.js",
-        "bytes": 10086,
-        "duration": 15
-      },
-      {
-        "name": "/js/pet-phrases.js",
-        "bytes": 6447,
-        "duration": 14
-      },
-      {
-        "name": "/api/auth/me",
-        "bytes": 0,
-        "duration": 5
-      },
-      {
-        "name": "/js/portal-chat-switch-optimizer.js",
-        "bytes": 1718,
-        "duration": 8
-      },
-      {
-        "name": "/css/portal-chat-profile-link.css",
-        "bytes": 357,
-        "duration": 11
-      },
-      {
-        "name": "/api/chat/groups",
-        "bytes": 0,
-        "duration": 6
-      },
-      {
         "name": "/js/pet-cat-frames.js",
         "bytes": 3861,
-        "duration": 10
+        "duration": 12
       },
       {
         "name": "/assets/portal-regulacao-header_512x512.png",
         "bytes": 224519,
-        "duration": 7
+        "duration": 11
       },
       {
         "name": "/api/pets/me",
         "bytes": 0,
-        "duration": 4
+        "duration": 7
       },
       {
         "name": "/api/pets/catalog",
         "bytes": 0,
-        "duration": 4
+        "duration": 8
       },
       {
         "name": "/css/pets.css",
-        "bytes": 4563,
-        "duration": 11
+        "bytes": 4956,
+        "duration": 8
       },
       {
         "name": "/api/auth/security",
         "bytes": 0,
-        "duration": 3
+        "duration": 6
       }
     ],
     "calls": [
@@ -450,25 +497,25 @@
       "/js/portal-global-chat.js?v=20261008-chat-groups-1",
       "/js/portal-chat-groups.js?v=20261008-chat-groups-1",
       "/js/portal-global-navigation.js?v=20261009-pets-1",
-      "/api/social/config",
       "/js/portal-chat.js?v=20261008-chat-groups-1",
-      "/js/pets-bootstrap.js",
+      "/api/social/config",
       "/api/social/relationships?type=friends",
+      "/js/pets-bootstrap.js",
       "/api/social/me",
       "/api/social/feed",
-      "/assets/canal-cidadao-icon.png?v=20260817-1",
-      "/js/pets-api.js",
-      "/js/pets-runtime.js?v=pets-speech-cycle-7",
-      "/js/pet-phrases.js?v=pet-phrases-20261009-cycle-1",
-      "/js/portal-chat-switch-optimizer.js?v=20260928-global-1",
       "/api/auth/me",
+      "/js/portal-chat-switch-optimizer.js?v=20260928-global-1",
+      "/js/pets-api.js",
+      "/js/pets-runtime.js?v=pets-combined-v8",
+      "/js/pet-phrases.js?v=pet-phrases-20261009-cycle-1",
       "/css/portal-chat-profile-link.css?v=20260906-2",
       "/api/chat/groups",
+      "/assets/canal-cidadao-icon.png?v=20260817-1",
       "/js/pet-cat-frames.js",
       "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
       "/api/pets/me",
       "/api/pets/catalog",
-      "/css/pets.css?v=pets-global-v4",
+      "/css/pets.css?v=pets-combined-v8",
       "/api/auth/security",
       "/api/chat/groups",
       "/api/chat/delivery",
@@ -484,7 +531,7 @@
         "x": 8,
         "y": 8,
         "right": 312,
-        "bottom": 746,
+        "bottom": 816,
         "viewport": 320,
         "height": 900,
         "chatAboveCompanion": true,
@@ -497,8 +544,14 @@
   {
     "route": "/",
     "width": 390,
-    "url": "http://127.0.0.1:4179/",
+    "url": "http://127.0.0.1:4180/",
     "title": "Início | Portal da Regulação",
+    "navigation": {
+      "rows": 1,
+      "reflow": false,
+      "targetsFit": true,
+      "labelsFit": true
+    },
     "controls": [
       {
         "text": "Sair",
@@ -566,44 +619,44 @@
       {
         "text": "Início",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 107,
-        "height": 62
+        "font": 14,
+        "width": 44,
+        "height": 58
       },
       {
         "text": "Amigos",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 107,
-        "height": 62
+        "font": 14,
+        "width": 49,
+        "height": 58
       },
       {
         "text": "Ferramentas",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 160,
-        "height": 62
+        "font": 14,
+        "width": 84,
+        "height": 58
       },
       {
         "text": "Avisos0",
         "class": "social-mobile-nav-link social-notification-trigger",
-        "font": 16,
-        "width": 107,
-        "height": 62
+        "font": 14,
+        "width": 68,
+        "height": 58
       },
       {
         "text": "Perfil",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 107,
-        "height": 62
+        "font": 14,
+        "width": 68,
+        "height": 58
       },
       {
         "text": "Mascotes",
         "class": "social-mobile-nav-link",
-        "font": 16,
-        "width": 160,
-        "height": 62
+        "font": 14,
+        "width": 68,
+        "height": 58
       },
       {
         "text": "Abrir chat interno",
@@ -666,112 +719,143 @@
       }
     ],
     "smallTargets": [],
-    "overflow": [],
+    "overflow": [
+      {
+        "tag": "LABEL",
+        "class": "sr-only",
+        "id": "",
+        "right": 26,
+        "width": 1,
+        "scrollWidth": 167,
+        "clientWidth": 1,
+        "whiteSpace": "nowrap"
+      },
+      {
+        "tag": "SPAN",
+        "class": "social-button-icon",
+        "id": "",
+        "right": 81,
+        "width": 19,
+        "scrollWidth": 27,
+        "clientWidth": 19,
+        "whiteSpace": "normal"
+      },
+      {
+        "tag": "SPAN",
+        "class": "social-button-icon",
+        "id": "",
+        "right": 224,
+        "width": 19,
+        "scrollWidth": 27,
+        "clientWidth": 19,
+        "whiteSpace": "normal"
+      }
+    ],
     "resources": [
       {
         "name": "/js/portal-performance.js",
         "bytes": 12614,
-        "duration": 25
+        "duration": 38
       },
       {
         "name": "/js/auth-client.js",
         "bytes": 17245,
-        "duration": 26
+        "duration": 45
       },
       {
         "name": "/css/portal.css",
         "bytes": 9230,
-        "duration": 26
+        "duration": 36
       },
       {
         "name": "/css/profile-account-link.css",
         "bytes": 1328,
-        "duration": 32
+        "duration": 36
       },
       {
         "name": "/css/portal-chat.css",
         "bytes": 27050,
-        "duration": 33
+        "duration": 43
       },
       {
         "name": "/css/home-loading.css",
         "bytes": 960,
-        "duration": 33
+        "duration": 42
       },
       {
         "name": "/css/home-mobile.css",
         "bytes": 12200,
-        "duration": 35
+        "duration": 52
       },
       {
         "name": "/css/home-chat-button.css",
         "bytes": 7419,
-        "duration": 35
+        "duration": 52
       },
       {
         "name": "/js/portal-theme.js",
         "bytes": 2436,
-        "duration": 35
+        "duration": 60
       },
       {
         "name": "/js/portal-pwa.js",
         "bytes": 19646,
-        "duration": 17
+        "duration": 42
       },
       {
         "name": "/css/portal-interactions.css",
         "bytes": 81988,
-        "duration": 16
+        "duration": 26
       },
       {
         "name": "/css/social.css",
         "bytes": 37294,
-        "duration": 19
+        "duration": 25
       },
       {
         "name": "/css/social-notification-panel.css",
         "bytes": 5130,
-        "duration": 25
+        "duration": 34
       },
       {
         "name": "/css/home-desktop-scale.css",
         "bytes": 6122,
-        "duration": 27
+        "duration": 34
       },
       {
         "name": "/css/citizen-readable-layout.css",
-        "bytes": 13209,
-        "duration": 27
+        "bytes": 14139,
+        "duration": 34
       },
       {
         "name": "/css/portal-pwa.css",
         "bytes": 2649,
-        "duration": 25
+        "duration": 26
       },
       {
         "name": "/assets/portal-regulacao-header_512x512.png",
         "bytes": 224519,
-        "duration": 9
+        "duration": 11
       },
       {
         "name": "/js/auth-config.js",
         "bytes": 1514,
-        "duration": 8
+        "duration": 12
       },
       {
         "name": "/js/portal-interactions.js",
         "bytes": 50769,
-        "duration": 9
+        "duration": 13
       },
       {
         "name": "/js/tools-catalog.js",
         "bytes": 8340,
-        "duration": 7
+        "duration": 15
       },
       {
         "name": "/js/social-api.js",
         "bytes": 22517,
-        "duration": 4
+        "duration": 11
       },
       {
         "name": "/js/social-navigation.js",
@@ -781,47 +865,47 @@
       {
         "name": "/js/social-feed.js",
         "bytes": 21061,
-        "duration": 4
+        "duration": 9
       },
       {
         "name": "/js/social-home.js",
         "bytes": 6023,
-        "duration": 5
+        "duration": 7
       },
       {
         "name": "/js/home.js",
         "bytes": 4949,
-        "duration": 3
+        "duration": 13
       },
       {
         "name": "/js/citizen-layout.js",
-        "bytes": 2573,
-        "duration": 5
+        "bytes": 3972,
+        "duration": 16
       },
       {
         "name": "/js/portal-global-chat.js",
         "bytes": 4330,
-        "duration": 6
-      },
-      {
-        "name": "/api/social/config",
-        "bytes": 0,
-        "duration": 3
+        "duration": 14
       },
       {
         "name": "/js/portal-chat-groups.js",
         "bytes": 34428,
-        "duration": 8
+        "duration": 11
       },
       {
         "name": "/js/portal-global-navigation.js",
         "bytes": 5835,
-        "duration": 7
+        "duration": 10
+      },
+      {
+        "name": "/api/social/config",
+        "bytes": 0,
+        "duration": 5
       },
       {
         "name": "/js/portal-chat.js",
         "bytes": 89717,
-        "duration": 29
+        "duration": 41
       },
       {
         "name": "/api/social/relationships",
@@ -830,88 +914,88 @@
       },
       {
         "name": "/js/pets-bootstrap.js",
-        "bytes": 2605,
-        "duration": 25
+        "bytes": 2604,
+        "duration": 22
       },
       {
         "name": "/api/social/me",
         "bytes": 0,
-        "duration": 20
+        "duration": 13
       },
       {
         "name": "/api/social/feed",
         "bytes": 0,
-        "duration": 19
-      },
-      {
-        "name": "/assets/canal-cidadao-icon.png",
-        "bytes": 1461693,
-        "duration": 29
+        "duration": 12
       },
       {
         "name": "/js/pets-api.js",
         "bytes": 1087,
-        "duration": 19
+        "duration": 6
       },
       {
         "name": "/js/pets-runtime.js",
-        "bytes": 10086,
-        "duration": 20
+        "bytes": 10408,
+        "duration": 9
       },
       {
         "name": "/js/pet-phrases.js",
         "bytes": 6447,
-        "duration": 25
+        "duration": 10
       },
       {
         "name": "/api/auth/me",
         "bytes": 0,
-        "duration": 8
+        "duration": 6
       },
       {
         "name": "/js/portal-chat-switch-optimizer.js",
         "bytes": 1718,
-        "duration": 16
-      },
-      {
-        "name": "/css/portal-chat-profile-link.css",
-        "bytes": 357,
-        "duration": 12
-      },
-      {
-        "name": "/api/chat/groups",
-        "bytes": 0,
         "duration": 6
+      },
+      {
+        "name": "/assets/canal-cidadao-icon.png",
+        "bytes": 1461693,
+        "duration": 37
       },
       {
         "name": "/js/pet-cat-frames.js",
         "bytes": 3861,
-        "duration": 8
+        "duration": 14
       },
       {
-        "name": "/assets/portal-regulacao-header_512x512.png",
-        "bytes": 224519,
+        "name": "/css/portal-chat-profile-link.css",
+        "bytes": 357,
+        "duration": 13
+      },
+      {
+        "name": "/api/chat/groups",
+        "bytes": 0,
         "duration": 7
       },
       {
         "name": "/api/pets/me",
         "bytes": 0,
-        "duration": 3
+        "duration": 9
       },
       {
         "name": "/api/pets/catalog",
         "bytes": 0,
-        "duration": 4
+        "duration": 9
       },
       {
         "name": "/css/pets.css",
-        "bytes": 4563,
-        "duration": 7
+        "bytes": 4956,
+        "duration": 10
+      },
+      {
+        "name": "/assets/portal-regulacao-header_512x512.png",
+        "bytes": 224519,
+        "duration": 12
       },
       {
         "name": "/api/auth/security",
         "bytes": 0,
-        "duration": 2
+        "duration": 5
       }
     ],
     "calls": [
@@ -943,27 +1027,27 @@
       "/js/home.js?v=20261009-citizen-layout-1",
       "/js/citizen-layout.js?v=20261009-1",
       "/js/portal-global-chat.js?v=20261008-chat-groups-1",
-      "/api/social/config",
       "/js/portal-chat-groups.js?v=20261008-chat-groups-1",
       "/js/portal-global-navigation.js?v=20261009-pets-1",
+      "/api/social/config",
       "/js/portal-chat.js?v=20261008-chat-groups-1",
-      "/js/pets-bootstrap.js",
       "/api/social/relationships?type=friends",
+      "/js/pets-bootstrap.js",
       "/api/social/me",
       "/api/social/feed",
-      "/assets/canal-cidadao-icon.png?v=20260817-1",
       "/js/pets-api.js",
-      "/js/pets-runtime.js?v=pets-speech-cycle-7",
+      "/js/pets-runtime.js?v=pets-combined-v8",
       "/js/pet-phrases.js?v=pet-phrases-20261009-cycle-1",
-      "/js/portal-chat-switch-optimizer.js?v=20260928-global-1",
       "/api/auth/me",
+      "/js/portal-chat-switch-optimizer.js?v=20260928-global-1",
+      "/assets/canal-cidadao-icon.png?v=20260817-1",
+      "/js/pet-cat-frames.js",
       "/css/portal-chat-profile-link.css?v=20260906-2",
       "/api/chat/groups",
-      "/js/pet-cat-frames.js",
-      "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
       "/api/pets/me",
       "/api/pets/catalog",
-      "/css/pets.css?v=pets-global-v4",
+      "/css/pets.css?v=pets-combined-v8",
+      "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
       "/api/auth/security",
       "/api/chat/groups",
       "/api/chat/delivery",
@@ -979,7 +1063,7 @@
         "x": 8,
         "y": 8,
         "right": 382,
-        "bottom": 746,
+        "bottom": 816,
         "viewport": 390,
         "height": 900,
         "chatAboveCompanion": true,

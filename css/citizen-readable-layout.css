@@ -138,21 +138,35 @@
   body.citizen-readable-layout.portal-page .social-mobile-nav {
     background: var(--portal-theme-surface, #fff);
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
+    grid-template-columns: var(--citizen-nav-columns, repeat(6, minmax(44px, 1fr)));
     grid-auto-flow: row !important;
     grid-auto-columns: auto !important;
-    gap: 4px;
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    gap: 1px;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 6px max(2px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(2px, env(safe-area-inset-left));
     overflow: visible !important;
   }
   body.citizen-readable-layout.portal-page .social-mobile-nav-link {
     flex: none !important;
     width: auto;
-    min-width: 0 !important;
-    min-height: 62px !important;
-    padding: 6px 2px !important;
-    font-size: 1rem !important;
+    min-width: 44px !important;
+    min-height: 52px !important;
+    max-width: 100%;
+    padding: 6px 0 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
     line-height: 1.25 !important;
+    white-space: nowrap;
+  }
+  body.citizen-readable-layout.portal-page .social-mobile-nav.citizen-nav-reflow {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  body.citizen-readable-layout.portal-page .citizen-nav-reflow .social-mobile-nav-link {
+    flex: 1 1 auto !important;
+    white-space: normal;
     overflow-wrap: anywhere;
   }
   body.citizen-readable-layout.portal-page

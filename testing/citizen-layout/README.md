@@ -1,4 +1,4 @@
-# Layout legível para cidadão — preparação, sem publicação
+# Layout legível para cidadão
 
 Base atual: `01535782ef41ccf42ce9c4fc3ef8d3b4466f78ab` (main com #618 e #619). Medidas iniciais e comparação de desktop/paleta foram coletadas em `bd7dad38`; estilos profissionais não foram alterados pela reconciliação. Branch `perf/cidadao-diagnostico`, worktree `/workspace/cidadao-perf`. O primeiro diagnóstico usou `491ae932`; a comparação final usa a base atual. Nenhum arquivo do runtime, cache ou página de mascotes foi editado. #618 está integrado na base; esta preparação preserva sua implementação, além das falas de #619.
 
@@ -28,13 +28,13 @@ Prioridade acordada: layout de celular, legibilidade e simplicidade; velocidade 
 | --- | --- | --- |
 | Largura rolável do Canal | 379 px | 320 px |
 | Conteúdo interno do formulário | 339 px em painel de 304 px | 304 / 304 px |
-| Navegação fora da Home | 10,4 px | 16 px |
+| Navegação fora da Home | 10,4 px | 14 px |
 | Editar / Excluir post | 11,52 px | 16 px |
 | Mostrar atalhos | 11,52 px; label 15 px de altura | 16 px; label 48 px |
 | Subir / Descer no perfil | 11,52 px; botão 36 px | 16 px; botão 48 px |
 | Chat aberto | Sobreposição com barra | Limite inferior acima da barra |
 
-A barra **permanece fixa embaixo**. Nesta proposta, seis destinos ficam visíveis em duas linhas, com ícones de 24 px e alvos de pelo menos 62 px; Ferramentas não fica fora da tela. Mascotes usa somente uma patinha SVG, nome acessível `Mascotes`, tooltip e estado ativo. **A disposição em duas linhas é um ponto explícito de revisão visual**: ocupa mais altura que a faixa original. Não foi substituída por menu oculto.
+A barra **permanece fixa embaixo**, em uma linha com seis destinos visíveis, nomes completos a 14 px e alvos de pelo menos 44 px. Mascotes usa somente uma patinha SVG com nome acessível. Com texto ampliado, a barra reflui para mais linhas, preservando rótulos e área de toque; o espaço reservado e o chat acompanham sua altura. O harness verifica uma linha em tamanho normal, rótulos inteiros, todos os destinos na tela e refluxo a 200%.
 
 O cabeçalho deixa de comprimir marca/conta numa linha; abas de manifestações ficam empilhadas; campos e legendas usam tamanho legível; botões de ordenação do perfil passam a linhas próprias. Cartões e progresso da conta refluem. O formulário distribui fechar/título e os passos sem invadir a largura. Com altura reduzida, cabeçalhos de formulário deixam de ser sticky para não cobrir campos.
 
@@ -77,7 +77,7 @@ Tamanhos de arquivos públicos do checkout, não estimativas de transferência c
 - Vídeo de abertura: 3.275.007 bytes e espera deliberada de aproximadamente dez segundos, conforme contrato de abertura existente. Não alterado unilateralmente.
 - `portal-chat.js`: 89.717 bytes; Canal usa várias folhas CSS, inclusive imports encadeados e estilos de formulário/detalhe. Carregamento tardio para telas ainda fechadas merece lote separado.
 
-Prioridade secundária sugerida: formatos/resoluções menores mantendo pixel/cores, revisão do carregamento de assets dos diálogos e coleta real de CWV/LCP/INP em ambiente autorizado. Assets não foram reprocessados neste lote; a camada nova adiciona cerca de 14 KB de CSS/JS crus. Requests/tempos da fixture local com cache desativado não representam rede móvel nem Core Web Vitals de produção. Cache global não foi reescrito.
+Prioridade secundária sugerida: formatos/resoluções menores mantendo pixel/cores, revisão do carregamento de assets dos diálogos e coleta real de CWV/LCP/INP em ambiente autorizado. Assets de produção não foram substituídos; a camada nova adiciona cerca de 14 KB de CSS/JS crus. Requests/tempos da fixture local com cache desativado não representam rede móvel nem Core Web Vitals de produção. Cache global não foi reescrito.
 
 ## Reconciliação com #618
 
@@ -85,10 +85,10 @@ Rebase sem conflitos sobre `01535782`; diff relativo ao novo main mantém `pets-
 
 ## Comparações adicionais
 
-[VISUAL-REVIEW.md](VISUAL-REVIEW.md) reúne screenshots da barra atual e duas alternativas de uma linha, chat acima do mascote, dimensões/proveniência dos cinco assets e candidatos WebP de 229.528 bytes totais (96,67% menores em disco). Alternativas e candidatos ainda não estão ligados ao portal. A escolha de navegação permanece pendente de revisão.
+[VISUAL-REVIEW.md](VISUAL-REVIEW.md) reúne screenshots da barra atual e alternativas de uma linha, chat acima do mascote, dimensões/proveniência dos cinco assets e candidatos WebP de 229.528 bytes totais (96,67% menores em disco). A opção de uma linha com nomes foi aplicada; as outras alternativas e os candidatos WebP continuam apenas no harness.
 
 ## Limites e entrega
 
 As duas screenshots reais da Library não puderam ser materializadas neste executor: preparação resolvida, download falhou e uma repetição limitada também falhou. Elas não foram inspecionadas localmente nem copiadas para fixtures/repo. Foram vistos os pixels das capturas locais sintéticas antes e depois. Consulta anônima ao domínio também retornou bloqueio de rede (403 do ambiente); nenhuma análise ao vivo foi alegada.
 
-Próximo gate: CI do PR draft e revisão visual da barra em duas linhas. Rebase sobre o main que integrou #618 concluído; conferir a base novamente antes de publicação. Login/cadastro, acessos condicionais e aparelhos reais continuam recortes adicionais, não declarados concluídos. Publicação exige coordenação da versão de cache com a tarefa de mascotes e os gates usuais; nenhuma alteração de cache, merge ou deploy foi executada aqui.
+Próximo gate: CI do head final e revisão visual da barra em uma linha com nomes. Rebase sobre o main que integrou #618 concluído; conferir a base novamente antes de publicação. Login/cadastro, acessos condicionais e aparelhos reais continuam recortes adicionais, não declarados concluídos. Publicação exige coordenação da versão de cache com a tarefa de mascotes e os gates usuais; nenhuma alteração de cache, merge ou deploy foi executada aqui.

@@ -27,6 +27,14 @@ for (const row of rows) {
       { svg: true, label: "Mascotes", text: "" },
       `${name}: accessible SVG paw`,
     );
+    if (row.navigation) {
+      assert.ok(row.navigation.targetsFit, `${name}: all navigation targets visible and at least 44 px`);
+      assert.ok(row.navigation.labelsFit, `${name}: complete navigation labels fit`);
+      if (row.textScale !== 2)
+        assert.equal(row.navigation.rows, 1, `${name}: normal text navigation stays in one row`);
+      else
+        assert.ok(row.navigation.reflow, `${name}: enlarged text reflows safely`);
+    }
     for (const target of row.controls.filter((c) =>
       c.class.includes("social-mobile-nav-link"),
     ))

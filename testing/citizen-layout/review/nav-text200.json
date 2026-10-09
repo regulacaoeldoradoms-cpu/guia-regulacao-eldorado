@@ -1,0 +1,132 @@
+[
+  {
+    "route": "/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/cidadao/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/perfil/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/amigos/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/notificacoes/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/configuracoes/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/seguranca/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/conquistas/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/ferramentas/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  },
+  {
+    "route": "/mascotes/",
+    "width": 320,
+    "textScale": 2,
+    "navigation": {
+      "rows": 3,
+      "reflow": true,
+      "targetsFit": true,
+      "labelsFit": true
+    },
+    "scrollWidth": 320,
+    "errors": []
+  }
+]

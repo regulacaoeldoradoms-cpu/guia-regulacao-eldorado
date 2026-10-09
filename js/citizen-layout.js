@@ -2,14 +2,32 @@
 // Presentation only: authorization continues to be enforced by RegulationAuth.
 (() => {
   let observedNav = null;
-  const navSize = new ResizeObserver((entries) => {
-    const height = entries[0]?.target.getBoundingClientRect().height || 0;
+  const measure = document.createElement("canvas").getContext("2d");
+  const updateNavLayout = () => {
+    const nav = observedNav;
+    if (!nav || !document.body.classList.contains("citizen-readable-layout")) return;
+    const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
+    nav.style.setProperty("--citizen-nav-columns", links.map((_, i) => i < 3 ? "minmax(44px,max-content)" : "minmax(44px,1fr)").join(" "));
+    const style = getComputedStyle(nav);
+    const available = nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const required = links.reduce((sum, link) => {
+      const label = link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)");
+      if (!label) return sum + 44;
+      const font = getComputedStyle(label);
+      measure.font = `${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
+      const text = label.textContent.trim();
+      const spacing = (parseFloat(font.letterSpacing) || 0) * Math.max(0, [...text].length - 1);
+      return sum + Math.max(44, measure.measureText(text).width + spacing);
+    }, Math.max(0, links.length - 1));
+    nav.classList.toggle("citizen-nav-reflow", required > available + 0.5);
+    const height = nav.getBoundingClientRect().height || 0;
     if (height)
       document.body.style.setProperty(
         "--citizen-bottom-space",
         `${Math.ceil(height) + 12}px`,
       );
-  });
+  };
+  const navSize = new ResizeObserver(updateNavLayout);
   function petNavigation() {
     if (!document.body?.classList.contains("citizen-readable-layout")) return;
     const nav = document.querySelector(".social-mobile-nav");
@@ -18,6 +36,7 @@
       observedNav = nav;
       navSize.observe(nav);
     }
+    nav?.querySelectorAll(".social-mobile-nav-link, .social-mobile-nav-link > span:not(.social-nav-icon):not(.social-nav-badge)").forEach(link => navSize.observe(link));
     document
       .querySelectorAll('.social-mobile-nav a[href="/mascotes/"]')
       .forEach((link) => {
@@ -34,6 +53,7 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="16" rx="6" ry="4"/><circle cx="5" cy="8" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="20" cy="8" r="2"/></svg>';
         link.replaceChildren(icon);
       });
+    updateNavLayout();
   }
   const apply = (user) => {
     document.body?.classList.toggle(

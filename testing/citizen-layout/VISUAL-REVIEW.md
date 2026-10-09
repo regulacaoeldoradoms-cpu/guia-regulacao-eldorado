@@ -1,6 +1,6 @@
 # Revisão concreta: navegação, mascote/chat e assets
 
-Estas alternativas são capturas de fixture cidadão. Não contêm contas, posts ou pacientes reais. A barra em duas linhas ainda é a implementação do PR; as três alternativas só são injetadas no harness, sem alterar navegação em produção. Não há escolha automática nem mudança do nome Ferramentas.
+Capturas de fixture cidadão, sem contas, posts ou pacientes reais. A implementação final aplica a barra em uma linha com nomes a 14 px e patinha SVG, conforme escolha autorizada. Texto ampliado reflui para mais linhas; todos os destinos permanecem acessíveis. As demais opções são injetadas somente no harness.
 
 ![Comparação em 320 px](review/nav-comparison-320.png)
 
@@ -8,12 +8,11 @@ Estas alternativas são capturas de fixture cidadão. Não contêm contas, posts
 
 | Opção em 320 px | Altura da barra | Alvos | Compromisso |
 | --- | --- | --- | --- |
-| Duas linhas, atual | 142 px | ≥87×62 px | Seis destinos e cinco nomes completos visíveis a 16 px; ocupa espaço. |
-| Uma linha, nomes a 14 px | 72 px | ≥44×58 px | Seis destinos e cinco nomes completos visíveis; espaçamento apertado em 320 px. Não é automaticamente aprovada para público idoso. |
-| Uma linha, ícones | 66 px | 52×52 px | Seis destinos visíveis; nomes completos via aria-label e title, sem nomes visíveis. Mais próxima da barra Instagram, mas identificação por ícone precisa revisão para idosos. |
-| Uma linha, nomes completos | 76 px | ≥72×62 px | Texto 16 px e Ferramentas intacto; precisa rolagem horizontal para acessar todos. Não atende seis destinos visíveis simultaneamente em 320 px. |
+| Uma linha, aplicada | 72 px | ≥44×58 px | Seis destinos e cinco nomes completos a 14 px; texto ampliado reflui sem corte. |
+| Uma linha, ícones | 66 px | 52×52 px | Alternativa de revisão, sem nomes visíveis. |
+| Uma linha, rolável | 76 px | ≥72×62 px | Alternativa de revisão que exige deslizar; não aplicada. |
 
-Nas três, Mascotes é exclusivamente a patinha SVG, com nome acessível. A largura de Ferramentas com o texto completo é cerca de 122 px no modelo rolável. Cinco nomes a 16 px mais seis alvos ≥44 px não cabem juntos em 320 px; não reduzi para 10 px nem renomeei o destino. A alternativa só com ícones não é apresentada como solução automaticamente acessível para todos. O quarto modelo usa 14 px, não 10 px: cabe com colunas proporcionais, rótulos inteiros e seis alvos ≥44 px. O harness verifica bounds de cada rótulo/alvo. Ainda é apertado em 320 px; precisa revisão visual e adaptação para texto ampliado antes de adotá-lo. A revisão deve escolher entre identificação visível, altura, tamanho de texto e todos os destinos simultaneamente.
+Mascotes é exclusivamente a patinha SVG com nome acessível. Ferramentas mantém seu nome completo. O harness verifica os limites de cada rótulo/alvo e a adaptação ao texto ampliado. As capturas comparativas são evidência sintética, sem substituir testes em aparelhos reais.
 
 A barra usa o token de superfície existente sem translucidez: texto do conteúdo atrás não atravessa a navegação. A nova camada aberta de chat fica em z-index 12001, acima do mascote global (12000), mantendo runtime, movimentação e contagem do pet intactos. O harness verifica essa ordem e o acesso por rolagem ao botão de notificações. Captura normal em 390 px e texto duplicado em 320 px:
 

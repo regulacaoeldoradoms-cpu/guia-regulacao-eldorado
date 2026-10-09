@@ -196,8 +196,8 @@ try {
           body.citizen-readable-layout.portal-page .social-mobile-nav{grid-template-columns:repeat(3,minmax(44px,max-content)) repeat(3,minmax(44px,1fr))!important;gap:0!important;padding-left:2px!important;padding-right:2px!important;min-height:0!important;height:auto!important}
           body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;padding:6px 0!important;font-size:14px!important;font-weight:500!important;white-space:nowrap!important;overflow-wrap:normal!important}
         ` : `
-          body.citizen-readable-layout.portal-page .social-mobile-nav{display:flex!important;gap:4px!important;overflow-x:auto!important;overflow-y:hidden!important;min-height:0!important;height:auto!important}
-          body.citizen-readable-layout.portal-page .social-mobile-nav-link{flex:0 0 auto!important;min-width:72px!important;min-height:62px!important;padding:6px 10px!important;white-space:nowrap!important;overflow-wrap:normal!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;overflow-x:auto!important;overflow-y:hidden!important;min-height:0!important;height:auto!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav .social-mobile-nav-link{flex:0 0 auto!important;min-width:72px!important;min-height:62px!important;padding:6px 10px!important;font-size:16px!important;white-space:nowrap!important;overflow-wrap:normal!important}
         ` });
         await page.evaluate(() => document.querySelectorAll(".social-mobile-nav-link").forEach(link => {
           const label = link.getAttribute("aria-label") || link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)")?.textContent.trim() || link.textContent.trim();
@@ -225,6 +225,7 @@ try {
             ),
           );
         });
+      await page.waitForTimeout(100); // Allow ResizeObserver to settle after text scaling.
       const metrics = await page.evaluate(() => {
         const visible = [...document.querySelectorAll("body *")].filter((e) => {
           const r = e.getBoundingClientRect(),
@@ -238,6 +239,17 @@ try {
         });
         return {
           title: document.title,
+          navigation: (() => {
+            const nav = document.querySelector(".social-mobile-nav");
+            if (!nav || getComputedStyle(nav).display === "none") return null;
+            const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
+            return {
+              rows: new Set(links.map(e => Math.round(e.getBoundingClientRect().top))).size,
+              reflow: nav.classList.contains("citizen-nav-reflow"),
+              targetsFit: links.every(e => { const r=e.getBoundingClientRect(); return r.width>=43.99 && r.height>=44 && r.left>=-1 && r.right<=innerWidth+1; }),
+              labelsFit: links.every(e => { const r=e.getBoundingClientRect(); const label=e.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)"); if(!label)return true; const l=label.getBoundingClientRect();return l.left>=r.left-1 && l.right<=r.right+1; })
+            };
+          })(),
           controls: visible
             .filter((e) =>
               e.matches(
@@ -358,6 +370,7 @@ try {
           })),
         };
       });
+      metrics.textScale = process.env.TEXT_SCALE === "2" ? 2 : 1;
       results.push({
         route,
         width,
@@ -367,7 +380,7 @@ try {
         errors,
       });
       if (process.env.NAV_REVIEW || process.env.REVIEW_CAPTURES) {
-        await page.locator(".social-mobile-nav").screenshot({path: `/tmp/citizen-nav-${process.env.NAV_REVIEW || "two-rows"}-${width}${process.env.TEXT_SCALE === "2" ? "-text200" : ""}.png`});
+        await page.locator(".social-mobile-nav").screenshot({path: `/tmp/citizen-nav-${process.env.NAV_REVIEW || "applied"}-${width}${process.env.TEXT_SCALE === "2" ? "-text200" : ""}.png`});
       }
       if ([320, 390, 1440].includes(width))
         await page.screenshot({
