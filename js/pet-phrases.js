@@ -30,6 +30,18 @@ export const PET_PHRASES = Object.freeze([
  'Meu talento é achar um cantinho confortável.',
  'Se eu ronronar, é só companhia.',
  'Gostei deste cantinho. Miau.',
+ 'Trabalho importante: observar uma poeirinha.',
+ 'Não estou parado. Estou em modo gato.',
+ 'Minha opinião sobre isso: miau.',
+ 'A reunião das patinhas foi adiada para a soneca.',
+ 'Este cantinho passou na inspeção felina.',
+ 'Achei um lugar bom. Vou testar deitado.',
+ 'Minha cama está me chamando pelo nome.',
+ 'Vou espreguiçar e fingir que foi exercício.',
+ 'Se houver uma caixa, eu gostaria de saber.',
+ 'Posso supervisionar? Prometo piscar devagar.',
+ 'Estou ocupado sendo um gato muito sério.',
+ 'Minha patinha pediu cinco minutos de descanso.',
 ]);
 
 // Keep a short recent history; needs alerts remain the runtime's first priority.

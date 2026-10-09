@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {PET_PHRASES,nextPetPhrase} from '../../js/pet-phrases.js';
 
 test('fixed companionship phrases retain original care lines and offer varied short copy',()=>{
- assert.equal(PET_PHRASES.length,30);
- assert.equal(new Set(PET_PHRASES).size,30);
+ assert.equal(PET_PHRASES.length,42);
+ assert.equal(new Set(PET_PHRASES).size,42);
  for(const phrase of ['Uma pausa também faz bem.','Miau. Que bom estar por aqui.','Minha água está sempre por perto.','Vou cuidar da minha patinha.'])assert(PET_PHRASES.includes(phrase));
  assert(PET_PHRASES.every(phrase=>phrase.length<=55));
 });
