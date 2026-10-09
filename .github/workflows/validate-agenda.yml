@@ -38,6 +38,10 @@ on:
       - 'docs/AGENDA-DIGSAUDE*.md'
       - 'scripts/agenda/**'
 
+concurrency:
+  group: agenda-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
