@@ -5,7 +5,7 @@ let current=null,running=null,epoch=0;
 function navigation(enabled){
  document.querySelectorAll('[data-pet-navigation]').forEach(link=>link.remove());
  if(!enabled)return;
- const targets=[['.social-side-links','Adotar mascote',''],['.social-mobile-nav','Mascotes','social-mobile-nav-link']];
+ const targets=[['.social-side-links','Mascotes',''],['.social-mobile-nav','Mascotes','social-mobile-nav-link']];
  for(const [selector,label,className] of targets){
   const nav=document.querySelector(selector);if(!nav||nav.querySelector('a[href="/mascotes/"]'))continue;
   const link=document.createElement('a');link.href='/mascotes/';link.textContent=label;link.className=className;link.dataset.petNavigation='';nav.append(link);
