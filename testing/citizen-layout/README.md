@@ -1,6 +1,6 @@
 # Layout legível para cidadão — preparação, sem publicação
 
-Base auditada: `bd7dad3890a4eb52d1d16e99c73bd569aeb08331` (main após #619). Branch `perf/cidadao-diagnostico`, worktree `/workspace/cidadao-perf`. O primeiro diagnóstico usou `491ae932`; a comparação final usa a base atual. Nenhum arquivo do runtime, cache ou página de mascotes foi editado. #618 continua independente; esta preparação não incorpora nem substitui sua implementação.
+Base atual: `01535782ef41ccf42ce9c4fc3ef8d3b4466f78ab` (main com #618 e #619). Medidas iniciais e comparação de desktop/paleta foram coletadas em `bd7dad38`; estilos profissionais não foram alterados pela reconciliação. Branch `perf/cidadao-diagnostico`, worktree `/workspace/cidadao-perf`. O primeiro diagnóstico usou `491ae932`; a comparação final usa a base atual. Nenhum arquivo do runtime, cache ou página de mascotes foi editado. #618 está integrado na base; esta preparação preserva sua implementação, além das falas de #619.
 
 ## Escopo comprovado no código
 
@@ -50,7 +50,7 @@ Conta, perfil, post, gato e protocolo são inteiramente fictícios. HTTP externo
 - Texto 200%: dez rotas em 320 px passaram. Fixture dobra tamanhos computados de texto e mede refluxo; não equivale a todos os mecanismos de zoom do sistema operacional.
 - Detalhe fictício: cinco tamanhos passaram, mais revisão a 200% em 320 px.
 - Janela reduzida: formulário focalizado com viewport menor e landscape, dois cenários passaram. Simulação de altura, não teclado físico/IME de aparelho real.
-- 902 testes completos do Worker passaram após ajuste de carregamento da Home; sintaxe e `git diff --check` passaram. Abertura real pós-login com fixture cidadão passou em dois projetos (desktop/mobile): mesmo documento, sem flash/reinicialização; lista exata de scripts preservada.
+- 902 testes completos do Worker passaram antes da integração de #618, após ajuste de carregamento da Home; essa evidência não conta os testes novos de vidas. O CI da base reconciliada valida a suíte atual; sintaxe e `git diff --check` passaram. Abertura real pós-login com fixture cidadão passou em dois projetos (desktop/mobile): mesmo documento, sem flash/reinicialização; lista exata de scripts preservada.
 - `evidence.json` guarda medidas sanitizadas. Imagens e JSON completos locais estão em `/tmp/citizen-*`. Workflow `validate-citizen-layout.yml` repete a matriz, texto ampliado e detalhes com artefatos, sem deploy.
 
 ```bash
@@ -79,6 +79,10 @@ Tamanhos de arquivos públicos do checkout, não estimativas de transferência c
 
 Prioridade secundária sugerida: formatos/resoluções menores mantendo pixel/cores, revisão do carregamento de assets dos diálogos e coleta real de CWV/LCP/INP em ambiente autorizado. Assets não foram reprocessados neste lote; a camada nova adiciona cerca de 14 KB de CSS/JS crus. Requests/tempos da fixture local com cache desativado não representam rede móvel nem Core Web Vitals de produção. Cache global não foi reescrito.
 
+## Reconciliação com #618
+
+Rebase sem conflitos sobre `01535782`; diff relativo ao novo main mantém `pets-runtime.js`, `pets-bootstrap.js`, `pet-phrases.js`, `css/pets.css`, `/mascotes/` e `portal-sw.js` sem alterações deste PR. Home e as três alternativas foram retestadas em 320/390 px; chat ampliado e Mascotes usam a fixture atual de sete vidas. Capturas de navegação e chat foram atualizadas na nova base. CI anterior tinha 25/26 workflows aprovados e somente auditoria escura ativa; seu monitor foi encerrado porque o head foi substituído.
+
 ## Comparações adicionais
 
 [VISUAL-REVIEW.md](VISUAL-REVIEW.md) reúne screenshots da barra atual e duas alternativas de uma linha, chat acima do mascote, dimensões/proveniência dos cinco assets e candidatos WebP de 229.528 bytes totais (96,67% menores em disco). Alternativas e candidatos ainda não estão ligados ao portal. A escolha de navegação permanece pendente de revisão.
@@ -87,4 +91,4 @@ Prioridade secundária sugerida: formatos/resoluções menores mantendo pixel/co
 
 As duas screenshots reais da Library não puderam ser materializadas neste executor: preparação resolvida, download falhou e uma repetição limitada também falhou. Elas não foram inspecionadas localmente nem copiadas para fixtures/repo. Foram vistos os pixels das capturas locais sintéticas antes e depois. Consulta anônima ao domínio também retornou bloqueio de rede (403 do ambiente); nenhuma análise ao vivo foi alegada.
 
-Próximo gate: CI do PR draft e revisão visual da barra em duas linhas. PR #618 deve integrar independentemente; conferir/rebasear a base novamente antes de publicação. Login/cadastro, acessos condicionais e aparelhos reais continuam recortes adicionais, não declarados concluídos. Publicação exige coordenação da versão de cache com a tarefa de mascotes e os gates usuais; nenhuma alteração de cache, merge ou deploy foi executada aqui.
+Próximo gate: CI do PR draft e revisão visual da barra em duas linhas. Rebase sobre o main que integrou #618 concluído; conferir a base novamente antes de publicação. Login/cadastro, acessos condicionais e aparelhos reais continuam recortes adicionais, não declarados concluídos. Publicação exige coordenação da versão de cache com a tarefa de mascotes e os gates usuais; nenhuma alteração de cache, merge ou deploy foi executada aqui.
