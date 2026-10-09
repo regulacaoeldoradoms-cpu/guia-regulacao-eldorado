@@ -1,0 +1,920 @@
+{
+  "base": "bd7dad3890a4eb52d1d16e99c73bd569aeb08331",
+  "kind": "local synthetic; not production CWV",
+  "routes": [
+    {
+      "route": "/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Editar": {
+          "beforeFont": 11.52,
+          "afterFont": 16,
+          "beforeHeight": 44,
+          "afterHeight": 44
+        },
+        "Excluir": {
+          "beforeFont": 11.52,
+          "afterFont": 16,
+          "beforeHeight": 44,
+          "afterHeight": 44
+        },
+        "Mostrar atalhos": {
+          "beforeFont": 11.52,
+          "afterFont": 16,
+          "beforeHeight": 15,
+          "afterHeight": 48
+        },
+        "Início": {
+          "beforeFont": 18,
+          "afterFont": 16,
+          "beforeHeight": 96,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 18,
+          "afterFont": 16,
+          "beforeHeight": 96,
+          "afterHeight": 62
+        }
+      },
+      "states": [
+        {
+          "name": "chat",
+          "opened": true,
+          "x": 8,
+          "y": 8,
+          "right": 312,
+          "bottom": 746,
+          "viewport": 320,
+          "height": 900,
+          "scrollWidth": 302,
+          "clientWidth": 302
+        }
+      ]
+    },
+    {
+      "route": "/cidadao/",
+      "width": 320,
+      "beforeScrollWidth": 379,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      },
+      "states": [
+        {
+          "name": "manifestation",
+          "opened": true,
+          "x": 8,
+          "y": 0,
+          "right": 312,
+          "bottom": 884,
+          "viewport": 320,
+          "height": 900,
+          "scrollWidth": 304,
+          "clientWidth": 304
+        }
+      ]
+    },
+    {
+      "route": "/perfil/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Subir": {
+          "beforeFont": 11.52,
+          "afterFont": 16,
+          "beforeHeight": 36,
+          "afterHeight": 48
+        }
+      },
+      "states": [
+        {
+          "name": "photo",
+          "opened": true,
+          "x": 14,
+          "y": 231.328125,
+          "right": 306,
+          "bottom": 668.65625,
+          "viewport": 320,
+          "height": 900,
+          "scrollWidth": 292,
+          "clientWidth": 292
+        }
+      ]
+    },
+    {
+      "route": "/amigos/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/notificacoes/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/configuracoes/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/seguranca/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/conquistas/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/ferramentas/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/mascotes/",
+      "width": 320,
+      "beforeScrollWidth": 320,
+      "afterScrollWidth": 320,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "sampleControls": {
+        "Início": {
+          "beforeFont": 16,
+          "afterFont": 18,
+          "beforeHeight": 44,
+          "afterHeight": 48
+        },
+        "Ferramentas": {
+          "beforeFont": 10.4,
+          "afterFont": 16,
+          "beforeHeight": 77,
+          "afterHeight": 62
+        }
+      }
+    },
+    {
+      "route": "/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "chat",
+          "opened": true,
+          "x": 8,
+          "y": 8,
+          "right": 352,
+          "bottom": 746,
+          "viewport": 360,
+          "height": 900,
+          "scrollWidth": 342,
+          "clientWidth": 342
+        }
+      ]
+    },
+    {
+      "route": "/cidadao/",
+      "width": 360,
+      "beforeScrollWidth": 379,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "manifestation",
+          "opened": true,
+          "x": 8,
+          "y": 0,
+          "right": 352,
+          "bottom": 884,
+          "viewport": 360,
+          "height": 900,
+          "scrollWidth": 344,
+          "clientWidth": 344
+        }
+      ]
+    },
+    {
+      "route": "/perfil/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "photo",
+          "opened": true,
+          "x": 14,
+          "y": 251.4375,
+          "right": 346,
+          "bottom": 648.546875,
+          "viewport": 360,
+          "height": 900,
+          "scrollWidth": 332,
+          "clientWidth": 332
+        }
+      ]
+    },
+    {
+      "route": "/amigos/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/notificacoes/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/configuracoes/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/seguranca/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/conquistas/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/ferramentas/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/mascotes/",
+      "width": 360,
+      "beforeScrollWidth": 360,
+      "afterScrollWidth": 360,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "chat",
+          "opened": true,
+          "x": 8,
+          "y": 8,
+          "right": 382,
+          "bottom": 746,
+          "viewport": 390,
+          "height": 900,
+          "scrollWidth": 372,
+          "clientWidth": 372
+        }
+      ]
+    },
+    {
+      "route": "/cidadao/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "manifestation",
+          "opened": true,
+          "x": 8,
+          "y": 0,
+          "right": 382,
+          "bottom": 884,
+          "viewport": 390,
+          "height": 900,
+          "scrollWidth": 374,
+          "clientWidth": 374
+        }
+      ]
+    },
+    {
+      "route": "/perfil/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "photo",
+          "opened": true,
+          "x": 14,
+          "y": 259.828125,
+          "right": 376,
+          "bottom": 640.15625,
+          "viewport": 390,
+          "height": 900,
+          "scrollWidth": 362,
+          "clientWidth": 362
+        }
+      ]
+    },
+    {
+      "route": "/amigos/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/notificacoes/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/configuracoes/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/seguranca/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/conquistas/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/ferramentas/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/mascotes/",
+      "width": 390,
+      "beforeScrollWidth": 390,
+      "afterScrollWidth": 390,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "chat",
+          "opened": true,
+          "x": 8,
+          "y": 8,
+          "right": 404,
+          "bottom": 746,
+          "viewport": 412,
+          "height": 900,
+          "scrollWidth": 394,
+          "clientWidth": 394
+        }
+      ]
+    },
+    {
+      "route": "/cidadao/",
+      "width": 412,
+      "beforeScrollWidth": 418,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "manifestation",
+          "opened": true,
+          "x": 8,
+          "y": 0,
+          "right": 404,
+          "bottom": 884,
+          "viewport": 412,
+          "height": 900,
+          "scrollWidth": 396,
+          "clientWidth": 396
+        }
+      ]
+    },
+    {
+      "route": "/perfil/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "photo",
+          "opened": true,
+          "x": 14,
+          "y": 270.25,
+          "right": 398,
+          "bottom": 629.75,
+          "viewport": 412,
+          "height": 900,
+          "scrollWidth": 384,
+          "clientWidth": 384
+        }
+      ]
+    },
+    {
+      "route": "/amigos/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/notificacoes/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/configuracoes/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/seguranca/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/conquistas/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/ferramentas/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/mascotes/",
+      "width": 412,
+      "beforeScrollWidth": 412,
+      "afterScrollWidth": 412,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "chat",
+          "opened": true,
+          "x": 8,
+          "y": 8,
+          "right": 836,
+          "bottom": 236,
+          "viewport": 844,
+          "height": 390,
+          "scrollWidth": 826,
+          "clientWidth": 826
+        }
+      ]
+    },
+    {
+      "route": "/cidadao/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "manifestation",
+          "opened": true,
+          "x": 8,
+          "y": 0,
+          "right": 836,
+          "bottom": 374,
+          "viewport": 844,
+          "height": 390,
+          "scrollWidth": 828,
+          "clientWidth": 828
+        }
+      ]
+    },
+    {
+      "route": "/perfil/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": [],
+      "states": [
+        {
+          "name": "photo",
+          "opened": true,
+          "x": 192,
+          "y": 35.359375,
+          "right": 652,
+          "bottom": 354.640625,
+          "viewport": 844,
+          "height": 390,
+          "scrollWidth": 460,
+          "clientWidth": 460
+        }
+      ]
+    },
+    {
+      "route": "/amigos/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/notificacoes/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/configuracoes/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/seguranca/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/conquistas/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/ferramentas/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/mascotes/",
+      "width": 844,
+      "beforeScrollWidth": 844,
+      "afterScrollWidth": 844,
+      "desktopGeometryEqual": null,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/cidadao/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/perfil/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/amigos/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/notificacoes/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/configuracoes/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/seguranca/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/conquistas/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/ferramentas/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    },
+    {
+      "route": "/mascotes/",
+      "width": 1440,
+      "beforeScrollWidth": 1440,
+      "afterScrollWidth": 1440,
+      "desktopGeometryEqual": true,
+      "semanticColorsEqual": true,
+      "errors": []
+    }
+  ]
+}

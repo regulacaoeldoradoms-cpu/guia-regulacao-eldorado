@@ -1,0 +1,68 @@
+name: Citizen mobile layout
+on:
+  pull_request:
+    paths:
+      - "css/citizen-readable-layout.css"
+      - "js/citizen-layout.js"
+      - "js/account-section-shell.js"
+      - "testing/citizen-layout/**"
+      - ".github/workflows/validate-citizen-layout.yml"
+permissions:
+  contents: read
+jobs:
+  synthetic-citizen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser harness
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Chromium path
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
+          fs.appendFileSync(process.env.GITHUB_ENV, 'CHROMIUM_PATH=' + chromium.executablePath() + '\n');
+          JS
+      - name: Citizen routes, portrait and landscape
+        run: |
+          node testing/citizen-layout/audit.mjs /tmp/citizen-layout.json
+          node testing/citizen-layout/verify.mjs /tmp/citizen-layout.json
+      - name: Double text size and reflow
+        env:
+          TEXT_SCALE: "2"
+          WIDTHS: "320"
+        run: |
+          node testing/citizen-layout/audit.mjs /tmp/citizen-text200.json
+          node testing/citizen-layout/verify.mjs /tmp/citizen-text200.json
+      - name: Existing manifestation and reduced viewport height
+        env:
+          DETAIL_FIXTURE: "1"
+          KEYBOARD_FIXTURE: "1"
+          ROUTES: "/cidadao/"
+          WIDTHS: "320,360,390,412,844"
+        run: |
+          node testing/citizen-layout/audit.mjs /tmp/citizen-detail.json
+          node testing/citizen-layout/verify.mjs /tmp/citizen-detail.json
+      - name: Navigation alternatives for visual review only
+        env:
+          ROUTES: "/"
+          WIDTHS: "320,390"
+        run: |
+          REVIEW_CAPTURES=1 node testing/citizen-layout/audit.mjs /tmp/citizen-nav-current.json
+          NAV_REVIEW=icons node testing/citizen-layout/audit.mjs /tmp/citizen-nav-icons.json
+          NAV_REVIEW=scroll node testing/citizen-layout/audit.mjs /tmp/citizen-nav-scroll.json
+          node testing/citizen-layout/review-nav.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-citizen-layout
+          path: |
+            /tmp/citizen-*.json
+            /tmp/citizen-*.png
+            testing/citizen-layout/review/*.png

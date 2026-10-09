@@ -29,6 +29,21 @@
       return null;
     }
 
+    // Citizen layout assets are owned separately from the concurrent pet runtime.
+    if (location.pathname === '/mascotes/' && user.role === 'cidadao') {
+      document.body.classList.add('citizen-readable-layout');
+      if (!document.getElementById('citizenReadableStyles')) {
+        const styles = document.createElement('link');
+        styles.id = 'citizenReadableStyles';
+        styles.rel = 'stylesheet';
+        styles.href = '/css/citizen-readable-layout.css?v=20261009-1';
+        document.head.appendChild(styles);
+        const layout = document.createElement('script');
+        layout.src = '/js/citizen-layout.js?v=20261009-1';
+        document.head.appendChild(layout);
+      }
+    }
+
     const name = document.getElementById('portalUserName');
     const role = document.getElementById('portalUserRole');
     if (name) name.textContent = user.name || user.username || 'Usuário';

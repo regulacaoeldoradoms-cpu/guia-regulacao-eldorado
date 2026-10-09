@@ -195,20 +195,60 @@ test('Conselho: detalhe, status, nota, carta e exclusão cancelada',async({page,
   await finishNetwork(info,network,{council:true});
 });
 
-for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],['dark','print']])test(`${citizen?'Cidadão':'Conselho'}: ${theme}/${media} preservado contra main`,async({page,context},info)=>{
+for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],['dark','print']])test(`${citizen?'Cidadão':'Conselho'}: ${theme}/${media} preservado contra main`,async({page,context,isMobile},info)=>{
   test.setTimeout(90_000);
   // Auth/storage/preferences must agree with the requested theme from startup.
   // Separate test contexts prevent a light account fixture from rehydrating a
   // light theme halfway through the dark-to-print comparison.
   const {network}=await setup(context,{citizen,theme});
   const route=citizen?'/cidadao/':'/conselho/painel/';
-    const result=await compareAgainstBase({page,context,info,route,theme,media,prepare:async page=>{
-      await openDetail(page,citizen);
+  const mobileRedesign=citizen&&isMobile&&theme==='light'&&media==='screen';
+  const palettes=[];
+  let mobileLayout;
+    const result=await compareAgainstBase({page,context,info,route,theme,media,
+      normalizeSelector:selector=>citizen?selector.replace(/\.citizen-readable-layout(?=[. >:]|$)/g,''):selector,
+      prepare:async page=>{
+      if(citizen&&media==='print'){
+        // Open the real handler without Playwright auto-scrolling a redesigned
+        // screen before switching to print; both sources begin at scroll zero.
+        await page.locator('#manifestationList [data-protocol]').first().evaluate(button=>button.click());
+        await expect(page.locator('#detailContent')).toBeVisible();
+        await expect(page.locator('#detailSubject')).toHaveText(manifestation.subject);
+      }else await openDetail(page,citizen);
       await page.evaluate(()=>document.fonts.ready);
       await page.mouse.move(0,0);
+      if(mobileRedesign){
+        palettes.push(await page.evaluate(()=>[
+          '#privacyChip','#detailPrivacy','#detailStatus','.status-chip',
+          '.manifestation-type-card','.privacy-option','#openNewManifestation','#replyButton'
+        ].flatMap(selector=>[...document.querySelectorAll(selector)].map(el=>{
+          const style=getComputedStyle(el);
+          return {selector,text:el.textContent.trim(),color:style.color,background:style.backgroundColor,border:style.borderColor};
+        }))));
+        if(!mobileLayout) mobileLayout=await page.evaluate(()=>{
+          const links=[...document.querySelectorAll('.social-mobile-nav-link')];
+          const panel=document.querySelector('#manifestationDetailModal .citizen-modal-panel');
+          return {
+            citizen:document.body.classList.contains('citizen-readable-layout'),
+            pageFits:document.documentElement.scrollWidth<=innerWidth+1,
+            rows:new Set(links.map(el=>Math.round(el.getBoundingClientRect().top))).size,
+            targetsFit:links.length>0&&links.every(el=>{const r=el.getBoundingClientRect();return r.width>=43.99&&r.height>=44&&r.left>=-1&&r.right<=innerWidth+1;}),
+            panelFits:!!panel&&panel.scrollWidth<=panel.clientWidth+1
+          };
+        });
+      }
     }});
+    if(mobileRedesign){
+      // Requested mobile geometry replaces the old pixel baseline; semantic colors remain exact.
+      expect(palettes).toHaveLength(2);
+      expect(palettes[0].length).toBeGreaterThan(6);
+      expect(palettes[0]).toEqual(palettes[1]);
+      expect(mobileLayout).toEqual({citizen:true,pageFits:true,rows:1,targetsFit:true,panelFits:true});
+      expect(result.captureStability.current.snapshotStable).toBe(true);
+    }else{
     expect(result.differences,`${theme}/${media} computed styles must remain identical to main`).toEqual([]);
     expect(result.pixelComparison.gateAccepted,`${theme}/${media}: stable raster sources must match within two pixels/one channel; nondeterministic Linux raster is diagnostic only with exact computed/layout snapshots`).toBe(true);
+    }
     expect(result.newErrors).toEqual([]);
   await finishNetwork(info,network,{council:!citizen});
 });

@@ -53,7 +53,7 @@ export function rasterDiagnosticCrops(current,baseline,comparison) {
 
 // Compare the exact real DOM/state against tracked product files from one commit.
 // Changes to an injected <style> in JS are included, not only linked CSS files.
-export async function compareAgainstBase({ page, context, info, route, theme='light', media='screen', prepare=async()=>{}, base=process.env.DARK_AUDIT_BASE||'origin/main' }) {
+export async function compareAgainstBase({ page, context, info, route, theme='light', media='screen', prepare=async()=>{}, base=process.env.DARK_AUDIT_BASE||'origin/main', normalizeSelector=selector=>selector }) {
   const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
   const git=(args)=>execFileSync('git',['-c','core.safecrlf=false',...args],{cwd:root,encoding:'utf8',maxBuffer:20*1024*1024}).trimEnd();
   const baseCommit=git(['rev-parse','--verify',`${base}^{commit}`]);
@@ -180,6 +180,9 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     await context.unroute(pattern,handler);
   }
   if(changed.includes('css/portal-interactions.css')&&(!fulfilledCurrent.has('css/portal-interactions.css')||!fulfilledBase.has('css/portal-interactions.css')))throw new Error('Changed global theme stylesheet was not served from both current and base source maps');
+  // Normalize only selector identity when explicitly requested; all styles and geometry remain.
+  for(const report of [current.report,baseline.report])
+    report.snapshot=report.snapshot.map(item=>({...item,selector:normalizeSelector(item.selector)}));
   for(const [label,report]of[['current',current.report],['base',baseline.report]])if(new Set(report.snapshot.map(item=>item.selector)).size!==report.snapshot.length)throw new Error(`Non-unique snapshot selectors invalidate ${label} comparison`);
   const baselineMap=new Map(baseline.report.snapshot.map(item=>[item.selector,item]));
   const differences=[];
