@@ -202,6 +202,15 @@
     flex: 1 1 160px;
     min-width: 0;
   }
+  body.citizen-readable-layout .pet-page button {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout .pet-page :is(select, input[type="time"]) {
+    min-width: 0;
+  }
   body.citizen-readable-layout .pet-days label {
     min-width: 48px;
   }

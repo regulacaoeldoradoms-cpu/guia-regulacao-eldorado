@@ -9,7 +9,7 @@ for (const row of rows) {
   assert.deepEqual(row.errors, [], `${name}: JavaScript errors`);
   assert.ok(
     row.scrollWidth <= row.width + 1,
-    `${name}: page overflow ${row.scrollWidth}`,
+    `${name}: page overflow ${row.scrollWidth}: ${JSON.stringify(row.overflow)}`,
   );
   assert.ok(
     row.bodyClass.includes("citizen-readable-layout"),
