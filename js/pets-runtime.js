@@ -1,11 +1,10 @@
 'use strict';
 import {drawCat,drawBed} from './pet-cat-frames.js';
-import {nextPetPhrase} from './pet-phrases.js';
+import {PetSpeech} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
 export class PetRuntime{
- constructor(api,state,onChange=()=>{}){
+ constructor(api,state,onChange=()=>{},speech=new PetSpeech()){
   this.api=api;this.state=state;this.onChange=onChange;this.closed=false;this.action='idle';this.queue=[];this.until=0;this.x=150;this.y=innerHeight-130;
-  this.tabId=crypto.randomUUID();this.sequence=0;this.leaseToken='';this.lastInteraction=0;this.eligibleBefore=false;this.frame=0;this.lastPaint=0;this.nextBubble=performance.now()+45000;
-  this.recentPhrases=[];
+  this.tabId=crypto.randomUUID();this.sequence=0;this.leaseToken='';this.lastInteraction=0;this.eligibleBefore=false;this.frame=0;this.lastPaint=0;this.speech=speech;
   this.root=document.createElement('div');this.root.className='pet-stage';this.root.setAttribute('aria-hidden','true');
   this.cat=document.createElement('canvas');this.cat.width=64;this.cat.height=48;this.cat.className='pet-cat';
   this.bed=document.createElement('canvas');this.bed.width=80;this.bed.height=30;this.bed.className='pet-bed';
@@ -108,8 +107,9 @@ export class PetRuntime{
   const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible||modalOpen;this.habitat.hidden=this.root.hidden;
   const motion=s.preferences.motionEnabled&&!this.reduced.matches;
   const alert=s.thirst>=70?'Estou com sede. Água é gratuita.':s.hunger>=70?'Estou com fome. Comida é gratuita.':s.dirt>=70?'Hora de um banho. Higiene básica é gratuita.':'';
+  this.needsAlert=alert;
   this.root.dataset.alert=s.thirst>=70?'thirst':s.hunger>=70?'hunger':'';
-  this.bubble.textContent=alert||(performance.now()<this.bubbleUntil?this.phrase:'');
+  this.bubble.textContent=alert||this.speech.text();
   this.bubble.hidden=!this.bubble.textContent;
   const action=motion?this.action:(s.awakeSeconds>=s.rules.sleepAfterSeconds?'sleep':'idle');
   drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
@@ -131,9 +131,9 @@ export class PetRuntime{
       if(d>2){this.x+=dx/d*Math.min(d,speed*dt);this.y+=dy/d*Math.min(d,speed*dt);this.facing=dx<0?-1:1;}
       else if(this.goingToBed){this.goingToBed=false;this.action='sleep';this.until=now+45000;this.rest();}
      }
-     if(now>=this.nextBubble){this.phrase=nextPetPhrase(this.recentPhrases);this.recentPhrases=[...this.recentPhrases,this.phrase].slice(-5);this.bubbleUntil=now+4500;this.nextBubble=now+45000+Math.random()*30000;}
     }
     this.render();
+    if(this.state.preferences.motionEnabled&&!this.reduced.matches&&!this.root.hidden&&!this.needsAlert&&this.speech.advance())this.render();
    }
    if(this.state.preferences.motionEnabled&&!this.reduced.matches)this.frame=requestAnimationFrame(tick);
   };
