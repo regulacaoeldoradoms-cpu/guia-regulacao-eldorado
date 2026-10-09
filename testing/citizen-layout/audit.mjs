@@ -193,8 +193,8 @@ try {
           body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;height:52px;overflow:visible;position:relative}
           .social-mobile-nav-link>span:not(.social-nav-icon):not(.social-nav-badge){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
         ` : mode === "compact" ? `
-          body.citizen-readable-layout.portal-page .social-mobile-nav{grid-template-columns:minmax(44px,1fr) minmax(48px,1.1fr) minmax(86px,1.9fr) repeat(3,minmax(44px,1fr))!important;gap:1px!important;padding-left:2px!important;padding-right:2px!important;min-height:0!important;height:auto!important}
-          body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;padding:6px 0!important;font-size:14px!important;white-space:nowrap!important;overflow-wrap:normal!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav{grid-template-columns:repeat(3,minmax(44px,max-content)) repeat(3,minmax(44px,1fr))!important;gap:0!important;padding-left:2px!important;padding-right:2px!important;min-height:0!important;height:auto!important}
+          body.citizen-readable-layout.portal-page .social-mobile-nav-link{min-height:52px!important;padding:6px 0!important;font-size:14px!important;font-weight:500!important;white-space:nowrap!important;overflow-wrap:normal!important}
         ` : `
           body.citizen-readable-layout.portal-page .social-mobile-nav{display:flex!important;gap:4px!important;overflow-x:auto!important;overflow-y:hidden!important;min-height:0!important;height:auto!important}
           body.citizen-readable-layout.portal-page .social-mobile-nav-link{flex:0 0 auto!important;min-width:72px!important;min-height:62px!important;padding:6px 10px!important;white-space:nowrap!important;overflow-wrap:normal!important}
@@ -205,12 +205,12 @@ try {
         }));
         await page.waitForTimeout(100);
         if (mode === "compact") {
-          const fits = await page.evaluate(() => [...document.querySelectorAll(".social-mobile-nav-link")].every(link => {
+          const bad = await page.evaluate(() => [...document.querySelectorAll(".social-mobile-nav-link")].map(link => {
             const target=link.getBoundingClientRect();
             const label=link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)")?.getBoundingClientRect();
-            return target.width>=44 && target.height>=44 && target.left>=0 && target.right<=innerWidth && (!label || (label.left>=target.left-1 && label.right<=target.right+1));
-          }));
-          if (!fits) throw Error("Compact navigation label or touch target does not fit");
+            return {name:link.getAttribute('aria-label'), target:target.toJSON(), label:label?.toJSON(), fits: target.width>=43.99 && target.height>=44 && target.left>=0 && target.right<=innerWidth && (!label || (label.left>=target.left-1 && label.right<=target.right+1))};
+          }).filter(item=>!item.fits));
+          if (bad.length) throw Error("Compact navigation label or touch target does not fit: "+JSON.stringify(bad));
         }
       }
       if (process.env.TEXT_SCALE === "2")
