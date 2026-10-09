@@ -26,7 +26,9 @@ async function sampleCouncilReflection(page,info){
   await info.attach('council-reflection-sampling.json',{body:Buffer.from(JSON.stringify(phase,null,2)),contentType:'application/json'});
 }
 // Explicit opt-in: these are actual base-commit comparisons, never a rebaseline.
-const routesWithoutBase = new Set(['/estudos/']);
+// Mascotes is new in this PR and has no HTML at the base commit; its current
+// dark/light/print surfaces are still checked by portal-dark-audit.spec.mjs.
+const routesWithoutBase = new Set(['/estudos/','/mascotes/']);
 if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRoutes.filter(route=>!aliasDestinations[route]&&!routesWithoutBase.has(route))) {
   for(const [theme,media] of [['light','screen'],['dark','print']])test(`preserve ${theme} ${media} ${route}`,async({page,context},info)=>{
     // The complete mobile catalogue exceeds 90 million physical pixels. Keep

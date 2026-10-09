@@ -608,7 +608,8 @@
         navLink('/perfil/', 'Perfil', icons.user || '', { mobile: true, social: true })
       );
     }
-    mobileLinks.push(navLink('/mascotes/', 'Mascotes', '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="16" rx="6" ry="4"/><circle cx="5" cy="8" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="20" cy="8" r="2"/></svg>', { mobile:true }));
+    if (window.PortalPets) mobileLinks.push(navLink('/mascotes/', 'Mascotes', '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="16" rx="6" ry="4"/><circle cx="5" cy="8" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="20" cy="8" r="2"/></svg>', { mobile:true }));
+    mobileLinks.filter(link => link.getAttribute('href') === '/mascotes/').forEach(link => { link.dataset.petNavigation = ''; });
     bottom.append(...mobileLinks);
     document.body.appendChild(bottom);
     document.body.classList.add('has-social-navigation');
