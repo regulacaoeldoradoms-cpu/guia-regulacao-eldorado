@@ -58,3 +58,57 @@ jobs:
           node --check scripts/agenda/recuperar-firebase-agenda.mjs
       - name: Executar testes da Agenda
         run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-contact-contract.test.mjs worker/tests/agenda-contact-recurrence.test.mjs worker/tests/agenda-capacity.test.mjs scripts/agenda/recuperar-firebase-agenda.test.mjs
+
+  verify-published-userscript:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir arquivo público após publicação do Pages
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const expected = readFileSync('agenda/digsaude-agenda-sync.user.js');
+          const source = expected.toString('utf8');
+          const version = source.match(/^\/\/ @version\s+(\S+)/m)?.[1];
+          const downloadUrl = source.match(/^\/\/ @downloadURL\s+(\S+)/m)?.[1];
+          const url = new URL(downloadUrl);
+          if (url.origin !== 'https://regulacaoeldoradoms.com.br'
+            || url.pathname !== '/agenda/digsaude-agenda-sync.user.js' || !version) {
+            throw new Error('Metadados públicos do sincronizador inválidos.');
+          }
+          const hash = value => createHash('sha256').update(value).digest('hex');
+          const expectedHash = hash(expected);
+          const installerHref = url.pathname + url.search;
+          const deadline = Date.now() + 10 * 60 * 1000;
+          let attempt = 0;
+          while (Date.now() < deadline) {
+            attempt += 1;
+            try {
+              const scriptResponse = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+              const served = Buffer.from(await scriptResponse.arrayBuffer());
+              const pageResponse = await fetch(url.origin + '/agenda/', { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+              const page = await pageResponse.text();
+              if (scriptResponse.ok && pageResponse.ok && hash(served) === expectedHash
+                && page.includes('href="' + installerHref + '"')) {
+                console.log('USERSCRIPT_PUBLICADO=' + version);
+                console.log('USERSCRIPT_SHA256=' + expectedHash);
+                console.log('INSTALLER_LINK=OK');
+                process.exit(0);
+              }
+              console.log('PUBLICACAO_PENDENTE tentativa=' + attempt
+                + ' scriptHTTP=' + scriptResponse.status + ' pageHTTP=' + pageResponse.status);
+            } catch (_) {
+              console.log('PUBLICACAO_PENDENTE tentativa=' + attempt + ' leitura_publica_indisponivel');
+            }
+            await new Promise(resolve => setTimeout(resolve, 10000));
+          }
+          throw new Error('PUBLICACAO_NAO_CONFIRMADA: arquivo ou link público não corresponde ao commit.');
+          NODE
