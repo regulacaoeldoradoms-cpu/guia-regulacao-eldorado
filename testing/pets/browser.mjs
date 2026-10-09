@@ -41,6 +41,7 @@ try{
  assert.equal(await b.evaluate(()=>window.PortalPets.runtime.state.pet),null);note('second account has no inherited pet, inventory or balance');await bContext.close();
  await page.request.post('http://127.0.0.1:8793/__fixture',{data:{account:'a',hunger:80,thirst:85,awakeSeconds:2700}});
  await page.evaluate(()=>window.PortalPets.runtime.refresh());await page.setViewportSize({width:390,height:844});
+ await page.locator('#petHabitat').scrollIntoViewIfNeeded();
  await page.locator('.pet-bubble').waitFor();assert.match(await page.locator('.pet-bubble').innerText(),/sede/);
  await page.screenshot({path:path.join(out,'mobile-alert.png'),fullPage:true});note('soft thirst alert on mobile');
  const rect=await page.locator('.pet-bed').boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=390);

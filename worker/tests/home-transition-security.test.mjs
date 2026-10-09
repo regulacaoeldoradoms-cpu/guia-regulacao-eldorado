@@ -30,6 +30,16 @@ test('the transition authorizes only the existing exact script map plus the glob
     ['/js/social-home.js','PortalSocialHome'], ['/js/home.js','PortalHomeReady']
   ]);
 });
+test('the real Home shell keeps every script inside the existing exact allowlist', () => {
+  const entries = vm.runInNewContext(source.match(/const SCRIPT_GLOBALS = (new Map\(\[[\s\S]*?\]\));/)[1]);
+  const home = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  const scripts = Array.from(home.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g), ([, src]) => new URL(src, 'https://portal.example.invalid'));
+  assert.ok(scripts.length > 0);
+  for (const script of scripts) {
+    assert.equal(script.origin, 'https://portal.example.invalid');
+    assert.ok(entries.has(script.pathname), script.pathname);
+  }
+});
 for (const [name, options] of [
   ['external origin with an otherwise allowed path',{extraScript:'https://external.invalid/js/portal-global-chat.js'}],
   ['same-origin script outside the map',{extraScript:'/js/unapproved.js'}],

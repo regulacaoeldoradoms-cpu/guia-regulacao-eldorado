@@ -8,11 +8,18 @@ export class PetRuntime{
   this.root=document.createElement('div');this.root.className='pet-stage';this.root.setAttribute('aria-hidden','true');
   this.cat=document.createElement('canvas');this.cat.width=64;this.cat.height=48;this.cat.className='pet-cat';
   this.bed=document.createElement('canvas');this.bed.width=80;this.bed.height=30;this.bed.className='pet-bed';
-  this.bubble=document.createElement('span');this.bubble.className='pet-bubble';this.root.append(this.bed,this.cat,this.bubble);document.body.append(this.root);
+  this.bubble=document.createElement('span');this.bubble.className='pet-bubble';this.root.append(this.bed,this.cat,this.bubble);
+  this.habitat=document.getElementById('petHabitat');this.ownsHabitat=!this.habitat;
+  if(this.ownsHabitat){
+   this.habitat=document.createElement('section');this.habitat.className='pet-habitat';this.habitat.setAttribute('aria-label','Seu mascote');
+   const care=document.createElement('a');care.className='pet-care-link';care.href='/mascotes/';care.textContent='Cuidar do mascote';
+   this.habitat.append(this.root,care);(document.querySelector('main')||document.body).prepend(this.habitat);
+  }else this.habitat.append(this.root);
   this.controller=new AbortController();const signal=this.controller.signal;
   const mark=event=>{if(event.isTrusted)this.lastInteraction=performance.now();};
   for(const event of ['pointerdown','keydown','wheel','touchstart'])document.addEventListener(event,mark,{passive:true,signal});
   window.addEventListener('resize',()=>this.layout(),{signal});window.visualViewport?.addEventListener('resize',()=>this.layout(),{signal});
+  this.observer=new ResizeObserver(()=>this.layout());this.observer.observe(this.root);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(this.frame);this.sample(false);}else{this.lastPaint=0;this.refresh();this.start();}},{signal});
   window.addEventListener('pagehide',()=>{this.sample(false);cancelAnimationFrame(this.frame);},{signal});
   window.addEventListener('pageshow',()=>{this.start();this.refresh();},{signal});
@@ -20,17 +27,19 @@ export class PetRuntime{
   this.timer=setInterval(()=>this.sample(),60000);this.layout();this.start();
  }
  update(s){this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();}
- close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.root.remove();}
+ close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
  safeRect(){
-  const view=window.visualViewport;const width=view?.width||innerWidth,height=view?.height||innerHeight;
-  const nav=document.querySelector('.social-mobile-nav');
-  const bottom=nav&&getComputedStyle(nav).display!=='none'?Math.max(20,height-nav.getBoundingClientRect().top):20;
-  return {left:88,right:Math.max(88,width-88),top:130,bottom:Math.max(130,height-bottom-24)};
+  // Coordinates belong to a reserved scene in document flow, never to page content.
+  const width=this.root.clientWidth||176,height=this.root.clientHeight||224;
+  return {left:88,right:Math.max(88,width-88),top:164,bottom:Math.max(164,height-24)};
  }
  layout(){
   const r=this.safeRect();this.bounds=r;this.x=Math.max(r.left,Math.min(r.right,this.x));this.y=Math.max(r.top,Math.min(r.bottom,this.y));
   const placement=this.previewPlacement||this.state.placement;
   this.bedPoint=placement?{x:r.left+(r.right-r.left)*placement.x,y:r.top+(r.bottom-r.top)*placement.y}:null;
+  if(this.bedPoint&&this.action==='sleep'){this.x=this.bedPoint.x;this.y=this.bedPoint.y-12;}
+  if(this.bedPoint&&this.goingToBed)this.target={x:this.bedPoint.x,y:this.bedPoint.y-12};
+  else if(this.target)this.target={x:Math.max(r.left,Math.min(r.right,this.target.x)),y:Math.max(r.top,Math.min(r.bottom,this.target.y))};
   this.bed.hidden=!placement; if(placement){
    this.bed.style.left=(this.bedPoint.x-80)+'px';this.bed.style.top=(this.bedPoint.y-40)+'px';drawBed(this.bed.getContext('2d'),placement.itemId);
   }
@@ -74,7 +83,7 @@ export class PetRuntime{
   finally{this.sampling=false;}
  }
  render(){
-  const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible;
+  const s=this.state;this.root.hidden=!s.pet||!s.preferences.visible;this.habitat.hidden=this.root.hidden;
   const motion=s.preferences.motionEnabled&&!this.reduced.matches;
   const alert=s.thirst>=70?'Estou com sede. Água é gratuita.':s.hunger>=70?'Estou com fome. Comida é gratuita.':s.dirt>=70?'Hora de um banho. Higiene básica é gratuita.':'';
   this.root.dataset.alert=s.thirst>=70?'thirst':s.hunger>=70?'hunger':'';
@@ -84,7 +93,7 @@ export class PetRuntime{
   drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
   this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-88)+'px';
   this.cat.style.transform=this.facing===-1?'scaleX(-1)':'';
-  this.bubble.style.left=Math.max(8,Math.min(innerWidth-240,this.x-110))+'px';this.bubble.style.top=Math.max(12,this.y-126)+'px';
+  this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top='12px';
  }
  start(){
   cancelAnimationFrame(this.frame);if(this.closed||document.hidden||!this.state.pet||!this.state.preferences.visible)return;
