@@ -172,6 +172,7 @@
     width: auto !important;
     height: auto !important;
     max-height: none !important;
+    overflow-y: auto;
   }
   body.citizen-readable-layout
     .portal-chat-panel
@@ -444,6 +445,12 @@
   body.citizen-readable-layout .portal-chat-panel
     :is(.portal-chat-empty, .portal-chat-note, .portal-group-empty) {
     overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout .portal-chat-notification-card button {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
   }
   html[data-portal-theme="dark"]
     body.citizen-readable-layout

@@ -111,6 +111,11 @@ try {
             String(Date.now()),
           );
           delete window.PushManager;
+          // Keep the notification prompt visible in both system and CI Chromium.
+          if (window.Notification) {
+            Object.defineProperty(window.Notification, "permission", { get: () => "default" });
+            window.Notification.requestPermission = async () => "default";
+          }
         },
         { user },
       );
@@ -431,6 +436,15 @@ try {
           await page.locator("#portalChatLauncher").click();
           await page.waitForTimeout(300);
           await snapshot("chat");
+          const notificationButton = page.locator("#portalChatEnableNotifications");
+          if (await notificationButton.isVisible()) {
+            await notificationButton.scrollIntoViewIfNeeded();
+            states.at(-1).notificationActionReachable = await notificationButton.evaluate((button) => {
+              const action = button.getBoundingClientRect();
+              const panel = button.closest(".portal-chat-panel").getBoundingClientRect();
+              return action.top >= panel.top && action.bottom <= panel.bottom && action.left >= panel.left && action.right <= panel.right;
+            });
+          }
         }
         results.at(-1).states = states;
       }
