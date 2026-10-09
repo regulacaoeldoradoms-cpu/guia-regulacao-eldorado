@@ -26,7 +26,7 @@ const user = {
   id: "synthetic-citizen",
   username: "fixture.citizen",
   name: "Cidadão fictício",
-  role: "cidadao",
+  role: process.env.AUDIT_ROLE || "cidadao",
   active: true,
   emailVerified: true,
   accountLevel: "prata",
@@ -127,7 +127,11 @@ try {
       await page.route("**/*", async (r) => {
         const u = new URL(r.request().url());
         calls.push(u.pathname + u.search);
-        if (u.hostname === "127.0.0.1") return r.continue();
+        if (u.hostname === "127.0.0.1") {
+          if (process.env.CACHED_NAV_PATH && u.pathname === "/js/social-navigation.js" && u.searchParams.get("v") === "20260928-2")
+            return r.fulfill({contentType:"text/javascript",body:await fs.readFile(process.env.CACHED_NAV_PATH,"utf8")});
+          return r.continue();
+        }
         let data = { ok: true };
         if (u.pathname === "/api/auth/me") data = { user };
         else if (u.pathname === "/api/social/config")
