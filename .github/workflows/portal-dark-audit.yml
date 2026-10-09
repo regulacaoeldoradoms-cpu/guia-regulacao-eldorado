@@ -72,6 +72,11 @@ jobs:
           PETS_LIVES_ARTIFACT_DIR: testing/browser/test-results-dark-audit/pets-lives
         run: node testing/pets/lives.cjs
 
+      - name: Verificar cadência, ciclo e isolamento das falas
+        env:
+          PETS_SPEECH_ARTIFACT_DIR: testing/browser/test-results-dark-audit/pets-speech
+        run: node testing/pets/speech.cjs
+
       - name: Resumir resultados disponíveis
         if: always()
         working-directory: testing/browser

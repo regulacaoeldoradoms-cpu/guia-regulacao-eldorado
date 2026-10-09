@@ -1,7 +1,7 @@
 'use strict';
 
 // Renova a integração de mascotes e evita reutilizar assets da versão anterior.
-const CACHE_VERSION = '20261009-pets-seven-lives-6';
+const CACHE_VERSION = '20261009-pets-combined-8';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
