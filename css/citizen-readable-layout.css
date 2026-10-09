@@ -1,5 +1,5 @@
-/* Citizen presentation only. Keep existing semantic colors, icons and states.
-   Desktop and professional modules retain their current styles. */
+/* Shared citizen routes: presentation only, preserving semantic colors and permissions.
+   Desktop and professional-only routes retain their current styles. */
 @media screen and (max-width: 900px) {
   body.citizen-readable-layout {
     font-size: 1.125rem;
@@ -144,7 +144,7 @@
     gap: 0;
     min-height: 0 !important;
     height: auto !important;
-    padding: 6px max(2px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(2px, env(safe-area-inset-left));
+    padding: 6px env(safe-area-inset-right) calc(6px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
     overflow: visible !important;
   }
   body.citizen-readable-layout.portal-page .social-mobile-nav-link {
@@ -154,6 +154,7 @@
     min-height: 52px !important;
     max-width: 100%;
     padding: 6px 0 !important;
+    font-family: Arial, sans-serif !important;
     font-size: 14px !important;
     font-weight: 500 !important;
     line-height: 1.25 !important;

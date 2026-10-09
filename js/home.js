@@ -13,10 +13,8 @@ window.PortalHomeReady = (async () => {
     return false;
   }
 
-  // Keep the trusted Home transition script map unchanged; citizen presentation is optional.
-  if (user.role === 'cidadao') {
-    await import('/js/citizen-layout.js?v=20261009-1').catch(() => {});
-  }
+  // Shared route presentation does not change the authenticated account permissions.
+  await import('/js/citizen-layout.js?v=20261009-2').catch(() => {});
 
   window.addEventListener('portal:social-config-updated', (event) => {
     const refreshed = event.detail?.config;

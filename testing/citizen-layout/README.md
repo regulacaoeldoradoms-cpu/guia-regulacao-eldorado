@@ -98,3 +98,9 @@ Cache: `account-section-shell.js` recebe referência versionada nova somente na 
 ## Gate de preservação do cidadão
 
 O layout móvel claro mudou intencionalmente. Nesse caso, a auditoria compara exatamente cores de tipo/privacidade/status/ações com main e verifica barra em uma linha, alvos ≥44 px, página/painel sem overflow e snapshot estável. Desktop e impressão mantêm comparação completa de estilos/geometria e pixels. O marcador `.citizen-readable-layout` é normalizado somente na identidade dos seletores cidadão, sem descartar propriedades. O caso de impressão abre o handler real sem a rolagem automática de Playwright: fontes atuais e base começam no mesmo scroll. Os quatro casos cidadão (desktop/mobile × light/screen e dark/print) passaram localmente. CSS novo usa `@media screen`, preservando impressão. Comparações do Conselho e demais módulos mantêm seus gates originais.
+
+## Hotfix das rotas compartilhadas (#621)
+
+A apresentação é ativada para conta autenticada nas dez rotas acima, independentemente do cargo. Isso não altera autorização nem catálogo de destinos. Diagnóstico com conta privilegiada é regressão visual, não prova de acesso cidadão. Mascotes agora referencia a navegação atual; o harness pode servir os bytes históricos `c10773fb` somente para a URL antiga para reproduzir cache real.
+
+Home/Canal/Mascotes passaram em 320/390 px com cidadão e admin sintéticos e scrollbar clássico (largura útil 305/375 px). A barra usa Arial 14 px, mantém seis controles de pelo menos 44 px, nomes completos e pata SVG, sem margem lateral artificial; safe-area continua respeitada. Texto 200% pode refluír para preservar leitura. O verificador compara overflow com `documentElement.clientWidth`, incluindo o espaço ocupado pela scrollbar. Runtime, frases, vidas e cache global dos mascotes permanecem na base publicada.

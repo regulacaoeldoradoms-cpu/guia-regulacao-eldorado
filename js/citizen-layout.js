@@ -55,10 +55,11 @@
       });
     updateNavLayout();
   }
+  const sharedRoutes = new Set(["/", "/cidadao/", "/amigos/", "/ferramentas/", "/perfil/", "/seguranca/", "/conquistas/", "/configuracoes/", "/notificacoes/", "/mascotes/"]);
   const apply = (user) => {
     document.body?.classList.toggle(
       "citizen-readable-layout",
-      user?.role === "cidadao",
+      Boolean(user) && sharedRoutes.has(location.pathname),
     );
     petNavigation();
   };
