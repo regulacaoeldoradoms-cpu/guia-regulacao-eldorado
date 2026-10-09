@@ -125,3 +125,8 @@ window.PortalHomeReady = (async () => {
     return showToolsFallback(socialFailureMessage(error));
   }
 })();
+
+// Optional companion loading must not block Home readiness or change the login script allowlist.
+window.PortalHomeReady.then((ready) => {
+  if (ready) import('/js/pets-bootstrap.js').catch(() => {});
+});

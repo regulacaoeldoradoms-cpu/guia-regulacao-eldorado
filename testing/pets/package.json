@@ -1,0 +1,1 @@
+{"private":true,"type":"module","scripts":{"preview":"node serve.mjs","browser":"node browser.mjs"},"devDependencies":{"playwright":"^1.58.0"}}

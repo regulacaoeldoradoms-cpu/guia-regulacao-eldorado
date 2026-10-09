@@ -55,6 +55,11 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     const override = responses[url.pathname];
     if (override) return route.fulfill({ status:override.status || 200, contentType:'application/json', body:JSON.stringify(override.body ?? override) });
     let data;
+    // Exact read-only mascot probes match the disabled production feature flag.
+    // Unknown paths and all mascot mutations still fail closed below.
+    if(request.method()==='GET'&&['/api/pets/me','/api/pets/catalog','/api/pets/achievements'].includes(url.pathname)) {
+      return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'PETS_DISABLED',error:'Mascotes ainda não disponíveis.'})});
+    }
     if (url.pathname === '/api/observability') return route.fulfill({status:204,body:''});
     if (url.pathname === '/api/auth/me' || url.pathname === '/api/auth/login') data = { user:authenticated ? user : null, token:'synthetic-audit-token-no-backend' };
     else if (url.pathname === '/api/auth/security') {

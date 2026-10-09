@@ -1,0 +1,3 @@
+import fs from 'node:fs';
+const file=new URL('./serve.mjs',import.meta.url);let s=fs.readFileSync(file,'utf8');s=s.replace("const v=JSON.parse(body),owner=v.account==='b'?'demo-b':'demo-a';","const v=JSON.parse(body),owner=v.account==='b'?'demo-b':'demo-a';\n   if(v.reset){f.sql.exec('DELETE FROM pet_operations; DELETE FROM pet_achievements; DELETE FROM pet_accounts;');return res.end('reset synthetic data');}");
+fs.writeFileSync(file,s);const b=new URL('./browser.mjs',import.meta.url);s=fs.readFileSync(b,'utf8');s=s.replace("try{\n await page.goto","try{\n await page.request.post('http://127.0.0.1:8793/__fixture',{data:{reset:true}});\n await page.goto");fs.writeFileSync(b,s);

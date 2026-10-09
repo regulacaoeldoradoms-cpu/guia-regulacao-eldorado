@@ -26,6 +26,31 @@ export function comparePngPixels(current,baseline) {
   return{accepted,withinTolerance:accepted,differentPixels,maxChannelDelta,differentRatio:totalPixels?differentPixels/totalPixels:0,totalPixels,dimensions:[a.width,a.height],bounds:differentPixels?{left,top,right,bottom}:null,limit:{pixels:2,channelDelta:1}};
 }
 
+// Keep failed raster evidence in the JSON report too. Image artifacts can be
+// hundreds of MB; these exact source crops expose a bounded mismatch without
+// changing acceptance, source pixels, CSS effects or screenshot preparation.
+export function rasterDiagnosticCrops(current,baseline,comparison) {
+  if(!comparison.bounds)return null;
+  const a=PNG.sync.read(current),b=PNG.sync.read(baseline);
+  if(a.width!==b.width||a.height!==b.height)return null;
+  const padding=24,{left,top,right,bottom}=comparison.bounds;
+  const x=Math.max(0,left-padding),y=Math.max(0,top-padding);
+  const width=Math.min(a.width,right+padding+1)-x,height=Math.min(a.height,bottom+padding+1)-y;
+  const clip={x,y,width,height};
+  if(width*height>1_000_000)return {clip,omitted:'Mismatch crop exceeds the diagnostic size bound; use full PNG attachments.'};
+  const currentCrop=new PNG({width,height}),baseCrop=new PNG({width,height}),mask=new PNG({width,height});
+  let changedPixels=0;
+  for(let row=0;row<height;row++)for(let column=0;column<width;column++){
+    const source=((y+row)*a.width+x+column)*4,target=(row*width+column)*4;
+    a.data.copy(currentCrop.data,target,source,source+4);
+    b.data.copy(baseCrop.data,target,source,source+4);
+    const changed=[0,1,2,3].some(channel=>a.data[source+channel]!==b.data[source+channel]);
+    if(changed)changedPixels++;
+    mask.data[target]=mask.data[target+1]=mask.data[target+2]=changed?255:0;mask.data[target+3]=255;
+  }
+  return {clip,changedPixels,encoding:'base64 PNG',currentPng:PNG.sync.write(currentCrop).toString('base64'),basePng:PNG.sync.write(baseCrop).toString('base64'),differenceMaskPng:PNG.sync.write(mask).toString('base64'),maskLegend:'White means any changed source channel; black means identical source pixels.'};
+}
+
 // Compare the exact real DOM/state against tracked product files from one commit.
 // Changes to an injected <style> in JS are included, not only linked CSS files.
 export async function compareAgainstBase({ page, context, info, route, theme='light', media='screen', prepare=async()=>{}, base=process.env.DARK_AUDIT_BASE||'origin/main' }) {
@@ -197,6 +222,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   pixelComparison.diagnosticOnly=!pixelComparison.gateApplicable||lowAmplitudeRaster||sparseRaster;
   const sourceEvidence=(files,sources)=>[...files].sort().map(file=>({path:file,sha256:createHash('sha256').update(sources.get(file)).digest('hex')}));
   const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,comparableChanged,newFilesWithoutBase:changed.filter(file=>!comparableChanged.includes(file)),productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
+  if(!pixelComparison.gateAccepted)report.rasterDiagnostics=rasterDiagnosticCrops(current.screenshot,baseline.screenshot,pixelComparison);
   const name=`${theme}-${media}-base-comparison`;
   await info.attach(`${name}.json`,{body:Buffer.from(JSON.stringify(report,null,2)),contentType:'application/json'});
   await writeFile(info.outputPath(`${name}.json`),JSON.stringify(report,null,2));

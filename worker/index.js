@@ -1,6 +1,7 @@
 'use strict';
 
 import aiWorker from './gemini-assistant.js';
+import {handlePetsRoute,isPetsApi} from './pets.js';
 import { fetchAiResilient } from './ai-resilience.js';
 import { handleObservabilityRoute, isObservabilityApi } from './observability.js';
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
@@ -86,6 +87,7 @@ export default {
     let url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+    if(request.method==='OPTIONS' && isPetsApi(url.pathname)) return handlePetsRoute(request,env,origin,originAllowed);
 
     if (isObservabilityApi(url.pathname)) {
       try { return await handleObservabilityRoute(request, env, ctx, origin, originAllowed); }
@@ -155,6 +157,7 @@ export default {
 
     const emailGate = await enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed);
     if (emailGate) return emailGate;
+    if(isPetsApi(url.pathname)) return handlePetsRoute(request,env,origin,originAllowed);
 
     if (isDocumentsApi(url.pathname)) {
       try { return await handleDocumentsRoute(request, env, origin, originAllowed); }

@@ -10,6 +10,19 @@ async function fixtureRequest(path, method = 'GET') {
     fulfill:async value=>{response=value;}, continue:async()=>{forwarded=true;}, abort:async()=>{} });
   return {network,response,forwarded};
 }
+for (const path of ['/api/pets/me','/api/pets/catalog','/api/pets/achievements']) test(`mascot read ${path} models PETS_ENABLED=false without forwarding`,async()=>{
+  const {network,response,forwarded}=await fixtureRequest(path);
+  assert.equal(response.status,503);
+  assert.equal(JSON.parse(response.body).code,'PETS_DISABLED');
+  assert.deepEqual(network.unexpected,[]);
+  assert.equal(forwarded,false);
+});
+for (const [path,method] of [['/api/pets/me','POST'],['/api/pets/catalog','POST'],['/api/pets/achievements','POST'],['/api/pets/unknown','GET'],['/api/pets/care','POST']]) test(`unmodeled mascot ${method} ${path} remains fail closed`,async()=>{
+  const {network,response,forwarded}=await fixtureRequest(path,method);
+  assert.equal(JSON.parse(response.body).code,'AUDIT_FIXTURE_MISSING');
+  assert.equal(network.unexpected.length,1);
+  assert.equal(forwarded,false);
+});
 test('the audit explicitly models unavailable realtime and keeps the HTTP fallback', async()=>{
   const {network,response,forwarded} = await fixtureRequest('/api/chat/realtime/ticket','POST');
   assert.equal(response.status,503);
