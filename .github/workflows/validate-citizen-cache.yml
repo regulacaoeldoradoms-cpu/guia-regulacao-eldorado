@@ -1,0 +1,42 @@
+name: Shared citizen HTML updates
+on:
+  pull_request:
+    paths:
+      - 'portal-sw.js'
+      - 'testing/citizen-cache/**'
+      - '.github/workflows/validate-citizen-cache.yml'
+permissions:
+  contents: read
+jobs:
+  installed-client-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Policy behavior and request isolation
+        run: node --test testing/citizen-cache/cache-policy.test.mjs
+      - name: Install browser harness
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Chromium path
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
+          fs.appendFileSync(process.env.GITHUB_ENV, 'CHROMIUM_PATH=' + chromium.executablePath() + '\n');
+          JS
+      - name: Pre-621 citizen/admin, draft preservation, slow and offline networks
+        run: node testing/citizen-cache/cache-update.mjs /tmp/citizen-cache-update.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-citizen-cache-update
+          path: /tmp/citizen-cache-update.json
+          if-no-files-found: warn
