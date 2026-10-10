@@ -1,0 +1,38 @@
+name: Home tools carousel
+on:
+  pull_request:
+    paths:
+      - index.html
+      - css/home-tools-carousel.css
+      - js/home.js
+      - js/citizen-layout.js
+      - testing/citizen-layout/**
+      - .github/workflows/validate-home-carousel.yml
+permissions:
+  contents: read
+jobs:
+  synthetic-home:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+        working-directory: testing/browser
+      - run: npx playwright install --with-deps chromium
+        working-directory: testing/browser
+      - name: Long synthetic feed, touch viewport, keyboard and preferences
+        env:
+          HOME_CAROUSEL: '1'
+          ROUTES: '/'
+          WIDTHS: '320,390'
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          AUDIT_ROLE=admin AUDIT_THEME=dark node testing/citizen-layout/audit.mjs /tmp/home-carousel-dark.json
+          AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-carousel-synthetic
+          path: /tmp/home-carousel-*

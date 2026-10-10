@@ -4,6 +4,7 @@ import path from "node:path";
 import { petCatalog } from "../../worker/pet-catalog.js";
 import { initialPetState, publicPetState } from "../../worker/pet-domain.js";
 import { chromium } from "../browser/node_modules/playwright/index.mjs";
+import { verifyHomeCarousel } from "./home-carousel.mjs";
 const root =
   process.env.PORTAL_ROOT || path.resolve(import.meta.dirname, "../..");
 const port = Number(process.env.AUDIT_PORT || 4179);
@@ -102,9 +103,11 @@ try {
       const context = await browser.newContext({
         viewport: { width, height: width === 844 ? 390 : 900 },
         serviceWorkers: "block",
+        ...(process.env.HOME_CAROUSEL ? { hasTouch: true, screen: { width, height: 900 }, reducedMotion: 'reduce', userAgent: 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/130.0.0.0 Mobile Safari/537.36' } : {}),
       });
       await context.addInitScript(
-        ({ user }) => {
+        ({ user, theme }) => {
+          if (theme) localStorage.setItem("regulacao.portal.theme.active.v1", theme);
           sessionStorage.setItem("regulacao.portal.session", "synthetic-token");
           sessionStorage.setItem("regulacao.portal.user", JSON.stringify(user));
           sessionStorage.setItem(
@@ -118,7 +121,7 @@ try {
             window.Notification.requestPermission = async () => "default";
           }
         },
-        { user },
+        { user, theme: process.env.AUDIT_THEME },
       );
       await context.routeWebSocket("**/*", (socket) => socket.close());
       const calls = [],
@@ -145,17 +148,17 @@ try {
         else if (u.pathname === "/api/social/me") data = { profile };
         else if (u.pathname.includes("/feed"))
           data = {
-            posts: [
+            posts: Array.from({ length: process.env.HOME_CAROUSEL ? 40 : 1 }, (_, index) => (
               {
-                id: "fixture-post",
+                id: `fixture-post-${index}`,
                 author: profile,
                 own: true,
                 body: "Publicação fictícia para conferir leitura e botões no celular.",
                 audience: "friends",
                 createdAt: "2026-10-09T12:00:00Z",
                 counts: { comments: 0, reactions: 0 },
-              },
-            ],
+              }
+            )),
             nextCursor: "",
           };
         else if (u.pathname.includes("/notifications"))
@@ -189,6 +192,10 @@ try {
         });
       });
       await page.goto(`http://127.0.0.1:${port}` + route);
+      if (process.env.HOME_CAROUSEL && route === '/') {
+        await page.waitForFunction(() => Boolean(window.PortalHomeReady));
+        await page.evaluate(() => window.PortalHomeReady);
+      }
       await page.waitForTimeout(300);
       if (process.env.NAV_REVIEW) {
         const mode = process.env.NAV_REVIEW;
@@ -378,6 +385,13 @@ try {
         };
       });
       metrics.textScale = process.env.TEXT_SCALE === "2" ? 2 : 1;
+      if (process.env.HOME_CAROUSEL && route === '/') {
+        await page.screenshot({path: `/tmp/home-carousel-${process.env.AUDIT_THEME || 'light'}-${user.role}-${width}.png`});
+        await page.evaluate(() => window.scrollTo(0, document.querySelector('.social-composer').getBoundingClientRect().top + scrollY - 12));
+        await page.screenshot({path: `/tmp/home-carousel-feed-${process.env.AUDIT_THEME || 'light'}-${user.role}-${width}.png`});
+        await page.evaluate(() => window.scrollTo(0, 0));
+        metrics.carousel = await verifyHomeCarousel(page, width);
+      }
       results.push({
         route,
         width,

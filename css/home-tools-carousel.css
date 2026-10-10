@@ -1,0 +1,185 @@
+.home-tools-hint { display: none; }
+@media screen and (max-width: 900px) {
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-topbar-inner {
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-brand {
+    gap: 10px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-brand .portal-symbol {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-brand h1 {
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-account-area {
+    padding: 0 !important;
+    gap: 8px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-user-meta strong {
+    font-size: 1rem !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #portalLogout {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+    font-size: 1rem !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-shell {
+    font-size: 1rem;
+    padding: 12px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] :is(.social-post-body, .social-card p, .social-textarea) {
+    font-size: 1rem !important;
+    line-height: 1.5;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-chat-launcher {
+    min-width: 92px !important;
+    min-height: 48px !important;
+    height: 48px !important;
+    padding: 0 14px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-chat-launcher .chat-launcher-text {
+    font-size: 1rem !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .portal-chat-launcher .chat-online-dot {
+    width: 10px !important;
+    height: 10px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-shortcuts {
+    margin: 0;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-shortcuts .social-section-heading {
+    padding: 12px 12px 0;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-shortcuts .social-section-heading h2 {
+    font-size: 1.125rem;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutLimitControl {
+    padding: 4px 12px 0 !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .home-tools-hint {
+    display: block;
+    margin: 0;
+    padding: 4px 12px 8px;
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid {
+    display: grid;
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(140px, 42%);
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 12px 12px;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 12px;
+    scroll-behavior: auto;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid .hub-card {
+    box-sizing: border-box;
+    min-height: 144px;
+    padding: 12px 8px;
+    gap: 8px;
+    scroll-snap-align: start;
+    scroll-margin-inline: 12px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid .hub-card:last-child {
+    scroll-snap-align: end;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid .hub-card-icon {
+    width: 48px;
+    height: 48px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid .hub-card-icon :is(img, svg) {
+    width: 44px;
+    height: 44px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid h3 {
+    font-size: 1rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-shortcuts .social-card-pad {
+    padding: 0 12px 12px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-shortcuts .social-card-pad .social-button {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 1rem;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid:focus-visible,
+  body.citizen-readable-layout[data-portal-home-bootstrap] #socialShortcutGrid .hub-card:focus-visible {
+    outline: 3px solid var(--portal-theme-accent, #126cb5);
+    outline-offset: -3px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-composer {
+    padding: 12px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-composer h2 {
+    margin-bottom: 8px;
+    font-size: 1.125rem;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-post {
+    padding: 12px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-post-header {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 8px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-post-header .social-avatar {
+    width: 44px;
+    height: 44px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-post-header > :last-child:not(.social-post-author) {
+    grid-column: 2;
+    justify-self: end;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-post-author :is(a, span) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-post-author a {
+    font-size: 1rem;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-action {
+    flex-direction: column;
+    gap: 4px;
+    min-height: 48px;
+    padding: 6px;
+    font-size: 1rem;
+    overflow-wrap: normal;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-action svg {
+    width: 20px;
+    height: 20px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-composer .social-textarea {
+    min-height: 88px;
+    padding: 12px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-composer-footer :is(.social-select, .social-button) {
+    min-height: 48px;
+    padding: 8px 12px;
+    font-size: 1rem;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-mobile-nav {
+    gap: 6px;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-mobile-nav-link {
+    padding-inline: 4px !important;
+  }
+  body.citizen-readable-layout[data-portal-home-bootstrap] .social-mobile-nav.citizen-nav-reflow {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+}

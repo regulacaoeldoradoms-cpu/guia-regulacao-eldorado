@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - "css/citizen-readable-layout.css"
+      - "css/home-tools-carousel.css"
+      - "index.html"
       - "js/citizen-layout.js"
       - "js/home.js"
       - "js/account-section-shell.js"
@@ -15,6 +17,7 @@ jobs:
   synthetic-citizen:
     runs-on: ubuntu-latest
     steps:
+      # The focused Home checks use the same synthetic-only browser fixture.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

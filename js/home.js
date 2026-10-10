@@ -14,7 +14,41 @@ window.PortalHomeReady = (async () => {
   }
 
   // Shared route presentation does not change the authenticated account permissions.
-  await import('/js/citizen-layout.js?v=20261009-2').catch(() => {});
+  await import('/js/citizen-layout.js?v=20261010-3').catch(() => {});
+
+  // Move the existing controls, retaining their state and authorized catalogue.
+  const shortcuts = document.querySelector('.social-shortcuts');
+  const feedColumn = document.querySelector('.social-feed-column');
+  if (shortcuts && feedColumn) {
+    const originalPosition = document.createComment('Home shortcuts desktop position');
+    shortcuts.before(originalPosition);
+    const mobileTools = matchMedia('screen and (max-width: 900px)');
+    const positionTools = () => {
+      if (mobileTools.matches) feedColumn.prepend(shortcuts);
+      else originalPosition.after(shortcuts);
+    };
+    positionTools();
+    mobileTools.addEventListener('change', positionTools);
+    const shortcutGrid = document.getElementById('socialShortcutGrid');
+    shortcutGrid?.addEventListener('keydown', (event) => {
+      if (!mobileTools.matches || event.target !== shortcutGrid || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      const card = shortcutGrid.querySelector('.hub-card');
+      if (!card) return;
+      event.preventDefault();
+      const step = card.getBoundingClientRect().width + (parseFloat(getComputedStyle(shortcutGrid).columnGap) || 0);
+      shortcutGrid.scrollBy({ left: event.key === 'ArrowRight' ? step : -step, behavior: 'auto' });
+    });
+    shortcutGrid?.addEventListener('focusin', (event) => {
+      const card = event.target.closest('.hub-card');
+      if (!mobileTools.matches || !card) return;
+      requestAnimationFrame(() => {
+        const container = shortcutGrid.getBoundingClientRect();
+        const focused = card.getBoundingClientRect();
+        if (focused.left < container.left || focused.right > container.right)
+          shortcutGrid.scrollTo({ left: shortcutGrid.scrollLeft + focused.left - container.left - 12, behavior: 'auto' });
+      });
+    });
+  }
 
   window.addEventListener('portal:social-config-updated', (event) => {
     const refreshed = event.detail?.config;

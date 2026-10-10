@@ -25,9 +25,11 @@
       measure.font = `${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
       const text = label.textContent.trim();
       const spacing = (parseFloat(font.letterSpacing) || 0) * Math.max(0, [...text].length - 1);
-      return sum + Math.max(44, measure.measureText(text).width + spacing);
+      const padding = getComputedStyle(link);
+      return sum + Math.max(44, measure.measureText(text).width + spacing + (parseFloat(padding.paddingLeft) || 0) + (parseFloat(padding.paddingRight) || 0));
     }, 0);
-    nav.classList.toggle("citizen-nav-reflow", required > available + 0.5);
+    const gaps = (parseFloat(style.columnGap) || 0) * Math.max(0, links.length - 1);
+    nav.classList.toggle("citizen-nav-reflow", required + gaps > available + 0.5);
     const height = nav.getBoundingClientRect().height || 0;
     if (height)
       document.body.style.setProperty(
