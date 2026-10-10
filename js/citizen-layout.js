@@ -22,7 +22,7 @@
     nav.style.setProperty("--citizen-nav-columns", links.map((_, i) => i < 3 ? "minmax(44px,max-content)" : "minmax(44px,1fr)").join(" "));
     const style = getComputedStyle(nav);
     const available = nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    const required = links.reduce((sum, link) => {
+    const required = home && nav.dataset.homeIconNavigation === "true" ? links.length * 44 : links.reduce((sum, link) => {
       const label = link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)");
       if (!label) return sum + 44;
       const font = getComputedStyle(label);

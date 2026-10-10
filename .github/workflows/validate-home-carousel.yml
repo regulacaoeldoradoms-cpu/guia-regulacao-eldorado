@@ -10,14 +10,20 @@ on:
       - css/social.css
       - css/home-mobile.css
       - css/home-chat-button.css
+      - css/home-mobile-direct.css
       - css/portal-chat.css
       - js/home.js
+      - js/home-mobile-composition.js
+      - js/home-social-presentation.js
+      - js/home-mobile-direct.js
       - js/citizen-layout.js
       - js/social-home.js
       - js/social-feed.js
       - js/tools-catalog.js
       - js/social-navigation.js
       - js/portal-chat.js
+      - js/portal-chat-groups.js
+      - portal-sw.js
       - testing/citizen-layout/**
       - .github/workflows/validate-home-carousel.yml
 permissions:
@@ -45,7 +51,7 @@ jobs:
           node testing/citizen-layout/verify.mjs /tmp/home-carousel-dark.json
           AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen.json
           node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen.json
-      - name: Full labels and reachable actions with 200 percent text
+      - name: Accessible icons and reachable actions with 200 percent text
         env:
           HOME_CAROUSEL: '1'
           ROUTES: '/'
@@ -57,8 +63,19 @@ jobs:
           node testing/citizen-layout/verify.mjs /tmp/home-carousel-dark-text200.json
           AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen-text200.json
           node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen-text200.json
+      - name: Citizen Home and Direct scenes with native session persistence
+        env:
+          ROLES: 'cidadao'
+          SESSION_BRIDGE: 'protocol'
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          WIDTHS=320 THEMES=light TEXT_SCALE=1,2 node testing/citizen-layout/home-social-scenes.mjs /tmp/home-social-scenes-320-light
+          WIDTHS=390 THEMES=light TEXT_SCALE=1,2 node testing/citizen-layout/home-social-scenes.mjs /tmp/home-social-scenes-390-light
+          WIDTHS=390 THEMES=dark TEXT_SCALE=2 node testing/citizen-layout/home-social-scenes.mjs /tmp/home-social-scenes-390-dark
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: home-carousel-synthetic
-          path: /tmp/home-carousel-*
+          path: |
+            /tmp/home-carousel-*
+            /tmp/home-social-scenes-*/

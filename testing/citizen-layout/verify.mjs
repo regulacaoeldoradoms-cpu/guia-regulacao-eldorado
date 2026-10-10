@@ -7,6 +7,17 @@ const baseline = process.argv[3]
 for (const row of rows) {
   const name = `${row.route} @ ${row.width}`;
   assert.deepEqual(row.errors, [], `${name}: JavaScript errors`);
+  if (row.cachedNavigationLoads) {
+    assert.ok(row.navigationScriptLoads.length > 0, `${name}: navigation source was requested`);
+    for (const url of row.navigationScriptLoads) {
+      const version = new URL(url, "http://localhost").searchParams.get("v");
+      assert.ok(version, `${name}: navigation source retains its versioned cache key`);
+      if (version === row.legacyNavigationVersion)
+        assert.ok(row.cachedNavigationLoads.includes(url), `${name}: old version receives the legacy fixture`);
+      else
+        assert.ok(!row.cachedNavigationLoads.includes(url), `${name}: bumped version bypasses the legacy fixture`);
+    }
+  }
   assert.ok(
     row.scrollWidth <= (row.clientWidth || row.width) + 1,
     `${name}: page overflow ${row.scrollWidth}: ${JSON.stringify(row.overflow)}`,
@@ -29,11 +40,22 @@ for (const row of rows) {
     );
     if (row.navigation) {
       assert.ok(row.navigation.targetsFit, `${name}: all navigation targets visible and at least 44 px`);
-      assert.ok(row.navigation.labelsFit, `${name}: complete navigation labels fit`);
-      if (row.textScale !== 2)
-        assert.equal(row.navigation.rows, 1, `${name}: normal text navigation stays in one row`);
-      else
-        assert.ok(row.navigation.reflow, `${name}: enlarged text reflows safely`);
+      if (row.route === "/") {
+        assert.ok(row.navigation.iconOnly, `${name}: Home uses approved icon navigation`);
+        assert.deepEqual(row.navigation.destinations, ["/", "/amigos/", "portalChatLauncher", "socialNotificationTriggerMobile", "/mascotes/", "/perfil/"], `${name}: all six Home destinations retain their order`);
+        assert.ok(row.navigation.accessibleNames.every(label => label.trim()), `${name}: every Home icon has an accessible name`);
+        assert.ok(row.navigation.labelsHidden, `${name}: Home labels are visually hidden`);
+        assert.ok(row.navigation.profileAvatar, `${name}: Perfil retains the account avatar`);
+        assert.equal(row.navigation.position, "fixed", `${name}: Home navigation stays reachable`);
+        assert.equal(row.navigation.rows, 1, `${name}: Home icons stay in one row at both text scales`);
+        assert.equal(row.navigation.reflow, false, `${name}: icon navigation does not need text reflow`);
+      } else {
+        assert.ok(row.navigation.labelsFit, `${name}: complete navigation labels fit`);
+        if (row.textScale !== 2)
+          assert.equal(row.navigation.rows, 1, `${name}: normal text navigation stays in one row`);
+        else
+          assert.ok(row.navigation.reflow, `${name}: enlarged text reflows safely`);
+      }
     }
     for (const target of row.controls.filter((c) =>
       c.class.includes("social-mobile-nav-link"),
@@ -49,7 +71,7 @@ for (const row of rows) {
         assert.ok(state.notificationActionReachable, `${name}: notification action reachable by scrolling`);
       assert.ok(state.opened, `${name}: ${state.name} opens`);
       assert.ok(
-        state.x >= -1 && state.right <= (row.clientWidth || row.width) + 1,
+        state.x >= -1 && state.right <= (state.viewportClientWidth ?? (row.clientWidth || row.width)) + 1,
         `${name}: ${state.name} horizontal bounds`,
       );
       assert.ok(

@@ -10,6 +10,7 @@ export const brightSurfaceAllowlist = [
   { selector:'.interface-theme-preview.is-light, .interface-theme-preview.is-light i', reason:'Explicit miniature preview of the light theme must illustrate its light surfaces.' },
   { selector:'.interface-switch > span',pseudo:'::after',maxArea:625,reason:'Small switch thumb is a control glyph; the surrounding settings panel and track remain audited.' },
   { selector:'.chat-online-dot, .portal-chat-presence-dot',maxArea:256,reason:'Small bright presence dot is a status indicator; the chat surface remains audited.' },
+  { selector:'body[data-portal-home-bootstrap].citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, .social-mobile-nav .home-nav-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"]',pseudo:'::after',homeInitials:true,reason:'The verified Home initials SVG paints small foreground letters, not a filled surface; the avatar background remains independently audited.' },
   { selector:'.social-profile-cover, .social-mini-cover',reason:'User-configurable decorative profile cover (js/social-profile.js and css/social.css); its artwork remains faithful while surrounding UI and text are audited.' },
   { selector:'#telemedicineViewSwitch > button, .telemedicine-actions > .portal-button',pseudo:'::before',mask:true,maxArea:1024,reason:'Small masked action glyph uses foreground currentColor; the button surface itself remains audited.' },
   { selector:'#manifestationDetailModal #replyButton',pseudo:'::before',mask:true,maxArea:625,reason:'25px masked reply-airplane glyph in citizen-detail-mobile-v4.css; reply button and detail panel remain audited.' },
@@ -119,6 +120,30 @@ export async function inspectSurfaces(page) {
       }); } catch { return false; }
     }).map(r=>({source:r.source, selector:r.selector, declarations:['background','background-color','background-image'].filter(k=>r.style.getPropertyValue(k)).map(k=>({property:k,value:r.style.getPropertyValue(k),important:r.style.getPropertyPriority(k)})),guards:r.guards})).filter(r=>r.declarations.length).slice(-18);
     const bright=[], allowed=[], contrast=[], snapshot=[];
+    const homeInitialsGlyph=(el,style,area)=>{
+      if(!['/','/home/'].includes(location.pathname)||style.backgroundImage!=='none'||style.maskRepeat!=='no-repeat'||style.maskPosition!=='50% 50%'||style.transform!=='none'||!['""',"''"].includes(style.content))return false;
+      const chat=el.matches('#portalChatRoot .portal-chat-avatar');
+      const comment=el.matches('#socialFeedList .social-comment > .social-avatar');
+      // Native account avatars retain their inline 40px size; other Home
+      // avatars are 28/36px. Comments have a 50px owner and 48px inner mask.
+      // Direct has a 56px owner and a fixed 36px mask.
+      const limit=chat?56:comment?48:40;
+      const ownerLimit=comment?50:limit;
+      const bounds=el.getBoundingClientRect();
+      if(area>limit*limit||parseFloat(style.width)>limit||parseFloat(style.height)>limit||bounds.width>ownerLimit||bounds.height>ownerLimit||style.maskSize!==(chat?'36px 36px':'100% 100%'))return false;
+      const mask=style.maskImage.match(/^url\(["']?(data:image\/svg\+xml,[^"']+)["']?\)$/);
+      if(!mask)return false;
+      try {
+        const svg=new DOMParser().parseFromString(decodeURIComponent(mask[1].slice('data:image/svg+xml,'.length)),'image/svg+xml').documentElement;
+        if(svg.localName!=='svg'||svg.namespaceURI!=='http://www.w3.org/2000/svg'||svg.getAttribute('viewBox')!=='0 0 36 36'||svg.children.length!==1||[...svg.attributes].some(a=>!['xmlns','viewBox'].includes(a.name)))return false;
+        const text=svg.firstElementChild;
+        const attributes={x:'18',y:'18','text-anchor':'middle','dominant-baseline':'central','font-family':'Arial, sans-serif','font-size':'13','font-weight':'700',fill:'#000'};
+        return text.localName==='text'&&text.children.length===0
+          &&text.attributes.length===Object.keys(attributes).length
+          &&Object.entries(attributes).every(([name,value])=>text.getAttribute(name)===value)
+          &&text.textContent.length>0&&text.textContent===[...el.textContent.trim()].slice(0,2).join('');
+      } catch {return false;}
+    };
     for (const el of document.querySelectorAll('html,body,body *')) {
       if (!visible(el)) continue;
       const rect=el.getBoundingClientRect(), name=selector(el);
@@ -141,7 +166,7 @@ export async function inspectSurfaces(page) {
         const maximum=colors.some(c=>c[3]>0)?lum(blend([...paint(style,under).slice(0,3),Number(style.opacity)],under)):0;
         const area=pseudo?(parseFloat(style.width)||rect.width)*(parseFloat(style.height)||rect.height):rect.width*rect.height;
         if(maximum>=.45 && area>=96 && !['img','video','canvas','svg','path'].includes(el.localName)) {
-          const exemption=allowlist.find(item=>el.matches(item.selector)&&(item.pseudo===undefined||item.pseudo===pseudo)&&(!item.mask||style.maskImage!=='none')&&(!item.maxArea||area<=item.maxArea));
+          const exemption=allowlist.find(item=>el.matches(item.selector)&&(item.pseudo===undefined||item.pseudo===pseudo)&&(!item.mask||style.maskImage!=='none')&&(!item.maxArea||area<=item.maxArea)&&(!item.homeInitials||homeInitialsGlyph(el,style,area)));
           const finding={ selector:name,pseudo,tag:el.localName,background:style.backgroundColor,backgroundImage:style.backgroundImage,maskImage:style.maskImage,opacity:style.opacity,luminance:+maximum.toFixed(4),color:style.color,area:Math.round(area),text:(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,110),inlineStyle:el.getAttribute('style'),sources:matchedSources(el,pseudo) };
           if(exemption) allowed.push({...finding,reason:exemption.reason}); else bright.push(finding);
         }

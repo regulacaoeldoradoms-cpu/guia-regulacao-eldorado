@@ -4,9 +4,15 @@ on:
     paths:
       - "css/citizen-readable-layout.css"
       - "css/home-tools-carousel.css"
+      - "css/home-mobile-direct.css"
       - "index.html"
       - "js/citizen-layout.js"
       - "js/home.js"
+      - "js/home-mobile-composition.js"
+      - "js/home-social-presentation.js"
+      - "js/home-mobile-direct.js"
+      - "js/social-navigation.js"
+      - "js/portal-chat.js"
       - "js/account-section-shell.js"
       - "mascotes/index.html"
       - "testing/citizen-layout/**"
@@ -40,7 +46,7 @@ jobs:
         run: |
           node testing/citizen-layout/audit.mjs /tmp/citizen-layout.json
           node testing/citizen-layout/verify.mjs /tmp/citizen-layout.json
-      - name: Legacy versioned navigation cache on shared citizen routes
+      - name: Versioned navigation cache isolation on shared citizen routes
         env:
           ROUTES: "/,/cidadao/,/mascotes/"
           WIDTHS: "320,390"
@@ -77,15 +83,6 @@ jobs:
         run: |
           node testing/citizen-layout/audit.mjs /tmp/citizen-detail.json
           node testing/citizen-layout/verify.mjs /tmp/citizen-detail.json
-      - name: Navigation alternatives for visual review only
-        env:
-          ROUTES: "/"
-          WIDTHS: "320,390"
-        run: |
-          REVIEW_CAPTURES=1 node testing/citizen-layout/audit.mjs /tmp/citizen-nav-current.json
-          NAV_REVIEW=icons node testing/citizen-layout/audit.mjs /tmp/citizen-nav-icons.json
-          NAV_REVIEW=scroll node testing/citizen-layout/audit.mjs /tmp/citizen-nav-scroll.json
-          node testing/citizen-layout/review-nav.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -93,4 +90,3 @@ jobs:
           path: |
             /tmp/citizen-*.json
             /tmp/citizen-*.png
-            testing/citizen-layout/review/*.png
