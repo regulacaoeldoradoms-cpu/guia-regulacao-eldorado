@@ -20,6 +20,7 @@ async function run(id, start, setup, exercise) {
   page.on('request', request => requests.push({ url:new URL(request.url()).pathname, type:request.resourceType() }));
   const check = (label, condition) => { assert.ok(condition, label); result.checks.push(label); };
   try {
+    if (process.env.WARM_CPU_THROTTLE) await (await context.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate:Number(process.env.WARM_CPU_THROTTLE) });
     await setup?.(page, context);
     await page.goto(server.origin + start, { waitUntil:'domcontentloaded' });
     await ready(page, start);
@@ -46,7 +47,8 @@ try {
     }
     const later = requests.slice(before);
     await fs.writeFile(path.join(output, 'activation-requests.json'), JSON.stringify(later, null, 2));
-    check('no HTML or script fetch on first prepared activation', !later.some(request => request.type === 'script' || !request.url.includes('.') && !request.url.startsWith('/api/')));
+    const unexpectedLoads = later.filter(request => request.type === 'script' || !request.url.includes('.') && !request.url.startsWith('/api/'));
+    check('no HTML or script fetch on first prepared activation: '+JSON.stringify(unexpectedLoads), unexpectedLoads.length === 0);
     check('no first-activation profile identity/feed fetch', !later.some(request => /^\/api\/(citizen\/identity|social\/me$|social\/profiles\/[^/]+\/posts)/.test(request.url)));
     check('no loading notice after preparation', await page.evaluate(() => !window.__loadingShown));
     check('single document and shared owners retained', audit.documents.length === 1 && await page.evaluate(() => {
