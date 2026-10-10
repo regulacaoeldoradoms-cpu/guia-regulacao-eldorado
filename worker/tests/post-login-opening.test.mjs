@@ -47,7 +47,7 @@ test('HTML real e laboratório começam com Entrar habilitado', () => {
     assert.doesNotMatch(button, /disabled|opening-gate|opacity/);
     assert.doesNotMatch(html, /Preparando abertura/);
     assert.match(html, /login-opening\.js\?v=20260918-1/);
-    assert.match(html, /login\.js\?v=20260917-3/);
+    assert.match(html, /login\.js\?v=20261010-login-compact-1/);
   }
 });
 
