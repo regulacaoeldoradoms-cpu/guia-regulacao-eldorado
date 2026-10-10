@@ -125,7 +125,13 @@
     } catch (_) {}
     navigation.mount(user, config || {});
     // Authenticated public guides also share the account companion, independently of social availability.
-    import('/js/pets-bootstrap.js?v=20261010-mobile-shell-1').then(async (pets) => {
+    // Reuse an explicit page bootstrap, including native guides that still
+    // declare its unversioned URL. Different module URLs create two owners.
+    const declaredPetsBootstrap = [...document.scripts].find(element => {
+      try { return new URL(element.src).pathname === '/js/pets-bootstrap.js'; }
+      catch (_) { return false; }
+    });
+    import(declaredPetsBootstrap?.src || '/js/pets-bootstrap.js?v=20261010-mobile-shell-1').then(async (pets) => {
       const session = await pets.petSession();
       session?.runtime.layout();
     }).catch(() => {});
