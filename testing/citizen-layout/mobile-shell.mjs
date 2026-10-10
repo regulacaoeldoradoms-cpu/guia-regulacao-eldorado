@@ -140,10 +140,17 @@ try {
     check('latest rapid intent wins', await page.locator('#socialFeedList').count() === 1);
     // The superseded preparation loads factories but intentionally never mounts
     // its route presenters. Count repeat loads only after the first real visit.
-    await go(page, '/mascotes/'); await go(page, '/');
-    const before = audit.resources.filter(resource => resource.startsWith('/js/')).length;
+    await go(page, '/mascotes/');
+    await page.evaluate(() => window.PortalCitizenMobileChatReady);
+    await page.locator('#petDays input').first().waitFor();
+    await go(page, '/');
+    // Optional global PWA/observability owners can start later independently.
+    // Measure the explicit route/runtime assets after their first real mount.
+    const routeAsset = /\/js\/(?:social-friends|pets-page|pets-runtime|pets-bootstrap|citizen-mobile-chat-bootstrap|account-section-shell|home|social-home|social-feed|citizen-layout|home-mobile-direct|home-mobile-composition|home-social-presentation)\.js/;
+    const before = audit.resources.filter(resource => routeAsset.test(resource)).length;
     for (const route of ['/amigos/', '/mascotes/', '/', '/amigos/', '/mascotes/', '/']) await go(page, route);
-    check('returning areas loads no new scripts', audit.resources.filter(resource => resource.startsWith('/js/')).length === before);
+    const later = audit.resources.filter(resource => routeAsset.test(resource));
+    check('returning areas loads no new route/runtime scripts: ' + JSON.stringify(later.slice(before)), later.length === before);
     check('bar remains six native controls', await page.locator('.social-mobile-nav > .social-mobile-nav-link').count() === 6);
   });
   await run('notifications-and-offline', 390, '/', async (page, audit, check) => {
