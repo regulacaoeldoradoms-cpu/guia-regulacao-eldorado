@@ -26,7 +26,7 @@ const user = {
   id: "synthetic-citizen",
   username: "fixture.citizen",
   name: "Cidadão fictício",
-  role: "cidadao",
+  role: process.env.AUDIT_ROLE || "cidadao",
   active: true,
   emailVerified: true,
   accountLevel: "prata",
@@ -90,6 +90,7 @@ await new Promise((r) => server.listen(port, "127.0.0.1", r));
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
   headless: true,
+  ignoreDefaultArgs: process.env.SCROLLBAR_FIXTURE ? ["--hide-scrollbars"] : undefined,
   args: ["--no-sandbox"],
 });
 const results = [];
@@ -127,7 +128,11 @@ try {
       await page.route("**/*", async (r) => {
         const u = new URL(r.request().url());
         calls.push(u.pathname + u.search);
-        if (u.hostname === "127.0.0.1") return r.continue();
+        if (u.hostname === "127.0.0.1") {
+          if (process.env.CACHED_NAV_PATH && u.pathname === "/js/social-navigation.js" && u.searchParams.get("v") === "20260928-2")
+            return r.fulfill({contentType:"text/javascript",body:await fs.readFile(process.env.CACHED_NAV_PATH,"utf8")});
+          return r.continue();
+        }
         let data = { ok: true };
         if (u.pathname === "/api/auth/me") data = { user };
         else if (u.pathname === "/api/social/config")
@@ -246,7 +251,7 @@ try {
             return {
               rows: new Set(links.map(e => Math.round(e.getBoundingClientRect().top))).size,
               reflow: nav.classList.contains("citizen-nav-reflow"),
-              targetsFit: links.every(e => { const r=e.getBoundingClientRect(); return r.width>=43.99 && r.height>=44 && r.left>=-1 && r.right<=innerWidth+1; }),
+              targetsFit: links.every(e => { const r=e.getBoundingClientRect(); return r.width>=43.99 && r.height>=44 && r.left>=-1 && r.right<=document.documentElement.clientWidth+1; }),
               labelsFit: links.every(e => { const r=e.getBoundingClientRect(); const label=e.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)"); if(!label)return true; const l=label.getBoundingClientRect();return l.left>=r.left-1 && l.right<=r.right+1; })
             };
           })(),
@@ -317,7 +322,9 @@ try {
                 }
               : null;
           })(),
+          role: window.RegulationAuth?.getCachedUser()?.role,
           viewport: innerWidth,
+          clientWidth: document.documentElement.clientWidth,
           scrollWidth: document.documentElement.scrollWidth,
           bodyClass: document.body.className,
           smallText: visible
@@ -419,7 +426,9 @@ try {
                 y: r.y,
                 right: r.right,
                 bottom: r.bottom,
-                viewport: innerWidth,
+                role: window.RegulationAuth?.getCachedUser()?.role,
+          viewport: innerWidth,
+          clientWidth: document.documentElement.clientWidth,
                 height: innerHeight,
                 chatAboveCompanion: e.classList.contains("portal-chat-panel") && document.querySelector(".pet-stage-global")
                   ? Number(getComputedStyle(e.closest(".portal-chat")).zIndex) > Number(getComputedStyle(document.querySelector(".pet-stage-global")).zIndex)

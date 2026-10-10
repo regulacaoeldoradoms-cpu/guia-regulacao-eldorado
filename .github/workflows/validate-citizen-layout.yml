@@ -4,7 +4,9 @@ on:
     paths:
       - "css/citizen-readable-layout.css"
       - "js/citizen-layout.js"
+      - "js/home.js"
       - "js/account-section-shell.js"
+      - "mascotes/index.html"
       - "testing/citizen-layout/**"
       - ".github/workflows/validate-citizen-layout.yml"
 permissions:
@@ -14,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -33,6 +37,27 @@ jobs:
         run: |
           node testing/citizen-layout/audit.mjs /tmp/citizen-layout.json
           node testing/citizen-layout/verify.mjs /tmp/citizen-layout.json
+      - name: Legacy versioned navigation cache on shared citizen routes
+        env:
+          ROUTES: "/,/cidadao/,/mascotes/"
+          WIDTHS: "320,390"
+          CACHED_NAV_PATH: "/tmp/citizen-cached-nav.js"
+        run: |
+          git show c10773fba8010bf2f2c8f42433976cefffe64315:js/social-navigation.js > "$CACHED_NAV_PATH"
+          node testing/citizen-layout/audit.mjs /tmp/citizen-cached-nav.json
+          node testing/citizen-layout/verify.mjs /tmp/citizen-cached-nav.json
+      - name: Shared routes with both account roles and classic scrollbars
+        env:
+          ROUTES: "/,/cidadao/,/mascotes/"
+          WIDTHS: "320,390"
+          SCROLLBAR_FIXTURE: "1"
+        run: |
+          for role in cidadao admin; do
+            AUDIT_ROLE="$role" node testing/citizen-layout/audit.mjs "/tmp/citizen-shared-$role.json"
+            node testing/citizen-layout/verify.mjs "/tmp/citizen-shared-$role.json"
+            AUDIT_ROLE="$role" TEXT_SCALE=2 WIDTHS=320 node testing/citizen-layout/audit.mjs "/tmp/citizen-shared-$role-text200.json"
+            node testing/citizen-layout/verify.mjs "/tmp/citizen-shared-$role-text200.json"
+          done
       - name: Double text size and reflow
         env:
           TEXT_SCALE: "2"

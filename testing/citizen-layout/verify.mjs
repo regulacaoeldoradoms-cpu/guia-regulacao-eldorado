@@ -8,14 +8,14 @@ for (const row of rows) {
   const name = `${row.route} @ ${row.width}`;
   assert.deepEqual(row.errors, [], `${name}: JavaScript errors`);
   assert.ok(
-    row.scrollWidth <= row.width + 1,
+    row.scrollWidth <= (row.clientWidth || row.width) + 1,
     `${name}: page overflow ${row.scrollWidth}: ${JSON.stringify(row.overflow)}`,
   );
   assert.ok(
     row.bodyClass.includes("citizen-readable-layout"),
     `${name}: citizen presentation`,
   );
-  if (row.citizenCards)
+  if (row.citizenCards && row.role !== "admin")
     assert.deepEqual(
       row.citizenCards,
       ["/cidadao/"],
@@ -38,7 +38,10 @@ for (const row of rows) {
     for (const target of row.controls.filter((c) =>
       c.class.includes("social-mobile-nav-link"),
     ))
-      assert.ok(target.height >= 44, `${name}: navigation touch target`);
+      {
+        assert.ok(target.height >= 44 && target.width >= 44, `${name}: navigation touch target`);
+        assert.ok(target.font >= 14, `${name}: readable navigation font`);
+      }
     for (const state of row.states || []) {
       if (state.chatAboveCompanion !== null && state.chatAboveCompanion !== undefined)
         assert.ok(state.chatAboveCompanion, `${name}: chat readable above floating companion`);
@@ -46,7 +49,7 @@ for (const row of rows) {
         assert.ok(state.notificationActionReachable, `${name}: notification action reachable by scrolling`);
       assert.ok(state.opened, `${name}: ${state.name} opens`);
       assert.ok(
-        state.x >= -1 && state.right <= row.width + 1,
+        state.x >= -1 && state.right <= (row.clientWidth || row.width) + 1,
         `${name}: ${state.name} horizontal bounds`,
       );
       assert.ok(

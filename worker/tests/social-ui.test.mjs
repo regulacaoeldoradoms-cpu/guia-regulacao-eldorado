@@ -117,8 +117,8 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   const socialHome = read('js/social-home.js');
   assert.match(socialHome, /cachedProfile = config\?\.profile/);
   assert.match(socialHome, /avatarVersion: String\(cachedProfile\.avatarVersion/);
-  assert.match(index, /\/js\/home\.js\?v=20261009-citizen-layout-1/);
-  assert.equal((index.match(/\/js\/home\.js\?v=20261009-citizen-layout-1/g) || []).length, 1);
+  assert.match(index, /\/js\/home\.js\?v=20261009-citizen-layout-2/);
+  assert.equal((index.match(/\/js\/home\.js\?v=20261009-citizen-layout-2/g) || []).length, 1);
   assert.match(index, /<body class="portal-page home-loading-active" data-portal-home-bootstrap="1">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);

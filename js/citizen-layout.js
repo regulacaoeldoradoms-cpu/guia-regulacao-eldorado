@@ -2,10 +2,18 @@
 // Presentation only: authorization continues to be enforced by RegulationAuth.
 (() => {
   let observedNav = null;
+  const mobileScreen = matchMedia("screen and (max-width: 900px)");
+  const originalPaws = new WeakMap();
   const measure = document.createElement("canvas").getContext("2d");
   const updateNavLayout = () => {
     const nav = observedNav;
     if (!nav || !document.body.classList.contains("citizen-readable-layout")) return;
+    if (!mobileScreen.matches) {
+      nav.classList.remove("citizen-nav-reflow");
+      nav.style.removeProperty("--citizen-nav-columns");
+      document.body.style.removeProperty("--citizen-bottom-space");
+      return;
+    }
     const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
     nav.style.setProperty("--citizen-nav-columns", links.map((_, i) => i < 3 ? "minmax(44px,max-content)" : "minmax(44px,1fr)").join(" "));
     const style = getComputedStyle(nav);
@@ -40,7 +48,17 @@
     document
       .querySelectorAll('.social-mobile-nav a[href="/mascotes/"]')
       .forEach((link) => {
+        if (!mobileScreen.matches) {
+          const original = originalPaws.get(link);
+          if (original) {
+            originalPaws.delete(link);
+            delete link.dataset.citizenPaw;
+            link.replaceChildren(...original);
+          }
+          return;
+        }
         if (link.dataset.citizenPaw === "true") return;
+        originalPaws.set(link, [...link.childNodes]);
         link.dataset.citizenPaw = "true";
         link.setAttribute("aria-label", "Mascotes");
         link.title = "Mascotes";
@@ -55,10 +73,11 @@
       });
     updateNavLayout();
   }
+  const sharedRoutes = new Set(["/", "/cidadao/", "/amigos/", "/ferramentas/", "/perfil/", "/seguranca/", "/conquistas/", "/configuracoes/", "/notificacoes/", "/mascotes/"]);
   const apply = (user) => {
     document.body?.classList.toggle(
       "citizen-readable-layout",
-      user?.role === "cidadao",
+      Boolean(user) && sharedRoutes.has(location.pathname),
     );
     petNavigation();
   };
@@ -81,6 +100,7 @@
     childList: true,
     subtree: true,
   });
+  mobileScreen.addEventListener("change", petNavigation);
   window.addEventListener("portal:session-ready", (event) =>
     apply(event.detail?.user),
   );
