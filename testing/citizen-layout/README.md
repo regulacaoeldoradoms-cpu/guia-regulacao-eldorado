@@ -104,3 +104,37 @@ O layout móvel claro mudou intencionalmente. Nesse caso, a auditoria compara ex
 A apresentação é ativada para conta autenticada nas dez rotas acima, independentemente do cargo. Isso não altera autorização nem catálogo de destinos. Diagnóstico com conta privilegiada é regressão visual, não prova de acesso cidadão. Mascotes agora referencia a navegação atual; o harness pode servir os bytes históricos `c10773fb` somente para a URL antiga para reproduzir cache real.
 
 Home/Canal/Mascotes passaram em 320/390 px com cidadão e admin sintéticos e scrollbar clássico (largura útil 305/375 px). A barra usa Arial 14 px, mantém seis controles de pelo menos 44 px, nomes completos e pata SVG, sem margem lateral artificial; safe-area continua respeitada. Texto 200% pode refluír para preservar leitura. O verificador compara overflow com `documentElement.clientWidth`, incluindo o espaço ocupado pela scrollbar. Runtime, frases, vidas e cache global dos mascotes permanecem na base publicada.
+
+### Home: ferramentas no topo e rolagem horizontal
+
+Na Home, ferramentas aparecem antes do compositor em cartões com rolagem lateral.
+O título e “Ver todas” compartilham o cabeçalho; a preferência de quantidade
+fica em “Mostrar atalhos”. Uma única ferramenta ocupa a largura disponível e
+não oferece um seletor redundante. O chat fechado fica junto aos controles da
+conta, preservando a área do feed. A barra mantém uma linha em 320–390 px com
+texto normal e nomes de 14 px; com texto ampliado, passa ao fluxo da página.
+
+Teste focado com 40 publicações fictícias, viewport CSS de 320/360/390 px, UA Android,
+toque habilitado e preferência de movimento reduzido:
+
+```bash
+HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,360,390 AUDIT_ROLE=admin AUDIT_THEME=dark node testing/citizen-layout/audit.mjs /tmp/home-carousel-dark.json
+node testing/citizen-layout/verify.mjs /tmp/home-carousel-dark.json
+HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,360,390 AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen.json
+node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen.json
+HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,390 AUDIT_ROLE=cidadao AUDIT_THEME=light TEXT_SCALE=2 node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen-text200.json
+node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen-text200.json
+```
+
+`home-carousel.mjs` verifica posição antes do compositor/feed, catálogo autorizado
+na mesma ordem, quantidade persistida, acesso à lista completa quando limitado,
+gesto horizontal por eventos de toque do Chromium, setas com a região em foco,
+visibilidade do último cartão ao receber foco, limites da página, rótulos da barra
+e restauração da posição original ao ampliar a viewport, mantendo nós, foco e
+rascunho. Também verifica cliques desobstruídos no compositor/feed, publicação
+pela API interceptada e texto de 200% após mudanças de quantidade/reload.
+Uma conta cidadão exibe
+somente seu cartão autorizado; o teste não adiciona ferramentas para criar rolagem.
+As capturas `home-carousel-*.png` mostram a tela inicial e o compositor/feed para
+revisão visual. Todas as APIs e contas são fictícias; páginas profissionais não
+são abertas. Emulação não comprova o resultado no Android físico.

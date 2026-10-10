@@ -9,12 +9,16 @@
     const nav = observedNav;
     if (!nav || !document.body.classList.contains("citizen-readable-layout")) return;
     if (!mobileScreen.matches) {
+      document.body.classList.remove('home-nav-in-flow');
       nav.classList.remove("citizen-nav-reflow");
       nav.style.removeProperty("--citizen-nav-columns");
       document.body.style.removeProperty("--citizen-bottom-space");
       return;
     }
     const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
+    const home = document.body.hasAttribute('data-portal-home-bootstrap');
+    // Measure the normal row so returning from enlarged text can restore it.
+    if (home) nav.classList.remove('citizen-nav-reflow');
     nav.style.setProperty("--citizen-nav-columns", links.map((_, i) => i < 3 ? "minmax(44px,max-content)" : "minmax(44px,1fr)").join(" "));
     const style = getComputedStyle(nav);
     const available = nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
@@ -25,9 +29,14 @@
       measure.font = `${font.fontWeight} ${font.fontSize} ${font.fontFamily}`;
       const text = label.textContent.trim();
       const spacing = (parseFloat(font.letterSpacing) || 0) * Math.max(0, [...text].length - 1);
-      return sum + Math.max(44, measure.measureText(text).width + spacing);
+      const padding = getComputedStyle(link);
+      return sum + Math.max(44, measure.measureText(text).width + spacing + (parseFloat(padding.paddingLeft) || 0) + (parseFloat(padding.paddingRight) || 0));
     }, 0);
-    nav.classList.toggle("citizen-nav-reflow", required > available + 0.5);
+    if (home)
+      nav.style.setProperty('--home-nav-gap', `${Math.max(0, Math.min(3, (available - required) / Math.max(1, links.length - 1)))}px`);
+    const gaps = (parseFloat(getComputedStyle(nav).columnGap) || 0) * Math.max(0, links.length - 1);
+    nav.classList.toggle("citizen-nav-reflow", required + gaps > available + 0.5);
+    document.body.classList.toggle('home-nav-in-flow', home && required + gaps > available + 0.5);
     const height = nav.getBoundingClientRect().height || 0;
     if (height)
       document.body.style.setProperty(

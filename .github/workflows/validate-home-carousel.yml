@@ -1,0 +1,64 @@
+name: Home tools carousel
+on:
+  pull_request:
+    paths:
+      - index.html
+      - css/home-tools-carousel.css
+      - css/citizen-readable-layout.css
+      - css/portal.css
+      - css/portal-interactions.css
+      - css/social.css
+      - css/home-mobile.css
+      - css/home-chat-button.css
+      - css/portal-chat.css
+      - js/home.js
+      - js/citizen-layout.js
+      - js/social-home.js
+      - js/social-feed.js
+      - js/tools-catalog.js
+      - js/social-navigation.js
+      - js/portal-chat.js
+      - testing/citizen-layout/**
+      - .github/workflows/validate-home-carousel.yml
+permissions:
+  contents: read
+jobs:
+  synthetic-home:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-package-lock --no-audit --no-fund
+        working-directory: testing/browser
+      - run: npx playwright install --with-deps chromium
+        working-directory: testing/browser
+      - name: Long synthetic feed, touch viewport, keyboard and preferences
+        env:
+          HOME_CAROUSEL: '1'
+          ROUTES: '/'
+          WIDTHS: '320,360,390'
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          AUDIT_ROLE=admin AUDIT_THEME=dark node testing/citizen-layout/audit.mjs /tmp/home-carousel-dark.json
+          node testing/citizen-layout/verify.mjs /tmp/home-carousel-dark.json
+          AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen.json
+          node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen.json
+      - name: Full labels and reachable actions with 200 percent text
+        env:
+          HOME_CAROUSEL: '1'
+          ROUTES: '/'
+          WIDTHS: '320,390'
+          TEXT_SCALE: '2'
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          AUDIT_ROLE=admin AUDIT_THEME=dark node testing/citizen-layout/audit.mjs /tmp/home-carousel-dark-text200.json
+          node testing/citizen-layout/verify.mjs /tmp/home-carousel-dark-text200.json
+          AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen-text200.json
+          node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen-text200.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-carousel-synthetic
+          path: /tmp/home-carousel-*

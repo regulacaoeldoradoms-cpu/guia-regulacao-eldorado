@@ -14,7 +14,113 @@ window.PortalHomeReady = (async () => {
   }
 
   // Shared route presentation does not change the authenticated account permissions.
-  await import('/js/citizen-layout.js?v=20261009-2').catch(() => {});
+  await import('/js/citizen-layout.js?v=20261010-4').catch(() => {});
+
+  // Move the existing controls, retaining their state and authorized catalogue.
+  const shortcuts = document.querySelector('.social-shortcuts');
+  const feedColumn = document.querySelector('.social-feed-column');
+  if (shortcuts && feedColumn) {
+    const originalPosition = document.createComment('Home shortcuts desktop position');
+    shortcuts.before(originalPosition);
+    const mobileTools = matchMedia('screen and (max-width: 900px)');
+    const heading = shortcuts.querySelector('.social-section-heading');
+    const headingTitle = heading?.querySelector('h2');
+    const originalHeading = headingTitle?.textContent;
+    const allTools = shortcuts.querySelector('.social-card-pad');
+    const allToolsPosition = document.createComment('Home complete catalogue position');
+    allTools?.before(allToolsPosition);
+    const allToolsLink = allTools?.querySelector('a');
+    const allToolsLabel = allToolsLink?.textContent;
+    const options = document.createElement('details');
+    options.className = 'home-tools-options';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Mostrar atalhos';
+    options.append(summary);
+    document.getElementById('socialShortcutGrid').after(options);
+    let controlPosition = null;
+    let chatPosition = null;
+    let navPosition = null;
+    const move = (node, parent, before = null) => {
+      if (!node || !parent || (node.parentNode === parent && node.nextSibling === before)) return;
+      const focused = node.contains(document.activeElement) ? document.activeElement : null;
+      parent.insertBefore(node, before);
+      focused?.focus({ preventScroll: true });
+    };
+    const restore = (node, marker) => {
+      if (marker?.parentNode && marker.nextSibling !== node) move(node, marker.parentNode, marker.nextSibling);
+    };
+    const positionTools = () => {
+      const focused = document.activeElement;
+      const focusedShortcut = shortcuts.contains(focused);
+      const compact = mobileTools.matches;
+      const headingText = compact ? 'Ferramentas' : originalHeading;
+      if (headingTitle && headingTitle.textContent !== headingText) headingTitle.textContent = headingText;
+      const control = document.getElementById('socialShortcutLimitControl');
+      const select = document.getElementById('socialShortcutLimit');
+      if (control && !controlPosition) {
+        controlPosition = document.createComment('Home shortcut preference position');
+        control.before(controlPosition);
+      }
+      if (compact) {
+        move(shortcuts, feedColumn.parentNode, feedColumn);
+        move(allTools, heading);
+        if (allToolsLink && allToolsLink.textContent !== 'Ver todas') allToolsLink.textContent = 'Ver todas';
+        if (control?.contains(focused)) options.open = true;
+        move(control, options);
+      } else {
+        restore(shortcuts, originalPosition);
+        restore(allTools, allToolsPosition);
+        if (allToolsLink && allToolsLink.textContent !== allToolsLabel) allToolsLink.textContent = allToolsLabel;
+        restore(control, controlPosition);
+      }
+      options.hidden = !control || control.hidden;
+      const selected = select?.selectedOptions[0]?.textContent || '';
+      const label = `Mostrar atalhos${selected ? ': ' + selected : ''}`;
+      if (summary.textContent !== label) summary.textContent = label;
+      shortcuts.classList.toggle('home-single-tool', shortcuts.querySelectorAll('#socialShortcutGrid .hub-card').length === 1);
+
+      const chat = document.getElementById('portalChatRoot');
+      if (chat && !chatPosition) {
+        chatPosition = document.createComment('Home floating chat desktop position');
+        chat.before(chatPosition);
+      }
+      if (compact) move(chat, document.querySelector('.portal-user'), document.getElementById('portalLogout'));
+      else restore(chat, chatPosition);
+
+      const nav = document.querySelector('.social-mobile-nav');
+      if (nav && !navPosition) {
+        navPosition = document.createComment('Home navigation original position');
+        nav.before(navPosition);
+      }
+      if (compact) move(nav, document.querySelector('.portal-topbar'));
+      else restore(nav, navPosition);
+      if (focusedShortcut) (focused === summary && !compact ? select : focused)?.focus({ preventScroll: true });
+    };
+    positionTools();
+    mobileTools.addEventListener('change', positionTools);
+    // Controls and chat mount asynchronously; move their existing nodes once available.
+    const homeChanges = new MutationObserver(positionTools);
+    homeChanges.observe(document.body, { childList: true, subtree: true });
+    const shortcutGrid = document.getElementById('socialShortcutGrid');
+    shortcutGrid?.addEventListener('keydown', (event) => {
+      if (!mobileTools.matches || event.target !== shortcutGrid || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      const card = shortcutGrid.querySelector('.hub-card');
+      if (!card) return;
+      event.preventDefault();
+      const step = card.getBoundingClientRect().width + (parseFloat(getComputedStyle(shortcutGrid).columnGap) || 0);
+      shortcutGrid.scrollBy({ left: event.key === 'ArrowRight' ? step : -step, behavior: 'auto' });
+    });
+    shortcutGrid?.addEventListener('focusin', (event) => {
+      const card = event.target.closest('.hub-card');
+      if (!mobileTools.matches || !card) return;
+      requestAnimationFrame(() => {
+        const container = shortcutGrid.getBoundingClientRect();
+        const focused = card.getBoundingClientRect();
+        if (focused.left < container.left || focused.right > container.right)
+          shortcutGrid.scrollTo({ left: shortcutGrid.scrollLeft + focused.left - container.left - 12, behavior: 'auto' });
+      });
+    });
+  }
 
   window.addEventListener('portal:social-config-updated', (event) => {
     const refreshed = event.detail?.config;
