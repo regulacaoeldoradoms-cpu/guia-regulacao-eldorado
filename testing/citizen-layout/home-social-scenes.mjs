@@ -192,7 +192,8 @@ async function installSessionBridge(context, audit) {
   await context.addInitScript(() => {
     // Telemetry only: this marker precedes the application's own pagehide PUT.
     // The harness never writes a snapshot or changes the original message.
-    window.addEventListener('pagehide', () => navigator.serviceWorker.controller?.postMessage({ type: 'SCENE_PAGEHIDE' }), { capture: true });
+    // Init scripts also run in about:blank, which has no serviceWorker API.
+    window.addEventListener('pagehide', () => navigator.serviceWorker?.controller?.postMessage({ type: 'SCENE_PAGEHIDE' }), { capture: true });
   });
 }
 
@@ -589,7 +590,7 @@ try {
     await intercept(context, fixture, audit);
     const page = await context.newPage();
     page.setDefaultTimeout(8000);
-    page.on('pageerror', error => result.errors.push(error.message));
+    page.on('pageerror', error => result.errors.push(`${page.url()}: ${error.stack || error.message}`));
     try {
       await page.goto(origin + '/', { waitUntil: 'domcontentloaded' });
       await ready(page);

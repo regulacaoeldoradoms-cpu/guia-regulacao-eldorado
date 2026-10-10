@@ -71,7 +71,7 @@ for (const row of rows) {
         assert.ok(state.notificationActionReachable, `${name}: notification action reachable by scrolling`);
       assert.ok(state.opened, `${name}: ${state.name} opens`);
       assert.ok(
-        state.x >= -1 && state.right <= (row.clientWidth || row.width) + 1,
+        state.x >= -1 && state.right <= (state.viewportClientWidth ?? (row.clientWidth || row.width)) + 1,
         `${name}: ${state.name} horizontal bounds`,
       );
       assert.ok(

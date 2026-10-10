@@ -460,7 +460,7 @@ try {
                 bottom: r.bottom,
                 role: window.RegulationAuth?.getCachedUser()?.role,
           viewport: innerWidth,
-          clientWidth: document.documentElement.clientWidth,
+                viewportClientWidth: document.documentElement.clientWidth,
                 height: innerHeight,
                 chatAboveCompanion: e.classList.contains("portal-chat-panel") && document.querySelector(".pet-stage-global")
                   ? (Number(getComputedStyle(e).zIndex) || Number(getComputedStyle(e.closest(".portal-chat")).zIndex)) > Number(getComputedStyle(document.querySelector(".pet-stage-global")).zIndex)
