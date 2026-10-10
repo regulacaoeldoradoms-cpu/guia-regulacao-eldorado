@@ -4,6 +4,13 @@
 const CACHE_VERSION = '20261009-pets-combined-8';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
+// Version this policy without replacing caches belonging to other modules.
+const SHARED_HTML_RELEASE = '20261010-citizen-html-1';
+const SHARED_HTML_TIMEOUT_MS = 2500;
+const SHARED_HTML_PATHS = new Set([
+  '/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/',
+  '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/'
+]);
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
 const MAX_WARM_ROUTES = 18;
 const MAX_ASSETS_PER_PAGE = 90;
@@ -653,11 +660,46 @@ async function fetchPage(request, key, event = null) {
   });
 }
 
+async function revalidateSharedPage(event, key, cache, cached) {
+  const id = `shared-page:${SHARED_HTML_RELEASE}:${new URL(key.url).pathname}`;
+  const update = deduped(id, async () => {
+    // Do not reuse navigation preload: its request may use the previous HTTP cache.
+    const response = await fetch(new Request(event.request, { cache: 'no-cache' }));
+    if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400 && response.headers.has('Location')))
+      return response;
+    if (!response.ok) throw new Error('shared_page_unavailable');
+    await putResponse(PAGE_CACHE, key, response);
+    return response;
+  });
+  // A slow response may still refresh the cache after the cached page is shown.
+  event.waitUntil(update.catch(() => null));
+  let timer;
+  try {
+    const response = await Promise.race([
+      update,
+      new Promise((resolve) => { timer = setTimeout(() => resolve(null), SHARED_HTML_TIMEOUT_MS); })
+    ]);
+    if (response) return response;
+  } catch (_) {
+    // Offline/errors retain the existing public HTML fallback, never account data.
+  } finally {
+    clearTimeout(timer);
+  }
+  if (cached) return cached;
+  const fallback = await cache.match(pageCacheKey('/')) || await cache.match(pageCacheKey('/login/'));
+  if (fallback) return fallback;
+  return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><p>Não foi possível carregar a página. Confira sua conexão e tente novamente.</p>', {
+    status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
+  });
+}
+
 async function handlePage(event) {
   const key = pageCacheKey(event.request.url);
   if (!key) return fetch(event.request);
   const cache = await caches.open(PAGE_CACHE);
   const cached = await cache.match(key);
+  if (SHARED_HTML_PATHS.has(new URL(key.url).pathname))
+    return revalidateSharedPage(event, key, cache, cached);
   const update = fetchPage(event.request, key, event);
 
   if (cached) {
