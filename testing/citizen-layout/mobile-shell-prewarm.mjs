@@ -52,6 +52,7 @@ try {
     const unexpectedLoads = later.filter(request => request.type === 'script' || !request.url.includes('.') && !request.url.startsWith('/api/'));
     check('no HTML or script fetch on first prepared activation: '+JSON.stringify(unexpectedLoads), unexpectedLoads.length === 0);
     check('no first-activation profile identity/feed fetch', !later.some(request => /^\/api\/(citizen\/identity|social\/me$|social\/profiles\/[^/]+\/posts)/.test(request.url)));
+    check('no first-activation friendship list fetch', !later.some(request => request.url === '/api/social/relationships'));
     check('no loading notice after preparation', await page.evaluate(() => !window.__loadingShown));
     check('single document and shared owners retained', audit.documents.length === 1 && await page.evaluate(() => {
       const saved = window.__preparedOwners;

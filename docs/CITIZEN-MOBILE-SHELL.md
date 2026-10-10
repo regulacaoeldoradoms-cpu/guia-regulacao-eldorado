@@ -4,7 +4,7 @@ O shell inicia apenas em tela móvel com conta cidadão. As dez áreas comuns s�
 
 Cada área visitada registra seu inicializador e mantém DOM, rascunhos, foco e rolagem em memória. Uma área fica conectada; barra, Chat e mascote têm os mesmos donos durante a navegação. Scripts da resposta HTML não são executados. Desktop usa navegação nativa; impressão e saída do breakpoint recuperam apresentação própria da área. Logout/troca de conta encerram o shell e o estado privado anterior.
 
-Após o carregamento inicial, uma fila prepara Home, Amigos, Perfil próprio, Mascotes e Avisos, uma área por vez. Amigos, Perfil próprio, Mascotes e Avisos também inicializam seus dados em DOM desconectado. A primeira ativação de uma área pronta reutiliza conteúdo e controladores, sem buscar novamente HTML/scripts nem mostrar o aviso de carregamento. A URL muda por History, sem trocar de documento. Chat continua com seu dono nativo; perfis de outras pessoas e módulos profissionais não entram na fila.
+Após o carregamento inicial, uma fila prepara Home, Amigos, Perfil próprio, Mascotes e Avisos, uma área por vez. Amigos, Perfil próprio, Mascotes e Avisos também inicializam seus dados em DOM desconectado. As listas próprias de amigos/pedidos/bloqueios que o controlador nativo já antecipava são concluídas durante esse preparo, sem reiniciar essas buscas na primeira ativação. A primeira ativação de uma área pronta reutiliza conteúdo e controladores, sem buscar novamente HTML/scripts nem mostrar o aviso de carregamento. A URL muda por History, sem trocar de documento. Chat continua com seu dono nativo; perfis de outras pessoas e módulos profissionais não entram na fila.
 
 ## Limites
 

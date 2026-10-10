@@ -363,10 +363,10 @@ const initializeCitizenArea = async (context) => {
   }
 
   function preloadOtherRelationshipLists() {
-    ['incoming', 'outgoing', 'blocked'].forEach((type) => {
-      if (relationshipLists.has(type) || relationshipLoads.has(type)) return;
-      fetchRelationshipType(type, false).catch(() => {});
-    });
+    return Promise.all(['incoming', 'outgoing', 'blocked'].map((type) => {
+      if (relationshipLists.has(type)) return relationshipLists.get(type);
+      return fetchRelationshipType(type, false).catch(() => {});
+    }));
   }
 
   async function search(append = false) {
@@ -408,7 +408,7 @@ const initializeCitizenArea = async (context) => {
   document.getElementById('socialSearchForm').addEventListener('submit', (event) => { event.preventDefault(); search(false); });
 
   await loadList(false);
-  if (context && !context.active) context.addController({ activate: preloadOtherRelationshipLists });
+  if (context && !context.active) await preloadOtherRelationshipLists();
   else preloadOtherRelationshipLists();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-friends', initializeCitizenArea);
