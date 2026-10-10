@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { installAuditFixture, auditAgenda } from './dark-audit-fixture.mjs';
+import { installAuditFixture, auditAgenda, auditUser } from './dark-audit-fixture.mjs';
 
 async function fixtureRequest(path, method = 'GET') {
   let handler, response, forwarded = false;
@@ -10,6 +10,16 @@ async function fixtureRequest(path, method = 'GET') {
     fulfill:async value=>{response=value;}, continue:async()=>{forwarded=true;}, abort:async()=>{} });
   return {network,response,forwarded};
 }
+test('own citizen identity preparation is synthetic and read-only',async()=>{
+  const read=await fixtureRequest('/api/citizen/identity');
+  assert.deepEqual(JSON.parse(read.response.body),{identity:{displayName:auditUser.name,handle:auditUser.username,canChangeHandle:true}});
+  assert.deepEqual(read.network.unexpected,[]);
+  assert.equal(read.forwarded,false);
+  const mutation=await fixtureRequest('/api/citizen/identity','PATCH');
+  assert.equal(mutation.response.status,503);
+  assert.equal(mutation.network.unexpected.length,1);
+  assert.equal(mutation.forwarded,false);
+});
 for (const path of ['/api/pets/me','/api/pets/catalog','/api/pets/achievements']) test(`mascot read ${path} models PETS_ENABLED=false without forwarding`,async()=>{
   const {network,response,forwarded}=await fixtureRequest(path);
   assert.equal(response.status,503);
