@@ -259,6 +259,7 @@
   }
   body.citizen-readable-layout[data-portal-home-bootstrap] .social-mobile-nav {
     gap: var(--home-nav-gap, 3px);
+    transition-property: none !important;
     padding-top: 4px;
     padding-bottom: calc(4px + env(safe-area-inset-bottom));
   }
