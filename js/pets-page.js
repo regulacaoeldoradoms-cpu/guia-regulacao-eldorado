@@ -1,5 +1,5 @@
 'use strict';
-import {petSession} from './pets-bootstrap.js';
+import {petSession} from './pets-bootstrap.js?v=20261010-mobile-shell-1';
 import {drawCat} from './pet-cat-frames.js';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;

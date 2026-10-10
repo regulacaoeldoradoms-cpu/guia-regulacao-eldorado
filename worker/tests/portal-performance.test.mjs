@@ -79,11 +79,11 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260923-1/g) || []).length,
+      (html.match(/portal-performance\.js\?v=(?:20260923-1|20261010-mobile-shell-1)/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260923-1" async/);
+    assert.match(html, /portal-performance\.js\?v=(?:20260923-1|20261010-mobile-shell-1)" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
       assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20261001-v34-8" as="script"/);

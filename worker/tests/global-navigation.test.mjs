@@ -27,7 +27,7 @@ test('desktop mantém os seis elementos definidos para a Barra Global', () => {
   }
   assert.match(navigation, /if \(socialAvailable\)/);
   assert.doesNotMatch(navigation, /if \(active\('\/'\) && socialAvailable\)/);
-  assert.match(navigation, /version: '20261009-pets-1'/);
+  assert.match(navigation, /version: '20261010-mobile-shell-1'/);
   assert.match(navigation, /has-global-user-search/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/"\]/);
   assert.match(navigation, /portal-user > a\.portal-button\[href="\/ferramentas\/"\]/);

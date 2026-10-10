@@ -23,6 +23,7 @@ test('the transition authorizes only the existing exact script map plus the glob
   const entries = vm.runInNewContext(source.match(/const SCRIPT_GLOBALS = (new Map\(\[[\s\S]*?\]\));/)[1]);
   assert.deepEqual(Array.from(entries, ([path,name])=>[path,name]), [
     ['/js/portal-performance.js','PortalPerformance'], ['/js/portal-global-chat.js','PortalGlobalChat'],
+    ['/js/portal-global-navigation.js','PortalGlobalNavigation'],
     ['/js/auth-config.js','REGULATION_AUTH_CONFIG'], ['/js/auth-client.js','RegulationAuth'],
     ['/js/portal-theme.js','PortalTheme'], ['/js/portal-interactions.js','PortalInteractions'],
     ['/js/tools-catalog.js','PortalTools'], ['/js/social-api.js','PortalSocial'],

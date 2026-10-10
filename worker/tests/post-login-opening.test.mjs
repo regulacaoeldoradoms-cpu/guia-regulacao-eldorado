@@ -138,7 +138,8 @@ test('bootstrap é restrito à Home local e não cria iframe ou executa script a
   assert.match(source, /portalHomeBootstrap !== '1'/);
   assert.match(source, /window.PortalHomeReady/);
   assert.doesNotMatch(source, /eval\(|new Function|document.write|createElement\('iframe'\)/);
-  assert.match(read('js/home.js'), /window.PortalHomeReady = \(async/);
+  assert.match(read('js/home.js'), /const initializeHome = async/);
+  assert.match(read('js/home.js'), /window.PortalHomeReady = window.PortalCitizenShell/);
 });
 
 

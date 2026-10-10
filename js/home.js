@@ -152,7 +152,7 @@ window.PortalHomeReady = window.PortalCitizenShell
 
 // Optional companion loading must not block Home readiness or change the login script allowlist.
 window.PortalHomeReady.then((ready) => {
-  if (ready) import('/js/pets-bootstrap.js').catch(() => {});
+  if (ready) import('/js/pets-bootstrap.js?v=20261010-mobile-shell-1').catch(() => {});
 });
 
 })();

@@ -33,7 +33,7 @@
   const bodyState = () => [...document.body.attributes].filter(attr => attr.name === 'class' || ['data-portal-home-bootstrap', 'data-citizen-mobile-chat-only', 'data-citizen-tab'].includes(attr.name)).map(attr => [attr.name, attr.value]);
   const initialUrl = new URL(location.href);
   if (!entries[initialUrl.pathname]) return;
-  const chrome = selector => /portal-topbar|portal-user|portal-brand|social-(mobile|global)-nav|social-nav-badge/.test(selector);
+  const chrome = selector => /portal-topbar|portal-user|portal-brand|social-(mobile|global)-nav|social-nav-badge|social(?:Confirm|Report)Dialog/.test(selector);
 
   function context(url, root) {
     const state = { url, root, active: true, disposed: false, listeners: [], timers: new Set(), frames: new Set(), controllers: [], ready: Promise.resolve(), scroll: [0, 0], styles: [], requests: new Set(), abort: new AbortController() };

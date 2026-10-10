@@ -125,7 +125,7 @@
     } catch (_) {}
     navigation.mount(user, config || {});
     // Authenticated public guides also share the account companion, independently of social availability.
-    import('/js/pets-bootstrap.js').then(async (pets) => {
+    import('/js/pets-bootstrap.js?v=20261010-mobile-shell-1').then(async (pets) => {
       const session = await pets.petSession();
       session?.runtime.layout();
     }).catch(() => {});
