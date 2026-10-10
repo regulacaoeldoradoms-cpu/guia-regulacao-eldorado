@@ -115,6 +115,8 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const network=await installAuditFixture(context,{theme,authenticated:!['/login/','/cadastro/'].includes(route)});
     const shared=sharedCitizenRoutes.has(route);
     const mobileRedesign=shared&&isMobile&&theme==='light'&&media==='screen';
+    const loginRedesign=route==='/login/'&&isMobile;
+    const loginContracts=[];
     // The approved presentation covers shared mobile navigation/Direct and
     // Profile's compact account header. Native controls remain compared to
     // base; desktop and print keep the exact computed and raster gates below.
@@ -149,6 +151,15 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     },nativeIdentityKey);
     let layout;
     const prepare=async target=>{
+      if(loginRedesign) loginContracts.push(await target.evaluate(()=>({
+        form:{action:document.getElementById('loginForm').getAttribute('action'),autocomplete:document.getElementById('loginForm').getAttribute('autocomplete')},
+        controls:['loginUsername','loginPassword','loginRemember','loginPasswordToggle','loginSubmit','loginStatus'].map(id=>{
+          const node=document.getElementById(id),style=getComputedStyle(node);
+          return {id,count:document.querySelectorAll('#'+id).length,tag:node.localName,type:node.getAttribute('type'),name:node.getAttribute('name'),autocomplete:node.getAttribute('autocomplete'),required:node.required||false,maxlength:node.getAttribute('maxlength'),role:node.getAttribute('role'),live:node.getAttribute('aria-live'),label:node.id==='loginPasswordToggle'?node.getAttribute('aria-label'):null,color:style.color,background:style.backgroundColor,border:style.borderColor};
+        }),
+        labels:['loginUsername','loginPassword'].map(id=>document.querySelector('label[for="'+id+'"]').textContent),
+        links:[...document.querySelectorAll('.login-card a')].map(node=>({href:node.getAttribute('href'),text:node.textContent.trim()}))
+      })));
       if(route==='/') {
         expect(await target.evaluate(async()=>Boolean(await window.PortalHomeReady)), 'Both Home sources must finish their real bootstrap before capture').toBe(true);
         await expect(target.locator('#portalChatLauncher')).toBeAttached();
@@ -230,8 +241,17 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       }
       expect(layout.active).toBe(true);expect(layout.fits).toBe(true);expect(layout.navFits).toBe(true);expect(layout.rows).toBeLessThanOrEqual(1);
       expect(comparison.captureStability.current.snapshotStable).toBe(true);
+    }else if(loginRedesign){
+      // The requested phone redesign changes copy/layout deliberately. Keep
+      // exact native form semantics/colors against base; dedicated phone tests
+      // exercise zoom, keyboard, error/retry and registration reachability.
+      expect(loginContracts).toHaveLength(2);
+      expect(loginContracts[0]).toEqual(loginContracts[1]);
+      expect(loginContracts[0].controls.every(control=>control.count===1)).toBe(true);
+      expect(comparison.captureStability.current.snapshotStable).toBe(true);
+      await info.attach('approved-mobile-login-contract.json',{body:Buffer.from(JSON.stringify({current:loginContracts[0],base:loginContracts[1],approved:'Login phone copy/layout; native form semantics and palette preserved'})),contentType:'application/json'});
     }else expect(comparison.differences,'Computed styles must equal the base commit').toEqual([]);
     expect(comparison.newErrors,'No new JavaScript errors beyond the measured base commit').toEqual([]);
-    if(!mobileRedesign)expect(comparison.pixelComparison.gateAccepted,'Stable raster sources must remain within 2 pixels / 1 channel; nondeterministic Linux raster is diagnostic only when computed/layout snapshots are exact').toBe(true);
+    if(!mobileRedesign&&!loginRedesign)expect(comparison.pixelComparison.gateAccepted,'Stable raster sources must remain within 2 pixels / 1 channel; nondeterministic Linux raster is diagnostic only when computed/layout snapshots are exact').toBe(true);
   });
 }

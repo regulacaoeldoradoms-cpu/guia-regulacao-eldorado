@@ -1,0 +1,29 @@
+name: Login móvel compacto
+on:
+  pull_request:
+    paths:
+      - login/index.html
+      - css/login-mobile.css
+      - js/login.js
+      - testing/citizen-layout/mobile-login.mjs
+      - .github/workflows/validate-mobile-login.yml
+jobs:
+  synthetic-login:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-package-lock --no-audit --no-fund
+        working-directory: testing/browser
+      - run: npx playwright install --with-deps chromium
+        working-directory: testing/browser
+      - run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          node testing/citizen-layout/mobile-login.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-login-synthetic
+          path: .local/mobile-login/after/
