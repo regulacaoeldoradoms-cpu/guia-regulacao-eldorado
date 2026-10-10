@@ -24,13 +24,14 @@
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
     'home-mobile-direct', 'pets', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
+  const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
   const primaryRoutes = ['/', '/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'];
   const backgroundControllers = new Set(['/amigos/', '/perfil/', '/notificacoes/', '/mascotes/']);
   let prewarming = false, prewarmTimer = 0;
   const sessionToken = window.RegulationAuth.getToken();
   const sessionIdentity = String(user.id || user.username || '');
-  let active, ended = false, navigating = false, wanted = null;
+  let active, ended = false, navigating = false, navigationKey = null, wanted = null;
   const valid = () => !ended && window.RegulationAuth?.getToken?.() === sessionToken;
   const enabled = () => valid() && screen.matches && !print.matches;
   const routeKey = url => url.pathname + url.search;
@@ -142,7 +143,7 @@
 
   const name = href => new URL(href, location.href).pathname.split('/').pop().replace(/\.css$/, '');
   for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
-    if (!sharedStyles.has(name(link.href))) active.styles.push(link);
+    if (!sharedStyles.has(name(link.href))) { styleMedia.set(link, link.media); active.styles.push(link); }
   }
   function loadScript(path, module = false) {
     if (resources.has(path)) return resources.get(path);
@@ -167,18 +168,21 @@
     await Promise.all([...doc.querySelectorAll('link[rel="stylesheet"]')].map(async source => {
       if (sharedStyles.has(name(source.href))) return;
       const href = new URL(source.getAttribute('href'), location.origin).href;
+      const key = 'css:' + href;
       let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
       if (!link) {
         link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; link.media = 'not all';
-        await new Promise((resolve, reject) => {
+        styleMedia.set(link, '');
+        const loading = new Promise((resolve, reject) => {
           const timeout = setTimeout(() => { link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); }, 15000);
           link.onload = () => { clearTimeout(timeout); resolve(); };
           link.onerror = () => { clearTimeout(timeout); link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); };
           document.head.append(link);
-        });
-        link.disabled = true;
-        link.removeAttribute('media');
+        }).catch(error => { resources.delete(key); throw error; });
+        resources.set(key, loading);
       }
+      if (resources.has(key)) await resources.get(key);
+      if (!styleMedia.has(link)) styleMedia.set(link, link.media);
       area.styles.push(link);
     }));
   }
@@ -192,11 +196,7 @@
   }
   async function buildArea(url) {
     const key = routeKey(url);
-    if (areas.size >= 16) {
-      const removable = [...areas.values()].find(area => area !== active && !area.dirty && !['/', '/mascotes/'].includes(area.url.pathname));
-      if (!removable) throw new Error('Conclua os rascunhos abertos antes de abrir outro perfil.');
-      areas.delete(routeKey(removable.url)); removable.dispose();
-    }
+    makeRoom(false);
     const controller = new AbortController();
     const abort = () => controller.abort();
     preparationAbort.signal.addEventListener('abort', abort, { once:true });
@@ -232,8 +232,18 @@
       if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=20261010-citizen-prewarm-1`, entry.startsWith('pets-'));
     }
     if (!valid()) { area.dispose(); throw new DOMException('Sessão encerrada', 'AbortError'); }
+    // Fetches can finish after another route filled the last cache slot.
+    // Admission, not request start, owns the strict memory bound.
+    makeRoom();
     areas.set(key, area); return area;
     } catch (error) { area.dispose(); throw error; }
+  }
+  function makeRoom(evict = true) {
+    if (areas.size >= 16) {
+      const removable = [...areas.values()].find(area => area !== active && routeKey(area.url) !== navigationKey && !area.dirty && !['/', '/mascotes/'].includes(area.url.pathname));
+      if (!removable) throw new Error('Conclua os rascunhos abertos antes de abrir outro perfil.');
+      if (evict) { areas.delete(routeKey(removable.url)); removable.dispose(); }
+    }
   }
 
   function initialize(area) {
@@ -262,6 +272,11 @@
       active.loaded = true;
       const user = await window.RegulationAuth.requireRole([]);
       if (!valid() || user?.role !== 'cidadao' || user.mustChangePassword) return;
+      await window.PortalCitizenMobileReady;
+      await window.PortalCitizenMobileChatReady;
+      // Finish the existing shared Chat owner; do not create a second runtime
+      // or leave its deferred script chain to overlap the first prepared tap.
+      await window.PortalGlobalChat?.start?.();
       for (const path of primaryRoutes) {
         if (!enabled() || document.hidden || !navigator.onLine || navigating) break;
         let area;
@@ -271,7 +286,7 @@
           if (area !== active && backgroundControllers.has(path)) await initialize(area);
         } catch (_) {
           // Background failure is silent. A tap retains the normal retry path.
-          if (area?.failed && area !== active) { areas.delete(path); area.dispose(); }
+          if (area?.failed && area !== active) { if (areas.get(path) === area) areas.delete(path); area.dispose(); }
         }
       }
     } catch (_) { /* Session/access failure leaves the current native gate in charge. */ }
@@ -297,7 +312,7 @@
     for (const [key, value] of area.attributes) if (key.startsWith('data-')) document.body.setAttribute(key, value);
     document.title = area.title;
     syncBrand();
-    area.styles.forEach(link => { link.disabled = false; });
+    area.styles.forEach(link => { link.disabled = false; link.media = styleMedia.get(link) || ''; });
     area.active = true; marker.after(area.root);
     window.PortalPets?.runtime?.attachHabitat?.(area.root.querySelector('#petHabitat'));
     area.dialogs?.forEach(dialog => { if (dialog.isConnected && !dialog.open) dialog.showModal(); });
@@ -315,7 +330,9 @@
     if (area.root.contains(window.PortalPets?.runtime?.root)) window.PortalPets.runtime.attachHabitat(null);
     window.PortalSocialFeed?.suspend?.(area.root.querySelector('#socialFeedMore, #profilePostsMore'));
     area.active = false; area.root.remove();
-    area.styles.forEach(link => { link.disabled = true; });
+    // Keep parsed stylesheets resident: disabling a link can refetch it on
+    // return and reflow after scroll restoration, especially with no-store.
+    area.styles.forEach(link => { link.media = 'not all'; });
   }
   function updateNavigation() {
     document.querySelectorAll('.social-mobile-nav a, .social-global-nav a').forEach(link => {
@@ -337,7 +354,7 @@
   async function navigate(url, pop = false) {
     if (!entries[url.pathname] || !valid() || !pop && !enabled()) return false;
     if (navigating) { wanted = { url, pop }; return true; }
-    navigating = true;
+    navigating = true; navigationKey = routeKey(url);
     const retained = areas.get(routeKey(url));
     notice.hidden = Boolean(retained?.loaded && !retained.failed); notice.textContent = 'Carregando…';
     notice.setAttribute('aria-busy', 'true');
@@ -389,7 +406,7 @@
       const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Tentar novamente';
       retry.addEventListener('click', () => navigate(url, pop), { once: true }); notice.append(retry);
     } finally {
-      notice.setAttribute('aria-busy', 'false'); navigating = false;
+      notice.setAttribute('aria-busy', 'false'); navigating = false; navigationKey = null;
       const next = wanted; wanted = null; if (next && valid()) void navigate(next.url, next.pop);
       else schedulePrewarm();
     }
@@ -446,7 +463,7 @@
     }
   });
   window.PortalCitizenShell = Object.freeze({
-    enabled, active: () => active, updateNavigation, navigate,
+    version:'20261010-citizen-prewarm-1', enabled, active: () => active, updateNavigation, navigate,
     canonicalize(path) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;

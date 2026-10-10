@@ -7,13 +7,15 @@ const root = path.resolve(import.meta.dirname, '../..');
 const output = path.join(root, '.local/mobile-shell-prewarm');
 await fs.mkdir(output, { recursive:true });
 const server = await serve(root);
-const browser = await chromium.launch({ executablePath:'/usr/bin/chromium', args:['--no-sandbox','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1'] });
+const browser = await chromium.launch({ executablePath:process.env.CHROMIUM_PATH || await fs.access('/usr/bin/chromium').then(()=>'/usr/bin/chromium',()=>chromium.executablePath()), args:['--no-sandbox','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1'] });
 const results = [];
+let releaseFriends, friendRequestStarted;
 const warm = page => page.waitForFunction(() => {
   const state = window.PortalCitizenShell?.diagnostics();
   return state && !state.prewarming && ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'].every(path => state.ready.includes(path));
 });
 async function run(id, start, setup, exercise) {
+  if (process.env.WARM_CASES && !process.env.WARM_CASES.split(',').includes(id)) return;
   const result = { id, checks:[], errors:[] };
   const { page, context, audit } = await newPage(browser, { width:390, theme:'dark', seedOnce:true }, server.origin, result);
   const requests = [];
@@ -111,6 +113,34 @@ try {
     }));
     await page.waitForURL('**/login/**');
     check('old pending preparation cannot mount into Login', await page.locator('.citizen-route-area').count() === 0);
+  });
+  await run('cache-admission-race', '/', async page => {
+    let started;
+    friendRequestStarted = new Promise(resolve => { started = resolve; });
+    const held = new Promise(resolve => { releaseFriends = resolve; });
+    await page.route('**/amigos/', async route => { started(); await held; await route.fallback().catch(() => {}); });
+  }, async (page, audit, requests, check) => {
+    await friendRequestStarted;
+    for (let n=0;n<17;n++) await page.evaluate(n => window.PortalCitizenShell.navigate(new URL('/perfil/?clean='+n, location.href)), n);
+    check('foreground fills strict16slot cache', await page.evaluate(() => window.PortalCitizenShell.diagnostics().routes === 16));
+    releaseFriends();
+    await page.waitForFunction(() => !window.PortalCitizenShell.diagnostics().prewarming);
+    const size = await page.evaluate(() => window.PortalCitizenShell.diagnostics().routes);
+    check('late background admission retains strict16slot bound: '+size, size === 16);
+    check('active profile survives concurrent admission', await page.locator('#socialProfile').isVisible() && new URL(page.url()).search === '?clean=16');
+    check('admission race retains document', audit.documents.length === 1);
+  });
+  await run('background-retains-reading-position', '/', async page => {
+    await page.route('**/perfil/', async route => { await new Promise(resolve => setTimeout(resolve, 600)); await route.fallback(); });
+  }, async (page, audit, requests, check) => {
+    await page.evaluate(() => {
+      scrollTo(0,240);
+      window.__readingBeforePreparation = {y:scrollY,nav:document.querySelector('.social-mobile-nav'),body:document.body.className};
+    });
+    await warm(page);
+    check('background preparation preserves current scroll', await page.evaluate(() => Math.abs(scrollY-window.__readingBeforePreparation.y)<3));
+    check('background preparation preserves active body and bar', await page.evaluate(() => document.body.className===window.__readingBeforePreparation.body&&document.querySelector('.social-mobile-nav')===window.__readingBeforePreparation.nav));
+    check('background content never mounts over Home', await page.locator('.citizen-route-area').count()===1&&await page.locator('#socialHome').isVisible());
   });
 } finally { await browser.close(); await new Promise(resolve => server.server.close(resolve)); }
 await fs.writeFile(path.join(output, 'results.json'), JSON.stringify(results, null, 2));

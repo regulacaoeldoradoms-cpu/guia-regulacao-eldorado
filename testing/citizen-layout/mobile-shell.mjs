@@ -50,6 +50,7 @@ try {
       window.__shellNodes = { nav:document.querySelector('.social-mobile-nav'), chat:document.getElementById('portalChatRoot'), launcher:document.getElementById('portalChatLauncher'), pet:window.PortalPets.runtime, root:window.PortalPets.runtime.root, tabId:window.PortalPets.runtime.tabId, document:window.__refinementDocument };
       document.getElementById('socialComposerText').value = 'Rascunho sintético preservado';
       window.scrollTo(0, 240); window.__homeY = scrollY;
+      document.addEventListener('click', () => { window.__leave = {y:scrollY,body:document.body.className,nav:getComputedStyle(document.querySelector('.social-mobile-nav')).position}; }, {capture:true,once:true});
     });
     await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
     await page.waitForFunction(() => !window.PortalCitizenShell.diagnostics().navigating && location.pathname === '/amigos/');
@@ -62,7 +63,8 @@ try {
     check('pet occupies active habitat', await page.evaluate(() => window.PortalPets.runtime.root.parentNode === document.getElementById('petHabitat')));
     await go(page, '/');
     check('home feed draft retained', await page.locator('#socialComposerText').inputValue() === 'Rascunho sintético preservado');
-    check('home scroll restored', await page.evaluate(() => Math.abs(scrollY - window.__homeY) < 3));
+    const scroll = await page.evaluate(() => ({actual:scrollY,saved:window.__homeY,retained:window.PortalCitizenShell.active().scroll,leave:window.__leave}));
+    check('home scroll restored '+JSON.stringify(scroll), Math.abs(scroll.actual-scroll.saved) < 3);
     check('shared document/bar/chat/pet identity', await page.evaluate(() => {
       const old = window.__shellNodes;
       return old.document === window.__refinementDocument && old.nav === document.querySelector('.social-mobile-nav') && old.chat === document.getElementById('portalChatRoot') && old.launcher === document.getElementById('portalChatLauncher') && old.pet === window.PortalPets.runtime && old.root === window.PortalPets.runtime.root && old.tabId === window.PortalPets.runtime.tabId;
