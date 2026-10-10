@@ -488,6 +488,13 @@ html[data-portal-theme="dark"] body.shared-mobile-navigation #portalChatRoot .po
   color: #c0d4e6 !important;
 }
 
+@media screen and (max-width: 900px) {
+  html[data-portal-theme="dark"] body.shared-mobile-navigation #portalChatRoot .portal-chat-unread {
+    background: var(--portal-theme-selected, #183e59) !important;
+    color: var(--portal-theme-text, #e5eef5) !important;
+  }
+}
+
 /* The global Início control closes the mobile panel through the native handler. */
 body.shared-mobile-navigation #portalChatClose {
   display: none !important;

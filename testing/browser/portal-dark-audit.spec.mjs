@@ -35,6 +35,44 @@ test('Home initials mask classification retains bright-surface regressions',asyn
   expect(outsideHome.bright.map(({selector,pseudo})=>selector+pseudo)).toEqual(expect.arrayContaining(['#chat::after','#initials::after','#white-base::after']));
 });
 
+test('Shared navigation initials mask classification retains unrelated surfaces',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<html data-portal-theme="dark"><meta name="viewport" content="width=device-width,initial-scale=1"><body class="citizen-readable-layout shared-mobile-navigation"></body></html>'}));
+  await page.goto('/perfil/');
+  await page.evaluate(()=>{
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" aria-hidden="true"><text x="14" y="14" text-anchor="middle" dominant-baseline="central" font-size="11" font-family="Arial, sans-serif" font-weight="700" fill="#000">AB</text></svg>';
+    const style=document.createElement('style');
+    style.textContent=`html,body{background:#101820;color:white}.home-nav-profile-avatar{position:relative;display:block;width:28px;height:28px;background:#172432}.home-nav-profile-avatar::after{content:'';position:absolute;inset:0;background:white;mask:var(--mask) center / 100% 100% no-repeat}#shared-white-base{background:white}#shared-oversized{width:56px;height:56px}#shared-scaled::after{mask-size:1000% 1000%}`;
+    document.head.append(style);
+    const nav=document.createElement('nav');nav.className='social-mobile-nav';document.body.append(nav);
+    for(const id of ['shared-valid','shared-white-base','shared-rectangle','shared-extra','shared-unmarked','shared-outside','shared-oversized','shared-scaled','shared-wrong-text']){
+      const el=document.createElement('span');el.id=id;el.className='home-nav-profile-avatar';el.textContent=id==='shared-wrong-text'?'CD':'AB';
+      if(id!=='shared-unmarked')el.dataset.homeAvatarInitials='true';
+      const image=id==='shared-rectangle'?svg.replace(/<text[\s\S]*<\/text>/,'<rect width="28" height="28"/>'):id==='shared-extra'?svg.replace('</svg>','<path d="M0 0H28V28H0Z"/></svg>'):svg;
+      el.style.setProperty('--mask',`url("data:image/svg+xml,${encodeURIComponent(image)}")`);
+      (id==='shared-outside'?document.body:nav).append(el);
+    }
+    const panel=document.createElement('div');panel.id='shared-panel';panel.style.background='white';panel.textContent='Synthetic unrelated panel';document.body.append(panel);
+  });
+  const report=await inspectSurfaces(page);
+  expect(report.allowed.map(({selector,pseudo})=>selector+pseudo).sort()).toEqual(['#shared-valid::after','#shared-white-base::after']);
+  expect(report.bright.map(({selector,pseudo})=>selector+pseudo).sort()).toEqual(['#shared-extra::after','#shared-outside::after','#shared-oversized::after','#shared-panel','#shared-rectangle::after','#shared-scaled::after','#shared-unmarked::after','#shared-white-base','#shared-wrong-text::after']);
+  for(const route of ['/', '/cidadao/', '/amigos/', '/ferramentas/', '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/']){
+    await page.evaluate(route=>history.replaceState(null,'',route),route);
+    expect((await inspectSurfaces(page)).allowed.map(({selector})=>selector)).toContain('#shared-valid');
+  }
+  await page.evaluate(()=>history.replaceState(null,'','/medico/'));
+  expect((await inspectSurfaces(page)).allowed).toEqual([]);
+  await page.evaluate(()=>{history.replaceState(null,'','/perfil/');document.body.classList.remove('shared-mobile-navigation');});
+  expect((await inspectSurfaces(page)).allowed).toEqual([]);
+  await page.evaluate(()=>document.body.classList.add('shared-mobile-navigation'));
+  await page.emulateMedia({media:'print'});
+  expect((await inspectSurfaces(page)).allowed).toEqual([]);
+  await page.emulateMedia({media:'screen'});
+  await page.setViewportSize({width:901,height:844});
+  expect((await inspectSurfaces(page)).allowed).toEqual([]);
+});
+
 for (const route of selectedAuditRoutes) {
   test(`computed surfaces ${route}`, async ({ page, context }, info) => {
     const network=await installAuditFixture(context,{authenticated:!['/login/','/cadastro/'].includes(route),userOverrides:route==='/estudos/'?{username:'wellyton',name:'Pessoa Fictícia Auditoria'}:{}});
