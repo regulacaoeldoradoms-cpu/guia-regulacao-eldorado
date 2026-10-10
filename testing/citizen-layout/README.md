@@ -107,23 +107,33 @@ Home/Canal/Mascotes passaram em 320/390 px com cidadão e admin sintéticos e sc
 
 ### Home: ferramentas no topo e rolagem horizontal
 
-Na Home, a barra agora acrescenta espaço entre destinos e usa duas linhas em
-320 px quando necessário; em 390 px permanece numa linha. Os rótulos continuam
-com 14 px. Essa organização substitui a exigência anterior de uma linha na Home.
+Na Home, ferramentas aparecem antes do compositor em cartões com rolagem lateral.
+O título e “Ver todas” compartilham o cabeçalho; a preferência de quantidade
+fica em “Mostrar atalhos”. Uma única ferramenta ocupa a largura disponível e
+não oferece um seletor redundante. O chat fechado fica junto aos controles da
+conta, preservando a área do feed. A barra mantém uma linha em 320–390 px com
+texto normal e nomes de 14 px; com texto ampliado, passa ao fluxo da página.
 
-Teste focado com 40 publicações fictícias, viewport CSS de 320/390 px, UA Android,
+Teste focado com 40 publicações fictícias, viewport CSS de 320/360/390 px, UA Android,
 toque habilitado e preferência de movimento reduzido:
 
 ```bash
-HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,390 AUDIT_ROLE=admin AUDIT_THEME=dark node testing/citizen-layout/audit.mjs /tmp/home-carousel-dark.json
-HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,390 AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen.json
+HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,360,390 AUDIT_ROLE=admin AUDIT_THEME=dark node testing/citizen-layout/audit.mjs /tmp/home-carousel-dark.json
+node testing/citizen-layout/verify.mjs /tmp/home-carousel-dark.json
+HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,360,390 AUDIT_ROLE=cidadao AUDIT_THEME=light node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen.json
+node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen.json
+HOME_CAROUSEL=1 ROUTES=/ WIDTHS=320,390 AUDIT_ROLE=cidadao AUDIT_THEME=light TEXT_SCALE=2 node testing/citizen-layout/audit.mjs /tmp/home-carousel-citizen-text200.json
+node testing/citizen-layout/verify.mjs /tmp/home-carousel-citizen-text200.json
 ```
 
 `home-carousel.mjs` verifica posição antes do compositor/feed, catálogo autorizado
 na mesma ordem, quantidade persistida, acesso à lista completa quando limitado,
 gesto horizontal por eventos de toque do Chromium, setas com a região em foco,
 visibilidade do último cartão ao receber foco, limites da página, rótulos da barra
-e restauração da posição original ao ampliar a viewport. Uma conta cidadão exibe
+e restauração da posição original ao ampliar a viewport, mantendo nós, foco e
+rascunho. Também verifica cliques desobstruídos no compositor/feed, publicação
+pela API interceptada e texto de 200% após mudanças de quantidade/reload.
+Uma conta cidadão exibe
 somente seu cartão autorizado; o teste não adiciona ferramentas para criar rolagem.
 As capturas `home-carousel-*.png` mostram a tela inicial e o compositor/feed para
 revisão visual. Todas as APIs e contas são fictícias; páginas profissionais não

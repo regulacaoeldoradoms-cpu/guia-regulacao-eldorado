@@ -30,9 +30,7 @@ for (const row of rows) {
     if (row.navigation) {
       assert.ok(row.navigation.targetsFit, `${name}: all navigation targets visible and at least 44 px`);
       assert.ok(row.navigation.labelsFit, `${name}: complete navigation labels fit`);
-      if (row.textScale !== 2 && row.route === '/')
-        assert.ok(row.navigation.rows <= 2, `${name}: Home navigation uses at most two readable rows`);
-      else if (row.textScale !== 2)
+      if (row.textScale !== 2)
         assert.equal(row.navigation.rows, 1, `${name}: normal text navigation stays in one row`);
       else
         assert.ok(row.navigation.reflow, `${name}: enlarged text reflows safely`);

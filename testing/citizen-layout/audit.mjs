@@ -5,6 +5,7 @@ import { petCatalog } from "../../worker/pet-catalog.js";
 import { initialPetState, publicPetState } from "../../worker/pet-domain.js";
 import { chromium } from "../browser/node_modules/playwright/index.mjs";
 import { verifyHomeCarousel } from "./home-carousel.mjs";
+import { applyTextScale } from "./text-scale.mjs";
 const root =
   process.env.PORTAL_ROOT || path.resolve(import.meta.dirname, "../..");
 const port = Number(process.env.AUDIT_PORT || 4179);
@@ -146,6 +147,10 @@ try {
             profile,
           };
         else if (u.pathname === "/api/social/me") data = { profile };
+        else if (u.pathname === '/api/social/posts' && r.request().method() === 'POST') {
+          const payload = r.request().postDataJSON();
+          data = {post: {id: 'fixture-created', author: profile, own: true, body: payload.body, audience: payload.audience, createdAt: '2026-10-10T01:00:00Z', counts: {comments:0,reactions:0}}};
+        }
         else if (u.pathname.includes("/feed"))
           data = {
             posts: Array.from({ length: process.env.HOME_CAROUSEL ? 40 : 1 }, (_, index) => (
@@ -225,18 +230,7 @@ try {
           if (bad.length) throw Error("Compact navigation label or touch target does not fit: "+JSON.stringify(bad));
         }
       }
-      if (process.env.TEXT_SCALE === "2")
-        await page.evaluate(() => {
-          const elements = [...document.querySelectorAll("body *")];
-          const sizes = elements.map((e) => getComputedStyle(e).fontSize);
-          elements.forEach((e, i) =>
-            e.style.setProperty(
-              "font-size",
-              parseFloat(sizes[i]) * 2 + "px",
-              "important",
-            ),
-          );
-        });
+      await applyTextScale(page);
       await page.waitForTimeout(100); // Allow ResizeObserver to settle after text scaling.
       const metrics = await page.evaluate(() => {
         const visible = [...document.querySelectorAll("body *")].filter((e) => {
@@ -386,9 +380,10 @@ try {
       });
       metrics.textScale = process.env.TEXT_SCALE === "2" ? 2 : 1;
       if (process.env.HOME_CAROUSEL && route === '/') {
-        await page.screenshot({path: `/tmp/home-carousel-${process.env.AUDIT_THEME || 'light'}-${user.role}-${width}.png`});
+        const captureScale = process.env.TEXT_SCALE === '2' ? '-text200' : '';
+        await page.screenshot({path: `/tmp/home-carousel-${process.env.AUDIT_THEME || 'light'}-${user.role}-${width}${captureScale}.png`});
         await page.evaluate(() => window.scrollTo(0, document.querySelector('.social-composer').getBoundingClientRect().top + scrollY - 12));
-        await page.screenshot({path: `/tmp/home-carousel-feed-${process.env.AUDIT_THEME || 'light'}-${user.role}-${width}.png`});
+        await page.screenshot({path: `/tmp/home-carousel-feed-${process.env.AUDIT_THEME || 'light'}-${user.role}-${width}${captureScale}.png`});
         await page.evaluate(() => window.scrollTo(0, 0));
         metrics.carousel = await verifyHomeCarousel(page, width);
       }
@@ -445,7 +440,8 @@ try {
           clientWidth: document.documentElement.clientWidth,
                 height: innerHeight,
                 chatAboveCompanion: e.classList.contains("portal-chat-panel") && document.querySelector(".pet-stage-global")
-                  ? Number(getComputedStyle(e.closest(".portal-chat")).zIndex) > Number(getComputedStyle(document.querySelector(".pet-stage-global")).zIndex)
+                  ? (Number(getComputedStyle(e).zIndex) || Number(getComputedStyle(e.closest(".portal-chat")).zIndex)) > Number(getComputedStyle(document.querySelector(".pet-stage-global")).zIndex)
+                    && e.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2))
                   : null,
                 scrollWidth: e.scrollWidth,
                 clientWidth: e.clientWidth,

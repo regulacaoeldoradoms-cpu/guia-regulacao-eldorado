@@ -43,7 +43,8 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const prepare=async target=>{
       if(route==='/conselho/painel/')await sampleCouncilReflection(target,info);
       if(mobileRedesign){
-        palettes.push(await target.evaluate(()=>[...document.querySelectorAll('button[id],input[id],textarea[id],.status-chip,.privacy-chip')].filter(e=>!e.closest('.social-mobile-nav,.social-notification-panel')).map(e=>{const s=getComputedStyle(e);return {id:e.id,class:e.className,color:s.color,background:s.backgroundColor,border:s.borderColor};})));
+        // Compare the same control identities and complete colors after responsive DOM moves.
+        palettes.push(await target.evaluate(()=>[...document.querySelectorAll('button[id],input[id],textarea[id],.status-chip,.privacy-chip')].filter(e=>!e.closest('.social-mobile-nav,.social-notification-panel')).map(e=>{const s=getComputedStyle(e);return {id:e.id,class:e.className,color:s.color,background:s.backgroundColor,border:s.borderColor};}).sort((a,b)=>a.id.localeCompare(b.id)||a.class.localeCompare(b.class))));
         if(!layout)layout=await target.evaluate(()=>{
           const nav=[...document.querySelectorAll('.social-mobile-nav-link')];
           const visible=nav.filter(e=>e.getBoundingClientRect().height>0);
