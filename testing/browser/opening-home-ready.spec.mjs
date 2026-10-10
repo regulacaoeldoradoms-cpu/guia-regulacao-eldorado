@@ -88,6 +88,9 @@ test('Home REAL inicia durante os 10 s; revela o mesmo documento sem flash nem r
   expect(calls.filter((call) => call.path === '/js/portal-chat.js' || call.path === '/js/portal-chat-switch-optimizer.js')).toHaveLength(bootstrapLoads);
   await expect(page.locator('#portalGlobalChatScript')).toHaveCount(1);
   await expect(page.locator('#portalGlobalChatOptimizer')).toHaveCount(1);
+  if (!await page.locator('#portalLogout').isVisible()) {
+    await page.locator('#homeAccountMenu > summary').click();
+  }
   await page.locator('#portalLogout').click();
   await expect(page).toHaveURL(/\/login\/$/);
   expect(calls.filter((call) => call.path === '/api/auth/logout')).toHaveLength(1);

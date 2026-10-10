@@ -1,11 +1,14 @@
 import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { petCatalog } from "../../worker/pet-catalog.js";
 import { initialPetState, publicPetState } from "../../worker/pet-domain.js";
-import { chromium } from "../browser/node_modules/playwright/index.mjs";
 import { verifyHomeCarousel } from "./home-carousel.mjs";
 import { applyTextScale } from "./text-scale.mjs";
+const { chromium } = await import(process.env.PLAYWRIGHT_PATH
+  ? pathToFileURL(path.resolve(process.env.PLAYWRIGHT_PATH)).href
+  : "../browser/node_modules/playwright/index.mjs");
 const root =
   process.env.PORTAL_ROOT || path.resolve(import.meta.dirname, "../..");
 const port = Number(process.env.AUDIT_PORT || 4179);
@@ -127,14 +130,20 @@ try {
       await context.routeWebSocket("**/*", (socket) => socket.close());
       const calls = [],
         errors = [];
+      const cachedNavigationLoads = [];
+      const legacyNavigationVersion = "20260928-2";
       const page = await context.newPage();
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/*", async (r) => {
         const u = new URL(r.request().url());
         calls.push(u.pathname + u.search);
         if (u.hostname === "127.0.0.1") {
-          if (process.env.CACHED_NAV_PATH && u.pathname === "/js/social-navigation.js" && u.searchParams.get("v") === "20260928-2")
+          // Match the original version key, as portal-sw cache.match(request)
+          // does. A bumped URL must load current source, not the legacy payload.
+          if (process.env.CACHED_NAV_PATH && u.pathname === "/js/social-navigation.js" && u.searchParams.get("v") === legacyNavigationVersion) {
+            cachedNavigationLoads.push(u.pathname + u.search);
             return r.fulfill({contentType:"text/javascript",body:await fs.readFile(process.env.CACHED_NAV_PATH,"utf8")});
+          }
           return r.continue();
         }
         let data = { ok: true };
@@ -197,7 +206,7 @@ try {
         });
       });
       await page.goto(`http://127.0.0.1:${port}` + route);
-      if (process.env.HOME_CAROUSEL && route === '/') {
+      if (route === '/') {
         await page.waitForFunction(() => Boolean(window.PortalHomeReady));
         await page.evaluate(() => window.PortalHomeReady);
       }
@@ -250,6 +259,15 @@ try {
             if (!nav || getComputedStyle(nav).display === "none") return null;
             const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
             return {
+              iconOnly: nav.dataset.homeIconNavigation === "true",
+              position: getComputedStyle(nav).position,
+              destinations: links.map(e => e.getAttribute("href") || e.id),
+              accessibleNames: links.map(e => e.getAttribute("aria-label") || ""),
+              labelsHidden: links.every(e => [...e.querySelectorAll(":scope > span:not(.social-nav-icon):not(.social-nav-badge):not(.portal-chat-launcher-icon):not(#portalChatUnread)")].every(label => {
+                const s = getComputedStyle(label), r = label.getBoundingClientRect();
+                return s.display === "none" || (r.width <= 1 && r.height <= 1 && s.overflow === "hidden");
+              })),
+              profileAvatar: !!links.at(-1)?.querySelector(".home-nav-profile-avatar"),
               rows: new Set(links.map(e => Math.round(e.getBoundingClientRect().top))).size,
               reflow: nav.classList.contains("citizen-nav-reflow"),
               targetsFit: links.every(e => { const r=e.getBoundingClientRect(); return r.width>=43.99 && r.height>=44 && r.left>=-1 && r.right<=document.documentElement.clientWidth+1; }),
@@ -394,6 +412,11 @@ try {
         ...metrics,
         calls,
         errors,
+        ...(process.env.CACHED_NAV_PATH ? {
+          cachedNavigationLoads,
+          legacyNavigationVersion,
+          navigationScriptLoads: calls.filter(value => new URL(value, "http://localhost").pathname === "/js/social-navigation.js"),
+        } : {}),
       });
       if (process.env.NAV_REVIEW || process.env.REVIEW_CAPTURES) {
         await page.locator(".social-mobile-nav").screenshot({path: `/tmp/citizen-nav-${process.env.NAV_REVIEW || "applied"}-${width}${process.env.TEXT_SCALE === "2" ? "-text200" : ""}.png`});
