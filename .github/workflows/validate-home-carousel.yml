@@ -4,8 +4,20 @@ on:
     paths:
       - index.html
       - css/home-tools-carousel.css
+      - css/citizen-readable-layout.css
+      - css/portal.css
+      - css/portal-interactions.css
+      - css/social.css
+      - css/home-mobile.css
+      - css/home-chat-button.css
+      - css/portal-chat.css
       - js/home.js
       - js/citizen-layout.js
+      - js/social-home.js
+      - js/social-feed.js
+      - js/tools-catalog.js
+      - js/social-navigation.js
+      - js/portal-chat.js
       - testing/citizen-layout/**
       - .github/workflows/validate-home-carousel.yml
 permissions:
