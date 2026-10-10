@@ -4,6 +4,8 @@
 // INTERACTIONS=0 limits mobile cases to profile layout/account/photo/form checks.
 // CASES=shared-mascotes runs only the shared Mascotes navigation/close smoke.
 // CASES=group-own-390-dark-100 exercises native asynchronous group reopening.
+// CASES=mascotes-breakpoints checks mobile-only Chat across desktop/print transitions.
+// MODE=preservation also compares fresh desktop/print Mascotes with no native Chat.
 // BASELINE_ROOT is required for preservation. No production endpoints or credentials.
 import http from 'node:http';
 import fs from 'node:fs/promises';
@@ -132,6 +134,7 @@ async function intercept(context, origin, audit) {
     const request = route.request(), url = new URL(request.url()), method = request.method();
     if (request.isNavigationRequest() && request.frame() === request.frame().page().mainFrame()) audit.documents.push(url.pathname + url.search);
     if (!url.pathname.startsWith('/api/')) {
+      audit.resources.push(url.pathname + url.search);
       if (url.origin === origin) return route.continue();
       audit.blockedResources.push(url.origin + url.pathname);
       return route.fulfill({ status:204, body:'' });
@@ -197,7 +200,7 @@ async function ready(page, route, candidate = true) {
 }
 
 async function newPage(browser, scenario, origin, result) {
-  const audit = { apiCalls:[], documents:[], blockedResources:[], unmappedApiCalls:[], webSocketsBlocked:0 };
+  const audit = { apiCalls:[], documents:[], resources:[], blockedResources:[], unmappedApiCalls:[], webSocketsBlocked:0 };
   if (scenario.group) {
     audit.groupFixture = true;
     audit.groupMessageRequests = 0;
@@ -520,11 +523,139 @@ async function printReady(page) {
   await settle(page);
 }
 
+async function mascotesReady(page, candidate) {
+  await page.locator('#petGallery .pet-choice').first().waitFor({ state:'attached' });
+  await page.waitForFunction(() => document.getElementById('petMessage')?.textContent === 'Seu gato está com você.');
+  await page.locator('.social-mobile-nav').waitFor({ state:'attached' });
+  if (candidate) {
+    await page.waitForFunction(() => Boolean(window.PortalCitizenMobileReady));
+    await page.evaluate(() => window.PortalCitizenMobileReady);
+  }
+  await page.evaluate(() => document.fonts.ready);
+  await settle(page);
+}
+
+function nativeChatRequests(audit) {
+  return {
+    api:audit.apiCalls.filter(call => / \/api\/chat(?:\/|\?)/.test(call)),
+    assets:audit.resources.filter(url => /^\/js\/portal-(?:global-chat|chat(?:-groups|-switch-optimizer)?)\.js(?:\?|$)/.test(url)
+      || /^\/css\/portal-chat(?:[-.]|\/)/.test(url)),
+    sockets:audit.webSocketsBlocked
+  };
+}
+
+async function mascotesPreservationState(page) {
+  return page.evaluate(() => {
+    const selectors = ['.portal-topbar','.pet-page','#petMessage','#petGallery','#petHome','#petLives','#petNeeds','#petShop','#petSettings','.social-global-nav','.social-mobile-nav','#portalChatRoot','#portalChatLauncher'];
+    return Object.fromEntries(selectors.map(selector => {
+      const node = document.querySelector(selector);
+      if (!node) return [selector,null];
+      const rect = node.getBoundingClientRect(), style = getComputedStyle(node);
+      return [selector, { text:node.getClientRects().length ? node.innerText.trim().replace(/\s+/g,' ') : '',
+        rect:['x','y','width','height'].map(key => Math.round(rect[key] * 10) / 10), hidden:node.hidden,
+        style:Object.fromEntries(['display','position','fontSize','color','backgroundColor','padding','margin','borderRadius'].map(key => [key,style[key]])) }];
+    }));
+  });
+}
+
+async function mascotesFreshComparison(page, result, audit, scenario, browser, baselineOrigin) {
+  const original = await newPage(browser, scenario, baselineOrigin, result);
+  try {
+    const bootstrap = await page.evaluate(async () => ({
+      mounted:Boolean(window[Symbol.for('portal.citizenMobileChatBootstrap')]),
+      readyPromise:typeof window.PortalCitizenMobileChatReady?.then === 'function',
+      started:await window.PortalCitizenMobileChatReady
+    }));
+    check(result, 'mobile-only bootstrap executes but declines fresh desktop/print Chat', bootstrap.mounted && bootstrap.readyPromise && bootstrap.started === false, bootstrap);
+    // Print is selected before navigation in both contexts: this tests fresh
+    // print entry, never a mobile-first page whose Chat already initialized.
+    if (scenario.print) await original.page.emulateMedia({ media:'print' });
+    await original.page.goto(baselineOrigin + '/mascotes/', { waitUntil:'load' });
+    await mascotesReady(original.page, false);
+    if (scenario.print) { await printReady(page); await printReady(original.page); }
+    const candidate = await mascotesPreservationState(page), base = await mascotesPreservationState(original.page);
+    check(result, 'fresh desktop/print Mascotes matches ac89d0fb presentation', JSON.stringify(candidate) === JSON.stringify(base), Object.keys(candidate).filter(key => JSON.stringify(candidate[key]) !== JSON.stringify(base[key])));
+    check(result, 'fresh Mascotes has no native Chat root or visible launcher in either source', await page.locator('#portalChatRoot').count() === 0
+      && await original.page.locator('#portalChatRoot').count() === 0
+      && await page.locator('#portalChatLauncher:visible').count() === 0
+      && await original.page.locator('#portalChatLauncher:visible').count() === 0);
+    await capture(original.page, result, 'baseline');
+    await capture(page, result, 'candidate');
+    // Observe requests through completed rendering/captures, rather than taking
+    // an early empty request list before the bootstrap has run.
+    const candidateRequests = nativeChatRequests(audit), baseRequests = nativeChatRequests(original.audit);
+    check(result, 'fresh desktop/print Mascotes requests no native Chat assets, APIs or sockets',
+      [candidateRequests,baseRequests].every(requests => !requests.api.length && !requests.assets.length && requests.sockets === 0), { candidate:candidateRequests, baseline:baseRequests });
+    check(result, 'baseline Mascotes APIs are explicitly synthetic', original.audit.unmappedApiCalls.length === 0, original.audit.unmappedApiCalls);
+    result.mascotesComparison = { baselineRoot, bootstrap, candidate, baseline:base, candidateRequests, baseRequests,
+      freshPrint:scenario.print || false, baselineApiCalls:original.audit.apiCalls };
+  } finally { await original.context.close(); }
+}
+
+async function mascotesBreakpoints(page, result, audit) {
+  await navChecks(page, result, 'Mascotes mobile before transition');
+  await page.locator('#petStart').focus();
+  await page.evaluate(() => scrollTo(0, 300));
+  const before = await snapshot(page), documentLoads = audit.documents.length;
+  await page.locator('#portalChatLauncher').click();
+  await page.locator(`[data-chat-user="${friendHandle}"]`).first().click();
+  await page.locator('#portalChatConversationView.active').waitFor();
+  await page.locator('#portalChatMessages [data-message-id="24"]').waitFor();
+  await page.waitForFunction(() => history.state?.__portalHomeDirect?.depth === 2);
+  const draft = 'Rascunho sintético Mascotes: preservar ao mudar desktop e impressão.';
+  await page.locator('#portalChatInput').fill(draft);
+  await page.locator('#portalChatInput').evaluate(node => { node.setSelectionRange(5,17); document.getElementById('portalChatMessages').scrollTop = 140; });
+  const conversation = await capture(page, result, 'mobile-conversation');
+  check(result, 'initial native conversation has a nonzero scroll position to preserve', Math.abs(conversation.chat.messageScroll - 140) <= 2
+    && await page.locator('#portalChatMessages').evaluate(node => node.scrollHeight > node.clientHeight), conversation.chat.messageScroll);
+  await page.evaluate(() => {
+    window.__mascotesTransitionNodes = Object.fromEntries(['portalChatRoot','portalChatLauncher','portalChatInput','portalChatUnread'].map(id => [id,document.getElementById(id)]));
+  });
+  const intactNodes = () => page.evaluate(() => Object.entries(window.__mascotesTransitionNodes).every(([id,node]) => document.getElementById(id) === node)
+    && document.querySelectorAll('#portalChatRoot').length === 1 && document.querySelectorAll('#portalChatLauncher').length === 1);
+  await page.setViewportSize({ width:1440, height });
+  await page.waitForFunction(() => !document.body.classList.contains('shared-mobile-navigation')
+    && !document.getElementById('portalChatRoot')?.classList.contains('open') && !history.state?.__portalHomeDirect);
+  await settle(page);
+  const desktop = await capture(page, result, 'desktop-after-mobile');
+  check(result, 'leaving mobile closes native conversation and hides Chat controls', !desktop.chat.open && !desktop.chat.conversation
+    && await page.locator('#portalChatRoot').isHidden() && await page.locator('#portalChatLauncher').isHidden());
+  check(result, 'desktop transition retains native nodes and page context', await intactNodes() && desktop.document === before.document
+    && desktop.pagehides === 0 && desktop.focus === before.focus && Math.abs(desktop.scrollY - before.scrollY) <= 1,
+  { before:{ focus:before.focus, scrollY:before.scrollY }, desktop:{ focus:desktop.focus, scrollY:desktop.scrollY } });
+  await printReady(page);
+  const printed = await capture(page, result, 'print-after-mobile');
+  check(result, 'print keeps native Chat closed, hidden and attached', await intactNodes() && !printed.chat.open && !printed.chat.conversation
+    && await page.locator('#portalChatRoot').isHidden() && await page.locator('#portalChatLauncher').isHidden());
+  check(result, 'retained hidden Chat does not create desktop or print page overflow', desktop.overflow <= 1 && printed.overflow <= 1,
+    { desktop:desktop.overflow, print:printed.overflow });
+  await page.setViewportSize({ width:390, height });
+  await page.emulateMedia({ media:'screen' });
+  await page.waitForFunction(() => document.body.classList.contains('shared-mobile-navigation'));
+  await settle(page);
+  check(result, 'returning to mobile leaves Chat closed until requested', await intactNodes() && await page.locator('#portalChatRoot').evaluate(node => !node.classList.contains('open')));
+  await navChecks(page, result, 'Mascotes mobile after transition');
+  await page.locator('#portalChatLauncher').click();
+  await page.locator('#portalChatConversationView.active').waitFor();
+  await page.waitForFunction(() => history.state?.__portalHomeDirect?.depth === 2);
+  await settle(page);
+  const returned = await capture(page, result, 'mobile-reopened');
+  check(result, 'reopen restores original conversation, fresh draft, scroll and selection', await intactNodes()
+    && returned.chat.selected === friendHandle && returned.chat.draft === draft
+    && JSON.stringify(returned.chat.selection) === JSON.stringify(conversation.chat.selection)
+    && Math.abs(returned.chat.messageScroll - conversation.chat.messageScroll) <= 2,
+  { before:conversation.chat, returned:returned.chat });
+  check(result, 'breakpoint cycle never reloads or leaves Mascotes', returned.document === before.document
+    && returned.url === '/mascotes/' && returned.pagehides === 0 && audit.documents.length === documentLoads);
+  result.mascotesBreakpoints = { before, conversation, desktop, printed, returned,
+    scope:'Native close occurs outside mobile. No claim that an initialized native Chat stops all background contact polling.' };
+}
+
 async function sourceHashes() {
   const files = ['js/citizen-layout.js','js/citizen-mobile-navigation.js','css/citizen-mobile-navigation.css',
     'js/profile-mobile-presentation.js','css/profile-mobile-presentation.css','js/home-mobile-direct.js',
     'css/home-mobile-direct.css','js/home-mobile-composition.js','css/home-tools-carousel.css',
-    'js/home.js','perfil/index.html'];
+    'js/home.js','perfil/index.html','mascotes/index.html','js/citizen-mobile-chat-bootstrap.js'];
   return Object.fromEntries(await Promise.all(files.map(async file => [file, await fs.readFile(path.join(root,file)).then(source => createHash('sha256').update(source).digest('hex')).catch(() => null)])));
 }
 
@@ -539,11 +670,14 @@ const scenarios = [
 const selected = process.env.CASES?.split(',');
 if (selected?.includes('shared-mascotes')) scenarios.push({ id:'shared-mascotes', route:'/mascotes/', width:390, theme:'dark', scale:2, quick:true });
 if (selected?.includes('group-own-390-dark-100')) scenarios.push({ id:'group-own-390-dark-100', profile:'own', width:390, theme:'dark', scale:1, group:true });
+if (selected?.includes('mascotes-breakpoints')) scenarios.push({ id:'mascotes-breakpoints', route:'/mascotes/', width:390, theme:'dark', scale:1, mascotesBreakpoints:true });
 const runCases = mode === 'preservation' ? [
   { id:'desktop-own-light', profile:'own', width:1440, theme:'light' },
   { id:'desktop-other-dark', profile:'other', width:1440, theme:'dark' },
   { id:'print-own-light', profile:'own', width:390, theme:'light', print:true },
   { id:'print-other-dark', profile:'other', width:390, theme:'dark', print:true },
+  { id:'desktop-mascotes-light', route:'/mascotes/', width:1440, theme:'light', mascotesFresh:true },
+  { id:'print-mascotes-light', route:'/mascotes/', width:390, theme:'light', print:true, mascotesFresh:true },
 ] : scenarios;
 await fs.mkdir(output, { recursive:true });
 const current = await serve(root), baseline = baselineRoot ? await serve(baselineRoot) : null;
@@ -556,9 +690,15 @@ try {
     const route = scenario.route || (scenario.profile === 'other' ? `/perfil/?u=${friendHandle}` : '/perfil/');
     const { page, context, audit } = await newPage(browser, scenario, current.origin, result);
     try {
-      await page.goto(current.origin + route, { waitUntil:'domcontentloaded' });
-      await ready(page, route, mode !== 'baseline');
-      if (scenario.group) {
+      if (scenario.mascotesFresh && scenario.print) await page.emulateMedia({ media:'print' });
+      await page.goto(current.origin + route, { waitUntil:scenario.mascotesFresh ? 'load' : 'domcontentloaded' });
+      if (scenario.mascotesFresh) await mascotesReady(page, true);
+      else await ready(page, route, mode !== 'baseline');
+      if (scenario.mascotesFresh) {
+        await mascotesFreshComparison(page, result, audit, scenario, browser, baseline.origin);
+      } else if (scenario.mascotesBreakpoints) {
+        await mascotesBreakpoints(page, result, audit);
+      } else if (scenario.group) {
         await navChecks(page, result, 'Perfil before group');
         await groupExercise(page, result, audit, route);
       } else if (scenario.quick) {
@@ -630,6 +770,7 @@ try {
       check(result, 'no page or harness errors', result.errors.length === 0);
       check(result, 'all exercised API routes have explicit synthetic fixtures', audit.unmappedApiCalls.length === 0, audit.unmappedApiCalls);
       result.network = { apiCalls:audit.apiCalls, documents:audit.documents, blockedResources:audit.blockedResources,
+        resources:audit.resources,
         unmappedApiCalls:audit.unmappedApiCalls, webSocketsBlocked:audit.webSocketsBlocked,
         ...(audit.groupFixture ? { groupMessageRequests:audit.groupMessageRequests } : {}) };
       result.failedChecks = result.checks.filter(item => !item.passed).map(item => item.name);

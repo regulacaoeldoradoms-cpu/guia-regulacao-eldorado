@@ -14,6 +14,7 @@ export function mountHomeMobileDirect() {
   const owner = resumableEntry ? savedEntry.owner
     : `home-direct-${globalThis.crypto?.randomUUID?.() || Date.now()}`;
   const body = document.body;
+  const mobileScreen = window.matchMedia('screen and (max-width: 900px)');
   let root = null, navigation = null, frame = 0, previousView = 0;
   let selectedRoute = null, currentRoute = null, pendingGroupRoute = null, lastProfileHandle = '';
   let replaying = false, traversing = false;
@@ -27,6 +28,8 @@ export function mountHomeMobileDirect() {
   const originalLabels = new Map();
   let notificationCard = null, notificationPosition = null, notificationDetails = null;
   let pageContext = null, returnToPage = false, savedConversation = null, pendingConversation = null;
+  let resumingConversation = null;
+  let mobileConversationPosition = null;
   let reopenAfterClose = false;
   let resumeGeneration = 0;
   const enabled = () => !sessionEnded && body.classList.contains('shared-mobile-navigation');
@@ -55,8 +58,9 @@ export function mountHomeMobileDirect() {
       ? context.focus : navigation?.querySelector('a[href="/"]');
     focus?.focus({ preventScroll: true });
     if (context) window.scrollTo({ left: context.x, top: context.y, behavior: 'instant' });
-    if (reopenAfterClose && enabled()) {
-      reopenAfterClose = false;
+    const reopen = reopenAfterClose;
+    reopenAfterClose = false;
+    if (reopen && enabled()) {
       queueMicrotask(() => { if (enabled() && !view()) click('portalChatLauncher'); });
     }
   }
@@ -67,13 +71,22 @@ export function mountHomeMobileDirect() {
     const group = root.classList.contains('group-open');
     const input = document.getElementById(group ? 'portalGroupInput' : 'portalChatInput');
     const messages = document.getElementById(group ? 'portalGroupMessages' : 'portalChatMessages');
-    return {
+    const saved = {
       route: currentRoute, handle: group ? '' : lastProfileHandle, group,
       scrollTop: messages?.scrollTop || 0,
       selectionStart: input?.selectionStart, selectionEnd: input?.selectionEnd,
       selectionDirection: input?.selectionDirection,
       inputScrollTop: input?.scrollTop || 0, inputScrollLeft: input?.scrollLeft || 0
     };
+    const key = saved.route ? `${group ? 'group' : 'direct'}:${saved.route.kind}:${saved.route.value}`
+      : !group && saved.handle ? `handle:${saved.handle}` : null;
+    if (enabled() && mobileScreen.matches) {
+      mobileConversationPosition = key && messages?.clientHeight > 0 ? { key, scrollTop: saved.scrollTop } : null;
+    } else if (key && mobileConversationPosition?.key === key) {
+      // Media reflow can clamp the scroller before the route's close callback.
+      saved.scrollTop = mobileConversationPosition.scrollTop;
+    }
+    return saved;
   }
 
   const resumeObserver = new MutationObserver(schedule);
@@ -95,10 +108,23 @@ export function mountHomeMobileDirect() {
     if (messages) messages.scrollTop = saved.scrollTop;
   }
 
-  function cancelResume() {
+  function cancelResume(preserveConversation = false) {
     resumeGeneration++;
+    resumingConversation = preserveConversation ? resumingConversation || pendingConversation : null;
     pendingConversation = null;
     resumeObserver.disconnect();
+  }
+
+  function closeToPage() {
+    discover();
+    reopenAfterClose = false;
+    if (sessionEnded || !view()) return;
+    savedConversation = resumingConversation || pendingConversation || saveConversation();
+    cancelResume();
+    returnToPage = true;
+    nativeClose();
+    // This also finishes the close when a route has already left mobile mode.
+    reconcile();
   }
 
   async function resumeSavedConversation(saved, generation) {
@@ -130,6 +156,7 @@ export function mountHomeMobileDirect() {
     if (row) row.click();
     else void window.PortalChat.openByUsername(decodeURIComponent(route.value));
     if (view() !== 2) return;
+    resumingConversation = null;
     pendingConversation = saved;
     const messages = document.getElementById(saved.group ? 'portalGroupMessages' : 'portalChatMessages');
     if (messages) resumeObserver.observe(messages, { childList: true, subtree: true });
@@ -248,7 +275,8 @@ export function mountHomeMobileDirect() {
     positionNotification(active);
     body.classList.toggle('home-direct-open', active && nextView > 0);
     if (!active) {
-      cancelResume();
+      // Keep an interrupted resume available to a route's native-close handoff.
+      cancelResume(true);
       if (body.classList.contains('home-direct-compact')) body.classList.remove('home-direct-compact');
       if (root) delete root.dataset.homeDirectView;
       for (const [node, labels] of originalLabels) {
@@ -262,6 +290,7 @@ export function mountHomeMobileDirect() {
         document.getElementById('portalChatHeaderName').textContent = 'Chat interno';
       }
       if (!sessionEnded && trackedEntry && !replaying && !traversing) followHistory(nextView, false);
+      restorePage();
       previousView = nextView;
       return;
     }
@@ -291,6 +320,7 @@ export function mountHomeMobileDirect() {
       pageContext = null;
     }
     restoreConversationPosition();
+    if (nextView === 2 && mobileScreen.matches) saveConversation();
     restorePage();
     previousView = nextView;
   }
@@ -376,17 +406,17 @@ export function mountHomeMobileDirect() {
   document.addEventListener('pointerdown', event => {
     if (enabled() && event.target.closest?.('#portalChatLauncher')) rememberPage();
   }, true);
+  document.addEventListener('scroll', event => {
+    if (!enabled() || !mobileScreen.matches || view() !== 2) return;
+    const id = root.classList.contains('group-open') ? 'portalGroupMessages' : 'portalChatMessages';
+    if (event.target === document.getElementById(id)) saveConversation();
+  }, true);
   document.addEventListener('click', event => {
     if (!enabled()) return;
     if (event.target.closest?.('.social-mobile-nav a[href="/"]') && view()) {
       event.preventDefault();
       event.stopPropagation();
-      savedConversation = saveConversation();
-      cancelResume();
-      returnToPage = true;
-      nativeClose();
-      // Start the existing native-history unwind before another launcher click.
-      reconcile();
+      closeToPage();
       return;
     }
     if (event.target.closest?.('#portalChatLauncher') && !view()) {
@@ -400,6 +430,7 @@ export function mountHomeMobileDirect() {
         rememberPage();
         const saved = savedConversation;
         savedConversation = null;
+        resumingConversation = saved;
         const generation = ++resumeGeneration;
         // A trusted click can run a microtask checkpoint between capture and
         // the native target listener. Resume after that listener opens the list.
@@ -413,6 +444,7 @@ export function mountHomeMobileDirect() {
     const row = event.target.closest?.('#portalChatRoot [data-chat-user], #portalChatRoot [data-group-open]');
     if (row) {
       cancelResume();
+      mobileConversationPosition = null;
       selectedRoute = row.hasAttribute('data-group-open')
         ? { kind: 'group', value: row.dataset.groupOpen }
         : { kind: 'user', value: row.dataset.chatUser };
@@ -440,6 +472,7 @@ export function mountHomeMobileDirect() {
     sessionEnded = true;
     cancelResume();
     savedConversation = pageContext = null;
+    mobileConversationPosition = null;
     returnToPage = false;
     reopenAfterClose = false;
     selectedRoute = currentRoute = pendingGroupRoute = null;
@@ -450,7 +483,7 @@ export function mountHomeMobileDirect() {
     root?.classList.remove('open');
     schedule();
   });
-  const controller = Object.freeze({ refresh: schedule });
+  const controller = Object.freeze({ refresh: schedule, closeToPage });
   window[INSTANCE] = controller;
   reconcile();
   return controller;

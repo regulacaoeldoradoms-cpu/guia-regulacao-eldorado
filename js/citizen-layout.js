@@ -121,20 +121,24 @@
     if (presentationStarted) return;
     presentationStarted = true;
     const profileRoute = location.pathname === '/perfil/';
+    const mobileChatOnly = location.pathname === '/mascotes/'
+      && document.body.hasAttribute('data-citizen-mobile-chat-only');
     try {
-      const [navigation, direct, profile] = await Promise.all([
+      const [navigation, direct, profile, mobileChat] = await Promise.all([
         import(`/js/citizen-mobile-navigation.js?v=${version}`),
         import(`/js/home-mobile-direct.js?v=${version}`),
         profileRoute ? import(`/js/profile-mobile-presentation.js?v=${version}`) : null,
+        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=${version}`) : null,
         loadStyle('/css/citizen-mobile-navigation.css'),
         loadStyle('/css/home-mobile-direct.css'),
         profileRoute ? loadStyle('/css/profile-mobile-presentation.css') : null
       ]);
       const profileController = profile?.mountProfileMobilePresentation();
-      direct.mountHomeMobileDirect();
+      const directController = direct.mountHomeMobileDirect();
       // This final mount exposes the shared marker only after all resources and
       // the direct controller are ready; failed loads keep native navigation.
       navigation.mountCitizenMobileNavigation();
+      mobileChat?.mountCitizenMobileChatBootstrap(directController);
       profileController?.sync();
       petNavigation();
       finishPresentation(true);

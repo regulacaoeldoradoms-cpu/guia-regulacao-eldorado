@@ -1,6 +1,10 @@
 /* One mobile navigation presentation for authenticated shared citizen routes.
    Native controls and their original positions are restored on desktop/print. */
+/* This route had no desktop chat. Direct closes a loaded mobile conversation on
+   exit and retains its draft/context for the user's next mobile open. */
+body[data-citizen-mobile-chat-only] #portalChatRoot { visibility: hidden !important; pointer-events: none !important; }
 @media screen and (max-width: 900px) {
+body[data-citizen-mobile-chat-only].shared-mobile-navigation #portalChatRoot { visibility: visible !important; }
 body.citizen-readable-layout.shared-mobile-navigation {
   --citizen-nav-surface: var(--portal-theme-surface, #fff);
   --citizen-nav-soft: var(--portal-theme-surface-2, #f0f5f8);

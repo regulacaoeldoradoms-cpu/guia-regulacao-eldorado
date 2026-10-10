@@ -10,6 +10,7 @@ on:
       - "index.html"
       - "js/citizen-layout.js"
       - "js/citizen-mobile-navigation.js"
+      - "js/citizen-mobile-chat-bootstrap.js"
       - "js/profile-mobile-presentation.js"
       - "js/home.js"
       - "js/home-mobile-composition.js"
@@ -61,7 +62,7 @@ jobs:
       - name: Mobile Profile and Chat with native session persistence
         run: |
           node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-refinement
-          CASES=group-own-390-dark-100,shared-mascotes node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-refinement/extra
+          CASES=group-own-390-dark-100,shared-mascotes,mascotes-breakpoints node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-refinement/extra
       - name: Preserve desktop and print Profile and Chat
         env:
           MODE: preservation
