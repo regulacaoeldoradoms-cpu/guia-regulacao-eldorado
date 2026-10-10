@@ -9,6 +9,7 @@
   const postStates = new Map();
   const commentStates = new Map();
   const autoScrollBindings = new WeakMap();
+  const pendingPosts = new WeakMap();
 
   function emptyState(message) {
     const empty = document.createElement('div');
@@ -305,6 +306,7 @@
     const card = document.createElement('article');
     card.className = 'social-post';
     card.dataset.postId = post.id;
+    card.dataset.postCreatedAt = String(Number(new Date(post.createdAt)) || 0);
     const header = authorHeader(post);
     const body = document.createElement('p');
     body.className = 'social-post-body';
@@ -449,6 +451,7 @@
     }
 
     autoScrollBindings.set(control, {
+      resume: () => bindAutoScroll(container, control, options),
       cleanup: () => {
         stopped = true;
         cleanup?.();
@@ -458,6 +461,7 @@
 
   async function load(container, paginationControl, options = {}) {
     const key = postKey(options);
+    if (container) container.dataset.socialFeedKey = key;
     let state = postStates.get(key);
     if (!options.append || !state) {
       state = freshState();
@@ -520,5 +524,70 @@
     }
   }
 
-  window.PortalSocialFeed = Object.freeze({ bindComposer, load, postNode, renderPosts });
+  async function checkNew(root, options = {}) {
+    const container = root.querySelector('#socialFeedList');
+    if (!container || pendingPosts.has(container)) return;
+    const state = postStates.get('feed');
+    if (!state || state.pending) return;
+    const top = container.querySelector('[data-post-id]');
+    const boundaryAt = Number(top?.dataset.postCreatedAt || 0);
+    const payload = await social.api('/api/social/feed', options);
+    if (!window.PortalCitizenShell?.enabled()) return;
+    const newest = payload.posts || [];
+    const fresh = newest.filter(post => !state.seen.has(String(post.id)) && Number(new Date(post.createdAt)) >= boundaryAt);
+    if (!fresh.length) return;
+    const crossed = newest.some(post => String(post.id) === top?.dataset.postId || Number(new Date(post.createdAt)) < boundaryAt);
+    pendingPosts.set(container, { posts:fresh, cursor:crossed ? '' : payload.nextCursor || '', boundaryAt, anchorId:top?.dataset.postId || '' });
+    let button = root.querySelector('.social-new-posts');
+    if (!button) {
+      button = document.createElement('button'); button.type = 'button';
+      button.className = 'social-button primary social-new-posts'; button.textContent = 'Novas publicações';
+      button.setAttribute('aria-label', 'Mostrar novas publicações');
+      container.before(button);
+      button.addEventListener('click', async () => {
+        const pending = pendingPosts.get(container);
+        if (!pending || button.disabled) return;
+        button.disabled = true;
+        try {
+          // Five extra pages per tap bounds requests; retain the continuation
+          // rather than losing posts after a long period away from the feed.
+          for (let page = 0; pending.cursor && page < 5; page++) {
+            const payload = await social.api('/api/social/feed?cursor=' + encodeURIComponent(pending.cursor));
+            if (!window.PortalCitizenShell?.enabled()) return;
+            pending.posts.push(...(payload.posts || []).filter(post => !state.seen.has(String(post.id)) && Number(new Date(post.createdAt)) >= pending.boundaryAt));
+            const crossed = (payload.posts || []).some(post => String(post.id) === pending.anchorId || Number(new Date(post.createdAt)) < pending.boundaryAt);
+            pending.cursor = crossed ? '' : payload.nextCursor || '';
+          }
+          if (root !== window.PortalCitizenShell?.active().root) return;
+          const anchor = [...container.querySelectorAll('[data-post-id]')].find(node => node.getBoundingClientRect().bottom > 0);
+          const before = anchor?.getBoundingClientRect().top;
+          const insertion = pending.anchorId ? container.querySelector('[data-post-id="' + CSS.escape(pending.anchorId) + '"]') : null;
+          const ids = new Set([...container.querySelectorAll('[data-post-id]')].map(node => node.dataset.postId));
+          container.querySelector('.social-empty')?.remove();
+          for (const post of pending.posts) {
+            if (ids.has(String(post.id))) continue;
+            ids.add(String(post.id)); container.insertBefore(postNode(post), insertion); state.seen.add(String(post.id));
+          }
+          pending.posts = [];
+          if (!pending.cursor) { pendingPosts.delete(container); button.hidden = true; }
+          if (anchor && before !== undefined) window.scrollBy(0, anchor.getBoundingClientRect().top - before);
+          if (button.hidden && document.activeElement === button && anchor) { anchor.tabIndex = -1; anchor.focus({ preventScroll:true }); }
+        } catch (error) { social.status(error.message || 'Não foi possível atualizar o feed.', 'error', root.querySelector('#socialStatus')); }
+        finally { button.disabled = false; }
+      });
+    }
+    button.hidden = false;
+  }
+  window.PortalSocialFeed = Object.freeze({ bindComposer, load, postNode, renderPosts, checkNew,
+    suspend: control => autoScrollBindings.get(control)?.cleanup(),
+    resume: control => autoScrollBindings.get(control)?.resume(),
+    release(root) {
+      root.querySelectorAll('[data-social-feed-key]').forEach(container => {
+        postStates.delete(container.dataset.socialFeedKey); pendingPosts.delete(container);
+        container.querySelectorAll('[data-post-id]').forEach(node => commentStates.delete(`comments:${node.dataset.postId}`));
+      });
+      root.querySelectorAll('[data-auto-scroll]').forEach(control => autoScrollBindings.get(control)?.cleanup());
+    },
+    clear() { postStates.clear(); commentStates.clear(); }
+  });
 })();

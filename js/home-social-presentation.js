@@ -4,7 +4,11 @@
 // their nodes and listeners; the wider-screen layout is restored at each marker.
 let mountedPresentation = null;
 
-export function mountHomeSocialPresentation(user) {
+export function mountHomeSocialPresentation(user, context) {
+  const document = context?.document || globalThis.document;
+  const MutationObserver = context?.MutationObserver || globalThis.MutationObserver;
+  const window = context?.window || globalThis;
+  let routeActive = true;
   if (mountedPresentation) {
     mountedPresentation.sync();
     return mountedPresentation;
@@ -339,14 +343,15 @@ export function mountHomeSocialPresentation(user) {
     }
   }
 
-  function sync() {
+  function sync(force = false) {
+    if (!routeActive && !force) return;
     syncQueued = false;
-    const compact = mobileScreen.matches && !printing && !printScreen.matches;
+    const compact = routeActive && mobileScreen.matches && !printing && !printScreen.matches;
     const changing = compact !== mobile;
     const focused = document.activeElement;
     if (changing && compact && form?.contains(focused)) composerExpanded = true;
     mobile = compact;
-    document.body.classList.add('home-social-presentation');
+    document.body.classList.toggle('home-social-presentation', routeActive);
     document.body.classList.toggle('home-social-mobile', mobile);
     if (mobile) {
       setText(title, 'Regulação');
@@ -366,6 +371,7 @@ export function mountHomeSocialPresentation(user) {
   }
 
   function scheduleSync() {
+    if (!routeActive) return;
     if (syncQueued) return;
     syncQueued = true;
     queueMicrotask(sync);
@@ -395,7 +401,7 @@ export function mountHomeSocialPresentation(user) {
     syncComposer();
   }
 
-  mountedPresentation = Object.freeze({ sync, setReady });
+  mountedPresentation = Object.freeze({ sync, setReady, deactivate() { routeActive = false; sync(true); }, activate() { routeActive = true; sync(); }, dispose() { routeActive = false; sync(true); mountedPresentation = null; accountMenu.remove(); } });
   sync();
   // mount() is synchronous: waiting here would deadlock the Home bootstrap that
   // creates PortalHomeReady. Its promise is available after this call returns.

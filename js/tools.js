@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   const user = await auth.requireRole([]);
@@ -20,8 +23,12 @@
   catch (_) {}
   window.PortalSocialNavigation?.mount(user, socialConfig);
 
-  document.getElementById('portalLogout')?.addEventListener('click', async () => {
+  if (!context) document.getElementById('portalLogout')?.addEventListener('click', async () => {
     await auth.logout();
     location.replace('/login/');
   });
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('tools', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();

@@ -39,7 +39,7 @@ self.addEventListener = (type, handler) => {
     if(event.data?.type === 'SCENE_PAGEHIDE') {const marker={sequence:sceneEvents.length+1,type:'SCENE_PAGEHIDE',route:new URL(event.source.url).pathname};sceneEvents.push(marker);scenePagehide.set(event.source.id,marker.sequence);return;}
     if(!/^PORTAL_CHAT_SESSION_(GET|PUT|CLEAR)$/.test(event.data?.type)) return;
     const started = performance.now();
-    const record = {sequence:sceneEvents.length+1,type:event.data.type,route:new URL(event.source.url).pathname,sameOrigin:new URL(event.source.url).origin===self.location.origin};
+    const record = {sequence:sceneEvents.length+1,type:event.data.type,clientId:event.source.id,route:new URL(event.source.url).pathname,sameOrigin:new URL(event.source.url).origin===self.location.origin};
     if(event.data.type.endsWith('_PUT')) {record.snapshot=sceneSnapshot(event.data.snapshot);record.afterPagehideSequence=scenePagehide.get(event.source.id) || null;}
     if(event.data.type.endsWith('_GET')) scenePagehide.delete(event.source.id);
     sceneEvents.push(record);
@@ -108,6 +108,8 @@ const documents = new Set(['/', '/home/', '/perfil/', '/amigos/', '/cidadao/', '
 const mime = { '.js':'text/javascript', '.css':'text/css', '.html':'text/html', '.svg':'image/svg+xml',
   '.png':'image/png', '.webp':'image/webp', '.woff2':'font/woff2', '.webmanifest':'application/manifest+json' };
 
+for (const route of ['/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/login/']) documents.add(route);
+
 async function serve(sourceRoot) {
   const server = http.createServer(async (request, response) => {
     try {
@@ -143,6 +145,7 @@ async function intercept(context, origin, audit) {
     if (method === 'OPTIONS') return route.fulfill({ status:204, body:'' });
     let data, status = 200;
     if (url.pathname === '/api/auth/me') data = { user };
+    else if (url.pathname === '/api/auth/logout') data = { ok:true };
     else if (url.pathname === '/api/social/config') data = { backendEnabled:true, homeEnabled:true, available:true, profile:ownProfile };
     else if (url.pathname === '/api/social/me') data = { profile:ownProfile };
     else if (url.pathname.startsWith('/api/social/avatars/')) return route.fulfill({ contentType:'image/png', body:Buffer.from(url.pathname.includes(friendHandle) ? friendAvatar : ownAvatar, 'base64') });
@@ -210,12 +213,15 @@ async function newPage(browser, scenario, origin, result) {
     hasTouch:scenario.width <= 900, isMobile:scenario.width <= 900, deviceScaleFactor:1, reducedMotion:'reduce',
     colorScheme:scenario.theme, locale:'pt-BR', timezoneId:'UTC', serviceWorkers:'allow' });
   context.on('serviceworker', worker => { audit.worker = worker; });
-  await context.addInitScript(({ user, theme, syntheticToken }) => {
+  await context.addInitScript(({ user, theme, syntheticToken, seedOnce }) => {
     if (location.protocol !== 'http:') return;
     localStorage.setItem('regulacao.portal.theme.active.v1', theme);
-    sessionStorage.setItem('regulacao.portal.session', syntheticToken);
-    sessionStorage.setItem('regulacao.portal.user', JSON.stringify(user));
-    sessionStorage.setItem('regulacao.portal.user.validatedAt', String(Date.now()));
+    if (!seedOnce || !sessionStorage.getItem('__shellFixtureSeeded')) {
+      sessionStorage.setItem('regulacao.portal.session', syntheticToken);
+      sessionStorage.setItem('regulacao.portal.user', JSON.stringify(user));
+      sessionStorage.setItem('regulacao.portal.user.validatedAt', String(Date.now()));
+      if (seedOnce) sessionStorage.setItem('__shellFixtureSeeded', 'true');
+    }
     window.__refinementDocument = crypto.randomUUID();
     window.__refinementPagehides = 0;
     window.addEventListener('pagehide', () => { window.__refinementPagehides++; navigator.serviceWorker?.controller?.postMessage({ type:'SCENE_PAGEHIDE' }); }, { capture:true });
@@ -230,7 +236,7 @@ async function newPage(browser, scenario, origin, result) {
       const node = document.getElementById(id);
       if (node && !window.__originalRefinementNodes[id]) window.__originalRefinementNodes[id] = node;
     })).observe(document, { childList:true, subtree:true });
-  }, { user, theme:scenario.theme, syntheticToken });
+  }, { user, theme:scenario.theme, syntheticToken, seedOnce:scenario.seedOnce });
   await intercept(context, origin, audit);
   const page = await context.newPage();
   page.setDefaultTimeout(9000);
@@ -268,7 +274,7 @@ async function snapshot(page) {
         camera:rect(document.getElementById('profilePhotoCamera')), editorVisible:visible(document.getElementById('profileEditor')),
         modules:[...document.querySelectorAll('#profileModules > [data-profile-module]')].filter(visible).map(node => node.dataset.profileModule) },
       focus:document.activeElement?.id || document.activeElement?.getAttribute('aria-label') || document.activeElement?.tagName,
-      nodeIdentity:Object.entries(window.__originalRefinementNodes || {}).every(([id,node]) => document.getElementById(id) === node),
+      nodeIdentity:Object.entries(window.__originalRefinementNodes || {}).every(([id,node]) => !node.isConnected || document.getElementById(id) === node),
       rootAtBody:document.getElementById('portalChatRoot')?.parentElement === document.body };
   });
 }
@@ -398,11 +404,17 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.locator('#portalChatLauncher').click();
   if (!(await page.locator('#portalChatConversationView').evaluate(node => node.classList.contains('active')))) await page.locator(`[data-chat-user="${friendHandle}"]`).first().click();
   await page.locator('#portalChatConversationView.active').waitFor();
+  const retainedNavigation = await page.evaluate(() => Boolean(window.PortalCitizenShell));
+  result.retainedNavigation = retainedNavigation;
   const departure = draft + ' Edição imediata antes de Amigos.';
   await page.locator('#portalChatInput').fill(departure);
   await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
   await page.waitForURL(origin + '/amigos/');
   await ready(page, '/amigos/');
+  if (retainedNavigation) {
+    check(result, 'retained Friends route closes Direct without a new document', audit.documents.length === documentsBefore && !await page.locator('#portalChatRoot').evaluate(node => node.classList.contains('open')));
+    await page.locator('#portalChatLauncher').click();
+  }
   await page.locator('#portalChatConversationView.active').waitFor();
   const friends = await capture(page, result, 'friends-restored');
   check(result, 'native worker restores fresh draft and selection after section navigation', friends.chat.open && friends.chat.selected === friendHandle && friends.chat.draft === departure, friends.chat);
@@ -412,9 +424,15 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.locator('.social-mobile-nav a[href="/perfil/"]').click();
   await page.waitForURL(origin + '/perfil/');
   await ready(page, '/perfil/');
+  if (retainedNavigation) await page.locator('#portalChatLauncher').click();
   await page.locator('#portalChatConversationView.active').waitFor();
   check(result, 'native worker restores draft when returning to own Perfil', await page.locator('#portalChatInput').inputValue() === returning);
-  result.persistedDrafts = [departure, returning];
+  result.persistedDrafts = retainedNavigation ? [returning] : [departure, returning];
+  if (retainedNavigation) {
+    await page.reload({ waitUntil:'domcontentloaded' }); await ready(page, '/perfil/');
+    await page.locator('#portalChatConversationView.active').waitFor();
+    check(result, 'explicit reload restores fresh retained-route draft through native SW', await page.locator('#portalChatInput').inputValue() === returning);
+  }
   await page.locator('.social-mobile-nav a[href="/"]').click();
   await page.locator('#portalChatRoot.open').waitFor({ state:'hidden' });
   await page.waitForFunction(() => !history.state?.__portalHomeDirect);
@@ -422,7 +440,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.locator('.social-mobile-nav a[href="/"]').click();
   await page.waitForURL(origin + '/');
   await ready(page, '/');
-  check(result, 'closed-chat Início follows its normal Home href', new URL(page.url()).pathname === '/' && audit.documents.at(-1) === '/');
+  check(result, 'closed-chat Início follows its normal Home href', new URL(page.url()).pathname === '/' && (retainedNavigation ? audit.documents.length === documentsBefore + 1 : audit.documents.at(-1) === '/'));
   await capture(page, result, 'home');
   await navChecks(page, result, 'Home');
 }
@@ -659,6 +677,7 @@ async function sourceHashes() {
   return Object.fromEntries(await Promise.all(files.map(async file => [file, await fs.readFile(path.join(root,file)).then(source => createHash('sha256').update(source).digest('hex')).catch(() => null)])));
 }
 
+if (!process.env.PORTAL_FIXTURES_ONLY) {
 const scenarios = [
   { id:'own-320-light-100', profile:'own', width:320, theme:'light', scale:1 },
   { id:'own-390-dark-100', profile:'own', width:390, theme:'dark', scale:1 },
@@ -764,8 +783,8 @@ try {
       if (audit.worker) {
         result.session = await audit.worker.evaluate(() => self.__sceneSessionEvidence()).catch(error => ({ error:String(error) }));
         check(result, 'native session transport has no handler errors', !result.session.error && !result.session.events.some(event => event.error));
-        if (result.persistedDrafts) check(result, 'native pagehide PUT commits both fresh section drafts', result.persistedDrafts.every(body => result.session.events.some(event => event.committed && event.afterPagehideSequence && event.snapshot?.drafts.some(item => item.body === body))));
-        if (result.persistedDrafts) check(result, 'native GET restores saved snapshots across both sections', result.session.getHits >= 2 && result.session.committedPuts >= 2, { hits:result.session.getHits, committed:result.session.committedPuts });
+        if (result.persistedDrafts) check(result, 'native pagehide PUT commits fresh drafts on document departures', result.persistedDrafts.every(body => result.session.events.some(event => event.committed && event.afterPagehideSequence && event.snapshot?.drafts.some(item => item.body === body))));
+        if (result.persistedDrafts) check(result, 'native GET restores saved snapshots across both sections', result.session.getHits >= (result.retainedNavigation ? 1 : 2) && result.session.committedPuts >= (result.retainedNavigation ? 1 : 2), { hits:result.session.getHits, committed:result.session.committedPuts });
       }
       check(result, 'no page or harness errors', result.errors.length === 0);
       check(result, 'all exercised API routes have explicit synthetic fixtures', audit.unmappedApiCalls.length === 0, audit.unmappedApiCalls);
@@ -792,3 +811,6 @@ try {
 }
 if (!results.length || results.some(result => result.failedChecks.length)) process.exitCode = 1;
 console.log(`Refinement evidence: ${path.join(output, 'summary.json')}`);
+
+}
+export { serve, newPage, ready, settle, user, posts, ownHandle, friendHandle, chromium };

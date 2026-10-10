@@ -1,6 +1,6 @@
 'use strict';
 import {PetApi} from './pets-api.js';
-import {PetRuntime} from './pets-runtime.js?v=pets-combined-v8';
+import {PetRuntime} from './pets-runtime.js?v=20261010-mobile-shell-1';
 import {petSpeechForSession} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
 let current=null,running=null,epoch=0;
 function navigation(enabled){

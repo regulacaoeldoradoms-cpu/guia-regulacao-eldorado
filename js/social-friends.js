@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   const user = await auth.requireRole([]);
@@ -8,7 +11,7 @@
   if (user.mustChangePassword) { location.replace('/seguranca/?primeiro-acesso=1'); return; }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Usuário';
   document.getElementById('portalUserRole').textContent = window.PortalTools?.roleLabels?.[user.role] || user.role || '';
-  document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
+  if (!context) document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
 
   let config;
   try { config = await social.getConfig(); }
@@ -405,4 +408,8 @@
 
   await loadList(false);
   preloadOtherRelationshipLists();
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-friends', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();

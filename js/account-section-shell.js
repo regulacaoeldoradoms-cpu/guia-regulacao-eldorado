@@ -13,6 +13,7 @@
   });
 
   async function mount(options = {}) {
+    const document = options.root ? window.PortalCitizenShell.active().document : window.document;
     const auth = window.RegulationAuth;
     if (!auth) return null;
     const onSecurityRoute = location.pathname === '/seguranca/' || location.pathname.startsWith('/seguranca/');
@@ -28,6 +29,7 @@
       location.replace('/seguranca/?primeiro-acesso=1');
       return null;
     }
+    if (options.isCurrent && !options.isCurrent()) return null;
 
     // Citizen layout assets are owned separately from the concurrent pet runtime.
     if (location.pathname === '/mascotes/') {
@@ -39,7 +41,7 @@
         styles.href = '/css/citizen-readable-layout.css?v=20261009-2';
         document.head.appendChild(styles);
         const layout = document.createElement('script');
-        layout.src = '/js/citizen-layout.js?v=20261010-mobile-refinement-1';
+        layout.src = '/js/citizen-layout.js?v=20261010-mobile-shell-1';
         document.head.appendChild(layout);
       }
     }

@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   const user = await auth.requireRole([]);
@@ -11,7 +14,7 @@
   }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Usuário';
   document.getElementById('portalUserRole').textContent = window.PortalTools?.roleLabels?.[user.role] || user.role || '';
-  document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
+  if (!context) document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
 
   let config;
   try { config = await social.getConfig(); }
@@ -135,7 +138,8 @@
   choosePhoto?.addEventListener('click', () => {
     if (!profile?.isSelf) return;
     if (!accountPhotoUnlocked()) {
-      location.href = '/seguranca/';
+      if (window.PortalCitizenShell?.enabled()) void window.PortalCitizenShell.navigate(new URL('/seguranca/', location.href));
+      else location.href = '/seguranca/';
       return;
     }
     photoInput?.click();
@@ -381,7 +385,8 @@
     const payload = await social.api(requested ? `/api/social/profiles/${encodeURIComponent(requested)}` : '/api/social/me');
     profile = payload.profile;
     if (requested && profile.canonicalHandle && profile.canonicalHandle !== requested) {
-      history.replaceState(null, '', social.profileUrl(profile.canonicalHandle));
+      if (window.PortalCitizenShell) window.PortalCitizenShell.canonicalize(social.profileUrl(profile.canonicalHandle));
+      else history.replaceState(history.state, '', social.profileUrl(profile.canonicalHandle));
     }
     render();
     await loadIdentity();
@@ -438,4 +443,8 @@
 
   try { await load(); }
   catch (error) { social.status(error.message || 'Perfil social não encontrado.', 'error'); }
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-profile', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();

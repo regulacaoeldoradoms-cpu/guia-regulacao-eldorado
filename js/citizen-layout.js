@@ -87,7 +87,7 @@
     updateNavLayout();
   }
   const sharedRoutes = new Set(["/", "/cidadao/", "/amigos/", "/ferramentas/", "/perfil/", "/seguranca/", "/conquistas/", "/configuracoes/", "/notificacoes/", "/mascotes/"]);
-  const version = '20261010-mobile-refinement-1';
+  const version = '20261010-mobile-shell-1';
   let presentationStarted = false;
   let finishPresentation;
   // Defined before initial apply, so Home and synthetic route fixtures can wait
@@ -103,7 +103,7 @@
         clearTimeout(timeout);
         link.removeEventListener('load', loaded);
         link.removeEventListener('error', failed);
-        if (error) reject(error); else resolve();
+        if (error) { link.remove(); reject(error); } else resolve();
       };
       const loaded = () => complete();
       const failed = () => complete(new Error(`Stylesheet unavailable: ${path}`));
@@ -171,7 +171,19 @@
   };
   // Home already has the authenticated (or configured preview) user before it
   // imports this script; accepting that result avoids depending on a past event.
-  window.PortalCitizenLayout = Object.freeze({ apply });
+  async function enterRoute() {
+    await window.PortalCitizenMobileReady;
+    if (location.pathname === '/perfil/') {
+      const profile = await import(`/js/profile-mobile-presentation.js?v=${version}`);
+      await loadStyle('/css/profile-mobile-presentation.css');
+      profile.mountProfileMobilePresentation()?.sync();
+    } else window[Symbol.for('portal.profileMobilePresentation')]?.sync();
+    if (location.pathname === '/mascotes/') {
+      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=${version}`);
+      chat.mountCitizenMobileChatBootstrap(window[Symbol.for('portal.homeMobileDirect')]);
+    }
+  }
+  window.PortalCitizenLayout = Object.freeze({ apply, enterRoute });
   apply(window.RegulationAuth?.getCachedUser?.() || cached());
   new MutationObserver(petNavigation).observe(document.body, {
     childList: true,

@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const user = await window.PortalAccountSection?.mount();
   if (!user) return;
   const panel = document.getElementById('accountLevelPanel');
@@ -35,4 +38,8 @@
       studyGrid.innerHTML = `<article class="achievement-card planned"><span class="achievement-state">Indisponível</span><div class="achievement-icon" aria-hidden="true">${bookIcon}</div><h3>Missão Bancária</h3><p>As conquistas de estudo estão temporariamente indisponíveis. Sua progressão de segurança continua normal.</p></article>`;
     }
   }
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('achievements', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();

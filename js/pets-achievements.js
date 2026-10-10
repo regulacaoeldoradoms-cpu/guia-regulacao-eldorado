@@ -1,4 +1,7 @@
-import {petSession} from './pets-bootstrap.js';
+import {petSession} from './pets-bootstrap.js?v=20261010-mobile-shell-1';
+const initializePetAchievements = (context) => {
+const window=context?.window||globalThis;
+const document=context?.document||globalThis.document;
 let generation=0;
 function clear(){generation++;document.getElementById('petAchievementsSection')?.remove();}
 async function mount(){
@@ -19,4 +22,7 @@ async function mount(){
 }
 window.addEventListener('portal:session-cleared',clear);
 window.addEventListener('portal:session-ready',mount);
-mount();
+return mount();
+};
+if(globalThis.PortalCitizenShell)globalThis.PortalCitizenShell.register('pets-achievements',initializePetAchievements);
+else initializePetAchievements();

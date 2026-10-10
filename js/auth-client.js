@@ -125,10 +125,11 @@
     const response = await fetch(`${endpoint}${path}`, { ...options, headers, cache: 'no-store' });
     const contentType = response.headers.get('Content-Type') || '';
     const payload = contentType.includes('application/json') ? await response.json().catch(() => ({})) : null;
+    if (token && getToken() !== token) throw new DOMException('A sessão mudou durante a solicitação.', 'AbortError');
     if (!response.ok) {
       // V34.8: qualquer API protegida que confirme 401 encerra o token local obsoleto.
       // Login inválido não interfere em uma sessão já existente.
-      if (response.status === 401 && token && path !== '/api/auth/login') clearSession();
+      if (response.status === 401 && token && token === getToken() && path !== '/api/auth/login') clearSession();
       const error = new Error(payload?.error || `Falha no portal (${response.status}).`);
       error.status = response.status;
       error.code = payload?.code || '';
@@ -170,6 +171,7 @@
     if (!token) return null;
     try {
       const payload = await api('/api/auth/me', { method: 'GET' });
+      if (getToken() !== token) return null;
       const fresh = payload?.user || null;
       let user = fresh;
       if (fresh) {
@@ -190,6 +192,7 @@
       }
       return user;
     } catch (error) {
+      if (getToken() !== token) return null;
       if (error.status === 401) clearSession();
       if (allowCached && error.status !== 401) {
         const cached = getCachedUser();

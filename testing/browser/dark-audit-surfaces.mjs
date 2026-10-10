@@ -68,7 +68,9 @@ export async function inspectSurfaces(page) {
       for (let p=el; p; p=p.parentElement) {
         if (uniqueId(p)) { segments.unshift('#'+CSS.escape(p.id)); break; }
         let segment=p.localName;
-        if (p.classList.length) segment += '.'+[...p.classList].map(CSS.escape).join('.');
+        // Async controllers may add the same class set in a different order.
+        // Class order does not change selector identity or computed rendering.
+        if (p.classList.length) segment += '.'+[...p.classList].sort().map(CSS.escape).join('.');
         const siblings=p.parentElement ? [...p.parentElement.children].filter(n=>n.localName===p.localName) : [];
         if (siblings.length>1) segment += ':nth-of-type('+(siblings.indexOf(p)+1)+')';
         segments.unshift(segment);

@@ -439,9 +439,16 @@ async function verifySectionPersistence(page, result, audit, captureViews) {
   // delivery, without awaiting the 140ms debounce or issuing a harness PUT.
   await page.locator('#portalChatInput').fill(departureDraft);
   const before = await chatSessionState(page);
+  const retainedNavigation = await page.evaluate(() => Boolean(window.PortalCitizenShell));
   await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
   await page.waitForURL(origin + '/amigos/');
   await ready(page, false);
+  if (retainedNavigation) {
+    check(result, 'retained Friends navigation closes Direct overlay', !(await chatSessionState(page)).panelOpen);
+    await page.locator('#portalChatLauncher').click();
+    await page.waitForFunction(() => document.getElementById('portalChatConversationView')?.classList.contains('active'));
+    await page.waitForFunction(expected => document.getElementById('portalChatInput')?.value === expected, departureDraft);
+  }
   if (sessionBridgeMode === 'protocol') await page.locator('[data-chat-user]').first().waitFor({ state: 'attached' });
   await settle(page);
   const friends = await chatSessionState(page);
@@ -465,7 +472,7 @@ async function verifySectionPersistence(page, result, audit, captureViews) {
   check(result, 'returning Home restores the open selected conversation', returned.panelOpen && returned.conversationOpen
     && returned.selectedHandle === contact.socialHandle && returned.contactName === contact.name);
   result.persistence = { mode: sessionBridgeMode, before, friends, returned,
-    manualReopenAfterNavigation: false, awaitedDebounceBeforeNavigation: false, harnessGeneratedPuts: 0 };
+    retainedNavigation, manualReopenAfterNavigation: retainedNavigation, awaitedDebounceBeforeNavigation: false, harnessGeneratedPuts: 0 };
 }
 
 async function persistenceDiagnostic(page, result, audit) {
@@ -640,8 +647,8 @@ try {
       if (audit.nativeSessionWorker) {
         result.sessionBridge = await audit.nativeSessionWorker.evaluate(() => self.__sceneSessionEvidence());
         check(result, 'native session worker has no handler errors', !result.sessionBridge.events.some(event => event.error));
-        if (result.persistence) check(result, 'native pagehide PUT saves the fresh edit from each section',
-          [result.persistence.friends.draft, result.persistence.returned.draft].every(body => body
+        if (result.persistence) check(result, 'native pagehide PUT saves fresh edits on document departures',
+          (result.persistence.retainedNavigation ? [result.persistence.returned.draft] : [result.persistence.friends.draft, result.persistence.returned.draft]).every(body => body
             && result.sessionBridge.events.some(event => event.committed && event.afterPagehideSequence
               && event.snapshot?.drafts.some(draft => draft.body === body))));
       } else result.sessionBridge = { mode: sessionBridgeMode, counts: { GET: 0, PUT: 0, CLEAR: 0 } };
