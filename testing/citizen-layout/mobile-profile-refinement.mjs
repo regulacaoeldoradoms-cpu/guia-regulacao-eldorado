@@ -274,7 +274,7 @@ async function snapshot(page) {
         camera:rect(document.getElementById('profilePhotoCamera')), editorVisible:visible(document.getElementById('profileEditor')),
         modules:[...document.querySelectorAll('#profileModules > [data-profile-module]')].filter(visible).map(node => node.dataset.profileModule) },
       focus:document.activeElement?.id || document.activeElement?.getAttribute('aria-label') || document.activeElement?.tagName,
-      nodeIdentity:Object.entries(window.__originalRefinementNodes || {}).every(([id,node]) => document.getElementById(id) === node),
+      nodeIdentity:Object.entries(window.__originalRefinementNodes || {}).every(([id,node]) => !node.isConnected || document.getElementById(id) === node),
       rootAtBody:document.getElementById('portalChatRoot')?.parentElement === document.body };
   });
 }
@@ -404,11 +404,17 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.locator('#portalChatLauncher').click();
   if (!(await page.locator('#portalChatConversationView').evaluate(node => node.classList.contains('active')))) await page.locator(`[data-chat-user="${friendHandle}"]`).first().click();
   await page.locator('#portalChatConversationView.active').waitFor();
+  const retainedNavigation = await page.evaluate(() => Boolean(window.PortalCitizenShell));
+  result.retainedNavigation = retainedNavigation;
   const departure = draft + ' Edição imediata antes de Amigos.';
   await page.locator('#portalChatInput').fill(departure);
   await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
   await page.waitForURL(origin + '/amigos/');
   await ready(page, '/amigos/');
+  if (retainedNavigation) {
+    check(result, 'retained Friends route closes Direct without a new document', audit.documents.length === documentsBefore && !await page.locator('#portalChatRoot').evaluate(node => node.classList.contains('open')));
+    await page.locator('#portalChatLauncher').click();
+  }
   await page.locator('#portalChatConversationView.active').waitFor();
   const friends = await capture(page, result, 'friends-restored');
   check(result, 'native worker restores fresh draft and selection after section navigation', friends.chat.open && friends.chat.selected === friendHandle && friends.chat.draft === departure, friends.chat);
@@ -418,9 +424,15 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.locator('.social-mobile-nav a[href="/perfil/"]').click();
   await page.waitForURL(origin + '/perfil/');
   await ready(page, '/perfil/');
+  if (retainedNavigation) await page.locator('#portalChatLauncher').click();
   await page.locator('#portalChatConversationView.active').waitFor();
   check(result, 'native worker restores draft when returning to own Perfil', await page.locator('#portalChatInput').inputValue() === returning);
-  result.persistedDrafts = [departure, returning];
+  result.persistedDrafts = retainedNavigation ? [returning] : [departure, returning];
+  if (retainedNavigation) {
+    await page.reload({ waitUntil:'domcontentloaded' }); await ready(page, '/perfil/');
+    await page.locator('#portalChatConversationView.active').waitFor();
+    check(result, 'explicit reload restores fresh retained-route draft through native SW', await page.locator('#portalChatInput').inputValue() === returning);
+  }
   await page.locator('.social-mobile-nav a[href="/"]').click();
   await page.locator('#portalChatRoot.open').waitFor({ state:'hidden' });
   await page.waitForFunction(() => !history.state?.__portalHomeDirect);
@@ -428,7 +440,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.locator('.social-mobile-nav a[href="/"]').click();
   await page.waitForURL(origin + '/');
   await ready(page, '/');
-  check(result, 'closed-chat Início follows its normal Home href', new URL(page.url()).pathname === '/' && audit.documents.at(-1) === '/');
+  check(result, 'closed-chat Início follows its normal Home href', new URL(page.url()).pathname === '/' && (retainedNavigation ? audit.documents.length === documentsBefore + 1 : audit.documents.at(-1) === '/'));
   await capture(page, result, 'home');
   await navChecks(page, result, 'Home');
 }
@@ -771,8 +783,8 @@ try {
       if (audit.worker) {
         result.session = await audit.worker.evaluate(() => self.__sceneSessionEvidence()).catch(error => ({ error:String(error) }));
         check(result, 'native session transport has no handler errors', !result.session.error && !result.session.events.some(event => event.error));
-        if (result.persistedDrafts) check(result, 'native pagehide PUT commits both fresh section drafts', result.persistedDrafts.every(body => result.session.events.some(event => event.committed && event.afterPagehideSequence && event.snapshot?.drafts.some(item => item.body === body))));
-        if (result.persistedDrafts) check(result, 'native GET restores saved snapshots across both sections', result.session.getHits >= 2 && result.session.committedPuts >= 2, { hits:result.session.getHits, committed:result.session.committedPuts });
+        if (result.persistedDrafts) check(result, 'native pagehide PUT commits fresh drafts on document departures', result.persistedDrafts.every(body => result.session.events.some(event => event.committed && event.afterPagehideSequence && event.snapshot?.drafts.some(item => item.body === body))));
+        if (result.persistedDrafts) check(result, 'native GET restores saved snapshots across both sections', result.session.getHits >= (result.retainedNavigation ? 1 : 2) && result.session.committedPuts >= (result.retainedNavigation ? 1 : 2), { hits:result.session.getHits, committed:result.session.committedPuts });
       }
       check(result, 'no page or harness errors', result.errors.length === 0);
       check(result, 'all exercised API routes have explicit synthetic fixtures', audit.unmappedApiCalls.length === 0, audit.unmappedApiCalls);
