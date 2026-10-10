@@ -17,6 +17,15 @@ async function finish(info,network) {
   expect(network.unexpected,'No unmodeled API can count as successful state coverage').toEqual([]);
   expect(network.errors,'Social/account/admin scenarios have no baseline JavaScript error').toEqual([]);
 }
+async function clickPostAction(post,name) {
+  const action=post.getByRole('button',{name,exact:true});
+  if(!await action.isVisible()) {
+    const menu=post.locator('.home-post-menu');
+    await expect(menu).toBeVisible();
+    if(!await menu.evaluate(el=>el.open))await menu.locator(':scope > summary').click();
+  }
+  await action.click();
+}
 
 test('social states: populated feed, edit, comments, confirmation and notification panel',async({page,context},info)=>{
   const network=await installAuditFixture(context);
@@ -24,7 +33,7 @@ test('social states: populated feed, edit, comments, confirmation and notificati
   const post=page.locator('[data-post-id="audit-post"]');
   await expect(post).toBeVisible();
   await capture(page,info,'feed-populated');
-  await post.getByRole('button',{name:'Editar',exact:true}).click();
+  await clickPostAction(post,'Editar');
   await expect(post.locator('.social-post-edit')).toBeVisible();
   await post.locator('.social-textarea').focus();
   await capture(page,info,'feed-edit-focus');
@@ -32,7 +41,7 @@ test('social states: populated feed, edit, comments, confirmation and notificati
   await post.getByRole('button',{name:/Comentários/}).click();
   await expect(post.locator('.social-comment').first()).toBeVisible();
   await capture(page,info,'feed-comments');
-  await post.getByRole('button',{name:'Excluir',exact:true}).click();
+  await clickPostAction(post,'Excluir');
   await expect(page.locator('#socialConfirmDialog')).toBeVisible();
   await capture(page,info,'social-delete-confirmation');
   await page.locator('#socialConfirmDialog').getByRole('button',{name:'Cancelar'}).click();
@@ -47,7 +56,9 @@ test('social states: populated feed, edit, comments, confirmation and notificati
 test('social states: report dialog from another synthetic author',async({page,context},info)=>{
   const network=await installAuditFixture(context,{responses:{'/api/social/feed':{posts:[{...auditPost,own:false,author:auditFriend}],nextCursor:''}}});
   await page.goto('/');
-  await page.locator('[data-post-id="audit-post"]').getByRole('button',{name:'Denunciar',exact:true}).click();
+  const post=page.locator('[data-post-id="audit-post"]');
+  await expect(post).toBeVisible();
+  await clickPostAction(post,'Denunciar');
   await expect(page.locator('#socialReportDialog')).toBeVisible();
   await page.locator('#socialReportReason').selectOption('privacidade');
   await page.locator('#socialReportDetails').fill('RELATO FICTÍCIO SEM ENVIO.');
