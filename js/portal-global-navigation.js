@@ -9,7 +9,7 @@
   const SOCIAL_API = '/js/social-api.js?v=20260910-4';
   const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';
   const AUTH_CLIENT = '/js/auth-client.js?v=20261001-v34-8';
-  const SOCIAL_NAVIGATION = '/js/social-navigation.js?v=20261009-pets-1';
+  const SOCIAL_NAVIGATION = '/js/social-navigation.js?v=20261010-mobile-shell-1';
   let started = false;
   let running = null;
 
@@ -107,7 +107,7 @@
       stylesheet(NOTIFICATION_CSS, 'portalGlobalNavigationNotificationCss')
     ]);
     await script(SOCIAL_API, 'PortalSocial', 'portalGlobalNavigationSocialApi');
-    const navigationIsCurrent = window.PortalSocialNavigation?.version === '20261009-pets-1';
+    const navigationIsCurrent = window.PortalSocialNavigation?.version === '20261010-mobile-shell-1';
     await script(
       SOCIAL_NAVIGATION,
       'PortalSocialNavigation',

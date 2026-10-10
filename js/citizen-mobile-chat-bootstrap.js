@@ -15,6 +15,7 @@ export function mountCitizenMobileChatBootstrap(directController) {
   const rootObserver = new MutationObserver(sync);
 
   function sync() {
+    if (window.PortalCitizenShell && location.pathname !== '/mascotes/') return;
     const nextRoot = document.getElementById('portalChatRoot');
     if (nextRoot !== root) {
       rootObserver.disconnect();
@@ -34,7 +35,7 @@ export function mountCitizenMobileChatBootstrap(directController) {
     if (started) return;
     started = true;
     window.PortalCitizenMobileChatReady = (async () => {
-      await import('/js/portal-global-chat.js?v=20261008-chat-groups-1');
+      await import('/js/portal-global-chat.js?v=20261010-mobile-shell-1');
       const ready = Boolean(await window.PortalGlobalChat?.start());
       // Also reconcile a resize while the native assets were loading.
       sync();

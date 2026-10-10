@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;
@@ -483,11 +486,14 @@
     }
   });
 
-  document.getElementById('portalLogout').addEventListener('click', async () => {
+  if (!context) document.getElementById('portalLogout').addEventListener('click', async () => {
     await auth.logout();
     location.replace('/login/');
   });
 
   await loadSecurity();
   await Promise.all([loadManifestations(), loadNotifications()]);
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen', initializeCitizenArea);
+else initializeCitizenArea();
 })();

@@ -15,7 +15,7 @@ export function mountProfileMobilePresentation() {
   const positions = new WeakMap();
   let printing = false, mobile = false, queued = false;
   let account = null, logout = null;
-  const enabled = () => media.matches && !printing && !printMedia.matches
+  const enabled = () => location.pathname === '/perfil/' && media.matches && !printing && !printMedia.matches
     && document.body.classList.contains('citizen-readable-layout')
     && document.body.classList.contains('shared-mobile-navigation');
   const menu = document.createElement('details');
@@ -49,6 +49,9 @@ export function mountProfileMobilePresentation() {
   function sync() {
     queued = false;
     const active = enabled();
+    // After restoring once, an inactive presenter must not compete with Home
+    // for the same native account controls.
+    if (!active && !mobile) return;
     const focused = document.activeElement;
     // Wait for auth-client to wrap its own meta node; moving bare meta earlier
     // would break that renderer's insertBefore(container, meta) contract.
@@ -70,7 +73,7 @@ export function mountProfileMobilePresentation() {
       menu.hidden = true;
       menu.open = false;
       document.body.classList.remove('profile-mobile-layout');
-      if (mobile && title) title.replaceChildren(...titleNodes);
+      if (mobile && title && location.pathname === '/perfil/') title.replaceChildren(...titleNodes);
       if (focused === summary && !printing && !printMedia.matches) account?.focus({ preventScroll: true });
     }
     mobile = active;

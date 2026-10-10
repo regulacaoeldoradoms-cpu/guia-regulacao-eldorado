@@ -31,6 +31,13 @@ export class PetRuntime{
   if(s.petRevision!==this.state.petRevision){this.queue=[];this.until=0;this.goingToBed=false;this.target=null;this.action='idle';}
   this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();
  }
+ attachHabitat(habitat){
+  if(this.closed)return;
+  this.ownsHabitat=!habitat;this.habitat=habitat||this.root;
+  this.root.classList.toggle('pet-stage-global',this.ownsHabitat);
+  for(const property of ['left','top','width','height'])this.root.style.removeProperty(property);
+  (habitat||document.body).append(this.root);this.previewPlacement=null;this.layout();
+ }
  close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
  safeRect(){
   // Both scenes use the same logical grid and scale; the global scene follows the viewport.

@@ -32,6 +32,7 @@ export function mountHomeMobileDirect() {
   let mobileConversationPosition = null;
   let reopenAfterClose = false;
   let resumeGeneration = 0;
+  const closeWaiters = new Set();
   const enabled = () => !sessionEnded && body.classList.contains('shared-mobile-navigation');
   const marker = () => {
     const value = history.state?.[HISTORY_KEY];
@@ -63,6 +64,8 @@ export function mountHomeMobileDirect() {
     if (reopen && enabled()) {
       queueMicrotask(() => { if (enabled() && !view()) click('portalChatLauncher'); });
     }
+    for (const resolve of closeWaiters) resolve();
+    closeWaiters.clear();
   }
 
   function saveConversation() {
@@ -118,13 +121,16 @@ export function mountHomeMobileDirect() {
   function closeToPage() {
     discover();
     reopenAfterClose = false;
-    if (sessionEnded || !view()) return;
+    if (sessionEnded || !view() && !traversing) return Promise.resolve();
+    const complete = new Promise(resolve => closeWaiters.add(resolve));
+    if (traversing && returnToPage) return complete;
     savedConversation = resumingConversation || pendingConversation || saveConversation();
     cancelResume();
     returnToPage = true;
     nativeClose();
     // This also finishes the close when a route has already left mobile mode.
     reconcile();
+    return complete;
   }
 
   async function resumeSavedConversation(saved, generation) {
@@ -469,6 +475,8 @@ export function mountHomeMobileDirect() {
   window.visualViewport?.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('pageshow', schedule);
   window.addEventListener('portal:session-cleared', () => {
+    for (const resolve of closeWaiters) resolve();
+    closeWaiters.clear();
     sessionEnded = true;
     cancelResume();
     savedConversation = pageContext = null;

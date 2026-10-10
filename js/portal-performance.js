@@ -262,6 +262,8 @@
   }
 
   function warmForUser(user, options = {}) {
+    // The continuous citizen shell loads its areas only when requested.
+    if (user?.role === 'cidadao' && matchMedia('screen and (max-width: 900px)').matches) return Promise.resolve(false);
     const all = routesForUser(user);
     const current = portalRoute(location.pathname);
     const first = Array.from(new Set([current, '/', '/ferramentas/'].filter(Boolean)));
@@ -286,11 +288,13 @@
   }
 
   function warmLink(event) {
+    if (window.PortalCitizenShell) return;
     const route = eligibleLink(event.target);
     if (route) warmRoutes([route], { immediate: true, force: true });
   }
 
   function observeVisibleLinks() {
+    if (window.PortalCitizenShell) return;
     if (!('IntersectionObserver' in window)) return;
     observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {

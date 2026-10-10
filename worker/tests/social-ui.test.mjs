@@ -37,7 +37,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /social\.css\?v=20260922-2/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260910-4/);
-    assert.match(html, /social-navigation\.js\?v=20261009-pets-1/);
+    assert.match(html, /social-navigation\.js\?v=(?:20261009-pets-1|20261010-mobile-shell-1)/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -111,15 +111,15 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(index, /<a href="\/configuracoes\/">Configurações<\/a>/);
   assert.match(index, /<a href="\/conquistas\/">Conquistas<\/a>/);
   assert.doesNotMatch(index, />Ver meu perfil<|>Amigos e pedidos<|>Notificações sociais<|>Privacidade social</);
-  assert.match(index, /social-navigation\.js\?v=20261009-pets-1/);
+  assert.match(index, /social-navigation\.js\?v=(?:20261009-pets-1|20261010-mobile-shell-1)/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
-  assert.match(index, /\/js\/social-home\.js\?v=20260910-2/);
+  assert.match(index, /\/js\/social-home\.js\?v=20261010-mobile-shell-1/);
   const socialHome = read('js/social-home.js');
   assert.match(socialHome, /cachedProfile = config\?\.profile/);
   assert.match(socialHome, /avatarVersion: String\(cachedProfile\.avatarVersion/);
   const homeScripts = [...index.matchAll(/<script\b[^>]*\bsrc\s*=\s*(["'])([^"']+)\1[^>]*>/gi)]
     .map((match) => match[2]).filter((source) => new URL(source, 'https://portal.invalid').pathname === '/js/home.js');
-  assert.deepEqual(homeScripts, ['/js/home.js?v=20261010-mobile-refinement-1']);
+  assert.deepEqual(homeScripts, ['/js/home.js?v=20261010-mobile-shell-1']);
   assert.match(index, /<body class="portal-page home-loading-active" data-portal-home-bootstrap="1">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);
@@ -244,7 +244,7 @@ test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação
   assert.match(html, /value="30">30 por página/);
   assert.match(html, /value="all">Todos/);
   assert.match(html, /id="relationshipPageButtons"/);
-  assert.match(html, /social-friends\.js\?v=20260911-1/);
+  assert.match(html, /social-friends\.js\?v=20261010-mobile-shell-1/);
 
   assert.match(navigation, /preloadRelationshipList\?\.\('friends'\)/);
   assert.match(apiSource, /fetchAllRelationshipPages/);

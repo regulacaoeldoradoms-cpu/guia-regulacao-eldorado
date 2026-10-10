@@ -8,7 +8,7 @@
   const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';
   const AUTH_CLIENT = '/js/auth-client.js?v=20261001-v34-8';
   const CHAT_CSS = '/css/portal-chat.css?v=20261008-chat-groups-1';
-  const CHAT_SCRIPT = '/js/portal-chat.js?v=20261008-chat-groups-1';
+  const CHAT_SCRIPT = '/js/portal-chat.js?v=20261010-mobile-shell-1';
   const GROUP_SCRIPT = '/js/portal-chat-groups.js?v=20261008-chat-groups-1';
   const CHAT_OPTIMIZER = '/js/portal-chat-switch-optimizer.js?v=20260928-global-1';
   let started = false;

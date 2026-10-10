@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalSocialNavigation?.version === '20261009-pets-1') return;
+  if (window.PortalSocialNavigation?.version === '20261010-mobile-shell-1') return;
 
   let activeNotificationPanel = null;
   let activeUserSearch = null;
@@ -134,12 +134,12 @@
     return mobile ? 'socialNotificationTriggerMobile' : 'socialNotificationTriggerDesktop';
   }
 
-  function renderNotificationItems(panel, items) {
+  function renderNotificationItems(panel, items, merge = false) {
     const social = window.PortalSocial;
     const list = panel.querySelector('.social-notification-panel-list');
-    list.textContent = '';
+    if (!merge) list.textContent = '';
     const visible = Array.isArray(items) ? items.slice(0, 10) : [];
-    if (!visible.length) {
+    if (!visible.length && !list.children.length) {
       const empty = document.createElement('div');
       empty.className = 'social-notification-panel-empty';
       const icon = document.createElement('span');
@@ -154,8 +154,12 @@
       return;
     }
 
-    visible.forEach((item) => {
+    (merge ? [...visible].reverse() : visible).forEach((item) => {
+      const existing = list.querySelector(`[data-notification-id="${CSS.escape(String(item.id))}"]`);
+      if (existing) { existing.classList.toggle('unread', !item.read); return; }
+      list.querySelector('.social-notification-panel-empty')?.remove();
       const row = document.createElement('article');
+      row.dataset.notificationId = String(item.id);
       row.className = `social-notification social-notification-panel-item${item.read ? '' : ' unread'}`;
       const judicial = item.type === 'judicial_alert';
       if (judicial) row.classList.add('judicial');
@@ -186,8 +190,9 @@
         : (social?.formatDate?.(displayedAt) || '');
       copy.append(message, time);
       row.append(avatar, copy);
-      list.appendChild(row);
+      if (merge) list.prepend(row); else list.appendChild(row);
     });
+    if (merge) [...list.children].slice(10).forEach(node => node.remove());
   }
 
   async function loadNotificationPanel(panel, force = false) {
@@ -557,6 +562,25 @@
   }
 
   function mount(user, socialConfig = {}) {
+    if (window.PortalCitizenShell && document.querySelector('.social-mobile-nav')) {
+      const available = Boolean(socialConfig.backendEnabled && socialConfig.available);
+      const icons = window.PortalSocial?.icons || {};
+      const bottom = document.querySelector('.social-mobile-nav');
+      const inner = document.querySelector('.social-global-nav-inner');
+      if (available) {
+        for (const [nav, mobile] of [[bottom, true], [inner, false]]) {
+          if (!nav) continue;
+          const before = nav.querySelector('#portalChatLauncher, a[href="/ferramentas/"], a[href="/mascotes/"]');
+          if (!nav.querySelector('a[href="/amigos/"]')) nav.insertBefore(navLink('/amigos/', 'Amigos', icons.friends || '', { mobile, social:true }), before);
+          if (!nav.querySelector('.social-notification-trigger')) nav.append(notificationButton(mobile ? 'Avisos' : 'Notificações', icons.bell || '', { mobile, badge:Number(socialConfig.unreadSocialNotifications || 0) }));
+          if (!nav.querySelector('a[href="/perfil/"]')) nav.append(navLink('/perfil/', 'Perfil', icons.user || '', { mobile, social:true }));
+        }
+      }
+      document.querySelectorAll('[data-social-nav="true"], .social-notification-trigger').forEach(node => { node.hidden = !available; });
+      setNotificationBadges(socialConfig.unreadSocialNotifications || 0);
+      window.PortalCitizenShell.updateNavigation();
+      return;
+    }
     closeNotificationPanel();
     document.querySelectorAll('.social-global-nav,.social-mobile-nav,.social-notification-panel').forEach((item) => item.remove());
     document.body.classList.remove('has-social-navigation');
@@ -619,5 +643,5 @@
     if (role && !role.textContent) role.textContent = labels[user?.role] || user?.role || '';
   }
 
-  window.PortalSocialNavigation = Object.freeze({ version: '20261009-pets-1', mount });
+  window.PortalSocialNavigation = Object.freeze({ version: '20261010-mobile-shell-1', mount, setNotificationBadges, closeNotificationPanel, renderNotificationItems });
 })();

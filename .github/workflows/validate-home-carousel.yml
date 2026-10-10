@@ -14,6 +14,8 @@ on:
       - css/home-mobile-direct.css
       - css/portal-chat.css
       - js/home.js
+      - js/citizen-mobile-shell.js
+      - css/citizen-mobile-shell.css
       - js/home-mobile-composition.js
       - js/home-social-presentation.js
       - js/home-mobile-direct.js
@@ -74,6 +76,11 @@ jobs:
           WIDTHS=320 THEMES=light TEXT_SCALE=1,2 node testing/citizen-layout/home-social-scenes.mjs /tmp/home-social-scenes-320-light
           WIDTHS=390 THEMES=light TEXT_SCALE=1,2 node testing/citizen-layout/home-social-scenes.mjs /tmp/home-social-scenes-390-light
           WIDTHS=390 THEMES=dark TEXT_SCALE=2 node testing/citizen-layout/home-social-scenes.mjs /tmp/home-social-scenes-390-dark
+      - name: Citizen retained routes and cache/feed/session regressions
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          node testing/citizen-layout/mobile-shell.mjs
+          node testing/citizen-layout/mobile-shell-regressions.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -81,3 +88,5 @@ jobs:
           path: |
             /tmp/home-carousel-*
             /tmp/home-social-scenes-*/
+            .local/mobile-shell-tests/
+            .local/mobile-shell-regressions/

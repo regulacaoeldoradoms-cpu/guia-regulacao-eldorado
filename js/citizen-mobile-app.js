@@ -1,5 +1,11 @@
-/* Canal do Cidadão — recursos de interface compartilhados e navegação mobile. */
 (() => {
+/* Canal do Cidadão — recursos de interface compartilhados e navegação mobile. */
+const initializeCitizenArea = (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
+  const MutationObserver = context?.MutationObserver || globalThis.MutationObserver;
+  const requestAnimationFrame = context?.window.requestAnimationFrame || globalThis.requestAnimationFrame;
+  const setTimeout = context?.window.setTimeout || globalThis.setTimeout;
   const setupPrivacyCompactHelp = () => {
     const privacyNotice = document.getElementById('newPrivacyNotice');
     if (!privacyNotice || document.getElementById('privacyCompactHelp')) return;
@@ -332,4 +338,7 @@
   };
 
   waitForCitizen();
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-mobile-app', initializeCitizenArea);
+else initializeCitizenArea();
 })();

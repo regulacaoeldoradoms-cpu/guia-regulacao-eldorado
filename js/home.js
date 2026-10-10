@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-window.PortalHomeReady = (async () => {
+const initializeHome = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   // Compatibilidade das suítes históricas: requireRole(['medico', 'recepcao', 'coordenacao', 'telemedicina'])
@@ -14,17 +17,19 @@ window.PortalHomeReady = (async () => {
   }
 
   // Shared route presentation does not change the authenticated account permissions.
-  await import('/js/citizen-layout.js?v=20261010-mobile-refinement-1').catch(() => {});
+  await import('/js/citizen-layout.js?v=20261010-mobile-shell-1').catch(() => {});
   window.PortalCitizenLayout?.apply(user);
 
   // Reuse the existing controls; mobile composition changes no account permissions.
   try {
     const [presentation, composition] = await Promise.all([
-      import('/js/home-social-presentation.js?v=20261010-design-1'),
-      import('/js/home-mobile-composition.js?v=20261010-mobile-refinement-1')
+      import('/js/home-social-presentation.js?v=20261010-mobile-shell-1'),
+      import('/js/home-mobile-composition.js?v=20261010-mobile-shell-1')
     ]);
-    presentation.mountHomeSocialPresentation(user);
-    composition.mountHomeMobileComposition(user);
+    const presenter = presentation.mountHomeSocialPresentation(user, context);
+    context?.addController(presenter);
+    const composer = composition.mountHomeMobileComposition(user, context);
+    context?.addController(composer);
     await window.PortalCitizenMobileReady;
   } catch (error) {
     console.warn('Home mobile presentation unavailable', error);
@@ -43,7 +48,7 @@ window.PortalHomeReady = (async () => {
     ? 'modo de configuração'
     : (window.PortalTools?.roleLabels?.[user.role] || user.role || '');
 
-  logout?.addEventListener('click', async () => {
+  if (!context) logout?.addEventListener('click', async () => {
     await auth.logout();
     location.replace('/login/');
   });
@@ -141,9 +146,13 @@ window.PortalHomeReady = (async () => {
   } catch (error) {
     return showToolsFallback(socialFailureMessage(error));
   }
-})();
+};
+window.PortalHomeReady = window.PortalCitizenShell
+  ? window.PortalCitizenShell.register('home', initializeHome) : initializeHome();
 
 // Optional companion loading must not block Home readiness or change the login script allowlist.
 window.PortalHomeReady.then((ready) => {
   if (ready) import('/js/pets-bootstrap.js').catch(() => {});
 });
+
+})();

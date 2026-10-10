@@ -1,6 +1,10 @@
+(() => {
 'use strict';
 
-(() => {
+const initializeCitizenArea = (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
+  const MutationObserver = context?.MutationObserver || globalThis.MutationObserver;
   const auth = window.RegulationAuth;
   if (!auth) return;
 
@@ -270,4 +274,7 @@
     new MutationObserver(ensureDeclarationButton).observe(detailContent, { attributes: true, attributeFilter: ['hidden'] });
   }
   ensureDeclarationButton();
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-declaration', initializeCitizenArea);
+else initializeCitizenArea();
 })();

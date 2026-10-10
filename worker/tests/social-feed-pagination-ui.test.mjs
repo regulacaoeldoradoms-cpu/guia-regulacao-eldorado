@@ -26,8 +26,8 @@ test('feed social usa lotes de 10 com rolagem automática e sem botão visível'
   assert.match(profile, /id="profilePostsMore"[^>]*data-auto-scroll="true"/);
   assert.doesNotMatch(home, />Carregar mais publicações</);
   assert.doesNotMatch(profile, />Carregar mais publicações</);
-  assert.match(home, /social-feed\.js\?v=20260910-1/);
-  assert.match(profile, /social-feed\.js\?v=20260910-1/);
+  assert.match(home, /social-feed\.js\?v=20261010-mobile-shell-1/);
+  assert.match(profile, /social-feed\.js\?v=20261010-mobile-shell-1/);
 });
 
 test('comentários mostram até 5 por lote e só oferecem mais quando houver conteúdo pendente', () => {

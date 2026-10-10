@@ -1,7 +1,10 @@
+(() => {
 'use strict';
 
-(() => {
-  if (window.PortalSocialHome) return;
+const initializeCitizenArea = (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
+  if (window.PortalSocialHome && (!context || window.PortalSocialHome.root === context.root)) return;
   const social = window.PortalSocial;
   const DEFAULT_SHORTCUT_LIMIT = 5;
 
@@ -144,5 +147,9 @@
     if (audience) audience.value = payload.profile.defaultPostAudience || 'friends';
   }
 
-  window.PortalSocialHome = Object.freeze({ mount });
+  window.PortalSocialHome = Object.freeze({ mount, root:context?.root });
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-home', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();

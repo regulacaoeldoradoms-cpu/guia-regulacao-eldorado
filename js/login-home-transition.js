@@ -14,6 +14,7 @@
     ['/js/tools-catalog.js', 'PortalTools'],
     ['/js/social-api.js', 'PortalSocial'],
     ['/js/social-navigation.js', 'PortalSocialNavigation'],
+    ['/js/citizen-mobile-shell.js', 'PortalCitizenShell'],
     ['/js/social-feed.js', 'PortalSocialFeed'],
     ['/js/social-home.js', 'PortalSocialHome'],
     ['/js/home.js', 'PortalHomeReady']

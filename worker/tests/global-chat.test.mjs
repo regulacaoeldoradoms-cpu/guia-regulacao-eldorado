@@ -59,7 +59,7 @@ const authenticatedModules = [
 test('chat global aparece em todos os módulos autenticados sem carga manual duplicada', () => {
   for (const path of authenticatedModules) {
     const html = read(path);
-    assert.match(html, /portal-global-chat\.js\?v=20261008-chat-groups-1/, path);
+    assert.match(html, /portal-global-chat\.js\?v=(?:20261008-chat-groups-1|20261010-mobile-shell-1)/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat\.js\?v=/, path);
     assert.doesNotMatch(html, /<script[^>]+portal-chat-switch-optimizer\.js\?v=/, path);
   }
@@ -116,7 +116,7 @@ test('bootstrap global exige sessão e preserva primeiro acesso', () => {
   assert.match(source, /if \(!storedToken\(\)\) return null/);
   assert.match(source, /user\.mustChangePassword/);
   assert.match(source, /portal-chat\.css\?v=20261008-chat-groups-1/);
-  assert.match(source, /portal-chat\.js\?v=20261008-chat-groups-1/);
+  assert.match(source, /portal-chat\.js\?v=20261010-mobile-shell-1/);
   assert.match(source, /portal-chat-switch-optimizer\.js\?v=20260928-global-1/);
 });
 

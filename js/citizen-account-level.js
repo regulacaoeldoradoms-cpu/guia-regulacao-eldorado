@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(() => {
+const initializeCitizenArea = (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const levels = window.AccountLevels;
   if (!auth || !levels) return;
@@ -72,4 +75,7 @@
   window.setTimeout(render, 0);
   window.setTimeout(render, 500);
   window.addEventListener('pageshow', render);
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-account-level', initializeCitizenArea);
+else initializeCitizenArea();
 })();

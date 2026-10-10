@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   const user = await window.PortalAccountSection?.mount();
@@ -81,4 +84,8 @@
   });
 
   await load();
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('settings', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();

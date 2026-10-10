@@ -4,7 +4,11 @@
 // chat launcher so their listeners, badges and desktop positions stay intact.
 let mountedComposition = null;
 
-export function mountHomeMobileComposition(user) {
+export function mountHomeMobileComposition(user, context) {
+  const document = context?.document || globalThis.document;
+  const MutationObserver = context?.MutationObserver || globalThis.MutationObserver;
+  const window = context?.window || globalThis;
+  let routeActive = true;
   if (mountedComposition) {
     mountedComposition.sync();
     return mountedComposition;
@@ -160,14 +164,16 @@ export function mountHomeMobileComposition(user) {
     if (summary.textContent !== label) summary.textContent = label;
   }
 
-  function sync() {
+  function sync(force = false) {
+    if (!routeActive && !force) return;
     queued = false;
     rememberRendererVisibility();
-    mobile = mobileScreen.matches && !printing && !printScreen.matches;
+    mobile = routeActive && mobileScreen.matches && !printing && !printScreen.matches;
     syncTools();
   }
 
   function schedule() {
+    if (!routeActive) return;
     if (queued) return;
     queued = true;
     queueMicrotask(sync);
@@ -201,7 +207,7 @@ export function mountHomeMobileComposition(user) {
   window.addEventListener('beforeprint', () => { printing = true; sync(); });
   window.addEventListener('afterprint', () => { printing = false; sync(); });
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
-  mountedComposition = Object.freeze({ sync });
+  mountedComposition = Object.freeze({ sync, deactivate() { routeActive = false; sync(true); }, activate() { routeActive = true; sync(); }, dispose() { routeActive = false; sync(true); mountedComposition = null; } });
   sync();
   return mountedComposition;
 }

@@ -1,6 +1,9 @@
 'use strict';
 import {petSession} from './pets-bootstrap.js';
 import {drawCat} from './pet-cat-frames.js';
+const initializePetArea = (context) => {
+const window=context?.window||globalThis;
+const document=context?.document||globalThis.document;
 const $=id=>document.getElementById(id);
 const message=(text,error=false)=>{$('petMessage').textContent=text;$('petMessage').dataset.error=String(error);};
 let session,selected=null,busy=false,initializing=false,bound=false,pageEpoch=0,pageToken=null;
@@ -56,7 +59,7 @@ function render(){
   $('petItems').append(card);
  }
  $('petPlacement').hidden=!s.placement;
- if(s.placement){$('bedX').value=s.placement.x;$('bedY').value=s.placement.y;}
+ if(s.placement&&!$('petPlacement').dataset.editing){$('bedX').value=s.placement.x;$('bedY').value=s.placement.y;}
  // Do not overwrite an unfinished preferences edit on every activity response.
  if(!$('petPreferences').dataset.editing){
   $('petVisible').checked=s.preferences.visible;$('petMotion').checked=s.preferences.motionEnabled;$('petPaused').checked=s.preferences.needsPaused;
@@ -86,9 +89,9 @@ async function initialize(){
  $('petAdopt').addEventListener('click',()=>{if(selected)command('adopt',{...selected,expectedPetRevision:session.runtime.state.petRevision},'Adoção confirmada. Cuidar de 7 vidas não é fácil');});
  for(const button of document.querySelectorAll('[data-care]'))button.addEventListener('click',()=>command('care',{action:button.dataset.care,expectedPetRevision:session.runtime.state.petRevision},'Cuidado realizado.'));
  const position=()=>{const s=session.runtime.state;return {...s.placement,x:Number($('bedX').value),y:Number($('bedY').value)};};
- for(const id of ['bedX','bedY'])$(id).addEventListener('input',()=>session.runtime.preview(position()));
- $('petPlacement').addEventListener('submit',event=>{event.preventDefault();const s=session.runtime.state,p=position();session.runtime.preview(null);command('placement',{itemId:p.itemId,x:p.x,y:p.y,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Posição salva.');});
- $('removeBed').addEventListener('click',()=>{const s=session.runtime.state;session.runtime.preview(null);command('placement',{itemId:null,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Caminha guardada no inventário.');});
+ for(const id of ['bedX','bedY'])$(id).addEventListener('input',()=>{$('petPlacement').dataset.editing='true';session.runtime.preview(position());});
+ $('petPlacement').addEventListener('submit',event=>{event.preventDefault();const s=session.runtime.state,p=position();delete $('petPlacement').dataset.editing;session.runtime.preview(null);command('placement',{itemId:p.itemId,x:p.x,y:p.y,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Posição salva.');});
+ $('removeBed').addEventListener('click',()=>{const s=session.runtime.state;delete $('petPlacement').dataset.editing;session.runtime.preview(null);command('placement',{itemId:null,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Caminha guardada no inventário.');});
  $('petPreferences').addEventListener('input',()=>{$('petPreferences').dataset.editing='true';});
  $('petPreferences').addEventListener('submit',event=>{
   event.preventDefault();const minutes=id=>{const [h,m]=$(id).value.split(':').map(Number);return h*60+m;};
@@ -107,4 +110,8 @@ window.addEventListener('portal:session-ready',()=>{
  else if(!session&&!initializing)initialize();
 });
 window.addEventListener('portal:background-refresh',()=>{if(!session&&!initializing)initialize();});
-initialize();
+context?.addController({activate:render,deactivate:()=>session?.runtime.preview(null)});
+return initialize();
+};
+if(globalThis.PortalCitizenShell) globalThis.PortalCitizenShell.register('pets-page',initializePetArea);
+else initializePetArea();

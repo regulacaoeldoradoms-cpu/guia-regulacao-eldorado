@@ -8,6 +8,7 @@
   if (!auth || !endpoint) return;
 
   let currentUser = null;
+  let sessionEnded = false;
   let contacts = [];
   let activeContact = null;
   let lastMessageId = 0;
@@ -684,6 +685,7 @@
   }
 
   function postChatSessionSnapshot(worker) {
+    if (sessionEnded) return false;
     const authorization = chatAuthorization();
     if (!worker || !authorization) return false;
     try {
@@ -1688,6 +1690,7 @@
   }
 
   async function openChatByUsername(username) {
+    if (sessionEnded) return;
     const normalized = String(username || '').trim();
     if (!normalized) return;
     if (!contacts.length) await loadContacts();
@@ -1696,6 +1699,7 @@
   }
 
   async function openChatByHandle(handle) {
+    if (sessionEnded) return false;
     const normalized = String(handle || '').replace(/^@/, '').trim().toLowerCase();
     if (!normalized) return false;
     await loadContacts();
@@ -2040,7 +2044,7 @@
 
   async function start() {
     currentUser = await auth.me({ allowCached: true }).catch(() => auth.getCachedUser?.() || null);
-    if (!currentUser || !CHAT_ROLES.has(currentUser.role)) return;
+    if (sessionEnded || !currentUser || !CHAT_ROLES.has(currentUser.role)) return;
     mount();
 
     const params = new URLSearchParams(location.search);
@@ -2054,6 +2058,7 @@
     }
 
     const snapshot = await snapshotPromise;
+    if (sessionEnded) return;
     hydrateChatSessionSnapshot(snapshot);
     const restoredContactsFresh = contacts.length > 0
       && Number(snapshot?.savedAt || 0) > 0
@@ -2074,6 +2079,7 @@
     restartContactsTimer();
 
     document.addEventListener('visibilitychange', () => {
+      if (sessionEnded) return;
       scheduleMessageDayRefresh();
       if (!document.hidden) {
         syncMessageDateDividers();
@@ -2090,18 +2096,21 @@
     });
 
     window.addEventListener('online', () => {
+      if (sessionEnded) return;
       realtimeStopped = false;
       void connectRealtime();
       syncVisibleConversation();
       if (conversationIsVisible()) void loadMessages(false);
     });
     window.addEventListener('pageshow', (event) => {
+      if (sessionEnded) return;
       if (!event.persisted) return;
       syncVisibleConversation();
       if (conversationIsVisible()) void loadMessages(false);
     });
 
     navigator.serviceWorker?.addEventListener('message', (event) => {
+      if (sessionEnded) return;
       if (event.data?.type === 'OPEN_PORTAL_CHAT' && event.data.chatUser) {
         openChatByUsername(event.data.chatUser);
       }
@@ -2114,7 +2123,8 @@
         const url = new URL(location.href);
         url.searchParams.delete('chat');
         url.searchParams.delete('chatHandle');
-        history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+        if (window.PortalCitizenShell) window.PortalCitizenShell.canonicalize(`${url.pathname}${url.search}${url.hash}`);
+        else history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
       } catch (_) {}
     }
   }
@@ -2124,6 +2134,7 @@
     if (!persistChatSessionSnapshotNow()) void persistChatSessionSnapshot();
   });
   window.addEventListener('portal:session-cleared', () => {
+    sessionEnded = true;
     window.clearTimeout(messageDayTimer);
     messageDayTimer = null;
     const avatar = document.getElementById('portalChatHeaderAvatar');

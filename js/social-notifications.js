@@ -1,6 +1,9 @@
+(() => {
 'use strict';
 
-(async () => {
+const initializeCitizenArea = async (context) => {
+  const window = context?.window || globalThis;
+  const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   const judicialIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v17M7 21h10M5 7h14"/><path d="m7 7-4 7h8L7 7Zm10 0-4 7h8l-4-7Z"/></svg>';
@@ -9,7 +12,7 @@
   if (user.mustChangePassword) { location.replace('/seguranca/?primeiro-acesso=1'); return; }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Usuário';
   document.getElementById('portalUserRole').textContent = window.PortalTools?.roleLabels?.[user.role] || user.role || '';
-  document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
+  if (!context) document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
   let config;
   try { config = await social.getConfig(); }
   catch (error) { social.status(error.message || 'Camada Social indisponível.', 'error'); return; }
@@ -20,7 +23,7 @@
   const list = document.getElementById('socialNotificationList');
   const more = document.getElementById('socialNotificationMore');
 
-  function render(items, append) {
+  function render(items, append, prepend = false) {
     if (!append) list.innerHTML = '';
     if (!items.length && !append) {
       const empty = document.createElement('div');
@@ -31,7 +34,11 @@
       empty.append(title, text); list.appendChild(empty); return;
     }
     items.forEach((item) => {
+      const existing = list.querySelector(`[data-notification-id="${CSS.escape(String(item.id))}"]`);
+      if (existing) { existing.classList.toggle('unread', !item.read); return; }
+      list.querySelector('.social-empty')?.remove();
       const row = document.createElement('article');
+      row.dataset.notificationId = String(item.id);
       row.className = `social-notification${item.read ? '' : ' unread'}`;
       const judicial = item.type === 'judicial_alert';
       if (judicial) row.classList.add('judicial');
@@ -52,7 +59,8 @@
       const time = document.createElement('time');
       time.dateTime = displayedAt;
       time.textContent = judicial ? `Recebido no Gmail: ${social.formatDate(displayedAt)}` : social.formatDate(displayedAt);
-      copy.append(message, time); row.append(avatar, copy); list.appendChild(row);
+      copy.append(message, time); row.append(avatar, copy);
+      if (prepend) list.prepend(row); else list.appendChild(row);
     });
   }
 
@@ -69,6 +77,12 @@
   }
 
   more.addEventListener('click', () => load(true));
+  window.addEventListener('portal:citizen-notifications', event => {
+    const anchor = [...list.children].find(node => node.getBoundingClientRect().bottom > 0);
+    const before = anchor?.getBoundingClientRect().top;
+    render([...(event.detail?.notifications || [])].reverse(), true, true);
+    if (anchor && before !== undefined) window.scrollBy(0, anchor.getBoundingClientRect().top - before);
+  });
   document.getElementById('markSocialRead').addEventListener('click', async () => {
     try {
       await social.api('/api/social/notifications', { method: 'PATCH', body: '{}' });
@@ -78,4 +92,8 @@
     } catch (error) { social.status(error.message || 'Não foi possível atualizar notificações.', 'error'); }
   });
   await load(false);
+};
+if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-notifications', initializeCitizenArea);
+else initializeCitizenArea();
+
 })();
