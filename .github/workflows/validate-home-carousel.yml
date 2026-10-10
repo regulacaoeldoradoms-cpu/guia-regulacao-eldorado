@@ -5,6 +5,7 @@ on:
       - index.html
       - css/home-tools-carousel.css
       - css/citizen-readable-layout.css
+      - css/citizen-mobile-navigation.css
       - css/portal.css
       - css/portal-interactions.css
       - css/social.css
@@ -17,6 +18,7 @@ on:
       - js/home-social-presentation.js
       - js/home-mobile-direct.js
       - js/citizen-layout.js
+      - js/citizen-mobile-navigation.js
       - js/social-home.js
       - js/social-feed.js
       - js/tools-catalog.js

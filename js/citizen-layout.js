@@ -1,6 +1,9 @@
 "use strict";
 // Presentation only: authorization continues to be enforced by RegulationAuth.
 (() => {
+  const instance = Symbol.for('portal.citizenLayout');
+  if (window[instance]) return;
+  window[instance] = true;
   let observedNav = null;
   const mobileScreen = matchMedia("screen and (max-width: 900px)");
   const originalPaws = new WeakMap();
@@ -18,11 +21,12 @@
     const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
     const home = document.body.hasAttribute('data-portal-home-bootstrap');
     // Measure the normal row so returning from enlarged text can restore it.
-    if (home) nav.classList.remove('citizen-nav-reflow');
+    const iconNavigation = nav.dataset.homeIconNavigation === "true";
+    if (home || iconNavigation) nav.classList.remove('citizen-nav-reflow');
     nav.style.setProperty("--citizen-nav-columns", links.map((_, i) => i < 3 ? "minmax(44px,max-content)" : "minmax(44px,1fr)").join(" "));
     const style = getComputedStyle(nav);
     const available = nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    const required = home && nav.dataset.homeIconNavigation === "true" ? links.length * 44 : links.reduce((sum, link) => {
+    const required = iconNavigation ? links.length * 44 : links.reduce((sum, link) => {
       const label = link.querySelector(":scope > span:not(.social-nav-icon):not(.social-nav-badge)");
       if (!label) return sum + 44;
       const font = getComputedStyle(label);
@@ -83,11 +87,68 @@
     updateNavLayout();
   }
   const sharedRoutes = new Set(["/", "/cidadao/", "/amigos/", "/ferramentas/", "/perfil/", "/seguranca/", "/conquistas/", "/configuracoes/", "/notificacoes/", "/mascotes/"]);
+  const version = '20261010-mobile-refinement-1';
+  let presentationStarted = false;
+  let finishPresentation;
+  // Defined before initial apply, so Home and synthetic route fixtures can wait
+  // for the same single mount without owning a second navigation controller.
+  window.PortalCitizenMobileReady = new Promise(resolve => { finishPresentation = resolve; });
+  function loadStyle(path) {
+    const href = new URL(`${path}?v=${version}`, location.href).href;
+    const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
+    if (existing?.sheet) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const link = existing || document.createElement('link');
+      const complete = (error) => {
+        clearTimeout(timeout);
+        link.removeEventListener('load', loaded);
+        link.removeEventListener('error', failed);
+        if (error) reject(error); else resolve();
+      };
+      const loaded = () => complete();
+      const failed = () => complete(new Error(`Stylesheet unavailable: ${path}`));
+      const timeout = setTimeout(failed, 15000);
+      link.addEventListener('load', loaded, { once: true });
+      link.addEventListener('error', failed, { once: true });
+      if (!existing) {
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.append(link);
+      }
+    });
+  }
+  async function mountPresentation() {
+    if (presentationStarted) return;
+    presentationStarted = true;
+    const profileRoute = location.pathname === '/perfil/';
+    try {
+      const [navigation, direct, profile] = await Promise.all([
+        import(`/js/citizen-mobile-navigation.js?v=${version}`),
+        import(`/js/home-mobile-direct.js?v=${version}`),
+        profileRoute ? import(`/js/profile-mobile-presentation.js?v=${version}`) : null,
+        loadStyle('/css/citizen-mobile-navigation.css'),
+        loadStyle('/css/home-mobile-direct.css'),
+        profileRoute ? loadStyle('/css/profile-mobile-presentation.css') : null
+      ]);
+      const profileController = profile?.mountProfileMobilePresentation();
+      direct.mountHomeMobileDirect();
+      // This final mount exposes the shared marker only after all resources and
+      // the direct controller are ready; failed loads keep native navigation.
+      navigation.mountCitizenMobileNavigation();
+      profileController?.sync();
+      petNavigation();
+      finishPresentation(true);
+    } catch (error) {
+      console.warn('Shared mobile presentation unavailable', error);
+      finishPresentation(false);
+    }
+  }
   const apply = (user) => {
     document.body?.classList.toggle(
       "citizen-readable-layout",
       Boolean(user) && sharedRoutes.has(location.pathname),
     );
+    if (user && sharedRoutes.has(location.pathname)) mountPresentation();
     petNavigation();
   };
   const cached = () => {
@@ -104,6 +165,9 @@
       return null;
     }
   };
+  // Home already has the authenticated (or configured preview) user before it
+  // imports this script; accepting that result avoids depending on a past event.
+  window.PortalCitizenLayout = Object.freeze({ apply });
   apply(window.RegulationAuth?.getCachedUser?.() || cached());
   new MutationObserver(petNavigation).observe(document.body, {
     childList: true,

@@ -82,15 +82,6 @@ body.citizen-readable-layout.home-social-mobile .social-post-actions { display: 
 body.citizen-readable-layout.home-social-mobile .social-post-actions button { display: flex; flex-direction: row; align-items: center; justify-content: center; flex: 1 1 max-content; gap: 6px; max-width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--home-muted); font-size: 16px; line-height: 1.3; }
 body.home-social-mobile .social-post-actions svg { width: 20px; height: 20px; flex: 0 0 20px; }
 body.home-social-mobile .social-post-actions button[aria-pressed="true"] { color: var(--home-accent); }
-body.citizen-readable-layout.home-social-mobile .social-mobile-nav { position: fixed !important; top: auto !important; bottom: 0 !important; left: 0; right: 0; z-index: 12005 !important; display: grid !important; grid-template-columns: repeat(var(--home-nav-count, 6), minmax(44px, 1fr)) !important; gap: 0 !important; width: 100%; margin: 0; padding: 3px max(4px, env(safe-area-inset-right)) calc(3px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)) !important; border: 0; border-top: 1px solid var(--home-line); border-radius: 0; background: var(--home-surface) !important; box-shadow: none !important; transition: none !important; }
-body.citizen-readable-layout.home-social-mobile .social-mobile-nav :is(.social-mobile-nav-link, #portalChatLauncher) { position: relative; display: grid !important; place-items: center; width: 100% !important; min-width: 44px !important; min-height: 50px !important; height: auto !important; padding: 6px 0 !important; gap: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; color: var(--home-text) !important; box-shadow: none !important; }
-body.home-social-mobile .social-mobile-nav .social-mobile-nav-link > span:not(.social-nav-icon):not(.social-nav-badge):not(.portal-chat-launcher-icon):not(#portalChatUnread), body.home-social-mobile .social-mobile-nav .chat-launcher-text { position: absolute !important; width: 1px !important; height: 1px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0 !important; }
-body.home-social-mobile .social-mobile-nav :is(.social-nav-icon, .portal-chat-launcher-icon) { display: grid !important; place-items: center; width: 26px !important; height: 26px !important; font-size: 26px !important; }
-body.home-social-mobile .social-mobile-nav :is(.social-nav-icon, .portal-chat-launcher-icon) svg { width: 26px !important; height: 26px !important; }
-body.home-social-mobile .social-mobile-nav .chat-online-dot { display: none !important; }
-body.home-social-mobile .social-mobile-nav :is(.social-nav-badge, #portalChatUnread) { position: absolute !important; top: 2px !important; right: 5px !important; min-width: 1.45em !important; height: 1.45em !important; padding: 0 .27em !important; border-radius: 1em; font-size: 11px !important; line-height: 1.45 !important; }
-body.home-social-mobile .social-mobile-nav :is([aria-current="page"], [aria-expanded="true"])::after { content: ''; position: absolute; bottom: 2px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: var(--home-accent); }
-body.citizen-readable-layout.home-social-mobile .social-mobile-nav .home-nav-profile-avatar { display: grid; place-items: center; width: 28px !important; height: 28px !important; min-width: 28px !important; flex: 0 0 28px; border: 1.5px solid currentColor !important; border-radius: 50%; background-color: var(--home-soft); color: var(--home-text); background-size: cover; background-position: center; font-size: 11px !important; box-shadow: none; }
 body.home-social-mobile :is(.home-tools-strip, .home-tools-strip a, .home-account-menu summary, .home-composer-trigger, .home-post-menu summary, .social-mobile-nav-link):focus-visible { outline: 3px solid var(--home-accent) !important; outline-offset: -3px; }
 @media (prefers-reduced-motion: reduce) {
   body.home-social-mobile :is(.home-tools-strip, .hub-card, .social-post, .social-mobile-nav, .home-account-panel, .home-post-menu-panel) { animation: none !important; transition: none !important; transform: none; }
@@ -100,22 +91,20 @@ body.citizen-readable-layout.home-social-mobile .portal-brand h1 { color: var(--
 body.citizen-readable-layout.home-social-mobile .portal-brand p { color: var(--home-muted) !important; }
 body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-account-area { color: var(--home-text) !important; }
 body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-user-meta { display: block !important; }
-body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-profile-avatar,
-body.citizen-readable-layout.home-social-mobile .social-mobile-nav .home-nav-profile-avatar { background-color: var(--home-soft) !important; color: var(--home-text) !important; box-shadow: none !important; }
-body.citizen-readable-layout.home-social-mobile .social-mobile-nav #portalChatLauncher { transform: none !important; }
+body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-profile-avatar { background-color: var(--home-soft) !important; color: var(--home-text) !important; box-shadow: none !important; }
 /* Enlarged labels wrap the header into rows before splitting the portal name. */
 body.citizen-readable-layout.home-social-mobile .portal-topbar-inner { flex-wrap: wrap !important; row-gap: 0 !important; }
 body.citizen-readable-layout.home-social-mobile .portal-brand { width: auto !important; flex: 1 1 max-content; min-width: max-content !important; }
 body.citizen-readable-layout.home-social-mobile .portal-brand h1 { white-space: nowrap !important; overflow-wrap: normal; }
 body.citizen-readable-layout.home-social-mobile .portal-user { margin-left: auto; }
 /* Fallback initials are decorative artwork, independent of reading text size. */
-body.citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, .social-mobile-nav .home-nav-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"] {
+body.citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"] {
   position: relative;
   color: transparent !important;
   text-shadow: none !important;
   --home-avatar-ink: var(--home-text);
 }
-body.citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, .social-mobile-nav .home-nav-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"]::after {
+body.citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"]::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -128,7 +117,4 @@ body.citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #soci
 body.home-social-mobile #portalChatRoot .portal-chat-avatar[data-home-avatar-initials="true"]::after {
   -webkit-mask-size: 36px 36px;
   mask-size: 36px 36px;
-}
-body.citizen-readable-layout.home-social-mobile .social-mobile-nav .home-nav-profile-avatar[data-home-avatar-initials="true"] {
-  border-color: var(--home-text) !important;
 }

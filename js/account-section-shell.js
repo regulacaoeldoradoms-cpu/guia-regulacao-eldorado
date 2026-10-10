@@ -39,7 +39,7 @@
         styles.href = '/css/citizen-readable-layout.css?v=20261009-2';
         document.head.appendChild(styles);
         const layout = document.createElement('script');
-        layout.src = '/js/citizen-layout.js?v=20261009-2';
+        layout.src = '/js/citizen-layout.js?v=20261010-mobile-refinement-1';
         document.head.appendChild(layout);
       }
     }

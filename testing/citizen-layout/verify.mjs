@@ -4,6 +4,10 @@ const rows = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const baseline = process.argv[3]
   ? JSON.parse(fs.readFileSync(process.argv[3], "utf8"))
   : [];
+const sharedRoutes = new Set([
+  '/', '/cidadao/', '/perfil/', '/amigos/', '/notificacoes/',
+  '/configuracoes/', '/seguranca/', '/conquistas/', '/ferramentas/', '/mascotes/',
+]);
 for (const row of rows) {
   const name = `${row.route} @ ${row.width}`;
   assert.deepEqual(row.errors, [], `${name}: JavaScript errors`);
@@ -26,6 +30,8 @@ for (const row of rows) {
     row.bodyClass.includes("citizen-readable-layout"),
     `${name}: citizen presentation`,
   );
+  if (sharedRoutes.has(row.route))
+    assert.equal(row.sharedPresentationReady, true, `${name}: shared presentation resources mounted`);
   if (row.citizenCards && row.role !== "admin")
     assert.deepEqual(
       row.citizenCards,
@@ -38,24 +44,19 @@ for (const row of rows) {
       { svg: true, label: "Mascotes", text: "" },
       `${name}: accessible SVG paw`,
     );
-    if (row.navigation) {
+    if (sharedRoutes.has(row.route)) {
+      assert.ok(row.bodyClass.includes('shared-mobile-navigation'), `${name}: shared mobile navigation mounted`);
+      assert.ok(row.navigation, `${name}: shared navigation is visible`);
       assert.ok(row.navigation.targetsFit, `${name}: all navigation targets visible and at least 44 px`);
-      if (row.route === "/") {
-        assert.ok(row.navigation.iconOnly, `${name}: Home uses approved icon navigation`);
-        assert.deepEqual(row.navigation.destinations, ["/", "/amigos/", "portalChatLauncher", "socialNotificationTriggerMobile", "/mascotes/", "/perfil/"], `${name}: all six Home destinations retain their order`);
-        assert.ok(row.navigation.accessibleNames.every(label => label.trim()), `${name}: every Home icon has an accessible name`);
-        assert.ok(row.navigation.labelsHidden, `${name}: Home labels are visually hidden`);
-        assert.ok(row.navigation.profileAvatar, `${name}: Perfil retains the account avatar`);
-        assert.equal(row.navigation.position, "fixed", `${name}: Home navigation stays reachable`);
-        assert.equal(row.navigation.rows, 1, `${name}: Home icons stay in one row at both text scales`);
-        assert.equal(row.navigation.reflow, false, `${name}: icon navigation does not need text reflow`);
-      } else {
-        assert.ok(row.navigation.labelsFit, `${name}: complete navigation labels fit`);
-        if (row.textScale !== 2)
-          assert.equal(row.navigation.rows, 1, `${name}: normal text navigation stays in one row`);
-        else
-          assert.ok(row.navigation.reflow, `${name}: enlarged text reflows safely`);
-      }
+      assert.ok(row.navigation.iconOnly, `${name}: shared routes use approved icon navigation`);
+      assert.deepEqual(row.navigation.destinations, ["/", "/amigos/", "portalChatLauncher", "socialNotificationTriggerMobile", "/mascotes/", "/perfil/"], `${name}: all six shared destinations retain their order`);
+      assert.deepEqual(row.navigation.accessibleNames, ['Início', 'Amigos', 'Chat', 'Avisos', 'Mascotes', 'Perfil'], `${name}: every shared icon retains its accessible name`);
+      assert.ok(row.navigation.labelsHidden, `${name}: shared labels are visually hidden`);
+      assert.ok(row.navigation.profileAvatar, `${name}: Perfil retains the account avatar`);
+      assert.ok(row.navigation.profileAvatarMatchesAccount, `${name}: Perfil uses the original signed-in account avatar`);
+      assert.equal(row.navigation.position, "fixed", `${name}: shared navigation stays reachable`);
+      assert.equal(row.navigation.rows, 1, `${name}: shared icons stay in one row at both text scales`);
+      assert.equal(row.navigation.reflow, false, `${name}: icon navigation does not need text reflow`);
     }
     for (const target of row.controls.filter((c) =>
       c.class.includes("social-mobile-nav-link"),

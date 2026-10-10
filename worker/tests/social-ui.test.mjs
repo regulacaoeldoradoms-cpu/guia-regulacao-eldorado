@@ -119,7 +119,7 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(socialHome, /avatarVersion: String\(cachedProfile\.avatarVersion/);
   const homeScripts = [...index.matchAll(/<script\b[^>]*\bsrc\s*=\s*(["'])([^"']+)\1[^>]*>/gi)]
     .map((match) => match[2]).filter((source) => new URL(source, 'https://portal.invalid').pathname === '/js/home.js');
-  assert.deepEqual(homeScripts, ['/js/home.js?v=20261010-design-1']);
+  assert.deepEqual(homeScripts, ['/js/home.js?v=20261010-mobile-refinement-1']);
   assert.match(index, /<body class="portal-page home-loading-active" data-portal-home-bootstrap="1">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);

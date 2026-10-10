@@ -364,6 +364,8 @@ async function ready(page, home = true) {
     await page.locator('#socialFeedList .social-post').first().waitFor();
   }
   await page.locator('#portalChatLauncher').waitFor({ state: 'attached' });
+  await page.waitForFunction(() => Boolean(window.PortalCitizenMobileReady));
+  await page.evaluate(() => window.PortalCitizenMobileReady);
   await page.waitForFunction(() => document.querySelectorAll('.social-mobile-nav .social-mobile-nav-link').length === 6);
 }
 
@@ -451,7 +453,9 @@ async function verifySectionPersistence(page, result, audit, captureViews) {
   if (captureViews) await capture(page, result, 'friends-chat');
   const returnDraft = departureDraft + ' Edição feita em Amigos.';
   if (friends.conversationOpen) await page.locator('#portalChatInput').fill(returnDraft);
-  await page.locator('.social-mobile-nav a[href="/"]').click();
+  // Início now closes an open mobile Chat in place. An explicit browser
+  // navigation still exercises the native pagehide snapshot with Chat open.
+  await page.goto(origin + '/', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(origin + '/');
   await ready(page);
   if (sessionBridgeMode === 'protocol') await page.locator('[data-chat-user]').first().waitFor({ state: 'attached' });
@@ -489,6 +493,7 @@ async function chatInteractions(page, result, audit) {
     await page.locator('#portalChatMessages [data-message-id="3"]').waitFor();
     await settle(page);
   };
+  await page.evaluate(() => { window.__sceneChatPriorFocus = document.activeElement; });
   await openList();
   await capture(page, result, 'chat-list');
   await openConversation();
@@ -513,13 +518,18 @@ async function chatInteractions(page, result, audit) {
   await settle(page);
   await openConversation();
   check(result, 'UI Back preserves per-contact draft', await input.inputValue() === draft);
-  await nativeHistoryAction(page, '#portalChatClose');
+  check(result, 'mobile X is hidden while native close handler remains installed', await page.locator('#portalChatClose').isHidden());
+  await nativeHistoryAction(page, '.social-mobile-nav a[href="/"]');
   await page.waitForFunction(() => !document.querySelector('#portalChatRoot')?.classList.contains('open'));
   await settle(page);
-  check(result, 'Close restores launcher focus', await launcher.evaluate(element => document.activeElement === element));
-  await openList();
-  await openConversation();
-  check(result, 'Close and reopen preserve draft', await input.inputValue() === draft);
+  check(result, 'Início closes Chat on the same Home route and restores prior focus', new URL(page.url()).pathname === '/'
+    && await page.evaluate(() => document.activeElement === window.__sceneChatPriorFocus
+      || (window.__sceneChatPriorFocus === document.body && document.activeElement === document.querySelector('.social-mobile-nav a[href="/"]'))));
+  await launcher.click();
+  await page.locator('#portalChatConversationView.active').waitFor();
+  await settle(page);
+  check(result, 'Início close and automatic reopen preserve selected conversation and draft', await input.inputValue() === draft
+    && (await chatSessionState(page)).selectedHandle === contact.socialHandle);
   check(result, 'original chat nodes survive repeated opens', await page.evaluate(() =>
     ['portalChatRoot', 'portalChatLauncher', 'portalChatUnread', 'portalChatInput'].every(id => window.__sceneOriginalNodes[id] === document.getElementById(id))
     && document.querySelectorAll('#portalChatRoot').length === 1 && document.querySelectorAll('#portalChatLauncher').length === 1

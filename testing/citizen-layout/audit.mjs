@@ -13,20 +13,21 @@ const root =
   process.env.PORTAL_ROOT || path.resolve(import.meta.dirname, "../..");
 const port = Number(process.env.AUDIT_PORT || 4179);
 const output = process.argv[2] || "/tmp/citizen-layout-before.json";
+const sharedRoutes = new Set([
+  "/",
+  "/cidadao/",
+  "/perfil/",
+  "/amigos/",
+  "/notificacoes/",
+  "/configuracoes/",
+  "/seguranca/",
+  "/conquistas/",
+  "/ferramentas/",
+  "/mascotes/",
+]);
 const routes = process.env.ROUTES
   ? process.env.ROUTES.split(",")
-  : [
-      "/",
-      "/cidadao/",
-      "/perfil/",
-      "/amigos/",
-      "/notificacoes/",
-      "/configuracoes/",
-      "/seguranca/",
-      "/conquistas/",
-      "/ferramentas/",
-      "/mascotes/",
-    ];
+  : [...sharedRoutes];
 const user = {
   id: "synthetic-citizen",
   username: "fixture.citizen",
@@ -210,6 +211,27 @@ try {
         await page.waitForFunction(() => Boolean(window.PortalHomeReady));
         await page.evaluate(() => window.PortalHomeReady);
       }
+      let sharedPresentationReady = null;
+      if (sharedRoutes.has(route)) {
+        await page.waitForFunction(() => Boolean(window.PortalCitizenMobileReady));
+        sharedPresentationReady = await page.evaluate(() => window.PortalCitizenMobileReady);
+        if (sharedPresentationReady !== true)
+          throw Error(`${route}: shared mobile presentation failed to mount`);
+        if (width <= 900) {
+          // Chat and the native pets link can mount after the shared controller.
+          // Wait for their original nodes rather than measuring its fallback row.
+          await page.waitForFunction(() => {
+            const nav = document.querySelector('.social-mobile-nav');
+            const expected = ['/', '/amigos/', 'portalChatLauncher', 'socialNotificationTriggerMobile', '/mascotes/', '/perfil/'];
+            const destinations = [...(nav?.querySelectorAll(':scope > .social-mobile-nav-link') || [])]
+              .map(link => link.getAttribute('href') || link.id);
+            return document.body.classList.contains('shared-mobile-navigation')
+              && nav?.dataset.homeIconNavigation === 'true'
+              && destinations.length === expected.length
+              && destinations.every((destination, index) => destination === expected[index]);
+          });
+        }
+      }
       await page.waitForTimeout(300);
       if (process.env.NAV_REVIEW) {
         const mode = process.env.NAV_REVIEW;
@@ -258,6 +280,8 @@ try {
             const nav = document.querySelector(".social-mobile-nav");
             if (!nav || getComputedStyle(nav).display === "none") return null;
             const links = [...nav.querySelectorAll(".social-mobile-nav-link")];
+            const profileAvatar = links.at(-1)?.querySelector(".home-nav-profile-avatar");
+            const accountAvatar = document.querySelector('.portal-topbar .portal-user .portal-profile-avatar:not(.home-nav-profile-avatar)');
             return {
               iconOnly: nav.dataset.homeIconNavigation === "true",
               position: getComputedStyle(nav).position,
@@ -267,7 +291,12 @@ try {
                 const s = getComputedStyle(label), r = label.getBoundingClientRect();
                 return s.display === "none" || (r.width <= 1 && r.height <= 1 && s.overflow === "hidden");
               })),
-              profileAvatar: !!links.at(-1)?.querySelector(".home-nav-profile-avatar"),
+              profileAvatar: !!profileAvatar,
+              profileAvatarMatchesAccount: !!profileAvatar && !!accountAvatar
+                && profileAvatar !== accountAvatar
+                && profileAvatar.textContent === accountAvatar.textContent
+                && profileAvatar.style.backgroundImage === accountAvatar.style.backgroundImage
+                && profileAvatar.getAttribute('aria-hidden') === 'true',
               rows: new Set(links.map(e => Math.round(e.getBoundingClientRect().top))).size,
               reflow: nav.classList.contains("citizen-nav-reflow"),
               targetsFit: links.every(e => { const r=e.getBoundingClientRect(); return r.width>=43.99 && r.height>=44 && r.left>=-1 && r.right<=document.documentElement.clientWidth+1; }),
@@ -410,6 +439,7 @@ try {
         width,
         url: page.url(),
         ...metrics,
+        sharedPresentationReady,
         calls,
         errors,
         ...(process.env.CACHED_NAV_PATH ? {

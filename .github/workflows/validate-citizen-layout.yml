@@ -3,10 +3,14 @@ on:
   pull_request:
     paths:
       - "css/citizen-readable-layout.css"
+      - "css/citizen-mobile-navigation.css"
+      - "css/profile-mobile-presentation.css"
       - "css/home-tools-carousel.css"
       - "css/home-mobile-direct.css"
       - "index.html"
       - "js/citizen-layout.js"
+      - "js/citizen-mobile-navigation.js"
+      - "js/profile-mobile-presentation.js"
       - "js/home.js"
       - "js/home-mobile-composition.js"
       - "js/home-social-presentation.js"
@@ -15,6 +19,14 @@ on:
       - "js/portal-chat.js"
       - "js/account-section-shell.js"
       - "mascotes/index.html"
+      - "perfil/index.html"
+      - "amigos/index.html"
+      - "cidadao/index.html"
+      - "ferramentas/index.html"
+      - "seguranca/index.html"
+      - "conquistas/index.html"
+      - "configuracoes/index.html"
+      - "notificacoes/index.html"
       - "testing/citizen-layout/**"
       - ".github/workflows/validate-citizen-layout.yml"
 permissions:
@@ -46,6 +58,17 @@ jobs:
         run: |
           node testing/citizen-layout/audit.mjs /tmp/citizen-layout.json
           node testing/citizen-layout/verify.mjs /tmp/citizen-layout.json
+      - name: Mobile Profile and Chat with native session persistence
+        run: |
+          node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-refinement
+          CASES=group-own-390-dark-100,shared-mascotes node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-refinement/extra
+      - name: Preserve desktop and print Profile and Chat
+        env:
+          MODE: preservation
+          BASELINE_ROOT: /tmp/mobile-profile-baseline
+        run: |
+          git worktree add --detach "$BASELINE_ROOT" ac89d0fb8a9c6555be52177dcfcae14aee236d73
+          node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-preservation
       - name: Versioned navigation cache isolation on shared citizen routes
         env:
           ROUTES: "/,/cidadao/,/mascotes/"
@@ -90,3 +113,5 @@ jobs:
           path: |
             /tmp/citizen-*.json
             /tmp/citizen-*.png
+            /tmp/mobile-profile-refinement/
+            /tmp/mobile-profile-preservation/
