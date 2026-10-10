@@ -163,6 +163,13 @@ try {
     });
     await page.route('**/api/social/notifications*', route => route.fulfill({ contentType:'application/json', body:JSON.stringify({ notifications, nextCursor:'' }) }));
     await go(page, '/notificacoes/');
+    // The updater has its own offline contract. Finish route startup reads
+    // before measuring it; an already preparing area may still settle its data.
+    await page.waitForFunction(() => {
+      const state = window.PortalCitizenShell.diagnostics();
+      return !state.prewarming && ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'].every(path => state.ready.includes(path));
+    });
+    await page.waitForLoadState('networkidle');
     notifications = [{ id:900, type:'relationship_requested', text:'há uma atualização sintética', createdAt:'2026-10-10T16:00:00Z', read:false }]; unread = 1;
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await page.locator('#socialNotificationList [data-notification-id="900"]').waitFor();
