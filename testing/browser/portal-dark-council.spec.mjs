@@ -206,7 +206,13 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
   const palettes=[];
   let mobileLayout;
     const result=await compareAgainstBase({page,context,info,route,theme,media,
-      normalizeSelector:selector=>citizen?selector.replace(/\.citizen-readable-layout(?=[. >:]|$)/g,''):selector,
+      // The retained route wrapper uses display:contents and the shared nav
+      // moves into portal-shell. Normalize those identities only; every
+      // computed property, rectangle and raster gate remains exact.
+      normalizeSelector:selector=>citizen?selector
+        .replace(/\.citizen-readable-layout(?=[. >:]|$)/g,'')
+        .replace(/ > div\.citizen-route-area:nth-of-type\(\d+\)/g,'')
+        .replace(/ > div\.portal-shell:nth-of-type\(\d+\)(?= > nav\.social-mobile-nav)/g,''):selector,
       prepare:async page=>{
       if(citizen&&media==='print'){
         // Open the real handler without Playwright auto-scrolling a redesigned

@@ -99,6 +99,15 @@ export function mountCitizenMobileNavigation() {
     for (const link of record.nav.querySelectorAll(':scope > .social-mobile-nav-link')) {
       if (link === launcher || record.links.includes(link)) continue;
       mark(link, 'Home navigation item position');
+      // Social availability can arrive while Tools is parked off-document.
+      // Its original marker still defines the native Friends-before-Tools
+      // order required when desktop or print restores these same links.
+      if (link.getAttribute('href') === '/amigos/') {
+        const tools = record.links.find(item => item.getAttribute('href') === '/ferramentas/');
+        const toolsMarker = positions.get(tools);
+        const linkMarker = positions.get(link);
+        if (toolsMarker?.parentNode === record.nav && linkMarker) record.nav.insertBefore(linkMarker, toolsMarker);
+      }
       record.links.push(link);
       record.labels.set(link, link.getAttribute('aria-label'));
     }
