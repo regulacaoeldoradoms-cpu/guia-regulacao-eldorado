@@ -14,18 +14,18 @@ window.PortalHomeReady = (async () => {
   }
 
   // Shared route presentation does not change the authenticated account permissions.
-  await import('/js/citizen-layout.js?v=20261010-design-1').catch(() => {});
+  await import('/js/citizen-layout.js?v=20261010-mobile-refinement-1').catch(() => {});
+  window.PortalCitizenLayout?.apply(user);
 
   // Reuse the existing controls; mobile composition changes no account permissions.
   try {
-    const [presentation, composition, direct] = await Promise.all([
+    const [presentation, composition] = await Promise.all([
       import('/js/home-social-presentation.js?v=20261010-design-1'),
-      import('/js/home-mobile-composition.js?v=20261010-design-1'),
-      import('/js/home-mobile-direct.js?v=20261010-design-1')
+      import('/js/home-mobile-composition.js?v=20261010-mobile-refinement-1')
     ]);
     presentation.mountHomeSocialPresentation(user);
     composition.mountHomeMobileComposition(user);
-    direct.mountHomeMobileDirect();
+    await window.PortalCitizenMobileReady;
   } catch (error) {
     console.warn('Home mobile presentation unavailable', error);
   }

@@ -32,11 +32,6 @@ export function mountHomeMobileComposition(user) {
   let printing = false;
   let queued = false;
   let limitControl = null;
-  let launcher = null;
-  let launcherState = null;
-  let navigation = null;
-  let sourceAvatar = null;
-  let lastFocused = document.activeElement;
 
   function setAttribute(node, name, value) {
     if (!node) return;
@@ -165,168 +160,11 @@ export function mountHomeMobileComposition(user) {
     if (summary.textContent !== label) summary.textContent = label;
   }
 
-  function discoverLauncher() {
-    // A navigation remount removes the old nav and its launcher from document.
-    // Keep the native reference until its original chat root is removed too.
-    const found = document.getElementById('portalChatLauncher');
-    if (found && found !== launcher) {
-      if (launcher) restoreLauncher();
-      launcher = found;
-      mark(launcher, 'Home chat launcher position');
-      launcherState = {
-        label: launcher.getAttribute('aria-label'),
-        navClass: launcher.classList.contains('social-mobile-nav-link')
-      };
-    }
-  }
-
-  function restoreLauncher() {
-    if (!launcher || !launcherState) return;
-    restore(launcher);
-    launcher.classList.toggle('social-mobile-nav-link', launcherState.navClass);
-    setAttribute(launcher, 'aria-label', launcherState.label);
-  }
-
-  function rememberNavigation(nav) {
-    mark(nav, 'Home mobile navigation position');
-    const links = [...nav.querySelectorAll(':scope > .social-mobile-nav-link')];
-    for (const link of links) mark(link, 'Home navigation item position');
-    const profile = links.find(link => link.getAttribute('href') === '/perfil/');
-    const profileIcon = profile?.querySelector('.social-nav-icon');
-    return {
-      nav, links, parked: document.createDocumentFragment(),
-      labels: new Map(links.map(link => [link, link.getAttribute('aria-label')])),
-      iconNavigation: nav.getAttribute('data-home-icon-navigation'),
-      count: nav.style.getPropertyValue('--home-nav-count'),
-      countPriority: nav.style.getPropertyPriority('--home-nav-count'),
-      profileIcon, profileContent: profileIcon ? [...profileIcon.childNodes] : [],
-      avatarSignature: null, avatarClone: null
-    };
-  }
-
-  function refreshNavigation(record) {
-    // Pets may add or replace its original link after the social nav mounts.
-    // Forget externally removed links, retaining only our parked Tools link.
-    record.links = record.links.filter(link => {
-      if (link.parentNode === record.nav || link.parentNode === record.parked) return true;
-      const marker = positions.get(link);
-      if (marker?.parentNode === record.nav) marker.remove();
-      record.labels.delete(link);
-      return false;
-    });
-    for (const link of record.nav.querySelectorAll(':scope > .social-mobile-nav-link')) {
-      if (link === launcher || record.links.includes(link)) continue;
-      mark(link, 'Home navigation item position');
-      record.links.push(link);
-      record.labels.set(link, link.getAttribute('aria-label'));
-    }
-    const profile = record.links.find(link => link.getAttribute('href') === '/perfil/');
-    const icon = profile?.querySelector('.social-nav-icon');
-    if (icon !== record.profileIcon) {
-      if (record.profileIcon && record.avatarClone?.parentNode === record.profileIcon) {
-        record.profileIcon.replaceChildren(...record.profileContent);
-      }
-      record.profileIcon = icon;
-      record.profileContent = icon ? [...icon.childNodes] : [];
-      record.avatarClone = null;
-      record.avatarSignature = null;
-    }
-  }
-
-  function restoreNavigation(record, restorePosition = true) {
-    if (!record) return;
-    restoreLauncher();
-    for (const link of record.links) {
-      restore(link);
-      setAttribute(link, 'aria-label', record.labels.get(link));
-    }
-    setAttribute(record.nav, 'data-home-icon-navigation', record.iconNavigation);
-    if (record.count) record.nav.style.setProperty('--home-nav-count', record.count, record.countPriority);
-    else record.nav.style.removeProperty('--home-nav-count');
-    if (record.profileIcon && record.avatarClone?.parentNode === record.profileIcon) record.profileIcon.replaceChildren(...record.profileContent);
-    record.avatarClone = null;
-    record.avatarSignature = null;
-    // social-navigation deliberately removes retired navs during remount. Its
-    // body marker can outlive that nav, so never resurrect a detached one.
-    if (restorePosition && record.nav.isConnected) restore(record.nav);
-  }
-
-  const avatarObserver = new MutationObserver(schedule);
-  function syncAvatar(record) {
-    const next = document.querySelector('.portal-topbar .portal-user .portal-profile-avatar:not(.home-nav-profile-avatar)');
-    if (next !== sourceAvatar) {
-      avatarObserver.disconnect();
-      sourceAvatar = next;
-      if (sourceAvatar) avatarObserver.observe(sourceAvatar, {
-        attributes: true, attributeFilter: ['style'], childList: true, characterData: true, subtree: true
-      });
-    }
-    if (!record?.profileIcon || !sourceAvatar) return;
-    const signature = `${sourceAvatar.textContent}\u0000${sourceAvatar.getAttribute('style') || ''}`;
-    if (record.avatarSignature === signature && record.avatarClone?.parentNode === record.profileIcon) return;
-    const clone = sourceAvatar.cloneNode(true);
-    clone.removeAttribute('id');
-    clone.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
-    clone.classList.add('home-nav-profile-avatar');
-    clone.setAttribute('aria-hidden', 'true');
-    record.profileIcon.replaceChildren(clone);
-    record.avatarClone = clone;
-    record.avatarSignature = signature;
-  }
-
-  function navLabel(link) {
-    if (link === launcher) return 'Chat';
-    const label = link.querySelector(':scope > span:not(.social-nav-icon):not(.social-nav-badge)')?.textContent.trim();
-    return label || link.getAttribute('aria-label') || link.getAttribute('title') || link.textContent.trim();
-  }
-
-  function syncNavigation() {
-    discoverLauncher();
-    const nav = document.querySelector('.social-mobile-nav');
-    const previous = navigation;
-    const recoverFocus = previous && previous.nav !== nav && !previous.nav.isConnected
-      && previous.nav.contains(lastFocused) && document.activeElement === document.body ? lastFocused : null;
-    if (navigation?.nav !== nav) {
-      restoreNavigation(navigation, false);
-      navigation = nav ? rememberNavigation(nav) : null;
-    }
-    if (navigation) refreshNavigation(navigation);
-    if (!mobile || !navigation) {
-      restoreNavigation(navigation);
-      restoreLauncher();
-      return;
-    }
-    if (nav.parentNode !== document.body) move(nav, document.body);
-    const byPath = path => navigation.links.find(link => link.getAttribute('href') === path);
-    const tools = byPath('/ferramentas/');
-    if (tools?.parentNode === nav) navigation.parked.append(tools);
-    const notification = navigation.links.find(link => link.id === 'socialNotificationTriggerMobile');
-    const ordered = [byPath('/'), byPath('/amigos/'), launcher, notification, byPath('/mascotes/'), byPath('/perfil/')].filter(Boolean);
-    if (launcher) launcher.classList.add('social-mobile-nav-link');
-    let before = null;
-    for (const link of [...ordered].reverse()) {
-      move(link, nav, before);
-      setAttribute(link, 'aria-label', navLabel(link));
-      before = link;
-    }
-    setAttribute(nav, 'data-home-icon-navigation', 'true');
-    const count = String(nav.querySelectorAll(':scope > .social-mobile-nav-link').length);
-    if (nav.style.getPropertyValue('--home-nav-count') !== count) nav.style.setProperty('--home-nav-count', count);
-    syncAvatar(navigation);
-    if (recoverFocus) {
-      const replacement = recoverFocus === launcher ? launcher
-        : ordered.find(link => (recoverFocus.id && link.id === recoverFocus.id)
-          || (recoverFocus.getAttribute('href') && link.getAttribute('href') === recoverFocus.getAttribute('href')));
-      replacement?.focus({ preventScroll: true });
-    }
-  }
-
   function sync() {
     queued = false;
     rememberRendererVisibility();
     mobile = mobileScreen.matches && !printing && !printScreen.matches;
     syncTools();
-    syncNavigation();
   }
 
   function schedule() {
@@ -355,7 +193,6 @@ export function mountHomeMobileComposition(user) {
       if (offset) strip.scrollBy({ left: offset, behavior: 'auto' });
     });
   });
-  document.addEventListener('focusin', event => { lastFocused = event.target; });
   document.addEventListener('change', event => {
     if (event.target.id === 'socialShortcutLimit') schedule();
   });

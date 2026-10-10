@@ -11,6 +11,7 @@ export const brightSurfaceAllowlist = [
   { selector:'.interface-switch > span',pseudo:'::after',maxArea:625,reason:'Small switch thumb is a control glyph; the surrounding settings panel and track remain audited.' },
   { selector:'.chat-online-dot, .portal-chat-presence-dot',maxArea:256,reason:'Small bright presence dot is a status indicator; the chat surface remains audited.' },
   { selector:'body[data-portal-home-bootstrap].citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, .social-mobile-nav .home-nav-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"]',pseudo:'::after',homeInitials:true,reason:'The verified Home initials SVG paints small foreground letters, not a filled surface; the avatar background remains independently audited.' },
+  { selector:'body.citizen-readable-layout.shared-mobile-navigation .social-mobile-nav .home-nav-profile-avatar[data-home-avatar-initials="true"]',pseudo:'::after',sharedNavigationInitials:true,reason:'The shared mobile navigation uses a verified 28px initials SVG as foreground lettering; its avatar background and every other surface remain audited.' },
   { selector:'.social-profile-cover, .social-mini-cover',reason:'User-configurable decorative profile cover (js/social-profile.js and css/social.css); its artwork remains faithful while surrounding UI and text are audited.' },
   { selector:'#telemedicineViewSwitch > button, .telemedicine-actions > .portal-button',pseudo:'::before',mask:true,maxArea:1024,reason:'Small masked action glyph uses foreground currentColor; the button surface itself remains audited.' },
   { selector:'#manifestationDetailModal #replyButton',pseudo:'::before',mask:true,maxArea:625,reason:'25px masked reply-airplane glyph in citizen-detail-mobile-v4.css; reply button and detail panel remain audited.' },
@@ -144,6 +145,27 @@ export async function inspectSurfaces(page) {
           &&text.textContent.length>0&&text.textContent===[...el.textContent.trim()].slice(0,2).join('');
       } catch {return false;}
     };
+    const sharedNavigationInitialsGlyph=(el,style,area)=>{
+      const routes=['/','/cidadao/','/amigos/','/ferramentas/','/perfil/','/seguranca/','/conquistas/','/configuracoes/','/notificacoes/','/mascotes/'];
+      if(!routes.includes(location.pathname)||!matchMedia('screen and (max-width: 900px)').matches||matchMedia('print').matches
+        ||style.backgroundImage!=='none'||style.maskRepeat!=='no-repeat'||style.maskPosition!=='50% 50%'
+        ||style.maskSize!=='100% 100%'||style.transform!=='none'||!['""',"''"].includes(style.content))return false;
+      const bounds=el.getBoundingClientRect();
+      if(area>28*28||parseFloat(style.width)>28||parseFloat(style.height)>28||bounds.width>28||bounds.height>28)return false;
+      const mask=style.maskImage.match(/^url\(["']?(data:image\/svg\+xml,[^"']+)["']?\)$/);
+      if(!mask)return false;
+      try {
+        const svg=new DOMParser().parseFromString(decodeURIComponent(mask[1].slice('data:image/svg+xml,'.length)),'image/svg+xml').documentElement;
+        if(svg.localName!=='svg'||svg.namespaceURI!=='http://www.w3.org/2000/svg'||svg.getAttribute('viewBox')!=='0 0 28 28'
+          ||svg.getAttribute('aria-hidden')!=='true'||svg.children.length!==1||[...svg.attributes].some(a=>!['xmlns','viewBox','aria-hidden'].includes(a.name)))return false;
+        const text=svg.firstElementChild;
+        const attributes={x:'14',y:'14','text-anchor':'middle','dominant-baseline':'central','font-size':'11','font-family':'Arial, sans-serif','font-weight':'700',fill:'#000'};
+        return text.localName==='text'&&text.children.length===0
+          &&text.attributes.length===Object.keys(attributes).length
+          &&Object.entries(attributes).every(([name,value])=>text.getAttribute(name)===value)
+          &&text.textContent.length>0&&text.textContent===[...el.textContent.trim()].slice(0,2).join('');
+      } catch {return false;}
+    };
     for (const el of document.querySelectorAll('html,body,body *')) {
       if (!visible(el)) continue;
       const rect=el.getBoundingClientRect(), name=selector(el);
@@ -166,7 +188,7 @@ export async function inspectSurfaces(page) {
         const maximum=colors.some(c=>c[3]>0)?lum(blend([...paint(style,under).slice(0,3),Number(style.opacity)],under)):0;
         const area=pseudo?(parseFloat(style.width)||rect.width)*(parseFloat(style.height)||rect.height):rect.width*rect.height;
         if(maximum>=.45 && area>=96 && !['img','video','canvas','svg','path'].includes(el.localName)) {
-          const exemption=allowlist.find(item=>el.matches(item.selector)&&(item.pseudo===undefined||item.pseudo===pseudo)&&(!item.mask||style.maskImage!=='none')&&(!item.maxArea||area<=item.maxArea)&&(!item.homeInitials||homeInitialsGlyph(el,style,area)));
+          const exemption=allowlist.find(item=>el.matches(item.selector)&&(item.pseudo===undefined||item.pseudo===pseudo)&&(!item.mask||style.maskImage!=='none')&&(!item.maxArea||area<=item.maxArea)&&(!item.homeInitials||homeInitialsGlyph(el,style,area))&&(!item.sharedNavigationInitials||sharedNavigationInitialsGlyph(el,style,area)));
           const finding={ selector:name,pseudo,tag:el.localName,background:style.backgroundColor,backgroundImage:style.backgroundImage,maskImage:style.maskImage,opacity:style.opacity,luminance:+maximum.toFixed(4),color:style.color,area:Math.round(area),text:(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,110),inlineStyle:el.getAttribute('style'),sources:matchedSources(el,pseudo) };
           if(exemption) allowed.push({...finding,reason:exemption.reason}); else bright.push(finding);
         }

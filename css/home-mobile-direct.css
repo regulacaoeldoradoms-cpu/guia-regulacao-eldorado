@@ -1,5 +1,5 @@
 /* The original root stays under body; its original launcher may live in navigation. */
-body.home-social-mobile {
+body.shared-mobile-navigation {
   --home-direct-surface: #fff;
   --home-direct-soft: #f4f5f7;
   --home-direct-text: #17202b;
@@ -8,16 +8,16 @@ body.home-social-mobile {
   --home-direct-accent: #176fbd;
 }
 
-body.home-social-mobile.home-direct-open {
+body.shared-mobile-navigation.home-direct-open {
   overflow: hidden;
   overscroll-behavior: none;
 }
 
-body.home-social-mobile.home-direct-open .social-mobile-nav[class] {
+body.shared-mobile-navigation.home-direct-open .social-mobile-nav[class] {
   bottom: var(--home-direct-keyboard-inset, 0px) !important;
 }
 
-body.home-social-mobile #portalChatRoot {
+body.shared-mobile-navigation #portalChatRoot {
   position: fixed !important;
   top: var(--home-direct-top, 0px) !important;
   right: 0 !important;
@@ -30,11 +30,11 @@ body.home-social-mobile #portalChatRoot {
   color: var(--home-direct-text);
 }
 
-body.home-social-mobile #portalChatRoot.open {
+body.shared-mobile-navigation #portalChatRoot.open {
   height: var(--home-direct-height, calc(100dvh - var(--home-direct-nav-height, 66px))) !important;
 }
 
-body.home-social-mobile #portalChatRoot.open .portal-chat-panel {
+body.shared-mobile-navigation #portalChatRoot.open .portal-chat-panel {
   position: absolute !important;
   inset: 0 !important;
   width: 100% !important;
@@ -53,7 +53,7 @@ body.home-social-mobile #portalChatRoot.open .portal-chat-panel {
   pointer-events: auto;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-header {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-header {
   min-height: calc(64px + env(safe-area-inset-top)) !important;
   padding: calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)) !important;
   gap: 10px !important;
@@ -62,7 +62,7 @@ body.home-social-mobile #portalChatRoot .portal-chat-header {
   border-bottom: 1px solid var(--home-direct-border) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-header-main strong {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-header-main strong {
   color: inherit !important;
   font-size: 16px !important;
   line-height: 1.3 !important;
@@ -73,18 +73,18 @@ body.home-social-mobile #portalChatRoot .portal-chat-header-main strong {
   text-overflow: clip !important;
 }
 
-body.home-social-mobile #portalChatRoot[data-home-direct-view="conversation"] .portal-chat-header-main {
+body.shared-mobile-navigation #portalChatRoot[data-home-direct-view="conversation"] .portal-chat-header-main {
   max-height: calc(var(--home-direct-height, 100dvh) * .25);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-body.home-social-mobile #portalChatRoot[data-home-direct-view="list"] .portal-chat-header-main strong {
+body.shared-mobile-navigation #portalChatRoot[data-home-direct-view="list"] .portal-chat-header-main strong {
   font-size: 23px !important;
   letter-spacing: -.035em;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-header-main span {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-header-main span {
   color: var(--home-direct-muted) !important;
   margin-top: 3px !important;
   font-size: 12px !important;
@@ -92,19 +92,19 @@ body.home-social-mobile #portalChatRoot .portal-chat-header-main span {
   opacity: 1;
 }
 
-body.home-social-mobile #portalChatRoot #portalChatHeaderStatus {
+body.shared-mobile-navigation #portalChatRoot #portalChatHeaderStatus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-body.home-social-mobile #portalChatRoot[data-home-direct-view="list"] #portalChatHeaderStatus,
-body.home-social-mobile.home-direct-compact #portalChatRoot #portalChatHeaderStatus,
-body.home-social-mobile #portalChatRoot #portalChatSummary {
+body.shared-mobile-navigation #portalChatRoot[data-home-direct-view="list"] #portalChatHeaderStatus,
+body.shared-mobile-navigation.home-direct-compact #portalChatRoot #portalChatHeaderStatus,
+body.shared-mobile-navigation #portalChatRoot #portalChatSummary {
   display: none !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-icon-button {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-icon-button {
   width: 44px !important;
   height: 44px !important;
   min-width: 44px !important;
@@ -113,46 +113,46 @@ body.home-social-mobile #portalChatRoot .portal-chat-icon-button {
   background: transparent !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-icon-button:hover {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-icon-button:hover {
   background: var(--home-direct-soft) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-profile-link {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-profile-link {
   color: var(--home-direct-accent) !important;
   font-size: 11px;
   line-height: 1.3;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-body,
-body.home-social-mobile #portalChatRoot .portal-chat-view,
-body.home-social-mobile #portalChatRoot .portal-chat-list,
-body.home-social-mobile #portalChatRoot .portal-chat-messages {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-body,
+body.shared-mobile-navigation #portalChatRoot .portal-chat-view,
+body.shared-mobile-navigation #portalChatRoot .portal-chat-list,
+body.shared-mobile-navigation #portalChatRoot .portal-chat-messages {
   min-width: 0 !important;
   min-height: 0 !important;
   background: var(--home-direct-surface) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-contacts {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-contacts {
   grid-template-rows: auto minmax(0, 1fr);
 }
 
-body.home-social-mobile #portalChatRoot #portalChatContactsView.active {
+body.shared-mobile-navigation #portalChatRoot #portalChatContactsView.active {
   display: block;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-body.home-social-mobile #portalChatRoot:has(#portalGroupTabs:not([hidden])) .portal-chat-contacts {
+body.shared-mobile-navigation #portalChatRoot:has(#portalGroupTabs:not([hidden])) .portal-chat-contacts {
   grid-template-rows: auto minmax(0, auto) minmax(0, 1fr);
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-search-wrap {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-search-wrap {
   padding: 12px 16px !important;
   border: 0 !important;
   background: var(--home-direct-surface) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-search {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-search {
   min-height: 44px !important;
   border: 1px solid transparent !important;
   border-radius: 12px !important;
@@ -163,13 +163,13 @@ body.home-social-mobile #portalChatRoot .portal-chat-search {
   line-height: 1.3 !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-list {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-list {
   padding: 0 8px 16px !important;
   overflow: visible !important;
   overscroll-behavior: contain;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-contact {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-contact {
   min-height: 84px !important;
   padding: 11px 8px !important;
   grid-template-columns: 56px minmax(0, 1fr) auto !important;
@@ -178,11 +178,11 @@ body.home-social-mobile #portalChatRoot .portal-chat-contact {
   color: var(--home-direct-text) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-contact:hover {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-contact:hover {
   background: var(--home-direct-soft) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-avatar {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-avatar {
   width: 56px !important;
   height: 56px !important;
   border: 1px solid var(--home-direct-border) !important;
@@ -191,13 +191,13 @@ body.home-social-mobile #portalChatRoot .portal-chat-avatar {
   font-size: 16px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-header .portal-chat-header-avatar {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-header .portal-chat-header-avatar {
   width: 40px !important;
   height: 40px !important;
   min-width: 40px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-contact-main strong {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-contact-main strong {
   color: var(--home-direct-text) !important;
   font-size: 15px !important;
   font-weight: 650 !important;
@@ -208,26 +208,26 @@ body.home-social-mobile #portalChatRoot .portal-chat-contact-main strong {
   text-overflow: clip !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-contact-main small {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-contact-main small {
   margin-top: 3px !important;
   color: var(--home-direct-muted) !important;
   font-size: 12px !important;
   line-height: 1.3 !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-presence {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-presence {
   margin-top: 4px !important;
   color: var(--home-direct-muted) !important;
   font-size: 11px !important;
   line-height: 1.3 !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-presence-dot {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-presence-dot {
   width: 6px !important;
   height: 6px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-unread {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-unread {
   min-width: 22px !important;
   height: 22px !important;
   padding: 0 6px !important;
@@ -235,19 +235,19 @@ body.home-social-mobile #portalChatRoot .portal-chat-unread {
   font-size: 11px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-conversation {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-conversation {
   grid-template-rows: minmax(0, 1fr) auto;
 }
 
-body.home-social-mobile #portalChatRoot.group-open #portalChatGroupView {
+body.shared-mobile-navigation #portalChatRoot.group-open #portalChatGroupView {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-body.home-social-mobile #portalChatRoot #portalChatGroupView:has(#portalGroupOlder[hidden]) {
+body.shared-mobile-navigation #portalChatRoot #portalChatGroupView:has(#portalGroupOlder[hidden]) {
   grid-template-rows: minmax(0, 1fr) auto;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-messages {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-messages {
   padding: 16px !important;
   gap: 10px !important;
   overflow-y: auto !important;
@@ -255,7 +255,7 @@ body.home-social-mobile #portalChatRoot .portal-chat-messages {
   scroll-padding-bottom: 12px;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-message {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-message {
   max-width: 84% !important;
   padding: 10px 14px !important;
   border: 0 !important;
@@ -267,51 +267,51 @@ body.home-social-mobile #portalChatRoot .portal-chat-message {
   line-height: 1.45 !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-message.mine {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-message.mine {
   background: #e8f1fe !important;
   border-bottom-right-radius: 6px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-message.theirs {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-message.theirs {
   border-bottom-left-radius: 6px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-message-time {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-message-time {
   margin-top: 4px !important;
   color: var(--home-direct-muted) !important;
   font-size: 10px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-date-divider {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-date-divider {
   color: var(--home-direct-muted);
   font-size: 11px !important;
   font-weight: 500;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-date-divider::before,
-body.home-social-mobile #portalChatRoot .portal-chat-date-divider::after {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-date-divider::before,
+body.shared-mobile-navigation #portalChatRoot .portal-chat-date-divider::after {
   background: var(--home-direct-border);
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-date-divider > span {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-date-divider > span {
   border: 0;
   background: var(--home-direct-surface);
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-composer {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-composer {
   min-width: 0;
   background: var(--home-direct-surface) !important;
   border-top: 1px solid var(--home-direct-border);
   padding-bottom: 3px;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-tools {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-tools {
   gap: 6px !important;
   padding: 6px 14px 0 !important;
   background: var(--home-direct-surface) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-tool-button {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-tool-button {
   position: relative;
   flex: 0 0 44px;
   width: 44px;
@@ -325,13 +325,13 @@ body.home-social-mobile #portalChatRoot .portal-chat-tool-button {
   font-weight: 550;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-tool-button svg {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-tool-button svg {
   width: 20px;
   height: 20px;
 }
 
 /* Keep the native accessible names while fitting the existing tools at large text. */
-body.home-social-mobile #portalChatRoot .portal-chat-tool-button > span {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-tool-button > span {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -343,7 +343,7 @@ body.home-social-mobile #portalChatRoot .portal-chat-tool-button > span {
   white-space: nowrap;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-compose {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-compose {
   grid-template-columns: minmax(0, 1fr) auto !important;
   gap: 8px !important;
   padding: 6px 14px !important;
@@ -351,7 +351,7 @@ body.home-social-mobile #portalChatRoot .portal-chat-compose {
   background: var(--home-direct-surface) !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-input {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-input {
   min-height: 44px !important;
   max-height: 96px !important;
   padding: 11px 14px !important;
@@ -363,7 +363,7 @@ body.home-social-mobile #portalChatRoot .portal-chat-input {
   line-height: 1.35 !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-send {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-send {
   min-width: 62px !important;
   min-height: 44px !important;
   padding: 0 8px !important;
@@ -374,7 +374,7 @@ body.home-social-mobile #portalChatRoot .portal-chat-send {
   font-size: 14px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-note {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-note {
   padding: 3px 16px 6px !important;
   border: 0 !important;
   color: var(--home-direct-muted) !important;
@@ -383,40 +383,40 @@ body.home-social-mobile #portalChatRoot .portal-chat-note {
   line-height: 1.3 !important;
 }
 
-body.home-social-mobile.home-direct-compact #portalChatRoot .portal-chat-composer > .portal-chat-note {
+body.shared-mobile-navigation.home-direct-compact #portalChatRoot .portal-chat-composer > .portal-chat-note {
   max-height: calc(2.6em + 9px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-empty {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-empty {
   padding: 32px 20px !important;
   color: var(--home-direct-muted) !important;
   font-size: 15px !important;
   line-height: 1.5 !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-group-list-section {
+body.shared-mobile-navigation #portalChatRoot .portal-group-list-section {
   max-height: none;
   border-color: var(--home-direct-border);
   overscroll-behavior: contain;
 }
 
-body.home-social-mobile #portalChatRoot:not([data-group-filter="groups"]) .portal-group-list-section:has(.portal-group-empty):not(:has([data-group-open])) {
+body.shared-mobile-navigation #portalChatRoot:not([data-group-filter="groups"]) .portal-group-list-section:has(.portal-group-empty):not(:has([data-group-open])) {
   display: none;
 }
 
-body.home-social-mobile #portalChatRoot .portal-group-tabs button {
+body.shared-mobile-navigation #portalChatRoot .portal-group-tabs button {
   min-height: 44px;
   padding: 7px 9px;
   font-size: 12px !important;
 }
 
-body.home-social-mobile #portalChatRoot .home-direct-notifications {
+body.shared-mobile-navigation #portalChatRoot .home-direct-notifications {
   margin-top: 4px;
 }
 
-body.home-social-mobile #portalChatRoot .home-direct-notifications > summary {
+body.shared-mobile-navigation #portalChatRoot .home-direct-notifications > summary {
   min-height: 44px;
   padding: 12px 4px;
   color: var(--home-direct-muted);
@@ -425,7 +425,7 @@ body.home-social-mobile #portalChatRoot .home-direct-notifications > summary {
   cursor: pointer;
 }
 
-body.home-social-mobile #portalChatRoot #portalChatNotificationCard:not([hidden]) {
+body.shared-mobile-navigation #portalChatRoot #portalChatNotificationCard:not([hidden]) {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr);
   gap: 8px;
@@ -433,44 +433,44 @@ body.home-social-mobile #portalChatRoot #portalChatNotificationCard:not([hidden]
   padding: 12px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-notification-icon svg {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-notification-icon svg {
   width: 24px;
   height: 24px;
 }
 
-body.home-social-mobile #portalChatRoot #portalChatEnableNotifications {
+body.shared-mobile-navigation #portalChatRoot #portalChatEnableNotifications {
   grid-column: 1 / -1;
   min-height: 44px;
 }
 
-body.home-social-mobile #portalChatRoot .portal-group-sheet > header {
+body.shared-mobile-navigation #portalChatRoot .portal-group-sheet > header {
   padding-top: calc(12px + env(safe-area-inset-top));
 }
 
-body.home-social-mobile #portalChatRoot .portal-group-sheet .portal-chat-avatar {
+body.shared-mobile-navigation #portalChatRoot .portal-group-sheet .portal-chat-avatar {
   width: 32px !important;
   height: 32px !important;
   font-size: 11px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-group-author .portal-chat-avatar {
+body.shared-mobile-navigation #portalChatRoot .portal-group-author .portal-chat-avatar {
   width: 23px !important;
   height: 23px !important;
   font-size: 9px !important;
 }
 
-body.home-social-mobile #portalChatRoot .portal-chat-status {
+body.shared-mobile-navigation #portalChatRoot .portal-chat-status {
   bottom: 110px;
   max-width: calc(100% - 24px);
   z-index: 10;
 }
 
-body.home-social-mobile #portalChatRoot :is(button, a, textarea, input):focus-visible {
+body.shared-mobile-navigation #portalChatRoot :is(button, a, textarea, input):focus-visible {
   outline: 2px solid var(--home-direct-accent) !important;
   outline-offset: 2px;
 }
 
-html[data-portal-theme="dark"] body.home-social-mobile {
+html[data-portal-theme="dark"] body.shared-mobile-navigation {
   --home-direct-surface: #101b26;
   --home-direct-soft: #1b2a38;
   --home-direct-text: #edf2f6;
@@ -479,11 +479,23 @@ html[data-portal-theme="dark"] body.home-social-mobile {
   --home-direct-accent: #88c3ff;
 }
 
-html[data-portal-theme="dark"] body.home-social-mobile #portalChatRoot .portal-chat-message.mine {
+html[data-portal-theme="dark"] body.shared-mobile-navigation #portalChatRoot .portal-chat-message.mine {
   background: #244768 !important;
 }
 
-html[data-portal-theme="dark"] body.home-social-mobile #portalChatRoot .portal-chat-avatar {
+html[data-portal-theme="dark"] body.shared-mobile-navigation #portalChatRoot .portal-chat-avatar {
   background-color: #273b4d !important;
   color: #c0d4e6 !important;
+}
+
+@media screen and (max-width: 900px) {
+  html[data-portal-theme="dark"] body.shared-mobile-navigation #portalChatRoot .portal-chat-unread {
+    background: var(--portal-theme-selected, #183e59) !important;
+    color: var(--portal-theme-text, #e5eef5) !important;
+  }
+}
+
+/* The global Início control closes the mobile panel through the native handler. */
+body.shared-mobile-navigation #portalChatClose {
+  display: none !important;
 }
