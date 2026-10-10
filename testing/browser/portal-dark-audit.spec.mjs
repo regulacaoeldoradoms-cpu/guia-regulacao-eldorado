@@ -5,6 +5,24 @@ import { writeFile } from 'node:fs/promises';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
 import { finishAuditNetwork } from './dark-audit-network.mjs';
 
+test('snapshot identity ignores class insertion order while retaining style regressions',async({page})=>{
+  await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<html data-portal-theme="light"><body class="has-social-navigation portal-chat-present"><main><p>Conteúdo sintético</p></main></body></html>'}));
+  await page.goto('/');
+  const before=await inspectSurfaces(page);
+  await page.evaluate(()=>{ document.body.className='portal-chat-present has-social-navigation'; });
+  const reordered=await inspectSurfaces(page);
+  expect(reordered.snapshot).toEqual(before.snapshot);
+  await page.evaluate(()=>{ document.querySelector('p').style.color='rgb(255, 0, 0)'; });
+  const changed=await inspectSurfaces(page);
+  const original=before.snapshot.find(item=>item.tag==='p'&&!item.pseudo);
+  const regression=changed.snapshot.find(item=>item.selector===original.selector);
+  expect(regression.color).toBe('rgb(255, 0, 0)');
+  expect(regression.color).not.toBe(original.color);
+  await page.evaluate(()=>{ document.body.classList.remove('portal-chat-present'); });
+  const removed=await inspectSurfaces(page);
+  expect(removed.snapshot.map(item=>item.selector)).not.toEqual(changed.snapshot.map(item=>item.selector));
+});
+
 test('Home initials mask classification retains bright-surface regressions',async({page})=>{
   await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<html data-portal-theme="dark"><body data-portal-home-bootstrap class="citizen-readable-layout home-social-mobile"></body></html>'}));
   await page.goto('/');
