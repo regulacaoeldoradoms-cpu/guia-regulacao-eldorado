@@ -20,7 +20,7 @@ for (let attempt = 1; attempt <= 20; attempt++) {
     assert.ok(button, 'login_button_missing');
     assert.doesNotMatch(button, /disabled|opening-gate/, 'login_button_still_blocked');
     assert.match(html, /login-opening\.js\?v=20260918-1/, 'opening_controller_version');
-    assert.match(html, /login\.js\?v=20260917-3/, 'login_controller_version');
+    assert.match(html, /login\.js\?v=20261010-login-compact-1/, 'login_controller_version');
     for (const file of files) {
       const response = await fetch(`${origin}/${file}?v=20260918-1`, {
         cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(15000)
