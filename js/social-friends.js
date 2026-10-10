@@ -339,6 +339,7 @@ const initializeCitizenArea = async (context) => {
         return relationshipLists.get(type) || [];
       })
       .catch((error) => {
+        if (context && !context.active && !cached) throw error;
         if (!cached && currentType === type) {
           render(relationshipList, [], false, 'list');
           renderPagination();
@@ -407,7 +408,8 @@ const initializeCitizenArea = async (context) => {
   document.getElementById('socialSearchForm').addEventListener('submit', (event) => { event.preventDefault(); search(false); });
 
   await loadList(false);
-  preloadOtherRelationshipLists();
+  if (context && !context.active) context.addController({ activate: preloadOtherRelationshipLists });
+  else preloadOtherRelationshipLists();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-friends', initializeCitizenArea);
 else initializeCitizenArea();

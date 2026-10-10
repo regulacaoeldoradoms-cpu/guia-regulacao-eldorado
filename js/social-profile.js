@@ -25,7 +25,7 @@ const initializeCitizenArea = async (context) => {
     return;
   }
 
-  const requested = String(new URLSearchParams(location.search).get('u') || '').replace(/^@/, '');
+  const requested = String(new URLSearchParams(context?.url.search ?? location.search).get('u') || '').replace(/^@/, '');
   let profile;
   let identityLoaded = false;
 
@@ -442,7 +442,10 @@ const initializeCitizenArea = async (context) => {
   });
 
   try { await load(); }
-  catch (error) { social.status(error.message || 'Perfil social não encontrado.', 'error'); }
+  catch (error) {
+    if (context && !context.active) throw error;
+    social.status(error.message || 'Perfil social não encontrado.', 'error');
+  }
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-profile', initializeCitizenArea);
 else initializeCitizenArea();

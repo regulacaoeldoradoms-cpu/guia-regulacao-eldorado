@@ -19,11 +19,14 @@ async function run(id,setup,exercise){
 }
 try{
  await run('cache-protected',null,async(page,context,audit,check)=>{
-  for(let i=0;i<15;i++){await go(page,'/perfil/?draft='+i);await page.locator('#profileEditBio').fill('draft-'+i);}
-  check('cache reaches16 including Home',await page.evaluate(()=>window.PortalCitizenShell.diagnostics().routes===16));
+  // Prepared Mascotes and Home reserve two protected slots; remaining clean
+  // prepared areas must be evicted before any edited profile can be lost.
+  await page.waitForFunction(()=>window.PortalCitizenShell.diagnostics().ready.includes('/mascotes/')&&!window.PortalCitizenShell.diagnostics().prewarming);
+  for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);await page.locator('#profileEditBio').fill('draft-'+i);}
+  check('cache reaches16 including protected Home and Mascotes',await page.evaluate(()=>window.PortalCitizenShell.diagnostics().routes===16));
   await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/perfil/?draft=overflow',location.href)));
-  check('overflow explicitly refused without changing area',await page.evaluate(()=>location.search==='?draft=14'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));
-  for(let i=0;i<15;i++){await go(page,'/perfil/?draft='+i);check('protected draft '+i+' retained',await page.locator('#profileEditBio').inputValue()==='draft-'+i);}
+  check('overflow explicitly refused without changing area',await page.evaluate(()=>location.search==='?draft=13'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));
+  for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);check('protected draft '+i+' retained',await page.locator('#profileEditBio').inputValue()==='draft-'+i);}
   check('no document reload under saturation',audit.documents.length===1);
  });
  await run('cache-clean-eviction',null,async(page,context,audit,check)=>{

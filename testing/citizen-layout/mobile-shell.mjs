@@ -238,8 +238,10 @@ try {
   });
   await run('login-home-handoff', 390, '/', async (page, audit, check) => {
     const seed = await page.evaluate(() => ({token:window.RegulationAuth.getToken(),user:window.RegulationAuth.getCachedUser()}));
-    await page.evaluate(() => { sessionStorage.removeItem('regulacao.portal.session'); sessionStorage.removeItem('regulacao.portal.user'); });
-    await page.goto(server.origin + '/login/', {waitUntil:'domcontentloaded'});
+    // End through the native session boundary before mounting Login. Removing
+    // storage directly races the real background auth gate's login redirect.
+    await page.evaluate(() => window.RegulationAuth.clearSession());
+    await page.waitForURL('**/login/**', { waitUntil:'domcontentloaded' });
     await page.locator('#loginForm').waitFor();
     const result = await page.evaluate(async seed => {
       sessionStorage.setItem('regulacao.portal.session',seed.token); sessionStorage.setItem('regulacao.portal.user',JSON.stringify(seed.user));

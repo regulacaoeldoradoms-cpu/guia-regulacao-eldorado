@@ -17,7 +17,7 @@ const initializeHome = async (context) => {
   }
 
   // Shared route presentation does not change the authenticated account permissions.
-  await import('/js/citizen-layout.js?v=20261010-mobile-shell-1').catch(() => {});
+  await import('/js/citizen-layout.js?v=20261010-citizen-prewarm-1').catch(() => {});
   window.PortalCitizenLayout?.apply(user);
 
   // Reuse the existing controls; mobile composition changes no account permissions.
