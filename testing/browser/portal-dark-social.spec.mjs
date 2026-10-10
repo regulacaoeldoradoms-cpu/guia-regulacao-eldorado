@@ -69,8 +69,15 @@ test('social states: report dialog from another synthetic author',async({page,co
 
 test('social states: chat contacts, search empty, incoming/outgoing messages and error',async({page,context},info)=>{
   const network=await installAuditFixture(context);
+  // This scenario audits message errors with notifications already blocked.
+  // An uncontrolled native permission prompt can resolve after the send error
+  // and replace its status, making the fixture depend on host browser timing.
+  await context.addInitScript(()=>{
+    if ('Notification' in window) Object.defineProperty(Notification,'permission',{configurable:true,get:()=> 'denied'});
+  });
   await page.goto('/ferramentas/');
   await page.locator('#portalChatLauncher').click();
+  await expect(page.locator('#portalChatNotificationText')).toContainText('bloqueadas');
   await expect(page.locator('[data-chat-user="synthetic.friend"]')).toBeVisible();
   await capture(page,info,'chat-contact-list');
   await page.locator('#portalChatSearch').fill('inexistente-ficticio');
