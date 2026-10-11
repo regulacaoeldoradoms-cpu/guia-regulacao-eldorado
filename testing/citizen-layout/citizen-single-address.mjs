@@ -30,7 +30,7 @@ async function run(id,width,entry,auth,exercise){
 async function owners(page){await page.evaluate(()=>{
  window.__owners={document,bar:document.querySelector('.social-mobile-nav'),chat:document.getElementById('portalChatRoot'),icon:document.querySelector('#portalChatLauncher svg'),pet:window.PortalPets.runtime,removed:0,empty:0,track:true};
  new MutationObserver(records=>{for(const r of records)for(const n of r.removedNodes)if(n===window.__owners.bar||n.contains?.(window.__owners.bar))window.__owners.removed++;}).observe(document.body,{childList:true,subtree:true});
- const frame=()=>{if(!window.__owners.track)return;if(!document.querySelector('.social-mobile-nav'))window.__owners.empty++;requestAnimationFrame(frame);};requestAnimationFrame(frame);
+ const frame=()=>{if(!window.__owners.track)return;const bar=document.querySelector('.social-mobile-nav'),css=bar&&getComputedStyle(bar);if(!bar||bar.getBoundingClientRect().height===0||css.visibility!=='visible'||Number(css.opacity)===0)window.__owners.empty++;requestAnimationFrame(frame);};requestAnimationFrame(frame);
  document.addEventListener('click',e=>{const link=e.target.closest('.social-mobile-nav a[href]');if(!e.isTrusted||!link)return;const route=new URL(link.href).pathname,started=performance.now();window.__paintMs=null;const paint=()=>{const s=window.PortalCitizenShell.diagnostics();if(s.active===route&&!s.navigating)requestAnimationFrame(()=>{window.__paintMs=Math.round((performance.now()-started)*10)/10;});else requestAnimationFrame(paint);};requestAnimationFrame(paint);},true);
 });}
 async function continuity(page,check){check('same document/bar/Chat/SVG/pet; no removed bar or empty animation frames',await page.evaluate(()=>{const o=window.__owners;return o.document===document&&o.bar===document.querySelector('.social-mobile-nav')&&o.chat===document.getElementById('portalChatRoot')&&o.icon===document.querySelector('#portalChatLauncher svg')&&o.pet===window.PortalPets.runtime&&!o.removed&&!o.empty;}));}
@@ -41,12 +41,12 @@ try{
    await page.locator(`.social-mobile-nav a[href="${route}"]`).click();await area(page,route);
    await page.waitForFunction(()=>window.__paintMs!==null);result.clickToPaint.push({route,ms:await page.evaluate(()=>window.__paintMs)});
    check('canonical address after '+route,new URL(page.url()).pathname==='/'&&new URL(page.url()).search==='');
-   if(route==='/perfil/')check('prepared native profile/post photos render without another activation fetch',await page.evaluate(()=>getComputedStyle(document.getElementById('profileAvatar')).backgroundImage!=='none'&&[...document.querySelectorAll('#profilePosts .social-avatar')].every(n=>getComputedStyle(n).backgroundImage!=='none')));
+   if(route==='/perfil/')check('prepared native profile/post photos render without another activation fetch',await page.evaluate(()=>getComputedStyle(document.getElementById('profileAvatar')).backgroundImage!=='none'&&document.querySelectorAll('#profilePosts .social-avatar').length>0&&[...document.querySelectorAll('#profilePosts .social-avatar')].every(n=>getComputedStyle(n).backgroundImage!=='none')));
    check('outlined Chat SVG after '+route,await page.evaluate(()=>{const c=getComputedStyle(document.querySelector('#portalChatLauncher svg'));return c.fill==='none'&&c.stroke===c.color&&c.strokeWidth==='1.8px';}));
   }
   await continuity(page,check);check('zero new document requests',audit.documents.length===docs);
   result.laterResources=audit.resources.slice(resources);check('zero route/script requests after preparation',!audit.resources.slice(resources).some(u=>/\/js\/|\/(?:amigos|perfil|mascotes)\/(?:\?|$)/.test(u)));
-  check('zero own initial data reads after preparation',!audit.apiCalls.slice(calls).some(u=>/GET \/api\/(?:citizen\/identity|social\/me$|social\/relationships|social\/profiles\/[^/]+\/posts)/.test(u)));
+  check('zero own initial data reads after preparation',!audit.apiCalls.slice(calls).some(u=>/GET \/api\/(?:citizen\/identity|social\/me$|social\/relationships|social\/avatars\/|social\/profiles\/[^/]+\/posts)/.test(u)));
   await context.setOffline(true);await page.locator('.social-mobile-nav a[href="/perfil/"]').click();await area(page,'/perfil/');await continuity(page,check);check('prepared offline switch has no document request',audit.documents.length===docs);
  });
  for(const entry of ['/amigos/','/perfil/','/perfil/?u=fixture.friend','/mascotes/'])await run('legacy-'+entry.replaceAll('/','_'),390,entry,'cached',async(page,context,audit,check)=>{
