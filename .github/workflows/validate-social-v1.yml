@@ -39,7 +39,9 @@ jobs:
             test -f "$file"
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
             grep -q 'social.css?v=20260922-2' "$file"
-            grep -q 'social-api.js?v=20260910-4' "$file"
+            social_api_version=20261011-home-speed-1
+            if [ "$file" = admin/social/index.html ]; then social_api_version=20260910-4; fi
+            grep -Fq "social-api.js?v=$social_api_version" "$file"
             grep -q 'portal-interactions.js?v=20260923-2' "$file"
           done
 

@@ -81,6 +81,11 @@ jobs:
           export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
           node testing/citizen-layout/mobile-shell.mjs
           node testing/citizen-layout/mobile-shell-regressions.mjs
+      - name: Home parallel startup and unavailable gates
+        if: always()
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          node testing/citizen-layout/home-startup.mjs
       - name: Citizen first prepared activation and failure boundaries
         if: always()
         run: |
@@ -93,6 +98,7 @@ jobs:
           path: |
             /tmp/home-carousel-*
             /tmp/home-social-scenes-*/
+            .local/home-startup-results.json
             .local/mobile-shell-tests/
             .local/mobile-shell-regressions/
             .local/mobile-shell-prewarm/

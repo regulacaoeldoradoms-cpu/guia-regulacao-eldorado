@@ -14,7 +14,7 @@ const initializeCitizenArea = async (context) => {
   if (!context) document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
 
   let config;
-  try { config = await social.getConfig(); }
+  try { config = await social.getConfig(5000, user.role === 'cidadao' ? { reuseFreshMs:5000 } : {}); }
   catch (error) { social.status(error.message || 'Camada Social indisponível.', 'error'); return; }
   window.PortalSocialNavigation?.mount(user, config);
   if (!config.available) { social.status(config.gate?.message || 'A Camada Social não está disponível para esta conta.', 'error'); return; }
