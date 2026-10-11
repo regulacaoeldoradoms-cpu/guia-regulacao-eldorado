@@ -21,12 +21,12 @@
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
   <link rel="stylesheet" href="/css/citizen-mobile.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/citizen-mobile-refinement.css?v=20260924-dark-final-1">
-  <link rel="stylesheet" href="/css/citizen-mobile-app.css?v=20260924-dark-final-1">
+  <link rel="stylesheet" href="/css/citizen-mobile-app.css?v=20261011-citizen-panel-1">
   <link rel="stylesheet" href="/css/citizen-privacy-accordion.css?v=20260924-dark-final-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
-  <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261009-2">
-  <script src="/js/citizen-layout.js?v=20261011-shared-header-1" defer></script>
+  <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
+  <script src="/js/citizen-layout.js?v=20261011-shared-header-account-1" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
 </head>
 <body class="portal-page">
@@ -38,6 +38,9 @@
       const compactViewport = window.matchMedia('(max-width: 860px)').matches;
       if (mobileUA || compactTouch || compactViewport) {
         document.body.classList.add('mobile-citizen-mode');
+        if (window.matchMedia('screen and (max-width: 900px)').matches) {
+          document.querySelector('link[rel="icon"]').href = '/assets/portal-regulacao-header_180x180.png?v=20260911-1';
+        }
       }
     })();
   </script>
@@ -46,7 +49,14 @@
     <header class="portal-topbar">
       <div class="portal-topbar-inner">
         <div class="portal-brand">
-          <img src="/assets/canal-cidadao-icon.png?v=20260817-1" alt="Símbolo do Canal do Cidadão">
+          <img data-citizen-native-src="/assets/canal-cidadao-icon.png?v=20260817-1" alt="Símbolo do Canal do Cidadão">
+          <script>
+            (() => {
+              const logo = document.currentScript.previousElementSibling;
+              logo.src = window.matchMedia('screen and (max-width: 900px)').matches
+                ? '/assets/portal-regulacao-header_180x180.png?v=20260911-1' : logo.dataset.citizenNativeSrc;
+            })();
+          </script>
           <div><h1>Canal do Cidadão</h1><p>Conselho Municipal de Saúde · Eldorado/MS</p></div>
         </div>
         <div class="portal-user">
@@ -213,10 +223,10 @@
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/social-api.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
-  <script src="/js/citizen-mobile-shell.js?v=20261011-shared-header-1"></script>
-  <script src="/js/citizen.js?v=20261010-mobile-shell-1"></script>
+  <script src="/js/citizen-mobile-shell.js?v=20261011-shared-header-account-1"></script>
+  <script src="/js/citizen.js?v=20261011-citizen-panel-1"></script>
   <script src="/js/citizen-declaration.js?v=20261010-mobile-shell-1"></script>
-  <script src="/js/citizen-account-level.js?v=20261010-mobile-shell-1"></script>
+  <script src="/js/citizen-account-level.js?v=20261011-citizen-panel-1"></script>
   <script src="/js/citizen-mobile-app.js?v=20261010-mobile-shell-1"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261010-mobile-shell-1"></script>

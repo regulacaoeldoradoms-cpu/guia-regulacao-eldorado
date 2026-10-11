@@ -1,17 +1,20 @@
 'use strict';
 
 const INSTANCE = Symbol.for('portal.citizenMobileHeader');
-const routes = new Set(['/', '/amigos/', '/perfil/', '/mascotes/']);
+const routes = new Set(['/', '/amigos/', '/perfil/', '/mascotes/', '/configuracoes/', '/seguranca/', '/conquistas/', '/ferramentas/', '/cidadao/']);
 
 // One persistent header owns the original account controls across shared views.
 // Route presenters continue to own their content, forms and native permissions.
 export function mountCitizenMobileHeader() {
   if (window[INSTANCE]) { window[INSTANCE].sync(); return window[INSTANCE]; }
   const host = document.querySelector('.portal-topbar .portal-user');
-  const title = document.querySelector('.portal-brand-copy h1');
-  const subtitle = document.querySelector('.portal-brand-copy p');
+  const title = document.querySelector('.portal-topbar .portal-brand h1');
+  const subtitle = document.querySelector('.portal-topbar .portal-brand p');
   if (!host || !title) return null;
   const originalTitle = [...title.childNodes], originalSubtitle = subtitle ? [...subtitle.childNodes] : [];
+  const copy = title.parentElement, logo = document.querySelector('.portal-topbar .portal-brand img');
+  const nativeCopyClass = copy.classList.contains('portal-brand-copy'), nativeLogoClass = logo?.classList.contains('portal-symbol');
+  const nativeLogo = logo ? {src:logo.dataset.citizenNativeSrc || logo.getAttribute('src'),alt:logo.getAttribute('alt')} : null;
   const media = matchMedia('screen and (max-width: 900px)'), print = matchMedia('print');
   const positions = new WeakMap();
   let mobile = false, printing = false, queued = false;
@@ -46,6 +49,11 @@ export function mountCitizenMobileHeader() {
     document.body.classList.toggle('shared-mobile-header',active);
     menu.hidden=!active;
     if (active) {
+      copy.classList.add('portal-brand-copy'); logo?.classList.add('portal-symbol');
+      if (nativeLogo?.src.includes('canal-cidadao-icon')) {
+        logo.setAttribute('src','/assets/portal-regulacao-header_180x180.png?v=20260911-1');
+        logo.setAttribute('alt','Símbolo do Portal da Regulação de Saúde');
+      }
       if ([account,logout,sideLinks].some(node=>node?.contains(document.activeElement))) menu.open=true;
       if (account && !account.contains(label)) account.append(label);
       move(logout,panel); move(sideLinks,panel,logout); move(tools,panel,sideLinks || logout); move(account,panel,tools);
@@ -54,6 +62,11 @@ export function mountCitizenMobileHeader() {
     } else if (changing) {
       const focused=document.activeElement; restore(account); restore(logout); restore(sideLinks); label.remove(); close();
       title.replaceChildren(...originalTitle); subtitle?.replaceChildren(...originalSubtitle);
+      if (!nativeCopyClass) copy.classList.remove('portal-brand-copy');
+      if (logo) {
+        if (!nativeLogoClass) logo.classList.remove('portal-symbol');
+        for (const [name,value] of Object.entries(nativeLogo)) value===null ? logo.removeAttribute(name) : logo.setAttribute(name,value);
+      }
       if (focused===summary && !printing && !print.matches) account?.focus({preventScroll:true});
     }
     mobile=active;

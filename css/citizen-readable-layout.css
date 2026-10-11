@@ -14,7 +14,7 @@
     max-width: 100%;
   }
   body.citizen-readable-layout .portal-topbar-inner,
-  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile
+  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile:not(.shared-mobile-header)
     .portal-topbar-inner {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
@@ -26,7 +26,7 @@
     min-width: 0 !important;
   }
   body.citizen-readable-layout .portal-brand h1,
-  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile
+  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile:not(.shared-mobile-header)
     .portal-brand
     h1 {
     white-space: normal !important;
@@ -35,7 +35,7 @@
     line-height: 1.25 !important;
   }
   body.citizen-readable-layout .portal-user,
-  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile
+  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile:not(.shared-mobile-header)
     .portal-user {
     width: 100% !important;
     justify-content: space-between !important;
@@ -55,7 +55,7 @@
     overflow-wrap: anywhere;
   }
   body.citizen-readable-layout .portal-user-meta strong,
-  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile
+  body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-primary-mobile:not(.shared-mobile-header)
     .portal-user-meta
     strong {
     max-width: none !important;

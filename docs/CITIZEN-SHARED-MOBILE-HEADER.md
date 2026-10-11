@@ -9,3 +9,11 @@ O diagnóstico sintético reproduziu a desmontagem do menu Conta pela Home ao tr
 Validação local: 12 cenários claros/escuros e 108 estados de rota (320/390/900/1440 px, incluindo texto sintético a 200% em 320/390); preservação de identidade do documento/cabeçalho/menu/controlador/barra/logout, endereço `/`, Conta/Escape e ausência de sobreposição. Comparação de 18 estados nativos desktop com o main anterior passou. Passaram também 21 cenários/371 verificações de navegação persistente, 2 cenários/44 verificações de Perfil e 6 cenários de preservação desktop/impressão contra `ac89d0fb`. Fixtures isoladas, sem dados reais ou endpoints clínicos.
 
 O workflow cidadão inclui o novo teste focado. Gates CI, integração e deploy do SHA precisam ser confirmados antes de declarar publicação. A aceitação no aparelho dos PR631/632 não equivale à validação desta correção no aparelho.
+
+## Extensão às áreas de conta e Canal do Cidadão
+
+Solicitação posterior ao PR633: aplicar o mesmo cabeçalho mobile também em `/configuracoes/`, `/seguranca/`, `/conquistas/`, `/ferramentas/` e `/cidadao/`, totalizando nove áreas. Reutiliza o mesmo controlador e os controles nativos. Mantida a política de URL existente: áreas principais em `/` e áreas secundárias em suas rotas, com o mesmo documento retido nas trocas. Não adiciona Ferramentas à barra inferior nem atalho em Perfil.
+
+O teste `shared-account-header.mjs` usa os acessos existentes em Conta (Canal do Cidadão via Ferramentas), com entradas diretas nas cinco rotas. Passaram 48 cenários e 288 estados de navegação em claro/escuro, 320/390 px e texto sintético a 200%: repetição das trocas, Escape, geometria/identidade do cabeçalho, rascunhos de Home/Configurações/Segurança e rolagem. Não envia preferências nem senha. O gate geral amplia somente as superfícies mobile autorizadas, conserva os contratos dos controles/formulários e compara desktop/impressão sem mudar limites de pixels. Assets afetados recebem chaves específicas; runtime global de cache permanece intacto.
+
+A apresentação e o carregamento do Canal do Cidadão estão documentados em `CITIZEN-MOBILE-PANEL.md`. Fixtures isoladas não comprovam aceitação em aparelho real. Publicação exige CI completo e confirmação do deploy do SHA integrado.

@@ -1,0 +1,69 @@
+/* Only the requested phone presentation. Native content, forms and warnings remain. */
+@media screen and (max-width:900px){
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-main{padding:16px 12px 24px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero{margin:0 !important;padding:0 !important;gap:12px !important;background:transparent !important;border-radius:0 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-eyebrow{display:none;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero h2{font-size:24px !important;line-height:1.25 !important;margin:0 0 6px !important;letter-spacing:0 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero p{font-size:18px !important;line-height:1.45 !important;max-width:36em !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-hero-status{display:flex !important;flex-direction:row !important;flex-wrap:wrap !important;gap:6px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(.level-mini-badge,.privacy-chip){width:auto !important;min-height:0 !important;padding:6px 10px !important;font-size:14px !important;line-height:1.4 !important;max-width:100%;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-actions{margin:16px 0 12px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation{min-height:76px !important;padding:12px !important;border-radius:14px !important;gap:12px !important;box-shadow:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation .icon{width:36px !important;height:36px !important;flex:0 0 36px !important;border-radius:10px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation strong{font-size:20px !important;line-height:1.3 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation > span:not(.icon){font-size:16px !important;line-height:1.4 !important;min-width:0;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-mobile-tabs{grid-template-columns:repeat(2,minmax(0,1fr)) !important;margin:12px 0 !important;padding:4px !important;border-radius:12px !important;gap:4px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-mobile-tab{min-height:48px !important;padding:10px 6px !important;font-size:17px !important;line-height:1.3 !important;flex-wrap:wrap;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-mobile-tab-count{min-width:24px;height:24px;font-size:14px;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-card{border-radius:14px !important;box-shadow:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-card-head{min-height:0 !important;padding:8px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-card-head .portal-button{min-height:48px !important;font-size:16px !important;padding:8px 12px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-card-body{padding:0 12px 12px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(.manifestation-item,.notification){padding:12px !important;gap:8px !important;min-height:48px;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .manifestation-item{flex-wrap:wrap;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(.manifestation-item,.notification) strong{font-size:18px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(.manifestation-item,.notification) small{font-size:16px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .status-chip{font-size:14px !important;padding:6px 10px !important;line-height:1.4;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .empty-state{padding:16px 8px !important;font-size:17px !important;line-height:1.45 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .empty-state strong{font-size:18px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(#manifestationList,#notificationList) > .portal-note.info{min-height:48px !important;padding:12px !important;font-size:18px !important;line-height:1.4 !important;border-width:1px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help{margin:12px 0;padding:0 12px;border:1px solid var(--portal-theme-border,#d7e3e9);border-radius:12px;background:var(--portal-theme-surface,#fff);font-size:16px;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help > summary{min-height:48px;padding:12px 0;cursor:pointer;line-height:1.4;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help .portal-note{margin:0 0 12px !important;padding:12px !important;font-size:16px !important;line-height:1.5 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(.citizen-modal-panel,.form-section,.portal-field){min-width:0;overflow-wrap:anywhere;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head h2{font-size:24px !important;line-height:1.25 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head small{font-size:16px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section{padding:12px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head h3{font-size:20px !important;line-height:1.3 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head p{font-size:16px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-type-grid{grid-template-columns:minmax(0,1fr) !important;gap:8px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-type-card{min-height:80px !important;padding:10px !important;gap:8px !important;flex-wrap:wrap;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-type-card .type-icon{width:28px !important;height:28px !important;flex:0 0 28px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-type-card strong{font-size:17px !important;line-height:1.3 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-type-card small{font-size:15px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(button,a,summary,input,select,textarea){scroll-margin-block:80px;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(button,a,summary,input,select,textarea):focus-visible{outline:3px solid var(--portal-theme-accent,#126cb5);outline-offset:3px;}
+
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .modal-kicker{display:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-close{width:48px !important;height:48px !important;min-height:48px !important;font-size:26px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head{flex-wrap:nowrap !important;align-items:flex-start !important;gap:8px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head > div{flex:1 1 0 !important;min-width:0;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-step{width:28px !important;height:28px !important;flex:0 0 28px !important;font-size:16px !important;line-height:1 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .portal-field label{font-size:18px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(input,select,textarea){font-size:18px !important;max-width:100%;}
+
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head{position:static !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option strong{font-size:17px !important;line-height:1.3 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option small{font-size:15px !important;line-height:1.4 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-help-actions{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(min(100%,8em),1fr)) !important;gap:8px !important;font-size:16px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-help-button{min-height:48px !important;font-size:16px !important;line-height:1.4 !important;}
+
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-panel{display:block !important;overflow-y:auto !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-content{overflow:visible !important;max-height:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head{grid-template-columns:minmax(0,1fr) 48px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option > span:not(.privacy-option-icon){min-width:0;flex:1 1 0;}
+
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option{padding:10px !important;gap:8px !important;flex-direction:column !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option-icon{width:28px !important;height:28px !important;flex:0 0 28px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option > span:not(.privacy-option-icon){width:100%;flex:0 0 auto;}
+}

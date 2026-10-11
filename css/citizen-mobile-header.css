@@ -9,14 +9,14 @@ body.citizen-readable-layout.shared-mobile-header {
   --home-muted: var(--portal-theme-muted, #60798b);
   --home-accent: var(--portal-theme-accent, #126cb5);
 }
-body.citizen-readable-layout.shared-mobile-header .portal-topbar { position: sticky !important; top: 0; z-index: 60 !important; background: var(--home-surface) !important; border-bottom: 1px solid var(--home-line); box-shadow: none !important; }
+body.citizen-readable-layout.shared-mobile-header .portal-topbar { position: sticky !important; top: 0; z-index: 60 !important; background: var(--home-surface) !important; border-bottom: 1px solid var(--home-line) !important; box-shadow: none !important; }
 body.citizen-readable-layout.shared-mobile-header .portal-topbar-inner { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; justify-content: space-between; gap: 8px !important; width: 100% !important; max-width: none; margin: 0 !important; min-height: 56px; padding: 6px 12px !important; }
 body.citizen-readable-layout.shared-mobile-header .portal-brand { flex: 1 1 auto; min-width: 0; gap: 8px !important; }
 body.citizen-readable-layout.shared-mobile-header .portal-brand .portal-symbol { width: 30px !important; height: 30px !important; flex: 0 0 30px !important; border: 0; border-radius: 8px; box-shadow: none; }
 body.citizen-readable-layout.shared-mobile-header .portal-brand-copy { min-width: 0; max-width: none !important; }
 body.citizen-readable-layout.shared-mobile-header .portal-brand h1 { display: block !important; overflow: visible !important; text-overflow: clip !important; margin: 0 !important; font-size: 17px !important; line-height: 1.15 !important; font-weight: 750; }
 body.citizen-readable-layout.shared-mobile-header .portal-brand p { display: none !important; margin: 2px 0 0 !important; font-size: 12px !important; line-height: 1.15 !important; }
-body.citizen-readable-layout.shared-mobile-header .portal-user { width: auto !important; flex: 0 0 auto !important; flex-wrap: nowrap !important; gap: 6px !important; }
+body.citizen-readable-layout.shared-mobile-header .portal-user { border: 0 !important; padding: 0 !important; width: auto !important; flex: 0 0 auto !important; flex-wrap: nowrap !important; gap: 6px !important; }
 body.shared-mobile-header .home-account-menu { position: relative; }
 body.shared-mobile-header .home-account-menu > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px; list-style: none; cursor: pointer; font-size: 16px; font-weight: 650; color: var(--home-text); }
 body.shared-mobile-header .home-account-menu > summary::-webkit-details-marker { display: none; }

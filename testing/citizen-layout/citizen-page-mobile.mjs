@@ -1,0 +1,56 @@
+// Citizen data below is invented. All network remains in the local fixture.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {applyTextScale} from './text-scale.mjs';
+process.env.PORTAL_FIXTURES_ONLY='1';
+const {serve,newPage,ready,settle,chromium}=await import('./mobile-profile-refinement.mjs');
+const root=path.resolve(import.meta.dirname,'../..'),output=process.env.CITIZEN_PAGE_OUTPUT || path.join(root,'.local/citizen-page-mobile');
+const item={protocol:'CMS-2026-000001',subject:'Sugestão fictícia sobre o espaço de espera',description:'Relato inteiramente sintético para conferir leitura e acompanhamento.',type:'sugestao',status:'recebida',privacyMode:'sigilosa',createdAt:'2026-10-09T12:00:00Z'};
+const rows=[];await fs.mkdir(output,{recursive:true});
+const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',args:['--no-sandbox']});
+async function active(page,route){await page.waitForFunction(route=>PortalCitizenShell.active().url.pathname===route && !PortalCitizenShell.diagnostics().navigating,route);await ready(page,route);await settle(page);}
+async function noOverflow(page,selector){const result=await page.locator(selector).evaluate(e=>({scroll:e.scrollWidth,width:e.clientWidth}));assert.ok(result.scroll<=result.width+1,`${selector} overflows: ${JSON.stringify(result)}`);}
+try{
+  for(const theme of ['light','dark'])for(const width of (process.env.WIDTHS || '320,360,390').split(',').map(Number)){
+    const result={theme,width,errors:[],writes:[]};const {page,context,audit}=await newPage(browser,{theme,width},server.origin,result);
+    try{
+      await context.route('**/api/council/**',route=>{
+        const pathname=new URL(route.request().url()).pathname,method=route.request().method();let payload;
+        if(method!=='GET'){result.writes.push({pathname,method});payload={ok:true};}
+        else if(pathname==='/api/council/my')payload={manifestations:[item]};
+        else if(pathname==='/api/council/notifications')payload={notifications:[{id:1,title:'Resposta fictícia do Conselho',protocol:item.protocol,createdAt:item.createdAt,readAt:null}]};
+        else if(pathname==='/api/council/manifestations/'+item.protocol)payload={manifestation:item,messages:[],events:[],attachments:[]};
+        else return route.fallback();
+        return route.fulfill({contentType:'application/json',body:JSON.stringify(payload)});
+      });
+      await page.goto(server.origin+'/cidadao/');await active(page,'/cidadao/');await page.locator('body.citizen-mobile-presentation').waitFor();await page.locator('.manifestation-item').waitFor();await applyTextScale(page);await settle(page);
+      assert.equal(await page.evaluate(()=>RegulationAuth.getCachedUser().role),'cidadao');
+      await noOverflow(page,'html');assert.equal(await page.locator('.portal-topbar h1').textContent(),'Portal da regulação');assert.equal(await page.locator('#homeAccountMenu').count(),1);assert.equal(await page.locator('#profileAccountMenu').count(),0);
+      assert.ok(await page.locator('.portal-topbar .portal-symbol').getAttribute('src').then(src=>src.includes('portal-regulacao-header_180x180')));
+      await page.evaluate(()=>window.__citizenOwners={document,header:document.querySelector('.portal-topbar'),nav:document.querySelector('.social-mobile-nav'),form:document.getElementById('newManifestationForm'),controller:window[Symbol.for('portal.citizenMobilePresentation')]});
+      const action=await page.locator('#openNewManifestation').boundingBox();assert.ok(action.height>=48);if(process.env.TEXT_SCALE!=='2')assert.ok(action.y+action.height<700,'Main action is reachable in the first screen');
+      await page.locator('#homeAccountMenu > summary').click();await page.locator('#portalLogout').waitFor({state:'visible'});await page.keyboard.press('Escape');assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open));
+      await page.screenshot({path:path.join(output,`${theme}-${width}-page-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
+      await page.locator('#openNewManifestation').click();await page.locator('#newManifestationModal.open').waitFor();await noOverflow(page,'#newManifestationModal .citizen-modal-panel');assert.equal(await page.locator('#newManifestationModal .citizen-modal-head').evaluate(e=>getComputedStyle(e).position),'static','Expanded title scrolls with form instead of covering fields');
+      await page.locator('.manifestation-type-card').filter({has:page.locator('input[value="sugestao"]')}).click();assert.ok(await page.locator('input[name=manifestationType][value=sugestao]').isChecked());
+      await page.locator('#manifestationSubject').fill('Rascunho sintético preservado');await page.locator('#manifestationDescription').fill('Relato fictício sem envio de informações ao serviço.');
+      assert.ok(await page.locator('#manifestationSubject').evaluate(e=>e.required && e.minLength===3 && e.maxLength===180));assert.ok(await page.locator('#manifestationConfirm').evaluate(e=>e.required && !e.checked));
+      await page.locator('.privacy-help-button[data-help=warning]').click();await page.locator('#privacyHelpWarning').waitFor({state:'visible'});assert.match(await page.locator('#privacyHelpWarning').textContent(),/CPF|Cartão SUS/);
+      await page.locator('.privacy-help-button[data-help=channel]').click();await page.locator('#privacyHelpChannel').waitFor({state:'visible'});assert.match(await page.locator('#privacyHelpChannel').textContent(),/urgência ou emergência/);
+      await page.locator('.privacy-option').filter({has:page.locator('input[value=identificada]')}).click();assert.ok(await page.locator('input[name=manifestationPrivacy][value=identificada]').isChecked());
+      await page.locator('.privacy-help-button[data-help=privacy]').click();await page.locator('#newPrivacyNotice').waitFor({state:'visible'});assert.match(await page.locator('#newPrivacyNotice').textContent(),/e-mail.*protegido/);
+      assert.ok(await page.locator('#newManifestationModal .citizen-modal-head').evaluate(e=>e.getBoundingClientRect().bottom<0),'Header scrolls out of the way while reading privacy controls');await page.screenshot({path:path.join(output,`${theme}-${width}-form-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
+      await page.locator('#newManifestationModal [data-close-modal]').first().click();await page.locator('.citizen-mobile-tab[data-tab=notifications]').click();assert.equal(await page.locator('.citizen-mobile-tab[data-tab=notifications]').getAttribute('aria-selected'),'true');
+      await page.locator('#markNotificationsRead').click();await page.waitForFunction(()=>true);await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
+      await page.locator('.manifestation-item').click();await page.locator('#detailContent:not([hidden])').waitFor();assert.equal(await page.locator('#detailSubject').textContent(),item.subject);assert.equal(await page.locator('#detailStatus').textContent(),'Recebida');
+      await page.locator('#manifestationDetailModal [data-close-modal]').first().click();
+      const docs=audit.documents.length;
+      await page.locator('.social-mobile-nav a[href="/perfil/"]').click();await active(page,'/perfil/');assert.ok(!await page.locator('body').evaluate(e=>e.classList.contains('citizen-mobile-presentation')));
+      await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href)));await active(page,'/cidadao/');assert.equal(await page.locator('#manifestationSubject').inputValue(),'Rascunho sintético preservado');assert.ok(await page.locator('input[name=manifestationPrivacy][value=identificada]').isChecked());
+      assert.equal(await page.evaluate(()=>location.pathname),'/cidadao/');assert.ok(await page.evaluate(()=>{const o=window.__citizenOwners;return o.document===document && o.header===document.querySelector('.portal-topbar') && o.nav===document.querySelector('.social-mobile-nav') && o.form===document.getElementById('newManifestationForm') && o.controller===window[Symbol.for('portal.citizenMobilePresentation')];}));assert.equal(audit.documents.length,docs);
+      assert.deepEqual(result.writes,[{pathname:'/api/council/notifications',method:'PATCH'}],'Native read action executes once; no manifestation is submitted');assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);
+      rows.push(result);console.log(JSON.stringify({theme,width,errors:result.errors,writes:result.writes}));
+    }finally{await context.close();await fs.writeFile(path.join(output,'results.json'),JSON.stringify(rows,null,2));}
+  }
+}finally{await browser.close();await new Promise(r=>server.server.close(r));}
