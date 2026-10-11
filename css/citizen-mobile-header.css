@@ -20,6 +20,7 @@ body.citizen-readable-layout.shared-mobile-header .portal-user { width: auto !im
 body.shared-mobile-header .home-account-menu { position: relative; }
 body.shared-mobile-header .home-account-menu > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px; list-style: none; cursor: pointer; font-size: 16px; font-weight: 650; color: var(--home-text); }
 body.shared-mobile-header .home-account-menu > summary::-webkit-details-marker { display: none; }
+body.shared-mobile-header .home-account-menu > summary:focus-visible { outline: 3px solid var(--home-accent) !important; outline-offset: 3px !important; }
 body.shared-mobile-header .home-account-menu > summary::after { content: ''; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin-top: -3px; }
 body.shared-mobile-header .home-account-panel { position: absolute; right: 0; top: calc(100% + 6px); width: min(320px, calc(100vw - 24px)); max-height: min(72dvh, calc(100dvh - 136px)); overflow: auto; padding: 8px; border: 1px solid var(--home-line); border-radius: 14px; background: var(--home-surface); box-shadow: 0 8px 24px #0002; z-index: 80; }
 body.citizen-readable-layout.shared-mobile-header .home-account-panel .portal-account-area { display: grid !important; grid-template-columns: 36px minmax(0, 1fr); width: 100%; min-width: 0 !important; padding: 10px !important; gap: 6px 10px !important; }

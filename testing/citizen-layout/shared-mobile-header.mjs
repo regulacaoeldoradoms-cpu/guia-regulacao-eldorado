@@ -46,6 +46,7 @@ try {
           assert.equal(await page.locator('#portalLogout').count(),1);
           await page.keyboard.press('Escape');
           assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open && e.querySelector('summary')===document.activeElement),'Escape closes one shared menu and restores focus');
+          assert.deepEqual(await page.locator('#homeAccountMenu > summary').evaluate(e=>{const s=getComputedStyle(e);return {width:s.outlineWidth,offset:s.outlineOffset};}),{width:'3px',offset:'3px'},'Conta keeps the approved Home keyboard focus');
           if (route==='/amigos/' || route==='/mascotes/' || route==='/perfil/') await page.screenshot({path:path.join(output,`${theme}-${width}-${route.slice(1,-1)}-${process.env.TEXT_SCALE || 1}.png`)});
         }
       }
