@@ -16,28 +16,33 @@ const initializeHome = async (context) => {
     return false;
   }
 
-  // Shared route presentation does not change the authenticated account permissions.
-  await import('/js/citizen-layout.js?v=20261010-citizen-prewarm-1').catch(() => {});
-  window.PortalCitizenLayout?.apply(user);
+  // Presentation and initial social reads are independent. Keep the final
+  // surface gated on both, while network I/O overlaps the existing imports.
+  const presentationReady = (async () => {
+    // Shared route presentation does not change the authenticated account permissions.
+    await import('/js/citizen-layout.js?v=20261010-citizen-prewarm-1').catch(() => {});
+    window.PortalCitizenLayout?.apply(user);
 
-  // Reuse the existing controls; mobile composition changes no account permissions.
-  try {
-    const [presentation, composition] = await Promise.all([
-      import('/js/home-social-presentation.js?v=20261010-mobile-shell-1'),
-      import('/js/home-mobile-composition.js?v=20261010-mobile-shell-1')
-    ]);
-    const presenter = presentation.mountHomeSocialPresentation(user, context);
-    context?.addController(presenter);
-    const composer = composition.mountHomeMobileComposition(user, context);
-    context?.addController(composer);
-    await window.PortalCitizenMobileReady;
-  } catch (error) {
-    console.warn('Home mobile presentation unavailable', error);
-  }
+    // Reuse the existing controls; mobile composition changes no account permissions.
+    try {
+      const [presentation, composition] = await Promise.all([
+        import('/js/home-social-presentation.js?v=20261010-mobile-shell-1'),
+        import('/js/home-mobile-composition.js?v=20261010-mobile-shell-1')
+      ]);
+      const presenter = presentation.mountHomeSocialPresentation(user, context);
+      context?.addController(presenter);
+      const composer = composition.mountHomeMobileComposition(user, context);
+      context?.addController(composer);
+      await window.PortalCitizenMobileReady;
+    } catch (error) {
+      console.warn('Home mobile presentation unavailable', error);
+    }
+
+  })();
 
   window.addEventListener('portal:social-config-updated', (event) => {
     const refreshed = event.detail?.config;
-    if (refreshed) window.PortalSocialNavigation?.mount(user, refreshed);
+    if (refreshed) presentationReady.then(() => window.PortalSocialNavigation?.mount(user, refreshed)).catch(() => {});
   });
 
   const name = document.getElementById('portalUserName');
@@ -107,7 +112,7 @@ const initializeHome = async (context) => {
 
   async function loadSocialConfigWithRecovery() {
     try {
-      return await social.getConfig(10000);
+      return await social.getConfig(10000, user.role === 'cidadao' ? { reuseFreshMs:5000 } : {});
     } catch (error) {
       if (!socialErrorIsRetryable(error)) throw error;
       announceLoading('Conectando à Camada Social');
@@ -126,24 +131,30 @@ const initializeHome = async (context) => {
   try {
     socialConfig = await loadSocialConfigWithRecovery();
   } catch (error) {
+    await presentationReady;
     window.PortalSocialNavigation?.mount(user, socialConfig);
     return showToolsFallback(socialFailureMessage(error));
   }
 
-  window.PortalSocialNavigation?.mount(user, socialConfig);
   if (!socialConfig.homeEnabled) {
+    await presentationReady;
+    window.PortalSocialNavigation?.mount(user, socialConfig);
     return showToolsFallback('A nova Home social está em validação controlada. Todas as ferramentas autorizadas permanecem disponíveis aqui e em Ferramentas.');
   }
   if (!socialConfig.available) {
+    await presentationReady;
+    window.PortalSocialNavigation?.mount(user, socialConfig);
     const message = socialConfig.gate?.message
       || 'Sua conta ainda precisa concluir a etapa de segurança para abrir a Camada Social.';
     return showToolsFallback(message);
   }
   try {
-    await window.PortalSocialHome.mount(user, socialConfig);
+    await Promise.all([window.PortalSocialHome.mount(user, socialConfig), presentationReady]);
+    window.PortalSocialNavigation?.mount(user, socialConfig);
     showHomeSurface('social');
     return true;
   } catch (error) {
+    await presentationReady;
     return showToolsFallback(socialFailureMessage(error));
   }
 };

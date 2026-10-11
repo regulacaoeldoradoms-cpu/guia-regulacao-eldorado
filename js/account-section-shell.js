@@ -66,7 +66,7 @@
 
     if (options.navigation !== false && !user.mustChangePassword) {
       let socialConfig = {};
-      try { socialConfig = await window.PortalSocial?.getConfig?.() || {}; }
+      try { socialConfig = await window.PortalSocial?.getConfig?.(5000, user.role === 'cidadao' && route.pathname === '/mascotes/' ? { reuseFreshMs:5000 } : {}) || {}; }
       catch (_) { socialConfig = {}; }
       window.PortalSocialNavigation?.mount?.(user, socialConfig);
     }

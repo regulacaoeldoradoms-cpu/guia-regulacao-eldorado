@@ -17,7 +17,7 @@ const initializeCitizenArea = async (context) => {
   if (!context) document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
 
   let config;
-  try { config = await social.getConfig(); }
+  try { config = await social.getConfig(5000, user.role === 'cidadao' ? { reuseFreshMs:5000 } : {}); }
   catch (error) { social.status(error.message || 'Camada Social indisponível.', 'error'); return; }
   window.PortalSocialNavigation?.mount(user, config);
   if (!config.available) {
@@ -389,10 +389,10 @@ const initializeCitizenArea = async (context) => {
       else history.replaceState(history.state, '', social.profileUrl(profile.canonicalHandle));
     }
     render();
-    await loadIdentity();
     const posts = document.getElementById('profilePosts');
     const more = document.getElementById('profilePostsMore');
-    await window.PortalSocialFeed.load(posts, more, { handle: profile.handle });
+    // Both reads depend only on the resolved profile, not on each other.
+    await Promise.all([loadIdentity(), window.PortalSocialFeed.load(posts, more, { handle: profile.handle })]);
   }
 
   document.getElementById('profileEditorForm')?.addEventListener('submit', async (event) => {

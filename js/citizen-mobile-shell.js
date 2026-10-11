@@ -220,16 +220,25 @@
     root.addEventListener('input', () => { area.dirty = true; });
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
-    await styles(doc, area);
-    const dependencies = ['/js/account-section-shell.js?v=20261010-citizen-prewarm-1'];
-    if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
-    if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
-    for (const path of dependencies) {
-      const api = path.includes('account-section-shell') ? window.PortalAccountSection : path.includes('social-feed') ? window.PortalSocialFeed : window.AccountLevels;
-      if (!api) await loadScript(path);
-    }
-    for (const entry of entries[url.pathname]) {
-      if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=20261010-citizen-prewarm-1`, entry.startsWith('pets-'));
+    const loadDependencies = async () => {
+      const dependencies = ['/js/account-section-shell.js?v=20261011-home-speed-1'];
+      if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
+      if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
+      for (const path of dependencies) {
+        const api = path.includes('account-section-shell') ? window.PortalAccountSection : path.includes('social-feed') ? window.PortalSocialFeed : window.AccountLevels;
+        if (!api) await loadScript(path);
+      }
+      for (const entry of entries[url.pathname]) {
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${['home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-home-speed-1' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+      }
+    };
+    if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
+      // CSS and registered factories are independent; initialize only after
+      // both settle. Still one area at a time and no additional assets/data.
+      await Promise.all([styles(doc, area), loadDependencies()]);
+    } else {
+      await styles(doc, area);
+      await loadDependencies();
     }
     if (!valid()) { area.dispose(); throw new DOMException('Sessão encerrada', 'AbortError'); }
     // Fetches can finish after another route filled the last cache slot.
@@ -463,7 +472,7 @@
     }
   });
   window.PortalCitizenShell = Object.freeze({
-    version:'20261010-citizen-prewarm-1', enabled, active: () => active, updateNavigation, navigate,
+    version:'20261011-home-speed-1', enabled, active: () => active, updateNavigation, navigate,
     canonicalize(path) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;
@@ -474,9 +483,15 @@
       if (!valid()) return Promise.resolve();
       factories.set(entry, initialize);
       if (entries[initialUrl.pathname].includes(entry)) {
-        const ready = Promise.resolve().then(() => initialize(active));
-        active.ready = Promise.all([active.ready, ready]); active.initialized = true;
-        active.ready.then(schedulePrewarm, () => {});
+        const area = active;
+        const ready = Promise.resolve().then(() => initialize(area));
+        const startupReady = area.ready = Promise.all([area.ready, ready]); area.initialized = true;
+        startupReady.then(() => {
+          if (area.ready !== startupReady || !entries[initialUrl.pathname].every(name => factories.has(name))) return;
+          area.loaded = true;
+          startUpdates();
+          schedulePrewarm();
+        }, () => {});
         return ready;
       }
       return Promise.resolve();
@@ -511,7 +526,7 @@
           window.dispatchEvent(new CustomEvent('portal:citizen-notifications', { detail: payload }));
         }
         const home = areas.get('/');
-        if (home?.root.querySelector('#socialFeedList')) await window.PortalSocialFeed?.checkNew?.(home.root, { signal: updateController.signal });
+        if (home?.loaded && home.root.querySelector('#socialFeedList')) await window.PortalSocialFeed?.checkNew?.(home.root, { signal: updateController.signal });
       }
       failures = 0;
     } catch (error) { if (error.name !== 'AbortError') failures++; }
@@ -530,7 +545,6 @@
   window.addEventListener('online', resumeUpdates);
   window.addEventListener('offline', resumeUpdates);
   window.addEventListener('focus', resumeUpdates);
-  active.ready.then(startUpdates);
   if (document.readyState === 'complete') schedulePrewarm();
   else window.addEventListener('load', schedulePrewarm, { once: true });
   document.addEventListener('visibilitychange', schedulePrewarm);

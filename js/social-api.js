@@ -42,7 +42,7 @@
     return `${CONFIG_CACHE_PREFIX}${encodeURIComponent(username)}`;
   }
 
-  function readConfigCache() {
+  function readConfigCache(freshMs = 0) {
     try {
       const raw = sessionStorage.getItem(configCacheKey());
       if (!raw) return null;
@@ -52,6 +52,7 @@
         sessionStorage.removeItem(configCacheKey());
         return null;
       }
+      if (freshMs > 0 && age > freshMs) return null;
       return record.value;
     } catch (_) {
       return null;
@@ -245,6 +246,13 @@
     if (typeof timeoutMs === 'object') {
       options = timeoutMs;
       timeoutMs = Number(options.timeoutMs || 5000);
+    }
+    // Optional startup reuse, bounded to five seconds. Normal callers and the
+    // forced updater still revalidate; this adds no persistent private cache.
+    const reuseFreshMs = Math.min(5000, Math.max(0, Number(options.reuseFreshMs) || 0));
+    if (options.force !== true && reuseFreshMs) {
+      const fresh = readConfigCache(reuseFreshMs);
+      if (fresh) return fresh;
     }
     const cached = options.force === true ? null : readConfigCache();
     if (cached) {

@@ -65,8 +65,11 @@ try {
     await page.route('**/amigos/', async route => { await new Promise(resolve => setTimeout(resolve, 1500)); await route.fallback(); });
   }, async (page, audit, requests, check) => {
     await page.waitForFunction(() => window.PortalCitizenShell.diagnostics().prewarming);
+    await page.evaluate(() => { scrollTo(0,240); window.__slowPreparationScroll=scrollY; });
     await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
     await page.locator('.citizen-route-notice:not([hidden])').waitFor();
+    check('loading notice preserves reading position', await page.evaluate(() => Math.abs(scrollY-window.__slowPreparationScroll)<3));
+    await page.screenshot({path:path.join(output,'slow-loading-notice.png')});
     check('initial Home remains visible during slow preparation', await page.locator('#socialHome').isVisible());
     await page.waitForFunction(() => location.pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('tap shares one in-flight HTML request', requests.filter(request => request.url === '/amigos/').length === 1);
