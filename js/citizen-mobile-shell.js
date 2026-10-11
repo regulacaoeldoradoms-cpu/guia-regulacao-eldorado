@@ -44,7 +44,7 @@
   };
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
-    'home-mobile-direct', 'pets', 'citizen-mobile-shell']);
+    'home-mobile-direct', 'citizen-mobile-header', 'pets', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
@@ -277,7 +277,7 @@
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261011-portal-header-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261011-shared-header-1'];
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
       if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
       for (const path of dependencies) {
@@ -285,7 +285,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'home' ? '20261011-portal-header-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'home' ? '20261011-shared-header-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {

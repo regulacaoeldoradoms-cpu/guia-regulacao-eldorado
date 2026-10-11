@@ -1,3 +1,4 @@
+import { mountCitizenMobileHeader } from '/js/citizen-mobile-header.js?v=20261011-shared-header-1';
 'use strict';
 
 // Home-only presentation. Existing authentication, forms and post actions retain
@@ -16,15 +17,11 @@ export function mountHomeSocialPresentation(user, context) {
 
   const mobileScreen = window.matchMedia('screen and (max-width: 900px)');
   const printScreen = window.matchMedia('print');
-  const accountHost = document.querySelector('.portal-topbar .portal-user');
+  const sharedHeader = mountCitizenMobileHeader();
   const composer = document.querySelector('#socialHome .social-composer');
   const form = document.getElementById('socialComposerForm');
   const textarea = document.getElementById('socialComposerText');
   const heading = composer?.querySelector(':scope > h2');
-  const title = document.querySelector('.portal-brand-copy h1');
-  const subtitle = document.querySelector('.portal-brand-copy p');
-  const titleNodes = title ? [...title.childNodes] : [];
-  const subtitleNodes = subtitle ? [...subtitle.childNodes] : [];
   const positions = new WeakMap();
   const postMenus = new Map();
   const menuDialogs = new WeakMap();
@@ -35,9 +32,6 @@ export function mountHomeSocialPresentation(user, context) {
   let composerExpanded = false;
   let ready = false;
   let syncQueued = false;
-  let accountArea = null;
-  let logout = null;
-  let sideLinks = null;
 
   function mark(node, label) {
     if (!node || positions.has(node)) return;
@@ -125,27 +119,6 @@ export function mountHomeSocialPresentation(user, context) {
       avatarObserver.observe(node, { attributes: true, attributeFilter: ['style'], childList: true, characterData: true, subtree: true });
     });
   }
-
-  const accountMenu = document.createElement('details');
-  accountMenu.id = 'homeAccountMenu';
-  accountMenu.className = 'home-account-menu';
-  accountMenu.hidden = true;
-  const accountSummary = document.createElement('summary');
-  accountSummary.textContent = 'Conta';
-  accountSummary.setAttribute('aria-controls', 'homeAccountPanel');
-  const accountPanel = document.createElement('div');
-  accountPanel.id = 'homeAccountPanel';
-  accountPanel.className = 'home-account-panel';
-  const toolsLink = document.createElement('a');
-  toolsLink.className = 'home-account-tools';
-  toolsLink.href = '/ferramentas/';
-  toolsLink.textContent = 'Ferramentas';
-  accountPanel.append(toolsLink);
-  const profileLabel = document.createElement('span');
-  profileLabel.className = 'home-account-label';
-  profileLabel.textContent = 'Perfil';
-  accountMenu.append(accountSummary, accountPanel);
-  accountHost?.append(accountMenu);
 
   const prompt = document.createElement('div');
   prompt.className = 'home-composer-prompt';
@@ -247,7 +220,7 @@ export function mountHomeSocialPresentation(user, context) {
   }
 
   function menus() {
-    return [accountMenu, ...[...postMenus.values()].map(record => record.menu)];
+    return [...postMenus.values()].map(record => record.menu);
   }
 
   function bindMenu(menu) {
@@ -256,7 +229,6 @@ export function mountHomeSocialPresentation(user, context) {
       for (const other of menus()) if (other !== menu) closeMenu(other);
     });
   }
-  bindMenu(accountMenu);
 
   function buildPostMenu(actions) {
     const menu = document.createElement('details');
@@ -317,32 +289,6 @@ export function mountHomeSocialPresentation(user, context) {
     }
   }
 
-  function syncAccount() {
-    accountArea ||= accountHost?.querySelector('.portal-account-area');
-    logout ||= document.getElementById('portalLogout');
-    sideLinks ||= document.querySelector('#socialHome .social-side-links') || accountPanel.querySelector('.social-side-links');
-    mark(accountArea, 'Home account identity position');
-    mark(logout, 'Home logout position');
-    mark(sideLinks, 'Home account preferences position');
-    accountMenu.hidden = !mobile;
-    profileLabel.hidden = !mobile;
-    if (mobile) {
-      if ([accountArea, sideLinks, logout].some(node => node?.contains(document.activeElement))) accountMenu.open = true;
-      if (accountArea && !accountArea.contains(profileLabel)) accountArea.append(profileLabel);
-      // Keep the account anchor under .portal-user for auth-client refreshes.
-      move(logout, accountPanel);
-      move(sideLinks, accountPanel, logout);
-      move(toolsLink, accountPanel, sideLinks || logout);
-      move(accountArea, accountPanel, toolsLink);
-    } else {
-      accountMenu.open = false;
-      restore(accountArea);
-      restore(logout);
-      restore(sideLinks);
-      profileLabel.remove();
-    }
-  }
-
   function sync(force = false) {
     if (!routeActive && !force) return;
     syncQueued = false;
@@ -353,20 +299,12 @@ export function mountHomeSocialPresentation(user, context) {
     mobile = compact;
     document.body.classList.toggle('home-social-presentation', routeActive);
     document.body.classList.toggle('home-social-mobile', mobile);
-    if (mobile) {
-      setText(title, 'Portal da regulação');
-      setText(subtitle, 'Eldorado/MS');
-    } else if (changing) {
-      title?.replaceChildren(...titleNodes);
-      subtitle?.replaceChildren(...subtitleNodes);
-    }
-    syncAccount();
+    sharedHeader?.sync();
     syncComposer();
     syncPostMenus();
     syncAvatars();
     if (changing && !mobile && !printing && !printScreen.matches) {
       if (focused === trigger || focused === collapse) textarea?.focus({ preventScroll: true });
-      if (focused === accountSummary) accountArea?.focus({ preventScroll: true });
     }
   }
 
@@ -401,7 +339,7 @@ export function mountHomeSocialPresentation(user, context) {
     syncComposer();
   }
 
-  mountedPresentation = Object.freeze({ sync, setReady, deactivate() { routeActive = false; sync(true); }, activate() { routeActive = true; sync(); }, dispose() { routeActive = false; sync(true); mountedPresentation = null; accountMenu.remove(); } });
+  mountedPresentation = Object.freeze({ sync, setReady, deactivate() { routeActive = false; sync(true); }, activate() { routeActive = true; sync(); }, dispose() { routeActive = false; sync(true); mountedPresentation = null; } });
   sync();
   // mount() is synchronous: waiting here would deadlock the Home bootstrap that
   // creates PortalHomeReady. Its promise is available after this call returns.

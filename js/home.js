@@ -20,13 +20,13 @@ const initializeHome = async (context) => {
   // surface gated on both, while network I/O overlaps the existing imports.
   const presentationReady = (async () => {
     // Shared route presentation does not change the authenticated account permissions.
-    await import('/js/citizen-layout.js?v=20261011-portal-header-1').catch(() => {});
+    await import('/js/citizen-layout.js?v=20261011-shared-header-1').catch(() => {});
     window.PortalCitizenLayout?.apply(user);
 
     // Reuse the existing controls; mobile composition changes no account permissions.
     try {
       const [presentation, composition] = await Promise.all([
-        import('/js/home-social-presentation.js?v=20261011-portal-header-1'),
+        import('/js/home-social-presentation.js?v=20261011-shared-header-1'),
         import('/js/home-mobile-composition.js?v=20261010-mobile-shell-1')
       ]);
       const presenter = presentation.mountHomeSocialPresentation(user, context);

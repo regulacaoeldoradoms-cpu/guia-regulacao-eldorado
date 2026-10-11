@@ -1,5 +1,4 @@
 /* Mobile profile only; all profile and permission state remains renderer-owned. */
-#profileAccountMenu[hidden] { display: none !important; }
 @media screen and (max-width: 900px) {
 body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation {
   --profile-surface: var(--portal-theme-surface, #fff);
@@ -11,23 +10,6 @@ body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation {
   background: var(--profile-surface);
   color: var(--profile-text);
 }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation .portal-topbar { position: sticky; top: 0; z-index: 60; background: var(--profile-surface); border-bottom: 1px solid var(--profile-line); box-shadow: none; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation .portal-topbar-inner { display: flex !important; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0 12px !important; min-height: 56px; padding: 6px 12px !important; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation .portal-brand { flex: 1 1 min-content; min-width: min-content; width: auto !important; gap: 8px; }
-body.profile-mobile-layout.shared-mobile-navigation .portal-brand .portal-symbol { width: 30px; height: 30px; flex: 0 0 30px; border: 0; border-radius: 8px; box-shadow: none; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation .portal-brand h1 { margin: 0; color: var(--profile-text); font-size: 17px !important; line-height: 1.2 !important; white-space: normal !important; overflow-wrap: normal; }
-body.profile-mobile-layout.shared-mobile-navigation .portal-brand p { display: none; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation .portal-user { width: auto !important; margin-left: auto; flex: 0 0 auto; flex-wrap: nowrap; }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountMenu { position: relative; color: var(--profile-text); }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountMenu > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px; list-style: none; cursor: pointer; font-size: 16px; font-weight: 650; }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountMenu > summary::-webkit-details-marker { display: none; }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountMenu > summary::after { content: ''; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountPanel { position: absolute; top: calc(100% + 6px); right: 0; width: min(320px, calc(100vw - 24px)); max-height: min(72dvh, calc(100dvh - 136px)); overflow: auto; padding: 8px; border: 1px solid var(--profile-line); border-radius: 14px; background: var(--profile-surface); box-shadow: 0 8px 24px #0002; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation #profileAccountPanel .portal-account-area { display: grid !important; grid-template-columns: 36px minmax(0, 1fr); align-items: center; width: 100%; padding: 10px; gap: 10px; color: var(--profile-text) !important; }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountPanel .portal-profile-avatar { width: 36px !important; height: 36px !important; min-width: 36px; background-color: var(--profile-soft) !important; color: var(--profile-text) !important; box-shadow: none !important; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation #profileAccountPanel .portal-user-meta { display: block !important; text-align: left; }
-body.profile-mobile-layout.shared-mobile-navigation #profileAccountPanel .portal-user-meta :is(strong, span) { color: var(--profile-text); white-space: normal; overflow-wrap: anywhere; }
-body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation #profileAccountPanel #portalLogout { display: flex; align-items: center; width: 100%; min-height: 48px; padding: 10px; border: 0; border-radius: 8px; background: transparent; color: var(--profile-text); font-size: 16px; }
 body.profile-mobile-layout.shared-mobile-navigation .social-shell { width: 100%; max-width: 680px; margin: 0 auto; padding: 0; }
 body.profile-mobile-layout.shared-mobile-navigation #socialProfile { border: 0; border-radius: 0; box-shadow: none; }
 body.profile-mobile-layout.shared-mobile-navigation #socialStatus { margin: 12px; }

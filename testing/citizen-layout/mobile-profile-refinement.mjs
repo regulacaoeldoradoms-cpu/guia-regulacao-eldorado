@@ -313,17 +313,17 @@ async function navChecks(page, result, name) {
 }
 
 async function profileActions(page, result, own) {
-  await page.locator('#profileAccountMenu > summary').click();
-  await page.locator('#profileAccountPanel').waitFor({ state:'visible' });
+  await page.locator('#homeAccountMenu > summary').click();
+  await page.locator('#homeAccountPanel').waitFor({ state:'visible' });
   await capture(page, result, 'account');
-  check(result, 'expanded profile account has no visible Tools access', await page.locator('a[href="/ferramentas/"]:visible').count() === 0);
+  check(result, 'expanded shared account retains one Tools destination', await page.locator('#homeAccountPanel a[href="/ferramentas/"]:visible').count() === 1);
   const blocked = [];
-  for (const action of await page.locator('#profileAccountPanel a, #profileAccountPanel button').all()) {
+  for (const action of await page.locator('#homeAccountPanel a, #homeAccountPanel button').all()) {
     try { await action.click({ trial:true, timeout:1200 }); } catch { blocked.push(await action.innerText()); }
   }
   check(result, 'account actions remain reachable at current scale', !blocked.length, blocked);
   await page.keyboard.press('Escape');
-  check(result, 'Escape closes account and returns visible trigger focus', await page.locator('#profileAccountMenu').evaluate(node => !node.open && node.querySelector('summary') === document.activeElement));
+  check(result, 'Escape closes account and returns visible trigger focus', await page.locator('#homeAccountMenu').evaluate(node => !node.open && node.querySelector('summary') === document.activeElement));
   const brokenWords = await page.locator('#profileActions').evaluate(container => {
     const failures = [];
     for (const button of container.querySelectorAll('button')) {
