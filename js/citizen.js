@@ -491,8 +491,14 @@ const initializeCitizenArea = async (context) => {
     location.replace('/login/');
   });
 
-  await loadSecurity();
-  await Promise.all([loadManifestations(), loadNotifications()]);
+  if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {
+    // Lists need authenticated access, already checked above, not the privacy
+    // lookup. Keep every read fresh while removing one sequential network wait.
+    await Promise.all([loadSecurity(), loadManifestations(), loadNotifications()]);
+  } else {
+    await loadSecurity();
+    await Promise.all([loadManifestations(), loadNotifications()]);
+  }
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen', initializeCitizenArea);
 else initializeCitizenArea();

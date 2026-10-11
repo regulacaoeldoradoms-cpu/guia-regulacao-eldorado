@@ -95,7 +95,7 @@
   // for the same single mount without owning a second navigation controller.
   window.PortalCitizenMobileReady = new Promise(resolve => { finishPresentation = resolve; });
   function loadStyle(path) {
-    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-header.css' ? '20261011-shared-header-1' : path === '/css/profile-mobile-presentation.css' ? '20261011-shared-header-1' : path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
+    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-presentation.css' ? '20261011-citizen-panel-1' : path === '/css/citizen-mobile-header.css' ? '20261011-shared-header-account-1' : path === '/css/profile-mobile-presentation.css' ? '20261011-shared-header-1' : path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
     const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
     if (existing?.sheet) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -118,6 +118,11 @@
       }
     });
   }
+  async function mountCitizenPanel() {
+    if (currentPath() !== '/cidadao/') return;
+    const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261011-citizen-panel-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
+    panel.mountCitizenMobilePresentation();
+  }
   async function mountPresentation() {
     if (presentationStarted) return;
     presentationStarted = true;
@@ -130,13 +135,14 @@
         import(`/js/home-mobile-direct.js?v=20261011-citizen-continuity-3`),
         profileRoute ? import(`/js/profile-mobile-presentation.js?v=20261011-shared-header-1`) : null,
         mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`) : null,
-        import('/js/citizen-mobile-header.js?v=20261011-shared-header-1'),
+        import('/js/citizen-mobile-header.js?v=20261011-shared-header-account-1'),
         loadStyle('/css/citizen-mobile-header.css'),
         loadStyle('/css/citizen-mobile-navigation.css'),
         loadStyle('/css/home-mobile-direct.css'),
         profileRoute ? loadStyle('/css/profile-mobile-presentation.css') : null
       ]);
       header.mountCitizenMobileHeader();
+      await mountCitizenPanel();
       const profileController = profile?.mountProfileMobilePresentation();
       const directController = direct.mountHomeMobileDirect();
       // This final mount exposes the shared marker only after all resources and
@@ -178,6 +184,8 @@
   async function enterRoute() {
     await window.PortalCitizenMobileReady;
     window[Symbol.for('portal.citizenMobileHeader')]?.sync();
+    if (currentPath() === '/cidadao/') await mountCitizenPanel();
+    else window[Symbol.for('portal.citizenMobilePresentation')]?.sync();
     if (currentPath() === '/perfil/') {
       const profile = await import(`/js/profile-mobile-presentation.js?v=20261011-shared-header-1`);
       await loadStyle('/css/profile-mobile-presentation.css');
@@ -190,6 +198,7 @@
   }
   async function prepareRoute(path) {
     await window.PortalCitizenMobileReady;
+    if (path === '/cidadao/') await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261011-citizen-panel-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
     if (path === '/perfil/') await Promise.all([
       import(`/js/profile-mobile-presentation.js?v=20261011-shared-header-1`),
       loadStyle('/css/profile-mobile-presentation.css')

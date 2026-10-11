@@ -109,6 +109,10 @@ async function sharedNativeControlContract(page, route) {
         if (node.matches('form,button,input,textarea,select')) ids.add(node.id);
       });
     }
+    if (route === '/cidadao/') {
+      ids.add('openNewManifestation');
+      document.querySelectorAll('#newManifestationForm [id],#newManifestationForm,#manifestationDetailModal [id],#manifestationsCard [id],#notificationsCard [id]').forEach(node=>{if(node.matches('form,button,input,textarea,select'))ids.add(node.id);});
+    }
     const original = window[Symbol.for(nativeIdentityKey)];
     const controls = [...ids].sort().map(id => {
       const node = document.getElementById(id);
@@ -129,7 +133,8 @@ async function sharedNativeControlContract(page, route) {
       };
     });
     const account = [...document.querySelectorAll('.portal-topbar .portal-account-area')].map(node=>({tag:node.localName,href:node.getAttribute('href')}));
-    return {requiredIds,controls,account};
+    const citizenForm = route === '/cidadao/' ? {radios:[...document.querySelectorAll('#newManifestationForm input[type=radio]')].map(node=>({name:node.name,value:node.value,checked:node.checked,required:node.required,disabled:node.disabled})),alerts:[...document.querySelectorAll('#newManifestationForm .form-alert')].map(node=>node.textContent.trim()),confirmation:document.querySelector('label.form-confirm')?.textContent.trim()} : null;
+    return {requiredIds,controls,account,citizenForm};
   }, { route, nativeIdentityKey });
 }
 async function homeControlContract(page) {
@@ -171,11 +176,11 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const loginRedesign=route==='/login/'&&isMobile;
     const loginContracts=[];
     // The approved presentation covers shared mobile navigation/Direct and
-    // the requested common Home header on the four primary views. Native controls remain compared to
+    // the requested common Home header on the nine requested views. Native controls remain compared to
     // base; desktop and print keep the exact computed and raster gates below.
     const homeRedesign=route==='/'&&mobileRedesign;
-    const headerRedesign=mobileRedesign&&['/','/amigos/','/perfil/','/mascotes/'].includes(route);
-    const approvedSurfaces=homeRedesign?approvedHomeSurfaces:approvedSharedSurfaces+(headerRedesign?',.portal-topbar':'');
+    const headerRedesign=mobileRedesign&&['/','/amigos/','/perfil/','/mascotes/','/configuracoes/','/seguranca/','/conquistas/','/ferramentas/','/cidadao/'].includes(route);
+    const approvedSurfaces=homeRedesign?approvedHomeSurfaces:approvedSharedSurfaces+(headerRedesign?',.portal-topbar':'')+(route==='/cidadao/'&&mobileRedesign?',.portal-main,.citizen-modal-panel':'');
     const headerContracts=[];
     const palettes=[];
     const homeContracts=[];
@@ -269,7 +274,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       expect(nativeContracts[0].controls.find(control=>control.id==='socialNotificationTriggerMobile')?.controls).toBe('socialNotificationPanelMobile');
       expect(nativeContracts[0].account).toEqual([{tag:'a',href:'/perfil/'}]);
       if(headerRedesign){
-        // Only the four requested mobile headers may change. Every native
+        // Only the nine requested mobile headers may change. Every native
         // control identity and all remaining palettes still compare to base.
         expect(headerContracts[0]).toEqual({title:'Portal da regulação',logo:1,headers:1,menu:1,competingMenu:0,logout:1,controller:true});
         await info.attach('approved-shared-mobile-header.json',{body:Buffer.from(JSON.stringify({route,current:headerContracts[0],base:headerContracts[1]},null,2)),contentType:'application/json'});

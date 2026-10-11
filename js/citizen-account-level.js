@@ -7,6 +7,8 @@ const initializeCitizenArea = (context) => {
   const auth = window.RegulationAuth;
   const levels = window.AccountLevels;
   if (!auth || !levels) return;
+  const compact = globalThis.matchMedia('screen and (max-width: 900px)').matches;
+  let pendingRender = false;
 
   const roleLabels = {
     medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
@@ -38,42 +40,52 @@ const initializeCitizenArea = (context) => {
   }
 
   async function render() {
-    const user = await resolvedUser();
-    if (!user) return;
+    if (compact && pendingRender) return;
+    pendingRender = true;
+    try {
+      const user = await resolvedUser();
+      if (!user) return;
 
-    const badge = document.getElementById('accountLevelBadge');
-    const notice = document.getElementById('accountEvolutionNotice');
-    const actionText = document.getElementById('accountActionText');
-    const actionTitle = document.getElementById('accountActionTitle');
-    const meta = levels.metaFor(user);
+      const badge = document.getElementById('accountLevelBadge');
+      const notice = document.getElementById('accountEvolutionNotice');
+      const actionText = document.getElementById('accountActionText');
+      const actionTitle = document.getElementById('accountActionTitle');
+      const meta = levels.metaFor(user);
 
-    syncIdentity(user);
+      syncIdentity(user);
 
-    if (badge) {
-      badge.hidden = false;
-      levels.renderMiniBadge(badge, user);
-    }
-    if (actionTitle) actionTitle.textContent = 'Segurança da conta';
-    if (actionText) {
-      actionText.textContent = meta.level === 'bronze'
-        ? 'Conta Bronze: confirme o e-mail para avançar ao Prata.'
+      if (badge) {
+        badge.hidden = false;
+        levels.renderMiniBadge(badge, user);
+      }
+      if (actionTitle) actionTitle.textContent = 'Segurança da conta';
+      if (actionText) {
+        actionText.textContent = meta.level === 'bronze'
+          ? 'Conta Bronze: confirme o e-mail para avançar ao Prata.'
+          : meta.level === 'prata'
+            ? 'Conta Prata: e-mail de segurança confirmado.'
+            : 'Conta Ouro: nível máximo de proteção.';
+      }
+
+      if (!notice) return;
+      notice.hidden = false;
+      notice.innerHTML = meta.level === 'bronze'
+        ? '<strong>Sua conta está no nível Bronze.</strong> Você pode usar o Canal do Cidadão. Sem e-mail verificado, novas manifestações são registradas como anônimas; após a confirmação, você poderá escolher entre envio sigiloso ou identificado.'
         : meta.level === 'prata'
-          ? 'Conta Prata: e-mail de segurança confirmado.'
-          : 'Conta Ouro: nível máximo de proteção.';
-    }
-
-    if (!notice) return;
-    notice.hidden = false;
-    notice.innerHTML = meta.level === 'bronze'
-      ? '<strong>Sua conta está no nível Bronze.</strong> Você pode usar o Canal do Cidadão. Sem e-mail verificado, novas manifestações são registradas como anônimas; após a confirmação, você poderá escolher entre envio sigiloso ou identificado.'
-      : meta.level === 'prata'
-        ? '<strong>Conta Prata.</strong> Seu e-mail de segurança está confirmado. Em cada nova manifestação, você pode manter sua identidade sigilosa ou optar por se identificar ao Conselho. O endereço de e-mail continua protegido.'
-        : '<strong>Conta Ouro.</strong> Sua conta atingiu o nível máximo de proteção previsto no portal.';
+          ? '<strong>Conta Prata.</strong> Seu e-mail de segurança está confirmado. Em cada nova manifestação, você pode manter sua identidade sigilosa ou optar por se identificar ao Conselho. O endereço de e-mail continua protegido.'
+          : '<strong>Conta Ouro.</strong> Sua conta atingiu o nível máximo de proteção previsto no portal.';
+    } finally { pendingRender = false; }
   }
 
   render();
-  window.setTimeout(render, 0);
-  window.setTimeout(render, 500);
+  if (!compact) {
+    window.setTimeout(render, 0);
+    window.setTimeout(render, 500);
+  } else {
+    // Returning to this area fetches fresh account data. Session authorization
+    // is owned by auth; prewarming other areas also emits session-ready.
+    window.addEventListener('portal:citizen-route', render);
+  }
   window.addEventListener('pageshow', render);
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-account-level', initializeCitizenArea);

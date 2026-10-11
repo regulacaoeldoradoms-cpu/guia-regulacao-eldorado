@@ -5,6 +5,7 @@ on:
       - "css/citizen-readable-layout.css"
       - "css/citizen-mobile-navigation.css"
       - "css/citizen-mobile-header.css"
+      - "css/citizen-mobile-presentation.css"
       - "css/profile-mobile-presentation.css"
       - "css/home-tools-carousel.css"
       - "css/home-mobile-direct.css"
@@ -12,6 +13,9 @@ on:
       - "js/citizen-layout.js"
       - "js/citizen-mobile-navigation.js"
       - "js/citizen-mobile-header.js"
+      - "js/citizen-mobile-presentation.js"
+      - "js/citizen.js"
+      - "js/citizen-account-level.js"
       - "js/citizen-mobile-chat-bootstrap.js"
       - "js/profile-mobile-presentation.js"
       - "js/home.js"
@@ -65,6 +69,14 @@ jobs:
         run: |
           node testing/citizen-layout/shared-mobile-header.mjs
           WIDTHS=320,390 TEXT_SCALE=2 HEADER_OUTPUT=/tmp/shared-header-text200 node testing/citizen-layout/shared-mobile-header.mjs
+      - name: Shared header on account routes, direct entry and retained forms
+        run: |
+          node testing/citizen-layout/shared-account-header.mjs
+          TEXT_SCALE=2 HEADER_OUTPUT=/tmp/shared-account-header-text200 node testing/citizen-layout/shared-account-header.mjs
+      - name: Citizen phone presentation, privacy, drafts and route continuity
+        run: |
+          node testing/citizen-layout/citizen-page-mobile.mjs
+          TEXT_SCALE=2 CITIZEN_PAGE_OUTPUT=/tmp/citizen-page-text200 node testing/citizen-layout/citizen-page-mobile.mjs
       - name: Single mobile address, native bar clicks and retained controllers
         run: |
           node testing/citizen-layout/citizen-single-address.mjs
@@ -124,6 +136,10 @@ jobs:
         with:
           name: synthetic-citizen-layout
           path: |
+            .local/shared-account-header/
+            .local/citizen-page-mobile/
+            /tmp/shared-account-header-text200/
+            /tmp/citizen-page-text200/
             .local/citizen-single-address/
             .local/mobile-shell-tests/
             .local/mobile-shell-prewarm/

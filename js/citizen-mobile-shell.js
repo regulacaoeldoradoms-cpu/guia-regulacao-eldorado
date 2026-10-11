@@ -44,7 +44,7 @@
   };
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
-    'home-mobile-direct', 'citizen-mobile-header', 'pets', 'citizen-mobile-shell']);
+    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
@@ -178,6 +178,16 @@
     for (const node of nodes) root.append(node);
     return root;
   }
+  function desktopBrand(brand) {
+    const clone = brand?.cloneNode(true);
+    // The citizen phone logo is selected before its first network request.
+    // Retained desktop/print brands still use the original native source.
+    clone?.querySelectorAll('img[data-citizen-native-src]').forEach(image => {
+      if (screen.matches && !print.matches) image.removeAttribute('src');
+      else image.src = image.dataset.citizenNativeSrc;
+    });
+    return clone;
+  }
   const firstMain = document.querySelector('main');
   const sharedBrand = document.querySelector('.portal-topbar .portal-brand');
   const brandMarker = document.createComment('Persistent mobile brand');
@@ -189,7 +199,7 @@
   if (initialUrl.pathname === '/' && firstRoot.querySelector('#socialHome')) document.body.dataset.portalHomeBootstrap = '1';
   active = context(initialUrl, firstRoot);
   active.title = document.title;
-  active.desktopBrand = sharedBrand?.cloneNode(true);
+  active.desktopBrand = desktopBrand(sharedBrand);
   active.attributes = bodyState();
   areas.set(routeKey(initialUrl), active);
   document.body.classList.toggle('citizen-mobile-shell', screen.matches && !print.matches);
@@ -272,12 +282,12 @@
       if (/^on/i.test(attr.name) || /^(href|src)$/i.test(attr.name) && /^javascript:/i.test(attr.value)) node.removeAttribute(attr.name);
     }));
     const area = context(url, root); area.active = false; area.title = doc.title;
-    area.desktopBrand = doc.querySelector('.portal-topbar .portal-brand')?.cloneNode(true);
+    area.desktopBrand = desktopBrand(doc.querySelector('.portal-topbar .portal-brand'));
     root.addEventListener('input', () => { area.dirty = true; });
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261011-shared-header-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261011-shared-header-account-1'];
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
       if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
       for (const path of dependencies) {
@@ -285,7 +295,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'home' ? '20261011-shared-header-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'home' ? '20261011-shared-header-account-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
@@ -508,6 +518,9 @@
     if (!sharedBrand || !brandMarker.parentNode) return;
     const next = screen.matches && !print.matches ? sharedBrand : active.desktopBrand;
     if (!next) return;
+    if (next === active.desktopBrand) next.querySelectorAll('img[data-citizen-native-src]').forEach(image => {
+      image.src = image.dataset.citizenNativeSrc;
+    });
     const current = brandMarker.nextSibling;
     if (current !== next) { current?.remove(); brandMarker.after(next); }
   }
