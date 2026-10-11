@@ -4,11 +4,12 @@
 (() => {
   if (window.PortalCitizenShell) return;
   const screen = matchMedia('screen and (max-width: 900px)');
+  const homeAliases = new Set(['/home/', '/index.html']);
   const primaryViews = new Set(['/', '/amigos/', '/perfil/', '/mascotes/']);
   const auth = window.RegulationAuth;
   if (!auth || !screen.matches) return;
   if (!auth.getCachedUser?.()) {
-    if (!primaryViews.has(location.pathname)) return;
+    if (!primaryViews.has(location.pathname) && !homeAliases.has(location.pathname)) return;
     // Entry controllers wait for this gate; a late account must not miss the
     // one-time shell bootstrap and then fall back to rebuilding documents.
     window.PortalCitizenShellReady = auth.requireRole([]).then(initializeShell).catch(() => {});
@@ -52,6 +53,9 @@
   const routeKey = url => url.pathname + url.search;
   const bodyState = () => [...document.body.attributes].filter(attr => attr.name === 'class' || ['data-portal-home-bootstrap', 'data-citizen-mobile-chat-only', 'data-citizen-tab'].includes(attr.name)).map(attr => [attr.name, attr.value]);
   const initialUrl = new URL(location.href);
+  // The login transition can mount the Home document at either legacy alias.
+  // Normalize the internal entry before selecting its controllers and History.
+  if (homeAliases.has(initialUrl.pathname)) initialUrl.pathname = '/';
   if (primaryViews.has(initialUrl.pathname) && initialUrl.pathname !== '/') {
     // Legacy links enter the same Home document before any area controller
     // starts. The fragment is only a one-time, same-origin route handoff.

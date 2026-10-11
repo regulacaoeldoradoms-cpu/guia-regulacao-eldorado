@@ -14,6 +14,10 @@ async function run(id,width,entry,auth,exercise){
  const result={id,checks:[],errors:[]},{page,context,audit}=await newPage(browser,{width,theme:id.includes('light')?'light':'dark',seedOnce:true},server.origin,result);
  const check=(name,value)=>{assert.ok(value,name);result.checks.push(name);};
  try{
+  if(entry.startsWith('/index.html')) await page.route('**/index.html*',async r=>{
+   if(r.request().isNavigationRequest())audit.documents.push(new URL(r.request().url()).pathname);
+   await r.fulfill({contentType:'text/html',body:await fs.readFile(path.join(root,'index.html'),'utf8')});
+  });
   if(auth==='late'){
    const source=await fs.readFile(path.join(root,'js/auth-client.js'),'utf8');
    await page.route('**/js/auth-client.js*',r=>r.fulfill({contentType:'text/javascript',body:"if(!sessionStorage.getItem('__lateFixture')){sessionStorage.removeItem('regulacao.portal.user');sessionStorage.setItem('__lateFixture','1');}\n"+source}));
@@ -48,6 +52,12 @@ try{
   result.laterResources=audit.resources.slice(resources);check('zero route/script requests after preparation',!audit.resources.slice(resources).some(u=>/\/js\/|\/(?:amigos|perfil|mascotes)\/(?:\?|$)/.test(u)));
   check('zero own initial data reads after preparation',!audit.apiCalls.slice(calls).some(u=>/GET \/api\/(?:citizen\/identity|social\/me$|social\/relationships|social\/avatars\/|social\/profiles\/[^/]+\/posts)/.test(u)));
   await context.setOffline(true);await page.locator('.social-mobile-nav a[href="/perfil/"]').click();await area(page,'/perfil/');await continuity(page,check);check('prepared offline switch has no document request',audit.documents.length===docs);
+ });
+ for(const auth of ['cached','late']) await run('home-index-'+auth,390,'/index.html',auth,async(page,context,audit,check)=>{
+  await prepared(page);await owners(page);const docs=audit.documents.length;
+  check('Home index alias canonicalized without another document',new URL(page.url()).pathname==='/'&&docs===1);
+  for(const route of ['/perfil/','/amigos/','/mascotes/','/']){await page.locator(`.social-mobile-nav a[href="${route}"]`).click();await area(page,route);check('alias entry retains Home address after '+route,new URL(page.url()).pathname==='/');}
+  await continuity(page,check);check('alias entry makes zero new document requests',audit.documents.length===docs);
  });
  for(const entry of ['/amigos/','/perfil/','/perfil/?u=fixture.friend','/mascotes/'])await run('legacy-'+entry.replaceAll('/','_'),390,entry,'cached',async(page,context,audit,check)=>{
   await prepared(page);await area(page,entry);check('legacy link restores intended area at Home address',new URL(page.url()).pathname==='/');check('only one initial compatibility redirect',audit.documents.length===2);

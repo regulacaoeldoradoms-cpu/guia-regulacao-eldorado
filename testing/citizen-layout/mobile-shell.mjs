@@ -245,22 +245,24 @@ try {
     check('logout has one native request', audit.apiCalls.filter(call => call === 'POST /api/auth/logout').length === 1);
     check('login document contains no retained route/pet/chat data', await page.evaluate(() => !window.PortalCitizenShell && !window.PortalPets && !document.getElementById('portalChatRoot')));
   });
-  await run('login-home-handoff', 390, '/', async (page, audit, check) => {
+  for (const destination of ['/', '/home/', '/index.html']) await run('login-home-handoff' + (destination === '/' ? '' : destination.replaceAll('/', '-')), 390, '/', async (page, audit, check) => {
     const seed = await page.evaluate(() => ({token:window.RegulationAuth.getToken(),user:window.RegulationAuth.getCachedUser()}));
     // End through the native session boundary before mounting Login. Removing
     // storage directly races the real background auth gate's login redirect.
     await page.evaluate(() => window.RegulationAuth.clearSession());
     await page.waitForURL('**/login/**', { waitUntil:'domcontentloaded' });
     await page.locator('#loginForm').waitFor();
-    const result = await page.evaluate(async seed => {
+    const result = await page.evaluate(async ({seed,destination}) => {
       sessionStorage.setItem('regulacao.portal.session',seed.token); sessionStorage.setItem('regulacao.portal.user',JSON.stringify(seed.user));
       const before=window.__refinementDocument, cover=document.createElement('div'); document.body.append(cover);
-      const transition=window.PortalHomeTransition.prepare('/');
+      const transition=window.PortalHomeTransition.prepare(destination);
       const mounted=await transition.mount(cover); transition.reveal(); cover.remove();
       return {mounted,sameDocument:before===window.__refinementDocument};
-    },seed);
+    },{seed,destination});
     check('allowlisted login handoff mounts citizen Home', result.mounted && result.sameDocument);
-    await ready(page,'/'); await go(page,'/amigos/'); await go(page,'/');
+    await ready(page,'/'); await go(page,'/amigos/');
+    check('Home aliases use the canonical public address', new URL(page.url()).pathname === '/');
+    await go(page,'/');
     check('handoff supports retained Home journey', audit.documents.length===2);
   });
 } finally {
