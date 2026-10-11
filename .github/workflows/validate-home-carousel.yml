@@ -81,6 +81,11 @@ jobs:
           export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
           node testing/citizen-layout/mobile-shell.mjs
           node testing/citizen-layout/mobile-shell-regressions.mjs
+      - name: Citizen first prepared activation and failure boundaries
+        if: always()
+        run: |
+          export CHROMIUM_PATH=$(node --input-type=module -e "import {chromium} from './testing/browser/node_modules/playwright/index.mjs';process.stdout.write(chromium.executablePath())")
+          node testing/citizen-layout/mobile-shell-prewarm.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -90,3 +95,4 @@ jobs:
             /tmp/home-social-scenes-*/
             .local/mobile-shell-tests/
             .local/mobile-shell-regressions/
+            .local/mobile-shell-prewarm/

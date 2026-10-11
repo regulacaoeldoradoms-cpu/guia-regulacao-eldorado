@@ -13,7 +13,8 @@
   });
 
   async function mount(options = {}) {
-    const document = options.root ? window.PortalCitizenShell.active().document : window.document;
+    const document = options.document || (options.root ? window.PortalCitizenShell.active().document : window.document);
+    const route = options.route || location;
     const auth = window.RegulationAuth;
     if (!auth) return null;
     const onSecurityRoute = location.pathname === '/seguranca/' || location.pathname.startsWith('/seguranca/');
@@ -32,7 +33,7 @@
     if (options.isCurrent && !options.isCurrent()) return null;
 
     // Citizen layout assets are owned separately from the concurrent pet runtime.
-    if (location.pathname === '/mascotes/') {
+    if (route.pathname === '/mascotes/' && (!options.root || options.root.isConnected)) {
       document.body.classList.add('citizen-readable-layout');
       if (!document.getElementById('citizenReadableStyles')) {
         const styles = document.createElement('link');
@@ -41,7 +42,7 @@
         styles.href = '/css/citizen-readable-layout.css?v=20261009-2';
         document.head.appendChild(styles);
         const layout = document.createElement('script');
-        layout.src = '/js/citizen-layout.js?v=20261010-mobile-shell-1';
+        layout.src = '/js/citizen-layout.js?v=20261010-citizen-prewarm-1';
         document.head.appendChild(layout);
       }
     }

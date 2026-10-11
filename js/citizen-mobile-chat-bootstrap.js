@@ -35,7 +35,7 @@ export function mountCitizenMobileChatBootstrap(directController) {
     if (started) return;
     started = true;
     window.PortalCitizenMobileChatReady = (async () => {
-      await import('/js/portal-global-chat.js?v=20261010-mobile-shell-1');
+      if (!window.PortalGlobalChat) await import('/js/portal-global-chat.js?v=20261010-mobile-shell-1');
       const ready = Boolean(await window.PortalGlobalChat?.start());
       // Also reconcile a resize while the native assets were loading.
       sync();

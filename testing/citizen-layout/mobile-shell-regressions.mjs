@@ -19,11 +19,14 @@ async function run(id,setup,exercise){
 }
 try{
  await run('cache-protected',null,async(page,context,audit,check)=>{
-  for(let i=0;i<15;i++){await go(page,'/perfil/?draft='+i);await page.locator('#profileEditBio').fill('draft-'+i);}
-  check('cache reaches16 including Home',await page.evaluate(()=>window.PortalCitizenShell.diagnostics().routes===16));
+  // Prepared Mascotes and Home reserve two protected slots; remaining clean
+  // prepared areas must be evicted before any edited profile can be lost.
+  await page.waitForFunction(()=>window.PortalCitizenShell.diagnostics().ready.includes('/mascotes/')&&!window.PortalCitizenShell.diagnostics().prewarming);
+  for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);await page.locator('#profileEditBio').fill('draft-'+i);}
+  check('cache reaches16 including protected Home and Mascotes',await page.evaluate(()=>window.PortalCitizenShell.diagnostics().routes===16));
   await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/perfil/?draft=overflow',location.href)));
-  check('overflow explicitly refused without changing area',await page.evaluate(()=>location.search==='?draft=14'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));
-  for(let i=0;i<15;i++){await go(page,'/perfil/?draft='+i);check('protected draft '+i+' retained',await page.locator('#profileEditBio').inputValue()==='draft-'+i);}
+  check('overflow explicitly refused without changing area',await page.evaluate(()=>location.search==='?draft=13'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));
+  for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);check('protected draft '+i+' retained',await page.locator('#profileEditBio').inputValue()==='draft-'+i);}
   check('no document reload under saturation',audit.documents.length===1);
  });
  await run('cache-clean-eviction',null,async(page,context,audit,check)=>{
@@ -69,6 +72,13 @@ try{
    window.__updaterClock={advance:async ms=>{const end=now+ms;while(true){const next=[...jobs].filter(([,job])=>job.due<=end).sort((a,b)=>a[1].due-b[1].due)[0];if(!next)break;jobs.delete(next[0]);now=next[1].due;await next[1].fn();}now=end;},pending:()=>[...jobs.values()].map(j=>j.due-now)};
   });
  },async(page,context,audit,check)=>{
+  // Route startup also reads social/config. Finish the independent preparation
+  // before counting the updater's requests; its synthetic clock has not moved.
+  await page.waitForFunction(()=>{
+   const state=window.PortalCitizenShell.diagnostics();
+   return !state.prewarming&&['/amigos/','/perfil/','/mascotes/','/notificacoes/'].every(path=>state.ready.includes(path));
+  });
+  await page.waitForLoadState('networkidle');
   let calls=0,fail=false,hold=false,release;
   await page.route('**/api/social/config',async route=>{calls++;if(hold){hold=false;await new Promise(resolve=>{release=resolve;});}return route.fulfill({status:fail?503:200,contentType:'application/json',body:JSON.stringify(fail?{error:'synthetic failure'}:{available:true,backendEnabled:true,homeEnabled:true,unreadSocialNotifications:0})});});
   await page.evaluate(()=>window.__updaterClock.advance(999));check('initial updater does not run before1s',calls===0);

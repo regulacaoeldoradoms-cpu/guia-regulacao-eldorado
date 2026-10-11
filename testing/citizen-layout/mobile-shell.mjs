@@ -50,6 +50,7 @@ try {
       window.__shellNodes = { nav:document.querySelector('.social-mobile-nav'), chat:document.getElementById('portalChatRoot'), launcher:document.getElementById('portalChatLauncher'), pet:window.PortalPets.runtime, root:window.PortalPets.runtime.root, tabId:window.PortalPets.runtime.tabId, document:window.__refinementDocument };
       document.getElementById('socialComposerText').value = 'Rascunho sintético preservado';
       window.scrollTo(0, 240); window.__homeY = scrollY;
+      document.addEventListener('click', () => { window.__leave = {y:scrollY,body:document.body.className,nav:getComputedStyle(document.querySelector('.social-mobile-nav')).position}; }, {capture:true,once:true});
     });
     await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
     await page.waitForFunction(() => !window.PortalCitizenShell.diagnostics().navigating && location.pathname === '/amigos/');
@@ -62,7 +63,8 @@ try {
     check('pet occupies active habitat', await page.evaluate(() => window.PortalPets.runtime.root.parentNode === document.getElementById('petHabitat')));
     await go(page, '/');
     check('home feed draft retained', await page.locator('#socialComposerText').inputValue() === 'Rascunho sintético preservado');
-    check('home scroll restored', await page.evaluate(() => Math.abs(scrollY - window.__homeY) < 3));
+    const scroll = await page.evaluate(() => ({actual:scrollY,saved:window.__homeY,retained:window.PortalCitizenShell.active().scroll,leave:window.__leave}));
+    check('home scroll restored '+JSON.stringify(scroll), Math.abs(scroll.actual-scroll.saved) < 3);
     check('shared document/bar/chat/pet identity', await page.evaluate(() => {
       const old = window.__shellNodes;
       return old.document === window.__refinementDocument && old.nav === document.querySelector('.social-mobile-nav') && old.chat === document.getElementById('portalChatRoot') && old.launcher === document.getElementById('portalChatLauncher') && old.pet === window.PortalPets.runtime && old.root === window.PortalPets.runtime.root && old.tabId === window.PortalPets.runtime.tabId;
@@ -161,6 +163,13 @@ try {
     });
     await page.route('**/api/social/notifications*', route => route.fulfill({ contentType:'application/json', body:JSON.stringify({ notifications, nextCursor:'' }) }));
     await go(page, '/notificacoes/');
+    // The updater has its own offline contract. Finish route startup reads
+    // before measuring it; an already preparing area may still settle its data.
+    await page.waitForFunction(() => {
+      const state = window.PortalCitizenShell.diagnostics();
+      return !state.prewarming && ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'].every(path => state.ready.includes(path));
+    });
+    await page.waitForLoadState('networkidle');
     notifications = [{ id:900, type:'relationship_requested', text:'há uma atualização sintética', createdAt:'2026-10-10T16:00:00Z', read:false }]; unread = 1;
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await page.locator('#socialNotificationList [data-notification-id="900"]').waitFor();
@@ -238,8 +247,10 @@ try {
   });
   await run('login-home-handoff', 390, '/', async (page, audit, check) => {
     const seed = await page.evaluate(() => ({token:window.RegulationAuth.getToken(),user:window.RegulationAuth.getCachedUser()}));
-    await page.evaluate(() => { sessionStorage.removeItem('regulacao.portal.session'); sessionStorage.removeItem('regulacao.portal.user'); });
-    await page.goto(server.origin + '/login/', {waitUntil:'domcontentloaded'});
+    // End through the native session boundary before mounting Login. Removing
+    // storage directly races the real background auth gate's login redirect.
+    await page.evaluate(() => window.RegulationAuth.clearSession());
+    await page.waitForURL('**/login/**', { waitUntil:'domcontentloaded' });
     await page.locator('#loginForm').waitFor();
     const result = await page.evaluate(async seed => {
       sessionStorage.setItem('regulacao.portal.session',seed.token); sessionStorage.setItem('regulacao.portal.user',JSON.stringify(seed.user));

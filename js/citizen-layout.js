@@ -128,7 +128,7 @@
         import(`/js/citizen-mobile-navigation.js?v=${version}`),
         import(`/js/home-mobile-direct.js?v=${version}`),
         profileRoute ? import(`/js/profile-mobile-presentation.js?v=${version}`) : null,
-        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=${version}`) : null,
+        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=20261010-citizen-prewarm-1`) : null,
         loadStyle('/css/citizen-mobile-navigation.css'),
         loadStyle('/css/home-mobile-direct.css'),
         profileRoute ? loadStyle('/css/profile-mobile-presentation.css') : null
@@ -179,11 +179,19 @@
       profile.mountProfileMobilePresentation()?.sync();
     } else window[Symbol.for('portal.profileMobilePresentation')]?.sync();
     if (location.pathname === '/mascotes/') {
-      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=${version}`);
+      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261010-citizen-prewarm-1`);
       chat.mountCitizenMobileChatBootstrap(window[Symbol.for('portal.homeMobileDirect')]);
     }
   }
-  window.PortalCitizenLayout = Object.freeze({ apply, enterRoute });
+  async function prepareRoute(path) {
+    await window.PortalCitizenMobileReady;
+    if (path === '/perfil/') await Promise.all([
+      import(`/js/profile-mobile-presentation.js?v=${version}`),
+      loadStyle('/css/profile-mobile-presentation.css')
+    ]);
+    if (path === '/mascotes/') await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261010-citizen-prewarm-1`);
+  }
+  window.PortalCitizenLayout = Object.freeze({ apply, enterRoute, prepareRoute });
   apply(window.RegulationAuth?.getCachedUser?.() || cached());
   new MutationObserver(petNavigation).observe(document.body, {
     childList: true,

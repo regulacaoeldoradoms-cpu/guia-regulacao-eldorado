@@ -67,6 +67,10 @@ export async function installAuditFixture(context, { theme='dark', authenticated
       data={security,user};
     }
     else if (url.pathname === '/api/auth/settings') data = { user };
+    // Citizen mobile startup prepares the current user's profile in the
+    // background. Model only its read; identity mutations remain fail-closed.
+    else if (url.pathname === '/api/citizen/identity' && request.method() === 'GET')
+      data = {identity:{displayName:user.name,handle:user.username,canChangeHandle:true}};
     else if (url.pathname === '/api/auth/change-password') data = {user:{...user,mustChangePassword:false},token:'synthetic-audit-token-no-backend'};
     else if (url.pathname === '/api/auth/email/send-verification') data = {ok:true,message:'Verificação fictícia preparada localmente.'};
     else if (url.pathname === '/api/admin/users') data = { users:[user] };

@@ -23,10 +23,15 @@
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
     'home-mobile-direct', 'pets', 'citizen-mobile-shell']);
-  const factories = new Map(), areas = new Map(), resources = new Map();
+  const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
+  const styleMedia = new WeakMap();
+  const preparationAbort = new AbortController();
+  const primaryRoutes = ['/', '/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'];
+  const backgroundControllers = new Set(['/amigos/', '/perfil/', '/notificacoes/', '/mascotes/']);
+  let prewarming = false, prewarmTimer = 0;
   const sessionToken = window.RegulationAuth.getToken();
   const sessionIdentity = String(user.id || user.username || '');
-  let active, ended = false, navigating = false, wanted = null;
+  let active, ended = false, navigating = false, navigationKey = null, wanted = null;
   const valid = () => !ended && window.RegulationAuth?.getToken?.() === sessionToken;
   const enabled = () => valid() && screen.matches && !print.matches;
   const routeKey = url => url.pathname + url.search;
@@ -79,7 +84,8 @@
     state.window = new Proxy(window, { get(target, key) {
       if (key in winEvents) return winEvents[key];
       if (key === 'PortalSocial') return state.social;
-      if (key === 'PortalAccountSection' && target[key]) return { ...target[key], mount: options => target[key].mount({ ...options, navigation: document.querySelector('.social-mobile-nav') ? false : options?.navigation, root, isCurrent: () => state.active && valid() }) };
+      if (key === 'PortalSocialNavigation' && target[key]) return { ...target[key], mount: (...args) => { if (state.active && valid()) return target[key].mount(...args); } };
+      if (key === 'PortalAccountSection' && target[key]) return { ...target[key], mount: options => target[key].mount({ ...options, navigation: state.active && !document.querySelector('.social-mobile-nav') ? options?.navigation : false, root, document: state.document, route: state.url, isCurrent: () => !state.disposed && valid() }) };
       if (key === 'setTimeout') return (fn, delay, ...args) => {
         const id = target.setTimeout(() => { state.timers.delete(id); if (valid() && !state.disposed && state.active) fn(...args); }, delay);
         state.timers.add(id); return id;
@@ -137,15 +143,23 @@
 
   const name = href => new URL(href, location.href).pathname.split('/').pop().replace(/\.css$/, '');
   for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
-    if (!sharedStyles.has(name(link.href))) active.styles.push(link);
+    if (!sharedStyles.has(name(link.href))) { styleMedia.set(link, link.media); active.styles.push(link); }
   }
   function loadScript(path, module = false) {
     if (resources.has(path)) return resources.get(path);
     const promise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
+      const finish = error => {
+        clearTimeout(timeout);
+        preparationAbort.signal.removeEventListener('abort', aborted);
+        if (error) { script.remove(); reject(error); } else resolve();
+      };
+      const aborted = () => finish(new DOMException('Sessão encerrada', 'AbortError'));
+      const timeout = setTimeout(() => finish(new Error('Não foi possível carregar esta área.')), 15000);
+      preparationAbort.signal.addEventListener('abort', aborted, { once:true });
       if (module) script.type = 'module';
-      script.src = path; script.onload = resolve;
-      script.onerror = () => { script.remove(); reject(new Error('Não foi possível carregar esta área.')); };
+      script.src = path; script.onload = () => finish();
+      script.onerror = () => finish(new Error('Não foi possível carregar esta área.'));
       document.head.append(script);
     }).catch(error => { resources.delete(path); throw error; });
     resources.set(path, promise); return promise;
@@ -154,31 +168,47 @@
     await Promise.all([...doc.querySelectorAll('link[rel="stylesheet"]')].map(async source => {
       if (sharedStyles.has(name(source.href))) return;
       const href = new URL(source.getAttribute('href'), location.origin).href;
+      const key = 'css:' + href;
       let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
       if (!link) {
-        link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href;
-        await new Promise((resolve, reject) => {
+        link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; link.media = 'not all';
+        styleMedia.set(link, '');
+        const loading = new Promise((resolve, reject) => {
           const timeout = setTimeout(() => { link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); }, 15000);
           link.onload = () => { clearTimeout(timeout); resolve(); };
           link.onerror = () => { clearTimeout(timeout); link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); };
           document.head.append(link);
-        });
-        link.disabled = true;
+        }).catch(error => { resources.delete(key); throw error; });
+        resources.set(key, loading);
       }
+      if (resources.has(key)) await resources.get(key);
+      if (!styleMedia.has(link)) styleMedia.set(link, link.media);
       area.styles.push(link);
     }));
   }
   async function prepare(url) {
     const key = routeKey(url);
     if (areas.has(key)) return areas.get(key);
-    if (areas.size >= 16) {
-      const removable = [...areas.values()].find(area => area !== active && !area.dirty && !['/', '/mascotes/'].includes(area.url.pathname));
-      if (!removable) throw new Error('Conclua os rascunhos abertos antes de abrir outro perfil.');
-      areas.delete(routeKey(removable.url)); removable.dispose();
-    }
-    const response = await fetch(url.pathname + url.search, { credentials: 'same-origin' });
-    if (!response.ok || !valid()) throw new Error('Não foi possível abrir esta área. Tente novamente.');
-    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+    if (preparations.has(key)) return preparations.get(key);
+    const pending = buildArea(url).finally(() => preparations.delete(key));
+    preparations.set(key, pending);
+    return pending;
+  }
+  async function buildArea(url) {
+    const key = routeKey(url);
+    makeRoom(false);
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    preparationAbort.signal.addEventListener('abort', abort, { once:true });
+    const timeout = setTimeout(abort, 15000);
+    let markup;
+    try {
+      if (!valid()) throw new DOMException('Sessão encerrada', 'AbortError');
+      const response = await fetch(url.pathname + url.search, { credentials: 'same-origin', signal: controller.signal });
+      if (!response.ok || !valid()) throw new Error('Não foi possível abrir esta área. Tente novamente.');
+      markup = await response.text();
+    } finally { clearTimeout(timeout); preparationAbort.signal.removeEventListener('abort', abort); }
+    const doc = new DOMParser().parseFromString(markup, 'text/html');
     const root = adopt(doc);
     // Only known repository markup is mounted. Executable attributes/scripts are excluded.
     root.querySelectorAll('script, iframe, object, embed').forEach(node => node.remove());
@@ -189,8 +219,9 @@
     area.desktopBrand = doc.querySelector('.portal-topbar .portal-brand')?.cloneNode(true);
     root.addEventListener('input', () => { area.dirty = true; });
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
+    try {
     await styles(doc, area);
-    const dependencies = ['/js/account-section-shell.js?v=20261010-mobile-shell-1'];
+    const dependencies = ['/js/account-section-shell.js?v=20261010-citizen-prewarm-1'];
     if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
     if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
     for (const path of dependencies) {
@@ -198,10 +229,72 @@
       if (!api) await loadScript(path);
     }
     for (const entry of entries[url.pathname]) {
-      if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=20261010-mobile-shell-1`, entry.startsWith('pets-'));
+      if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=20261010-citizen-prewarm-1`, entry.startsWith('pets-'));
     }
     if (!valid()) { area.dispose(); throw new DOMException('Sessão encerrada', 'AbortError'); }
+    // Fetches can finish after another route filled the last cache slot.
+    // Admission, not request start, owns the strict memory bound.
+    makeRoom();
     areas.set(key, area); return area;
+    } catch (error) { area.dispose(); throw error; }
+  }
+  function makeRoom(evict = true) {
+    if (areas.size >= 16) {
+      const removable = [...areas.values()].find(area => area !== active && routeKey(area.url) !== navigationKey && !area.dirty && !['/', '/mascotes/'].includes(area.url.pathname));
+      if (!removable) throw new Error('Conclua os rascunhos abertos antes de abrir outro perfil.');
+      if (evict) { areas.delete(routeKey(removable.url)); removable.dispose(); }
+    }
+  }
+
+  function initialize(area) {
+    if (area.initialized) return area.ready;
+    area.initialized = true;
+    area.ready = (async () => {
+      for (const entry of entries[area.url.pathname]) {
+        const pending = factories.get(entry)?.(area);
+        if (entry === 'home') window.PortalHomeReady = Promise.resolve(pending);
+        await pending;
+      }
+      area.loaded = true;
+    })().catch(error => { area.failed = true; throw error; });
+    return area.ready;
+  }
+
+  // One background area at a time, only after the initial document is ready.
+  // This is session memory; it never expands access or visits arbitrary profiles.
+  async function prewarm() {
+    prewarmTimer = 0;
+    if (prewarming || !enabled() || document.hidden || !navigator.onLine || navigating) return;
+    prewarming = true;
+    try {
+      if (!entries[initialUrl.pathname].every(entry => factories.has(entry))) return;
+      await active.ready;
+      active.loaded = true;
+      const user = await window.RegulationAuth.requireRole([]);
+      if (!valid() || user?.role !== 'cidadao' || user.mustChangePassword) return;
+      await window.PortalCitizenMobileReady;
+      await window.PortalCitizenMobileChatReady;
+      // Finish the existing shared Chat owner; do not create a second runtime
+      // or leave its deferred script chain to overlap the first prepared tap.
+      await window.PortalGlobalChat?.start?.();
+      for (const path of primaryRoutes) {
+        if (!enabled() || document.hidden || !navigator.onLine || navigating) break;
+        let area;
+        try {
+          area = await prepare(new URL(path, location.origin));
+          await window.PortalCitizenLayout?.prepareRoute?.(path);
+          if (area !== active && backgroundControllers.has(path)) await initialize(area);
+        } catch (_) {
+          // Background failure is silent. A tap retains the normal retry path.
+          if (area?.failed && area !== active) { if (areas.get(path) === area) areas.delete(path); area.dispose(); }
+        }
+      }
+    } catch (_) { /* Session/access failure leaves the current native gate in charge. */ }
+    finally { prewarming = false; }
+  }
+  function schedulePrewarm() {
+    if (!valid() || document.readyState !== 'complete' || prewarmTimer || prewarming) return;
+    prewarmTimer = setTimeout(prewarm, 250);
   }
 
   function activate(area) {
@@ -219,7 +312,7 @@
     for (const [key, value] of area.attributes) if (key.startsWith('data-')) document.body.setAttribute(key, value);
     document.title = area.title;
     syncBrand();
-    area.styles.forEach(link => { link.disabled = false; });
+    area.styles.forEach(link => { link.disabled = false; link.media = styleMedia.get(link) || ''; });
     area.active = true; marker.after(area.root);
     window.PortalPets?.runtime?.attachHabitat?.(area.root.querySelector('#petHabitat'));
     area.dialogs?.forEach(dialog => { if (dialog.isConnected && !dialog.open) dialog.showModal(); });
@@ -237,7 +330,9 @@
     if (area.root.contains(window.PortalPets?.runtime?.root)) window.PortalPets.runtime.attachHabitat(null);
     window.PortalSocialFeed?.suspend?.(area.root.querySelector('#socialFeedMore, #profilePostsMore'));
     area.active = false; area.root.remove();
-    area.styles.forEach(link => { link.disabled = true; });
+    // Keep parsed stylesheets resident: disabling a link can refetch it on
+    // return and reflow after scroll restoration, especially with no-store.
+    area.styles.forEach(link => { link.media = 'not all'; });
   }
   function updateNavigation() {
     document.querySelectorAll('.social-mobile-nav a, .social-global-nav a').forEach(link => {
@@ -259,7 +354,9 @@
   async function navigate(url, pop = false) {
     if (!entries[url.pathname] || !valid() || !pop && !enabled()) return false;
     if (navigating) { wanted = { url, pop }; return true; }
-    navigating = true; notice.hidden = false; notice.textContent = 'Carregando…';
+    navigating = true; navigationKey = routeKey(url);
+    const retained = areas.get(routeKey(url));
+    notice.hidden = Boolean(retained?.loaded && !retained.failed); notice.textContent = 'Carregando…';
     notice.setAttribute('aria-busy', 'true');
     const previous = active;
     let previousHistory;
@@ -279,18 +376,7 @@
       history.replaceState({ ...history.state, [KEY]:routeKey(url), __portalHomeDirect:undefined }, '', url.pathname + url.search + url.hash);
       activate(area);
       await window.PortalCitizenLayout?.enterRoute?.();
-      if (!area.initialized) {
-        area.initialized = true;
-        area.ready = (async () => {
-          for (const entry of entries[url.pathname]) {
-            const pending = factories.get(entry)?.(area);
-            if (entry === 'home') window.PortalHomeReady = Promise.resolve(pending);
-            await pending;
-          }
-        })();
-        try { await area.ready; }
-        catch (error) { area.failed = true; throw error; }
-      }
+      await initialize(area);
       const destination = active.url;
       const destinationState = { ...history.state, [KEY]:routeKey(destination) };
       if (!pop && !wanted?.pop) {
@@ -320,8 +406,9 @@
       const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Tentar novamente';
       retry.addEventListener('click', () => navigate(url, pop), { once: true }); notice.append(retry);
     } finally {
-      notice.setAttribute('aria-busy', 'false'); navigating = false;
+      notice.setAttribute('aria-busy', 'false'); navigating = false; navigationKey = null;
       const next = wanted; wanted = null; if (next && valid()) void navigate(next.url, next.pop);
+      else schedulePrewarm();
     }
     return true;
   }
@@ -354,6 +441,7 @@
   window.addEventListener('afterprint', syncMedia);
   function dispose() {
     if (ended) return; ended = true; wanted = null;
+    clearTimeout(prewarmTimer); preparationAbort.abort();
     areas.forEach(area => area.dispose()); areas.clear(); notice.remove();
     window.PortalSocialFeed?.clear?.();
     clearTimeout(updateTimer); updateController?.abort();
@@ -375,7 +463,7 @@
     }
   });
   window.PortalCitizenShell = Object.freeze({
-    enabled, active: () => active, updateNavigation, navigate,
+    version:'20261010-citizen-prewarm-1', enabled, active: () => active, updateNavigation, navigate,
     canonicalize(path) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;
@@ -383,15 +471,19 @@
       history.replaceState({ ...history.state, [KEY]: routeKey(url) }, '', url.pathname + url.search + url.hash);
     },
     register(entry, initialize) {
+      if (!valid()) return Promise.resolve();
       factories.set(entry, initialize);
       if (entries[initialUrl.pathname].includes(entry)) {
         const ready = Promise.resolve().then(() => initialize(active));
         active.ready = Promise.all([active.ready, ready]); active.initialized = true;
+        active.ready.then(schedulePrewarm, () => {});
         return ready;
       }
       return Promise.resolve();
     },
-    diagnostics: () => ({ routes: areas.size, active: routeKey(active.url), navigating, ended, updateScheduled: Boolean(updateTimer), updateRunning })
+    diagnostics: () => ({ routes: areas.size, active: routeKey(active.url), navigating, ended, prewarming,
+      prepared: primaryRoutes.filter(path => areas.has(path)), ready: primaryRoutes.filter(path => areas.get(path)?.loaded && !areas.get(path)?.failed),
+      updateScheduled: Boolean(updateTimer), updateRunning })
   });
   const logout = document.getElementById('portalLogout');
   if (logout) {
@@ -439,4 +531,8 @@
   window.addEventListener('offline', resumeUpdates);
   window.addEventListener('focus', resumeUpdates);
   active.ready.then(startUpdates);
+  if (document.readyState === 'complete') schedulePrewarm();
+  else window.addEventListener('load', schedulePrewarm, { once: true });
+  document.addEventListener('visibilitychange', schedulePrewarm);
+  window.addEventListener('online', schedulePrewarm);
 })();
