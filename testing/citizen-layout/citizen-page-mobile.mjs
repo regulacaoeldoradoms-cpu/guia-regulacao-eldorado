@@ -11,6 +11,26 @@ const rows=[];await fs.mkdir(output,{recursive:true});
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',args:['--no-sandbox']});
 async function active(page,route){await page.waitForFunction(route=>PortalCitizenShell.active().url.pathname===route && !PortalCitizenShell.diagnostics().navigating,route);await ready(page,route);await settle(page);}
 async function noOverflow(page,selector){const result=await page.locator(selector).evaluate(e=>({scroll:e.scrollWidth,width:e.clientWidth}));assert.ok(result.scroll<=result.width+1,`${selector} overflows: ${JSON.stringify(result)}`);}
+async function accountHelp(page,result,entry){
+  const help=page.locator('.citizen-account-help'),summary=help.locator(':scope > summary'),notice=help.locator('#accountEvolutionNotice');
+  await help.waitFor({state:'visible'});assert.equal(await summary.textContent(),'Sobre sua conta e privacidade');
+  assert.equal(await help.evaluate(e=>e.tagName),'DETAILS');assert.equal(await summary.evaluate(e=>e.tagName),'SUMMARY');
+  if(await help.evaluate(e=>e.open))await summary.click();
+  assert.ok(!await notice.isVisible());
+  for(let cycle=0;cycle<3;cycle++){
+    await summary.click();assert.ok(await help.evaluate(e=>e.open));await notice.waitFor({state:'visible'});
+    assert.match(await notice.textContent(),/Conta Prata.*e-mail.*confirmado.*identidade sigilosa.*identificar ao Conselho.*e-mail continua protegido/s);
+    const geometry=await help.evaluate(e=>{const n=e.querySelector('#accountEvolutionNotice'),s=e.querySelector('summary'),r=n.getBoundingClientRect(),h=e.getBoundingClientRect();return{height:r.height,top:r.top,summaryBottom:s.getBoundingClientRect().bottom,bottom:r.bottom,helpBottom:h.bottom,scroll:n.scrollHeight,client:n.clientHeight,overflow:getComputedStyle(e).overflowY};});
+    assert.ok(geometry.height>100&&geometry.top>=geometry.summaryBottom-1&&geometry.bottom<=geometry.helpBottom+1,'Full explanation appears below summary inside expanded disclosure');
+    assert.ok(geometry.scroll<=geometry.client+1,'Explanation is not vertically clipped');await noOverflow(page,'html');await noOverflow(page,'.citizen-account-help');
+    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+    assert.ok(await notice.evaluate(n=>n.getBoundingClientRect().bottom<=document.querySelector('.social-mobile-nav').getBoundingClientRect().top+1),'Last line remains reachable above persistent navigation at page end');
+    if(cycle===0)await page.screenshot({path:path.join(output,`${result.theme}-${result.width}-${entry}-help-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
+    await summary.click();assert.ok(!await help.evaluate(e=>e.open));assert.ok(!await notice.isVisible());
+  }
+  await summary.focus();assert.ok(await summary.evaluate(e=>e===document.activeElement));await page.keyboard.press('Enter');assert.ok(await help.evaluate(e=>e.open));assert.ok(await notice.isVisible());await page.keyboard.press('Space');assert.ok(!await help.evaluate(e=>e.open));assert.ok(!await notice.isVisible());
+  result.accountHelp ||= [];result.accountHelp.push({entry,cycles:3,keyboard:'native Enter opens / Space closes',visibleContent:true});
+}
 try{
   for(const theme of ['light','dark'])for(const width of (process.env.WIDTHS || '320,360,390').split(',').map(Number)){
     const result={theme,width,errors:[],writes:[]};const {page,context,audit}=await newPage(browser,{theme,width},server.origin,result);
@@ -32,6 +52,7 @@ try{
       const action=await page.locator('#openNewManifestation').boundingBox();assert.ok(action.height>=48);if(process.env.TEXT_SCALE!=='2')assert.ok(action.y+action.height<700,'Main action is reachable in the first screen');
       await page.locator('#homeAccountMenu > summary').click();await page.locator('#portalLogout').waitFor({state:'visible'});await page.keyboard.press('Escape');assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open));
       await page.screenshot({path:path.join(output,`${theme}-${width}-page-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
+      await accountHelp(page,result,'direct');
       await page.locator('#openNewManifestation').click();await page.locator('#newManifestationModal.open').waitFor();await noOverflow(page,'#newManifestationModal .citizen-modal-panel');assert.equal(await page.locator('#newManifestationModal .citizen-modal-head').evaluate(e=>getComputedStyle(e).position),'static','Expanded title scrolls with form instead of covering fields');
       await page.locator('.manifestation-type-card').filter({has:page.locator('input[value="sugestao"]')}).click();assert.ok(await page.locator('input[name=manifestationType][value=sugestao]').isChecked());
       await page.locator('#manifestationSubject').fill('Rascunho sintético preservado');await page.locator('#manifestationDescription').fill('Relato fictício sem envio de informações ao serviço.');
@@ -49,7 +70,9 @@ try{
       await page.locator('.social-mobile-nav a[href="/perfil/"]').click();await active(page,'/perfil/');assert.ok(!await page.locator('body').evaluate(e=>e.classList.contains('citizen-mobile-presentation')));
       await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href)));await active(page,'/cidadao/');assert.equal(await page.locator('#manifestationSubject').inputValue(),'Rascunho sintético preservado');assert.ok(await page.locator('input[name=manifestationPrivacy][value=identificada]').isChecked());
       assert.equal(await page.evaluate(()=>location.pathname),'/cidadao/');assert.ok(await page.evaluate(()=>{const o=window.__citizenOwners;return o.document===document && o.header===document.querySelector('.portal-topbar') && o.nav===document.querySelector('.social-mobile-nav') && o.form===document.getElementById('newManifestationForm') && o.controller===window[Symbol.for('portal.citizenMobilePresentation')];}));assert.equal(audit.documents.length,docs);
+      await applyTextScale(page);await accountHelp(page,result,'shell-return');
       assert.deepEqual(result.writes,[{pathname:'/api/council/notifications',method:'PATCH'}],'Native read action executes once; no manifestation is submitted');assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);
+      await page.goto(server.origin+'/');await active(page,'/');await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href)));await active(page,'/cidadao/');await applyTextScale(page);await accountHelp(page,result,'shell-new');assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);
       rows.push(result);console.log(JSON.stringify({theme,width,errors:result.errors,writes:result.writes}));
     }finally{await context.close();await fs.writeFile(path.join(output,'results.json'),JSON.stringify(rows,null,2));}
   }
