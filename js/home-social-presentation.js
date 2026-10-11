@@ -354,7 +354,7 @@ export function mountHomeSocialPresentation(user, context) {
     document.body.classList.toggle('home-social-presentation', routeActive);
     document.body.classList.toggle('home-social-mobile', mobile);
     if (mobile) {
-      setText(title, 'Regulação');
+      setText(title, 'Portal da regulação');
       setText(subtitle, 'Eldorado/MS');
     } else if (changing) {
       title?.replaceChildren(...titleNodes);

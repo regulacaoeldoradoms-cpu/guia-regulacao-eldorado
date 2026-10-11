@@ -66,7 +66,7 @@ export function mountProfileMobilePresentation() {
       if ([account, logout].some(node => node?.contains(focused))) menu.open = true;
       move(logout, panel);
       move(account, panel, panel.firstChild);
-      if (title && title.textContent !== 'Regulação') title.textContent = 'Regulação';
+      if (title && title.textContent !== 'Portal da regulação') title.textContent = 'Portal da regulação';
     } else {
       // Restore first so a focused native control is never hidden mid-move.
       restore(account);

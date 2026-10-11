@@ -14,7 +14,7 @@ body.citizen-readable-layout.home-social-mobile {
 }
 body.home-social-mobile :is(.home-account-menu, .home-composer-prompt, .home-composer-panel, .home-composer-warning, .home-post-menu, .home-tools-options, .home-tools-strip)[hidden] { display: none !important; }
 body.citizen-readable-layout.home-social-mobile .portal-topbar { position: sticky !important; top: 0; z-index: 60 !important; background: var(--home-surface) !important; border-bottom: 1px solid var(--home-line); box-shadow: none !important; }
-body.citizen-readable-layout.home-social-mobile .portal-topbar-inner { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; justify-content: space-between; gap: 12px !important; min-height: 56px; padding: 6px 12px !important; }
+body.citizen-readable-layout.home-social-mobile .portal-topbar-inner { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important; justify-content: space-between; gap: 8px !important; min-height: 56px; padding: 6px 12px !important; }
 body.citizen-readable-layout.home-social-mobile .portal-brand { flex: 1 1 auto; min-width: 0; gap: 8px !important; }
 body.citizen-readable-layout.home-social-mobile .portal-brand .portal-symbol { width: 30px !important; height: 30px !important; flex: 0 0 30px !important; border: 0; border-radius: 8px; box-shadow: none; }
 body.citizen-readable-layout.home-social-mobile .portal-brand-copy { min-width: 0; }
@@ -92,10 +92,10 @@ body.citizen-readable-layout.home-social-mobile .portal-brand p { color: var(--h
 body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-account-area { color: var(--home-text) !important; }
 body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-user-meta { display: block !important; }
 body.citizen-readable-layout.home-social-mobile .home-account-panel .portal-profile-avatar { background-color: var(--home-soft) !important; color: var(--home-text) !important; box-shadow: none !important; }
-/* Enlarged labels wrap the header into rows before splitting the portal name. */
+/* Keep the full portal name readable, including enlarged text on narrow screens. */
 body.citizen-readable-layout.home-social-mobile .portal-topbar-inner { flex-wrap: wrap !important; row-gap: 0 !important; }
-body.citizen-readable-layout.home-social-mobile .portal-brand { width: auto !important; flex: 1 1 max-content; min-width: max-content !important; }
-body.citizen-readable-layout.home-social-mobile .portal-brand h1 { white-space: nowrap !important; overflow-wrap: normal; }
+body.citizen-readable-layout.home-social-mobile .portal-brand { width: auto !important; flex: 1 1 min-content; min-width: min-content !important; }
+body.citizen-readable-layout.home-social-mobile .portal-brand h1 { white-space: normal !important; overflow-wrap: normal; }
 body.citizen-readable-layout.home-social-mobile .portal-user { margin-left: auto; }
 /* Fallback initials are decorative artwork, independent of reading text size. */
 body.citizen-readable-layout.home-social-mobile :is(.home-composer-avatar, #socialFeedList .social-avatar, .home-account-panel .portal-profile-avatar, #portalChatRoot .portal-chat-avatar)[data-home-avatar-initials="true"] {

@@ -42,7 +42,7 @@
         styles.href = '/css/citizen-readable-layout.css?v=20261009-2';
         document.head.appendChild(styles);
         const layout = document.createElement('script');
-        layout.src = '/js/citizen-layout.js?v=20261011-citizen-continuity-3';
+        layout.src = '/js/citizen-layout.js?v=20261011-portal-header-1';
         document.head.appendChild(layout);
       }
     }
