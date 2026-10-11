@@ -59,6 +59,12 @@ jobs:
         run: |
           node testing/citizen-layout/audit.mjs /tmp/citizen-layout.json
           node testing/citizen-layout/verify.mjs /tmp/citizen-layout.json
+      - name: Single mobile address, native bar clicks and retained controllers
+        run: |
+          node testing/citizen-layout/citizen-single-address.mjs
+          node testing/citizen-layout/mobile-shell.mjs
+          node testing/citizen-layout/mobile-shell-prewarm.mjs
+          node testing/citizen-layout/mobile-shell-regressions.mjs
       - name: Mobile Profile and Chat with native session persistence
         run: |
           node testing/citizen-layout/mobile-profile-refinement.mjs /tmp/mobile-profile-refinement
@@ -112,6 +118,10 @@ jobs:
         with:
           name: synthetic-citizen-layout
           path: |
+            .local/citizen-single-address/
+            .local/mobile-shell-tests/
+            .local/mobile-shell-prewarm/
+            .local/mobile-shell-regressions/
             /tmp/citizen-*.json
             /tmp/citizen-*.png
             /tmp/mobile-profile-refinement/

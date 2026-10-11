@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalSocialNavigation?.version === '20261010-mobile-shell-1') return;
+  if (window.PortalSocialNavigation?.version === '20261011-citizen-continuity-1') return;
 
   let activeNotificationPanel = null;
   let activeUserSearch = null;
@@ -41,7 +41,7 @@
   }
 
   function active(path) {
-    const current = location.pathname;
+    const current = window.PortalCitizenShell?.active()?.url.pathname || location.pathname;
     if (path === '/') return current === '/';
     return current === path || current.startsWith(path);
   }
@@ -643,5 +643,5 @@
     if (role && !role.textContent) role.textContent = labels[user?.role] || user?.role || '';
   }
 
-  window.PortalSocialNavigation = Object.freeze({ version: '20261010-mobile-shell-1', mount, setNotificationBadges, closeNotificationPanel, renderNotificationItems });
+  window.PortalSocialNavigation = Object.freeze({ version: '20261011-citizen-continuity-1', mount, setNotificationBadges, closeNotificationPanel, renderNotificationItems });
 })();

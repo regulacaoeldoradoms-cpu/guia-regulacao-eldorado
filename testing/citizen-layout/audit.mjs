@@ -207,6 +207,7 @@ try {
         });
       });
       await page.goto(`http://127.0.0.1:${port}` + route);
+      if (user.role === "cidadao" && width <= 900 && /^\/(?:perfil|amigos|mascotes)\//.test(route)) await page.waitForFunction(route => window.PortalCitizenShell?.active().url.pathname === route && !window.PortalCitizenShell.diagnostics().navigating, route);
       if (route === '/') {
         await page.waitForFunction(() => Boolean(window.PortalHomeReady));
         await page.evaluate(() => window.PortalHomeReady);

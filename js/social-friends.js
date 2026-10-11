@@ -411,7 +411,9 @@ const initializeCitizenArea = async (context) => {
   if (context && !context.active) await preloadOtherRelationshipLists();
   else preloadOtherRelationshipLists();
 };
-if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-friends', initializeCitizenArea);
-else initializeCitizenArea();
+const start = () => window.PortalCitizenShell
+  ? window.PortalCitizenShell.register('social-friends', initializeCitizenArea) : initializeCitizenArea();
+if (window.PortalCitizenShellReady) window.PortalCitizenShellReady.then(start);
+else start();
 
 })();

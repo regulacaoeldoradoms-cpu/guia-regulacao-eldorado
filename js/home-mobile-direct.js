@@ -33,6 +33,7 @@ export function mountHomeMobileDirect() {
   let reopenAfterClose = false;
   let resumeGeneration = 0;
   const closeWaiters = new Set();
+  let pendingBarControl = null;
   const enabled = () => !sessionEnded && body.classList.contains('shared-mobile-navigation');
   const marker = () => {
     const value = history.state?.[HISTORY_KEY];
@@ -419,12 +420,22 @@ export function mountHomeMobileDirect() {
   }, true);
   document.addEventListener('click', event => {
     if (!enabled()) return;
-    if (event.target.closest?.('.social-mobile-nav a[href="/"]') && view()) {
+    const barControl = event.target.closest?.('.social-mobile-nav .social-mobile-nav-link');
+    if (barControl && barControl.id !== 'portalChatLauncher'
+      && (view() || returnToPage && (traversing || replaying))) {
       event.preventDefault();
-      event.stopPropagation();
-      closeToPage();
+      event.stopImmediatePropagation();
+      // Close through the native owner, including its History handoff. Only
+      // the latest area intent is replayed after drafts/focus are preserved.
+      pendingBarControl = barControl.getAttribute('href') === '/' ? null : barControl;
+      void closeToPage().then(() => {
+        if (pendingBarControl !== barControl || !barControl.isConnected || !enabled()) return;
+        pendingBarControl = null;
+        barControl.click();
+      });
       return;
     }
+    if (event.target.closest?.('#portalChatLauncher')) pendingBarControl = null;
     if (event.target.closest?.('#portalChatLauncher') && !view()) {
       if (returnToPage && (traversing || replaying || marker())) {
         event.preventDefault();

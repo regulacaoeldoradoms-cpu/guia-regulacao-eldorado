@@ -43,7 +43,7 @@ try {
     const before = requests.length;
     for (const path of ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/', '/']) {
       await page.evaluate(path => window.PortalCitizenShell.navigate(new URL(path, location.href)), path);
-      check(path + ' keeps real History URL', new URL(page.url()).pathname === path);
+      check(path + ' keeps internal route and canonical mobile address', await page.evaluate(path => window.PortalCitizenShell.active().url.pathname === path && location.pathname === (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(path) ? '/' : path), path));
       if (path === '/amigos/') check('friend content prepared without skeleton', await page.locator('#relationshipList .social-skeleton').count() === 0);
       if (path === '/perfil/') check('own profile already visible', await page.locator('#socialProfile').isVisible());
     }
@@ -71,7 +71,7 @@ try {
     check('loading notice preserves reading position', await page.evaluate(() => Math.abs(scrollY-window.__slowPreparationScroll)<3));
     await page.screenshot({path:path.join(output,'slow-loading-notice.png')});
     check('initial Home remains visible during slow preparation', await page.locator('#socialHome').isVisible());
-    await page.waitForFunction(() => location.pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('tap shares one in-flight HTML request', requests.filter(request => request.url === '/amigos/').length === 1);
     check('slow preparation does not reload', audit.documents.length === 1);
   });
@@ -84,17 +84,17 @@ try {
     await page.locator('.citizen-route-notice button').waitFor();
     await page.unroute('**/amigos/');
     await page.locator('.citizen-route-notice button').click();
-    await page.waitForFunction(() => location.pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('failed preparation remains retryable without reload', audit.documents.length === 1);
   });
   await run('deep-link-own-profile', '/perfil/?u=fixture.friend', null, async (page, audit, requests, check) => {
     await warm(page);
-    check('background preparation keeps requested deep-link URL', new URL(page.url()).search === '?u=fixture.friend');
+    check('background preparation keeps requested deep-link URL', await page.evaluate(() => window.PortalCitizenShell.active().url.search === '?u=fixture.friend' && location.pathname === '/'));
     const before = requests.length;
     await page.evaluate(() => window.PortalCitizenShell.navigate(new URL('/perfil/', location.href)));
     check('own profile preparation ignores deep-link search', await page.locator('#profileName').textContent() === 'Maria Aparecida de Oliveira dos Santos');
     check('prepared own profile uses no new route/script fetch', !requests.slice(before).some(request => request.type === 'script' || request.url === '/perfil/'));
-    check('deep-link bootstrap retains one document', audit.documents.length === 1);
+    check('legacy deep-link uses one initial Home handoff', audit.documents.length === 2);
   });
   await run('background-profile-data-error', '/', async page => {
     await page.route('**/api/social/me', route => route.fulfill({ status:503, contentType:'application/json', body:JSON.stringify({ error:'synthetic unavailable' }) }));
@@ -131,7 +131,7 @@ try {
     await page.waitForFunction(() => !window.PortalCitizenShell.diagnostics().prewarming);
     const size = await page.evaluate(() => window.PortalCitizenShell.diagnostics().routes);
     check('late background admission retains strict16slot bound: '+size, size === 16);
-    check('active profile survives concurrent admission', await page.locator('#socialProfile').isVisible() && new URL(page.url()).search === '?clean=16');
+    check('active profile survives concurrent admission', await page.locator('#socialProfile').isVisible() && await page.evaluate(() => window.PortalCitizenShell.active().url.search === '?clean=16' && location.pathname === '/'));
     check('admission race retains document', audit.documents.length === 1);
   });
   await run('background-retains-reading-position', '/', async page => {

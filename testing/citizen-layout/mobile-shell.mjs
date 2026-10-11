@@ -40,7 +40,7 @@ async function run(id, width, start, exercise) {
 const go = async (page, route) => {
   console.log('route ' + route);
   await page.evaluate(route => window.PortalCitizenShell.navigate(new URL(route, location.href)), route);
-  await page.waitForFunction(route => !window.PortalCitizenShell.diagnostics().navigating && location.pathname + location.search === route, route);
+  await page.waitForFunction(route => !window.PortalCitizenShell.diagnostics().navigating && (window.PortalCitizenShell?.active().url || location).pathname + (window.PortalCitizenShell?.active().url || location).search === route, route);
   await settle(page);
 };
 try {
@@ -53,7 +53,7 @@ try {
       document.addEventListener('click', () => { window.__leave = {y:scrollY,body:document.body.className,nav:getComputedStyle(document.querySelector('.social-mobile-nav')).position}; }, {capture:true,once:true});
     });
     await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
-    await page.waitForFunction(() => !window.PortalCitizenShell.diagnostics().navigating && location.pathname === '/amigos/');
+    await page.waitForFunction(() => !window.PortalCitizenShell.diagnostics().navigating && (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/');
     check('friends native controller loaded', await page.locator('#socialSearchForm').count() === 1);
     await page.locator('#socialSearchInput').fill('Busca sem enviar');
     await go(page, '/mascotes/');
@@ -73,9 +73,9 @@ try {
     await go(page, '/amigos/');
     check('friend search draft retained', await page.locator('#socialSearchInput').inputValue() === 'Busca sem enviar');
     await page.goBack();
-    await page.waitForFunction(() => location.pathname === '/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/' && !window.PortalCitizenShell.diagnostics().navigating);
     await page.goForward();
-    await page.waitForFunction(() => location.pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('Back/Forward kept document', audit.documents.length === 1);
     await go(page, '/mascotes/');
     check('pet preference draft retained', await page.locator('#petTimezone').inputValue() === 'America/Sao_Paulo');
@@ -83,11 +83,11 @@ try {
     await page.locator('#portalChatRoot.open').waitFor();
     await page.locator('.social-mobile-nav a[href="/"]').click();
     await page.waitForFunction(() => !document.getElementById('portalChatRoot').classList.contains('open') && !history.state?.__portalHomeDirect);
-    check('Início closes Chat within Mascotes', new URL(page.url()).pathname === '/mascotes/' && audit.documents.length === 1);
+    check('Início closes Chat within Mascotes', await page.evaluate(() => window.PortalCitizenShell.active().url.pathname === '/mascotes/' && location.pathname === '/') && audit.documents.length === 1);
     await page.locator('#portalChatLauncher').click();
     await page.locator('#portalChatRoot.open').waitFor();
     await go(page, '/amigos/');
-    check('route waits for Chat history unwind', await page.evaluate(() => location.pathname === '/amigos/' && !history.state?.__portalHomeDirect && !document.getElementById('portalChatRoot').classList.contains('open')));
+    check('route waits for Chat history unwind', await page.evaluate(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !history.state?.__portalHomeDirect && !document.getElementById('portalChatRoot').classList.contains('open')));
     await go(page, '/');
     const newest = { ...posts[0], id:'fixture-new-post', body:'Nova publicação sintética', createdAt:'2026-10-10T16:00:00Z' };
     await contextRouteFeed(page, [newest, ...posts]);
@@ -113,7 +113,7 @@ try {
   });
   await run('mascotes-deep-link', 390, '/mascotes/', async (page, audit, check) => {
     await go(page, '/'); await go(page, '/amigos/'); await go(page, '/mascotes/');
-    check('Mascotes direct entry supports return journey', audit.documents.length === 1);
+    check('Mascotes direct entry supports return journey after one initial Home handoff', audit.documents.length === 2);
   });
   await run('desktop-native', 1440, '/', async (page, audit, check) => {
     check('desktop shell inactive', await page.evaluate(() => !window.PortalCitizenShell));
@@ -129,16 +129,16 @@ try {
     });
     await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
     await page.locator('.citizen-route-notice button').waitFor();
-    check('failed route keeps Home and URL', await page.evaluate(() => location.pathname === '/' && Boolean(document.getElementById('socialFeedList'))));
+    check('failed route keeps Home and URL', await page.evaluate(() => (window.PortalCitizenShell?.active().url || location).pathname === '/' && Boolean(document.getElementById('socialFeedList'))));
     await page.locator('.citizen-route-notice button').click();
-    await page.waitForFunction(() => location.pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('explicit retry works without document navigation', audit.documents.length === 1);
     await page.evaluate(() => {
       void window.PortalCitizenShell.navigate(new URL('/mascotes/', location.href));
       void window.PortalCitizenShell.navigate(new URL('/perfil/', location.href));
       void window.PortalCitizenShell.navigate(new URL('/', location.href));
     });
-    await page.waitForFunction(() => location.pathname === '/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('latest rapid intent wins', await page.locator('#socialFeedList').count() === 1);
     // The superseded preparation loads factories but intentionally never mounts
     // its route presenters. Count repeat loads only after the first real visit.
@@ -189,7 +189,7 @@ try {
   });
   await run('other-profile-deep-link', 390, '/perfil/?u=fixture.friend', async (page, audit, check) => {
     await go(page, '/amigos/'); await go(page, '/perfil/?u=fixture.friend');
-    check('profile query URL preserved', new URL(page.url()).search === '?u=fixture.friend');
+    check('profile query URL preserved', await page.evaluate(() => window.PortalCitizenShell.active().url.search === '?u=fixture.friend' && location.pathname === '/'));
     check('other profile remains without own identity editor', await page.locator('#profileIdentityEditor').isHidden());
     await page.reload({ waitUntil:'domcontentloaded' }); await ready(page, '/perfil/?u=fixture.friend');
     check('direct reload remains functional', await page.locator('#socialProfile:not([hidden])').count() === 1);
@@ -229,7 +229,7 @@ try {
     await go(page, '/amigos/');
     await page.setViewportSize({width:1440,height:900});
     await page.goBack();
-    await page.waitForFunction(() => location.pathname === '/' && !window.PortalCitizenShell.diagnostics().navigating);
+    await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/' && !window.PortalCitizenShell.diagnostics().navigating);
     check('Back after desktop resize activates Home', await page.locator('#socialFeedList').count() === 1);
     check('desktop breakpoint removes mobile shell marker', await page.evaluate(() => !document.body.classList.contains('citizen-mobile-shell')));
     await page.setViewportSize({width:390,height:844});
