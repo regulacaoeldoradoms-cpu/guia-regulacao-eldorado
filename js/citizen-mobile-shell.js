@@ -62,7 +62,12 @@
   // The login transition can mount the Home document at either legacy alias.
   // Normalize the internal entry before selecting its controllers and History.
   if (homeAliases.has(initialUrl.pathname)) initialUrl.pathname = '/';
-  if (screen.matches && primaryViews.has(initialUrl.pathname) && initialUrl.pathname !== '/') {
+  // Direct Mascotes now starts in its own document; prepare the Home factory
+  // in the background so its first retained tap has the same readiness contract.
+  if(initialUrl.pathname==='/mascotes/')backgroundControllers.add('/');
+  if (screen.matches && primaryViews.has(initialUrl.pathname) && !['/','/mascotes/'].includes(initialUrl.pathname)) {
+    // Mascotes already has first-frame mobile styles and can own its initial
+    // area directly. History still exposes '/' without painting an intervening Home.
     // Legacy links enter the same Home document before any area controller
     // starts. The fragment is only a one-time, same-origin route handoff.
     // Suppress the outgoing native document animation for this compatibility
@@ -298,7 +303,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261011-citizen-startup-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261011-citizen-privacy-help-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
