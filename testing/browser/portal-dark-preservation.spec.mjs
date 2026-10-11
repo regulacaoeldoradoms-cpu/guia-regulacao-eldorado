@@ -185,9 +185,22 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const palettes=[];
     const homeContracts=[];
     const nativeContracts=[];
+    let friendsSource=0;
     if(mobileRedesign)await context.addInitScript(trackNativeControls,nativeIdentityKey);
     let layout;
     const prepare=async target=>{
+      if(route==='/amigos/'){
+        // The user approved removing this exact explanatory card on mobile and desktop.
+        // Normalize only the historical card; all remaining pixels/controls still compare exactly.
+        const card=target.locator('aside > section').filter({has:target.getByRole('heading',{name:'Descoberta protegida',exact:true})});
+        await expect(card).toHaveCount(friendsSource++===0?0:1);
+        if(await card.count()){
+          await expect(card.locator('p')).toHaveText('Cidadãos não recebem um diretório de profissionais. Perfis profissionais ficam disponíveis somente no contexto profissional autorizado, inclusive pelo chat.');
+          await card.evaluate(e=>e.remove());
+        }
+        await expect(target.locator('aside > section')).toHaveCount(1);
+        await expect(target.locator('#socialSearchForm')).toBeAttached();
+      }
       if(shared)expect(await target.locator('.citizen-route-area').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).display==='contents')),'Retained area wrappers must have no painted layout box').toBe(true);
       if(loginRedesign) loginContracts.push(await target.evaluate(()=>({
         form:{action:document.getElementById('loginForm').getAttribute('action'),autocomplete:document.getElementById('loginForm').getAttribute('autocomplete')},

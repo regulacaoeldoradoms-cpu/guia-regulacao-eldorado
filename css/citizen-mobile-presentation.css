@@ -30,6 +30,8 @@ body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobi
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help{margin:12px 0;padding:0 12px;border:1px solid var(--portal-theme-border,#d7e3e9);border-radius:12px;background:var(--portal-theme-surface,#fff);font-size:16px;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help > summary{min-height:48px;padding:12px 0;cursor:pointer;line-height:1.4;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help .portal-note{margin:0 0 12px !important;padding:12px !important;font-size:16px !important;line-height:1.5 !important;}
+/* The native disclosure owns visibility here; the legacy mobile rule hides this notice elsewhere. */
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .citizen-account-help[open] > #accountEvolutionNotice:not([hidden]){display:block !important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation :is(.citizen-modal-panel,.form-section,.portal-field){min-width:0;overflow-wrap:anywhere;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head h2{font-size:24px !important;line-height:1.25 !important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head small{font-size:16px !important;line-height:1.4 !important;}

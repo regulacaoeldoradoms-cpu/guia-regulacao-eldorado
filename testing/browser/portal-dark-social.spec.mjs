@@ -156,6 +156,8 @@ test('social states: friends populated, empty list and empty search',async({page
   });
   await page.goto('/amigos/');
   await expect(page.locator('#relationshipList')).toContainText(auditFriend.name);
+  await expect(page.getByRole('heading',{name:'Descoberta protegida',exact:true})).toHaveCount(0);
+  await expect(page.locator('aside > section')).toHaveCount(1);
   await capture(page,info,'friends-populated');
   await context.unroute('**/api/social/relationships?*');
   await page.reload();
