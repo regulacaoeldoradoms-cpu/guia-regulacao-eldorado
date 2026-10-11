@@ -8,7 +8,7 @@ await fs.mkdir(out,{recursive:true});
 const server=await serve(root), browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || await fs.access('/usr/bin/chromium').then(()=>'/usr/bin/chromium',()=>chromium.executablePath()),args:['--no-sandbox','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']});
 const results=[];
 const until=async fn=>{for(let n=0;n<300;n++){try{if(await fn())return;}catch(error){if(!/Execution context was destroyed|Cannot find context/.test(error.message))throw error;}await new Promise(r=>setTimeout(r,10));}throw Error('condition timeout');};
-const go=async(page,route)=>{await page.evaluate(route=>window.PortalCitizenShell.navigate(new URL(route,location.href)),route);assert.equal(await page.evaluate(()=>location.pathname+location.search),route);};
+const go=async(page,route)=>{await page.evaluate(route=>window.PortalCitizenShell.navigate(new URL(route,location.href)),route);assert.equal(await page.evaluate(()=>(window.PortalCitizenShell?.active().url || location).pathname+(window.PortalCitizenShell?.active().url || location).search),route);};
 async function run(id,setup,exercise){
  if(process.env.CASES&&!process.env.CASES.split(',').includes(id))return;
  const result={id,checks:[],errors:[]}, {page,context,audit}=await newPage(browser,{width:390,theme:'dark',seedOnce:true},server.origin,result);
@@ -25,7 +25,7 @@ try{
   for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);await page.locator('#profileEditBio').fill('draft-'+i);}
   check('cache reaches16 including protected Home and Mascotes',await page.evaluate(()=>window.PortalCitizenShell.diagnostics().routes===16));
   await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/perfil/?draft=overflow',location.href)));
-  check('overflow explicitly refused without changing area',await page.evaluate(()=>location.search==='?draft=13'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));
+  check('overflow explicitly refused without changing area',await page.evaluate(()=>(window.PortalCitizenShell?.active().url || location).search==='?draft=13'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));
   for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);check('protected draft '+i+' retained',await page.locator('#profileEditBio').inputValue()==='draft-'+i);}
   check('no document reload under saturation',audit.documents.length===1);
  });

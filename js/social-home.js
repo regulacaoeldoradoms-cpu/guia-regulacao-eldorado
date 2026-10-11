@@ -149,7 +149,9 @@ const initializeCitizenArea = (context) => {
 
   window.PortalSocialHome = Object.freeze({ mount, root:context?.root });
 };
-if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-home', initializeCitizenArea);
-else initializeCitizenArea();
+const start = () => window.PortalCitizenShell
+  ? window.PortalCitizenShell.register('social-home', initializeCitizenArea) : initializeCitizenArea();
+if (window.PortalCitizenShellReady) window.PortalCitizenShellReady.then(start);
+else start();
 
 })();

@@ -2,12 +2,13 @@
 
 // Profile presentation only. The original social renderer owns profile data,
 // permissions, photo actions, module order and the customization forms.
+const currentPath = () => window.PortalCitizenShell?.active()?.url.pathname || location.pathname;
 const INSTANCE = Symbol.for('portal.profileMobilePresentation');
 
 export function mountProfileMobilePresentation() {
   if (window[INSTANCE]) { window[INSTANCE].sync(); return window[INSTANCE]; }
   const host = document.querySelector('.portal-topbar .portal-user');
-  if (location.pathname !== '/perfil/' || !host) return null;
+  if (currentPath() !== '/perfil/' || !host) return null;
   const media = matchMedia('screen and (max-width: 900px)');
   const printMedia = matchMedia('print');
   const title = document.querySelector('.portal-brand-copy h1');
@@ -15,7 +16,7 @@ export function mountProfileMobilePresentation() {
   const positions = new WeakMap();
   let printing = false, mobile = false, queued = false;
   let account = null, logout = null;
-  const enabled = () => location.pathname === '/perfil/' && media.matches && !printing && !printMedia.matches
+  const enabled = () => currentPath() === '/perfil/' && media.matches && !printing && !printMedia.matches
     && document.body.classList.contains('citizen-readable-layout')
     && document.body.classList.contains('shared-mobile-navigation');
   const menu = document.createElement('details');
@@ -73,7 +74,7 @@ export function mountProfileMobilePresentation() {
       menu.hidden = true;
       menu.open = false;
       document.body.classList.remove('profile-mobile-layout');
-      if (mobile && title && location.pathname === '/perfil/') title.replaceChildren(...titleNodes);
+      if (mobile && title && currentPath() === '/perfil/') title.replaceChildren(...titleNodes);
       if (focused === summary && !printing && !printMedia.matches) account?.focus({ preventScroll: true });
     }
     mobile = active;

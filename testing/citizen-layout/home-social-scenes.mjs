@@ -425,7 +425,7 @@ async function presentationInteractions(page, result, audit) {
 }
 
 async function chatSessionState(page) {
-  return page.evaluate(() => ({ route: location.pathname,
+  return page.evaluate(() => ({ route: window.PortalCitizenShell?.active().url.pathname || location.pathname,
     panelOpen: Boolean(document.getElementById('portalChatRoot')?.classList.contains('open')),
     conversationOpen: Boolean(document.getElementById('portalChatConversationView')?.classList.contains('active')),
     selectedHandle: new URL(document.getElementById('portalChatProfileLink')?.href || location.href).searchParams.get('u') || '',
@@ -441,7 +441,7 @@ async function verifySectionPersistence(page, result, audit, captureViews) {
   const before = await chatSessionState(page);
   const retainedNavigation = await page.evaluate(() => Boolean(window.PortalCitizenShell));
   await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
-  await page.waitForURL(origin + '/amigos/');
+  await page.waitForFunction(() => (window.PortalCitizenShell?.active().url.pathname || location.pathname) === '/amigos/' && !window.PortalCitizenShell?.diagnostics().navigating);
   await ready(page, false);
   if (retainedNavigation) {
     check(result, 'retained Friends navigation closes Direct overlay', !(await chatSessionState(page)).panelOpen);

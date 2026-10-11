@@ -1,10 +1,11 @@
 // Mascotes had no desktop chat. Its native runtime starts only after the shared
 // mobile presentation is ready, and remains closed outside that presentation.
+const currentPath = () => window.PortalCitizenShell?.active()?.url.pathname || location.pathname;
 const INSTANCE = Symbol.for('portal.citizenMobileChatBootstrap');
 
 export function mountCitizenMobileChatBootstrap(directController) {
   if (window[INSTANCE]) { window[INSTANCE].sync(); return window[INSTANCE]; }
-  if (location.pathname !== '/mascotes/'
+  if (currentPath() !== '/mascotes/'
     || !document.body.hasAttribute('data-citizen-mobile-chat-only')) return null;
   const mobile = matchMedia('screen and (max-width: 900px)');
   const print = matchMedia('print');
@@ -15,7 +16,7 @@ export function mountCitizenMobileChatBootstrap(directController) {
   const rootObserver = new MutationObserver(sync);
 
   function sync() {
-    if (window.PortalCitizenShell && location.pathname !== '/mascotes/') return;
+    if (window.PortalCitizenShell && currentPath() !== '/mascotes/') return;
     const nextRoot = document.getElementById('portalChatRoot');
     if (nextRoot !== root) {
       rootObserver.disconnect();

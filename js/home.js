@@ -20,7 +20,7 @@ const initializeHome = async (context) => {
   // surface gated on both, while network I/O overlaps the existing imports.
   const presentationReady = (async () => {
     // Shared route presentation does not change the authenticated account permissions.
-    await import('/js/citizen-layout.js?v=20261010-citizen-prewarm-1').catch(() => {});
+    await import('/js/citizen-layout.js?v=20261011-citizen-continuity-3').catch(() => {});
     window.PortalCitizenLayout?.apply(user);
 
     // Reuse the existing controls; mobile composition changes no account permissions.
@@ -158,8 +158,10 @@ const initializeHome = async (context) => {
     return showToolsFallback(socialFailureMessage(error));
   }
 };
-window.PortalHomeReady = window.PortalCitizenShell
+const startHome = () => window.PortalCitizenShell
   ? window.PortalCitizenShell.register('home', initializeHome) : initializeHome();
+window.PortalHomeReady = window.PortalCitizenShellReady
+  ? window.PortalCitizenShellReady.then(startHome) : startHome();
 
 // Optional companion loading must not block Home readiness or change the login script allowlist.
 window.PortalHomeReady.then((ready) => {

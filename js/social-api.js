@@ -434,9 +434,13 @@
     element.setAttribute('role', 'img');
     element.setAttribute('aria-label', `Foto de ${profile.name || `@${profile.handle}`}`);
     if (!profile.avatarAvailable) return;
+    const avatarSession = auth?.getToken?.();
     try {
       const url = await avatarBlob(profile);
-      if (!url || !element.isConnected) return;
+      // A citizen area can prepare its native avatar while disconnected. Only
+      // the current account's live, owned roots may accept that response.
+      const retained = window.PortalCitizenShell?.ownsElement?.(element);
+      if (!url || avatarSession !== auth?.getToken?.() || !element.isConnected && !retained) return;
       element.textContent = '';
       element.style.backgroundImage = `url("${url}")`;
     } catch (_) {}

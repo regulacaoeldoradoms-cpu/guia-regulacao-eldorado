@@ -447,7 +447,9 @@ const initializeCitizenArea = async (context) => {
     social.status(error.message || 'Perfil social não encontrado.', 'error');
   }
 };
-if (window.PortalCitizenShell) window.PortalCitizenShell.register('social-profile', initializeCitizenArea);
-else initializeCitizenArea();
+const start = () => window.PortalCitizenShell
+  ? window.PortalCitizenShell.register('social-profile', initializeCitizenArea) : initializeCitizenArea();
+if (window.PortalCitizenShellReady) window.PortalCitizenShellReady.then(start);
+else start();
 
 })();
