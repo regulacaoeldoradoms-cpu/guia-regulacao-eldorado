@@ -1,6 +1,6 @@
 # Investigação de ativação: Home → Perfil/Amigos
 
-Base: main `46d3b3ed3d525aeed52a5470c78b5a022d09772b` (PR630). Dados e sessões exclusivamente sintéticos. Nenhuma leitura de usuários/pacientes, mudança de permissões ou publicação neste diagnóstico.
+Base: main `46d3b3ed3d525aeed52a5470c78b5a022d09772b` (PR630). Dados e sessões exclusivamente sintéticos. Nenhuma leitura de usuários/pacientes ou mudança de permissões neste diagnóstico. A publicação das correções está autorizada e depende dos gates finais.
 
 ## Reprodução na versão publicada
 
@@ -16,11 +16,13 @@ Cliques reais em controles visíveis da Home; cada destino foi testado a partir 
 
 O código da Home reconhece Android pelo user agent e pode apresentar `mobile-home-mode` em980px; o bootstrap da shell usa exclusivamente a media query até900px. A instalação inicial também exige cargo exatamente `cidadao`. A shell que não foi instalada não observa mudanças posteriores do viewport. Esses são caminhos demonstrados; cargo e viewport efetivos do aparelho relatado ainda não foram confirmados. A conta administrativa sintética é controle negativo, não prova de acesso cidadão.
 
-## Correção preparada
+## Correções e validação
 
 O login permite três destinosHome: `/`, `/home/` e `/index.html`. Antes da correção, o bootstrap não reconhecia os dois aliases; mesmo montando o HTMLHome, não selecionava seus controladores. A correção normaliza apenas esses aliases para a área interna `/`, antes da seleção e History. O endereço público mantém `/`, sem redirecionar/recriar o documento. Autenticação tardia também reconhece as entradas. Somente a query de versão do script modificado é atualizada nos dez documentos compartilhados.
 
-Validação local:17/17cenários de endereço único e15/15cenários de ciclo de vida. Os dois novos cenários `/index.html` mantêm documento/barra/Chat/SVG/mascote, sem remoções ou frames vazios da barra, e zero documentos novos nas quatro trocas. O login monta os três destinos mantendo o documento e o endereço público canônico. Desktop901/1440px, logout, troca de conta, Chat, Back/Forward e entrada por links antigos seguem nos testes.
+Além dos aliases, a ativação das áreas compartilhadas passa a aceitar contas autenticadas, preservando autorização nos controladores e backend. O cargo não é alterado nem confere novos acessos. Rotas profissionais não entram na lista ou fila. Para celulares com toque múltiplo e tela física compacta, a captura inicial dos controladores permite ativar a navegação quando o viewport largo retorna ao breakpoint móvel; em largura acima900px, a política de links continua nativa. Não há rebootstrap duplicando controladores nem recarga do documento.
+
+Validação:21cenários de endereço único (incluindo dois cargos sintéticos e dois de mudança de largura),15cenários de ciclo de vida, além dos gates finais registrados no PR. Os dois novos cenários `/index.html` mantêm documento/barra/Chat/SVG/mascote, sem remoções ou frames vazios da barra, e zero documentos novos nas quatro trocas. O login monta os três destinos mantendo o documento e o endereço público canônico. Desktop901/1440px, logout, troca de conta, Chat, Back/Forward e entrada por links antigos seguem nos testes.
 
 ## Cache e evidência de publicação
 
@@ -30,9 +32,9 @@ Os testes de navegação anteriores usam o handler nativo de mensagens do SW, ma
 
 ## Prioridade e limites
 
-1. Confirmar o cargo e viewport no Android relatado: cargo fora de `cidadao` ou largura acima900px tornam a promessa de endereço único inaplicável na implementação atual. Não expandir cargos nem comportamento desktop sem alinhar esse alcance.
-2. Revisar a correção demonstrada dos aliasesHome; ela não prova solucionar o relato do usuário se sua entrada foi `/` em outra condição.
+1. Corrigida a exclusão de contas não cidadãs das mesmas áreas comuns. A captura mostrou “Desenvolvedor”, mas isso não identifica o cargo interno. Cargo/viewport reais ainda não foram confirmados; essa lacuna não impede publicar as correções demonstradas. Larguras efetivas acima900px mantêm política nativa.
+2. Corrigidos aliasesHome e transição do login; a condição exata do Android relatado continua sem validação direta.
 3. Se o aparelho for cidadão e viewport até900px, verificar release do HTML/script recebido antes de atribuir o problema ao cache. Investigar fallback antigo com SW completo em navegador isolado antes de mudar a política.
-4. A mudança de viewport após carregamento é uma omissão confirmada, mas rebootstrap tardio precisa preservar controladores já iniciados, Chat/mascote e formulários. Não foi implementado de forma improvisada.
+4. Corrigida a ativação após mudança de viewport em tela física compacta com toque múltiplo; preserva documento/controladores/barra/Chat/mascote/rascunho. Desktop verdadeiro permanece nativo.
 
-Evidências locais no worktree: `.local/activation-probe.json`, `.local/activation-probe-baseline.log`, `.local/sw-html-probe.json`, `.local/citizen-single-address/results.json` e `.local/mobile-shell-tests/results.json`. Próxima ação: vincular a reprodução à condição real do Android, completar gates de publicação para a correção correspondente e só então publicar. Este diagnóstico não declara resolvido o caso relatado.
+Evidências locais no worktree: `.local/activation-probe.json`, `.local/activation-probe-baseline.log`, `.local/sw-html-probe.json`, `.local/citizen-single-address/results.json` e `.local/mobile-shell-tests/results.json`. Próxima ação: concluir gates finais e publicar o head aprovado, conferindo deploySHA. A verificação no aparelho real permanece separada. Este diagnóstico não declara resolvido o caso relatado.

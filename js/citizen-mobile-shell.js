@@ -4,10 +4,14 @@
 (() => {
   if (window.PortalCitizenShell) return;
   const screen = matchMedia('screen and (max-width: 900px)');
+  // A compact touch device can start with a wide desktop-site viewport. Capture
+  // its controllers once, but retain native wide-screen navigation until the
+  // existing mobile media query matches. Desktop computers keep native startup.
+  const compactTouch = navigator.maxTouchPoints > 1 && Math.min(window.screen.width, window.screen.height) <= 700;
   const homeAliases = new Set(['/home/', '/index.html']);
   const primaryViews = new Set(['/', '/amigos/', '/perfil/', '/mascotes/']);
   const auth = window.RegulationAuth;
-  if (!auth || !screen.matches) return;
+  if (!auth || (!screen.matches && !compactTouch)) return;
   if (!auth.getCachedUser?.()) {
     if (!primaryViews.has(location.pathname) && !homeAliases.has(location.pathname)) return;
     // Entry controllers wait for this gate; a late account must not miss the
@@ -21,7 +25,9 @@
   function initializeShell() {
   const print = matchMedia('print');
   const user = window.RegulationAuth?.getCachedUser?.();
-  if (!screen.matches || print.matches || user?.role !== 'cidadao') return;
+  // These are shared account routes, not a grant of citizen permissions. Their
+  // native controllers still authorize access; professional routes stay native.
+  if ((!screen.matches && !compactTouch) || print.matches || !user || !window.RegulationAuth.getToken?.()) return;
   const KEY = '__portalCitizenRoute';
   const ACCOUNT = '__portalCitizenAccount';
   const entries = {
@@ -56,7 +62,7 @@
   // The login transition can mount the Home document at either legacy alias.
   // Normalize the internal entry before selecting its controllers and History.
   if (homeAliases.has(initialUrl.pathname)) initialUrl.pathname = '/';
-  if (primaryViews.has(initialUrl.pathname) && initialUrl.pathname !== '/') {
+  if (screen.matches && primaryViews.has(initialUrl.pathname) && initialUrl.pathname !== '/') {
     // Legacy links enter the same Home document before any area controller
     // starts. The fragment is only a one-time, same-origin route handoff.
     // Suppress the outgoing native document animation for this compatibility
@@ -188,7 +194,8 @@
   areas.set(routeKey(initialUrl), active);
   document.body.classList.toggle('citizen-mobile-shell', screen.matches && !print.matches);
   history.replaceState({ ...history.state, [KEY]: routeKey(initialUrl), [ACCOUNT]:sessionIdentity }, '', publicAddress(initialUrl));
-  history.scrollRestoration = 'manual';
+  const nativeScrollRestoration = history.scrollRestoration;
+  history.scrollRestoration = enabled() ? 'manual' : nativeScrollRestoration;
 
   const name = href => new URL(href, location.href).pathname.split('/').pop().replace(/\.css$/, '');
   for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
@@ -329,7 +336,7 @@
       await active.ready;
       active.loaded = true;
       const user = await window.RegulationAuth.requireRole([]);
-      if (!valid() || user?.role !== 'cidadao' || user.mustChangePassword) return;
+      if (!valid() || !user || user.mustChangePassword) return;
       await window.PortalCitizenMobileReady;
       await window.PortalCitizenMobileChatReady;
       // Finish the existing shared Chat owner; do not create a second runtime
@@ -507,7 +514,10 @@
   const syncMedia = () => {
     document.body.classList.toggle('citizen-mobile-shell', enabled());
     if (valid()) history.replaceState(history.state, '', publicAddress(active.url));
+    history.scrollRestoration = enabled() ? 'manual' : nativeScrollRestoration;
     syncBrand();
+    resumeUpdates();
+    if (enabled()) schedulePrewarm();
   };
   screen.addEventListener('change', syncMedia);
   print.addEventListener('change', syncMedia);
@@ -515,6 +525,7 @@
   window.addEventListener('afterprint', syncMedia);
   function dispose() {
     if (ended) return; ended = true; wanted = null;
+    history.scrollRestoration = nativeScrollRestoration;
     clearTimeout(prewarmTimer); preparationAbort.abort();
     areas.forEach(area => area.dispose()); areas.clear(); notice.remove();
     window.PortalSocialFeed?.clear?.();
@@ -538,7 +549,7 @@
   });
   window.PortalCitizenShell = Object.freeze({
     ownsElement: element => valid() && [...areas.values()].some(area => !area.disposed && area.root.contains(element)),
-    version:'20261011-citizen-continuity-3', enabled, active: () => active, updateNavigation, navigate,
+    version:'20261011-citizen-entry-1', enabled, active: () => active, updateNavigation, navigate,
     canonicalize(path, area = active) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;
@@ -576,7 +587,7 @@
   let updateTimer = 0, updateRunning = false, updateController = null, failures = 0;
   async function updates() {
     updateTimer = 0;
-    if (!valid() || document.hidden || !navigator.onLine || updateRunning) return;
+    if (!enabled() || document.hidden || !navigator.onLine || updateRunning) return;
     updateRunning = true; updateController = new AbortController();
     try {
       const config = await window.PortalSocial.api('/api/social/config', { signal: updateController.signal });
@@ -598,13 +609,13 @@
     } catch (error) { if (error.name !== 'AbortError') failures++; }
     finally {
       updateRunning = false; updateController = null;
-      if (valid() && !document.hidden && navigator.onLine) updateTimer = setTimeout(updates, Math.min(120000, 30000 * 2 ** Math.min(failures, 2)));
+      if (enabled() && !document.hidden && navigator.onLine) updateTimer = setTimeout(updates, Math.min(120000, 30000 * 2 ** Math.min(failures, 2)));
     }
   }
-  function startUpdates() { if (!updateTimer && !updateRunning && valid()) updateTimer = setTimeout(updates, 1000); }
+  function startUpdates() { if (!updateTimer && !updateRunning && enabled()) updateTimer = setTimeout(updates, 1000); }
   function resumeUpdates() {
     clearTimeout(updateTimer); updateTimer = 0;
-    if (document.hidden || !navigator.onLine) { updateController?.abort(); return; }
+    if (!enabled() || document.hidden || !navigator.onLine) { updateController?.abort(); return; }
     if (!updateRunning) void updates();
   }
   document.addEventListener('visibilitychange', resumeUpdates);

@@ -2,16 +2,16 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 process.env.PORTAL_FIXTURES_ONLY='1';
-const {serve,newPage,ready,chromium}=await import('./mobile-profile-refinement.mjs');
+const {serve,newPage,ready,chromium,user}=await import('./mobile-profile-refinement.mjs');
 const root=path.resolve(import.meta.dirname,'../..'), output=path.join(root,'.local/citizen-single-address');
 await fs.mkdir(output,{recursive:true});
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']});
 const results=[];
 const prepared=page=>page.waitForFunction(()=>{const s=window.PortalCitizenShell?.diagnostics();return s&&!s.navigating&&!s.prewarming&&['/','/amigos/','/perfil/','/mascotes/'].every(p=>s.ready.includes(p));});
 const area=async(page,route)=>page.waitForFunction(route=>window.PortalCitizenShell?.active().url.pathname+window.PortalCitizenShell?.active().url.search===route&&!window.PortalCitizenShell.diagnostics().navigating,route);
-async function run(id,width,entry,auth,exercise){
+async function run(id,width,entry,auth,exercise,options={}){
  if(process.env.CASES&&!process.env.CASES.split(',').includes(id))return;
- const result={id,checks:[],errors:[]},{page,context,audit}=await newPage(browser,{width,theme:id.includes('light')?'light':'dark',seedOnce:true},server.origin,result);
+ const result={id,checks:[],errors:[]},{page,context,audit}=await newPage(browser,{width,theme:id.includes('light')?'light':'dark',seedOnce:true,...options},server.origin,result);
  const check=(name,value)=>{assert.ok(value,name);result.checks.push(name);};
  try{
   if(entry.startsWith('/index.html')) await page.route('**/index.html*',async r=>{
@@ -53,6 +53,30 @@ try{
   check('zero own initial data reads after preparation',!audit.apiCalls.slice(calls).some(u=>/GET \/api\/(?:citizen\/identity|social\/me$|social\/relationships|social\/avatars\/|social\/profiles\/[^/]+\/posts)/.test(u)));
   await context.setOffline(true);await page.locator('.social-mobile-nav a[href="/perfil/"]').click();await area(page,'/perfil/');await continuity(page,check);check('prepared offline switch has no document request',audit.documents.length===docs);
  });
+ for(const role of ['admin','medico']) await run('shared-account-'+role,390,'/','cached',async(page,context,audit,check)=>{
+  await prepared(page);await owners(page);const docs=audit.documents.length;
+  check('native authentication preserves the synthetic account role',await page.evaluate(role=>RegulationAuth.getCachedUser().role===role,role));
+  for(const route of ['/perfil/','/amigos/','/mascotes/','/']){await page.locator(`.social-mobile-nav a[href="${route}"]`).click();await area(page,route);check('shared area keeps address after '+route,new URL(page.url()).pathname==='/');}
+  await continuity(page,check);check('shared authenticated journey creates no documents',audit.documents.length===docs);
+  check('background preparation stays within shared route allowlist',!audit.resources.some(u=>/^\/(?:admin|medico|recepcao|telemedicina|protocolo|conselho)\//.test(u)));
+  await page.route('**/outside-shared-fixture/',r=>{audit.documents.push('/outside-shared-fixture/');return r.fulfill({contentType:'text/html',body:'<!doctype html><title>Native synthetic destination</title><p>Outside shared route fixture</p>'});});
+  await page.evaluate(()=>{const a=document.createElement('a');a.id='outsideSharedFixture';a.href='/outside-shared-fixture/';a.textContent='Synthetic route outside shared scope';document.body.append(a);});
+  await page.locator('#outsideSharedFixture').click();await page.waitForURL('**/outside-shared-fixture/');check('unmapped routes keep native navigation',audit.documents.length===docs+1);
+ },{user:{...user,id:'synthetic-'+role,role}});
+ for(const auth of ['cached','late']) await run('android-wide-to-compact-'+auth,980,'/',auth,async(page,context,audit,check)=>{
+  await page.waitForFunction(()=>window.PortalCitizenShell?.diagnostics().ready.includes('/'));
+  const docs=audit.documents.length;
+  check('wide compact-touch entry keeps native URL policy and scroll restoration',await page.evaluate(()=>!PortalCitizenShell.enabled()&&location.pathname==='/'&&history.scrollRestoration==='auto'));
+  check('wide entry does not prepare hidden route documents',await page.evaluate(()=>PortalCitizenShell.diagnostics().routes===1));
+  await page.locator('#socialComposerText').fill('Rascunho sintético antes da mudança de largura');
+  await page.evaluate(()=>window.__wideOwners={document,bar:document.querySelector('.social-mobile-nav'),chat:document.getElementById('portalChatRoot'),pet:window.PortalPets.runtime});
+  await page.setViewportSize({width:390,height:844});await prepared(page);await owners(page);
+  check('compact activation keeps original document/bar/Chat/pet and draft',await page.evaluate(()=>{const o=window.__wideOwners;return o.document===document&&o.bar===document.querySelector('.social-mobile-nav')&&o.chat===document.getElementById('portalChatRoot')&&o.pet===window.PortalPets.runtime&&document.getElementById('socialComposerText').value==='Rascunho sintético antes da mudança de largura'&&PortalCitizenShell.enabled();}));
+  for(const route of ['/perfil/','/amigos/','/']){await page.locator(`.social-mobile-nav a[href="${route}"]`).click();await area(page,route);check('resized touch device retains Home address after '+route,new URL(page.url()).pathname==='/');}
+  await continuity(page,check);check('resize and later switches have zero document requests',audit.documents.length===docs);
+  await page.setViewportSize({width:980,height:844});check('return to wide layout restores native navigation and scroll policy',await page.evaluate(()=>!PortalCitizenShell.enabled()&&history.scrollRestoration==='auto'));
+  await page.emulateMedia({media:'print'});check('print disables retained navigation',await page.evaluate(()=>!PortalCitizenShell.enabled()));await page.emulateMedia({media:'screen'});
+ },{screen:{width:390,height:844},hasTouch:true,isMobile:true,maxTouchPoints:5,userAgent:'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'});
  for(const auth of ['cached','late']) await run('home-index-'+auth,390,'/index.html',auth,async(page,context,audit,check)=>{
   await prepared(page);await owners(page);const docs=audit.documents.length;
   check('Home index alias canonicalized without another document',new URL(page.url()).pathname==='/'&&docs===1);

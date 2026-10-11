@@ -1,6 +1,6 @@
 # Navegação móvel do cidadão
 
-O shell inicia apenas em tela móvel com conta cidadão. As dez áreas comuns são Home, Amigos, Mascotes, Perfil, Ferramentas, Avisos, Segurança, Configurações, Conquistas e Canal do Cidadão. Catálogo e gates nativos continuam decidindo acesso; módulos profissionais não são pré-carregados.
+O shell atende contas autenticadas nas áreas comuns em tela móvel. As dez áreas comuns são Home, Amigos, Mascotes, Perfil, Ferramentas, Avisos, Segurança, Configurações, Conquistas e Canal do Cidadão. Catálogo e gates nativos continuam decidindo acesso; módulos profissionais não são pré-carregados.
 
 Cada área visitada registra seu inicializador e mantém DOM, rascunhos, foco e rolagem em memória. Uma área fica conectada; barra, Chat e mascote têm os mesmos donos durante a navegação. Scripts da resposta HTML não são executados. Desktop usa navegação nativa; impressão e saída do breakpoint recuperam apresentação própria da área. Logout/troca de conta encerram o shell e o estado privado anterior.
 
@@ -26,7 +26,7 @@ Os fixtures usam somente usuários/conteúdo sintéticos e interceptam API/WebSo
 
 A instalação aguarda a autenticação quando o perfil cidadão ainda não está no cache. Os inicializadores dessas quatro entradas aguardam o mesmo gate; desktop continua com documentos e links nativos. Apresentação, destaque da barra e Perfil usam a área interna ativa, sem depender do caminho público. Links antigos, login `next`, Back/Forward e refresh continuam usando os gates de acesso existentes. O fragmento temporário de compatibilidade aceita apenas destino da mesma origem nas quatro áreas e é removido do endereço. O redirecionamento inicial não usa a animação nativa entre documentos, evitando uma captura da barra descartada.
 
-A entrada Home por `/index.html` e a montagem da transição do login em `/home/` ou `/index.html` usam a área interna `/` desde a instalação. A normalização mantém query e fragmento e não cria outro documento. Os gates de cargo cidadão e viewport até900px continuam aplicados. Testes adicionais cobrem `/index.html` com autenticação imediata/tardia e os três destinos permitidos da transição do login.
+A entrada Home por `/index.html` e a montagem da transição do login em `/home/` ou `/index.html` usam a área interna `/` desde a instalação. A normalização mantém query e fragmento e não cria outro documento. Os gates nativos de cada controlador continuam aplicados; a navegação persistente usa viewport até900px. Testes adicionais cobrem `/index.html` com autenticação imediata/tardia e os três destinos permitidos da transição do login.
 
 Com o Chat aberto, os outros controles da barra fecham pelo dono nativo antes de executar sua ação. Início conserva o comportamento anterior de fechar e permanecer na área atual; um segundo toque abre Home. Amigos, Perfil, Mascotes e Avisos fecham e executam sua ação. Cliques rápidos guardam a última intenção. Conversa e rascunho seguem no mesmo Chat; o ícone SVG tem estilo próprio na barra móvel, independente da marca de inicialização de outro script.
 
@@ -35,3 +35,9 @@ Com o Chat aberto, os outros controles da barra fecham pelo dono nativo antes de
 As suites anteriores foram adaptadas para conferir a área interna junto do endereço público; a única navegação extra aceita é a entrada inicial de compatibilidade, antes de medir continuidade. Os testes de vidas também aguardam a restauração da área após refresh antes de contar corações. Não há alteração de permissões, APIs clínicas, regras de vidas/falas ou cache/SW global.
 
 O renderizador nativo de fotos pode concluir uma imagem em uma área preparada ainda desconectada, somente se o shell da conta atual continuar dono desse nó. Área descartada e resposta de sessão anterior são recusadas. Isso reaproveita o cache nativo existente, sem alterar sua política. A restauração automática de links/refresh não altera foco nem `tabindex` do título; a comparação integral de Perfil/Chat em desktop/impressão continua obrigatória.
+
+## Ativação das áreas compartilhadas (11/10/2026)
+
+A ativação não depende de cargo `cidadao`: as dez entradas são áreas comuns cujo acesso já é decidido pelos controladores nativos. Autenticação, primeiro acesso, Conselho e gates do backend continuam inalterados. Rotas fora da lista usam navegação nativa, e a fila não acessa módulos profissionais. Testes com contas sintéticas administrador e médico verificam somente essas áreas comuns, conservação do cargo e exclusão de rotas fora da lista. A identificação “Desenvolvedor” vista na captura não comprova o cargo interno da conta.
+
+Dispositivos com mais de um ponto de toque e menor dimensão física de tela até700px usam a mesma detecção compacta já existente na Home. Quando começam com viewport acima900px, os controladores são capturados uma vez, mas a navegação permanece nativa, sem preparo em segundo plano nem updater da shell. Ao voltar para viewport até900px, a media query ativa preparo e navegação no documento existente, preservando rascunho/Chat/mascote/barra. Voltar à largura maior ou imprimir desativa a interceptação e recupera a política nativa de rolagem. Computadores desktop continuam com inicialização e documentos nativos. Não há promessa de endereço único em “Versão para computador” enquanto a largura efetiva exceder900px.

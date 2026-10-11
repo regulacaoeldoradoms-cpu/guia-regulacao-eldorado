@@ -144,7 +144,7 @@ async function intercept(context, origin, audit) {
     audit.apiCalls.push(`${method} ${url.pathname}${url.search}`);
     if (method === 'OPTIONS') return route.fulfill({ status:204, body:'' });
     let data, status = 200;
-    if (url.pathname === '/api/auth/me') data = { user };
+    if (url.pathname === '/api/auth/me') data = { user:audit.user || user };
     else if (url.pathname === '/api/auth/logout') data = { ok:true };
     else if (url.pathname === '/api/social/config') data = { backendEnabled:true, homeEnabled:true, available:true, profile:ownProfile };
     else if (url.pathname === '/api/social/me') data = { profile:ownProfile };
@@ -205,17 +205,20 @@ async function ready(page, route, candidate = true) {
 
 async function newPage(browser, scenario, origin, result) {
   const audit = { apiCalls:[], documents:[], resources:[], blockedResources:[], unmappedApiCalls:[], webSocketsBlocked:0 };
+  audit.user = scenario.user || user;
   if (scenario.group) {
     audit.groupFixture = true;
     audit.groupMessageRequests = 0;
     audit.groupReloadReached = new Promise(resolve => { audit.notifyGroupReload = resolve; });
   }
-  const context = await browser.newContext({ viewport:{ width:scenario.width, height }, screen:{ width:scenario.width, height },
-    hasTouch:scenario.width <= 900, isMobile:scenario.width <= 900, deviceScaleFactor:1, reducedMotion:'reduce',
+  const context = await browser.newContext({ viewport:{ width:scenario.width, height }, screen:scenario.screen || { width:scenario.width, height },
+    hasTouch:scenario.hasTouch ?? scenario.width <= 900, isMobile:scenario.isMobile ?? scenario.width <= 900,
+    ...(scenario.userAgent ? {userAgent:scenario.userAgent} : {}), deviceScaleFactor:1, reducedMotion:'reduce',
     colorScheme:scenario.theme, locale:'pt-BR', timezoneId:'UTC', serviceWorkers:'allow' });
   context.on('serviceworker', worker => { audit.worker = worker; });
-  await context.addInitScript(({ user, theme, syntheticToken, seedOnce }) => {
+  await context.addInitScript(({ user, theme, syntheticToken, seedOnce, maxTouchPoints }) => {
     if (location.protocol !== 'http:') return;
+    if(maxTouchPoints !== undefined)Object.defineProperty(navigator,'maxTouchPoints',{get:()=>maxTouchPoints});
     localStorage.setItem('regulacao.portal.theme.active.v1', theme);
     if (!seedOnce || !sessionStorage.getItem('__shellFixtureSeeded')) {
       sessionStorage.setItem('regulacao.portal.session', syntheticToken);
@@ -237,7 +240,7 @@ async function newPage(browser, scenario, origin, result) {
       const node = document.getElementById(id);
       if (node && !window.__originalRefinementNodes[id]) window.__originalRefinementNodes[id] = node;
     })).observe(document, { childList:true, subtree:true });
-  }, { user, theme:scenario.theme, syntheticToken, seedOnce:scenario.seedOnce });
+  }, { user:audit.user, theme:scenario.theme, syntheticToken, seedOnce:scenario.seedOnce, maxTouchPoints:scenario.maxTouchPoints });
   await intercept(context, origin, audit);
   const page = await context.newPage();
   page.setDefaultTimeout(9000);
