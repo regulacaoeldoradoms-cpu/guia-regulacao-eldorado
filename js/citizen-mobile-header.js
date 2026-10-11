@@ -64,11 +64,14 @@ export function mountCitizenMobileHeader() {
     if (!mobile || !menu.open || event.key!=='Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
     event.preventDefault(); close(true);
   });
+  menu.addEventListener('click',event=>{
+    if (!event.defaultPrevented && event.target.closest('a[href]')) close(true);
+  });
   menu.addEventListener('toggle',()=>{
     if (menu.open) document.querySelectorAll('.home-post-menu[open]').forEach(other=>{other.open=false;});
   });
   document.addEventListener('toggle',event=>{if(event.target.matches?.('.home-post-menu[open]')) close();},true);
-  window.addEventListener('portal:citizen-route',()=>{close();sync();});
+  window.addEventListener('portal:citizen-route',()=>{close(menu.open);sync();});
   media.addEventListener('change',sync); print.addEventListener('change',sync);
   window.addEventListener('beforeprint',()=>{printing=true;sync();});
   window.addEventListener('afterprint',()=>{printing=false;sync();});

@@ -52,6 +52,17 @@ try {
           if (route==='/amigos/' || route==='/mascotes/' || route==='/perfil/') await page.screenshot({path:path.join(output,`${theme}-${width}-${route.slice(1,-1)}-${process.env.TEXT_SCALE || 1}.png`)});
         }
       }
+      if (!process.env.HEADER_BASELINE && width<=900) {
+        for (const source of ['/', '/amigos/', '/perfil/', '/mascotes/']) {
+          if (source!==await page.evaluate(()=>PortalCitizenShell.active().url.pathname)) {
+            await page.locator(`.social-mobile-nav a[href="${source}"]`).click(); await ready(page,source);
+          }
+          await page.locator('#homeAccountMenu > summary').click();
+          await page.locator('#homeAccountPanel .portal-account-area').click(); await ready(page,'/perfil/');
+          assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open),'Selecting Perfil closes Conta instead of overlaying the new view');
+          assert.equal(await page.evaluate(()=>location.pathname),'/');
+        }
+      }
       assert.deepEqual(result.errors,[]); assert.deepEqual(audit.unmappedApiCalls,[]);
       if (!process.env.HEADER_BASELINE && width<=900) assert.equal(audit.documents.length,1,'No document reload across shared views');
       rows.push(result); console.log(JSON.stringify({theme,width,states:result.states.length,errors:result.errors}));
