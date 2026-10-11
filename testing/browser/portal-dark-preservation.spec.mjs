@@ -171,10 +171,12 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const loginRedesign=route==='/login/'&&isMobile;
     const loginContracts=[];
     // The approved presentation covers shared mobile navigation/Direct and
-    // Profile's compact account header. Native controls remain compared to
+    // the requested common Home header on the four primary views. Native controls remain compared to
     // base; desktop and print keep the exact computed and raster gates below.
     const homeRedesign=route==='/'&&mobileRedesign;
-    const approvedSurfaces=homeRedesign?approvedHomeSurfaces:approvedSharedSurfaces+(route==='/perfil/'?',.portal-topbar':'');
+    const headerRedesign=mobileRedesign&&['/','/amigos/','/perfil/','/mascotes/'].includes(route);
+    const approvedSurfaces=homeRedesign?approvedHomeSurfaces:approvedSharedSurfaces+(headerRedesign?',.portal-topbar':'');
+    const headerContracts=[];
     const palettes=[];
     const homeContracts=[];
     const nativeContracts=[];
@@ -208,6 +210,16 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
         await expect(target.locator('#portalGroupInput')).toBeAttached();
         await target.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         nativeContracts.push(await sharedNativeControlContract(target,route));
+        if(headerRedesign) headerContracts.push(await target.evaluate(()=>{
+          const header=document.querySelector('.portal-topbar');
+          return {title:header.querySelector('.portal-brand-copy h1')?.textContent,
+            logo:header.querySelectorAll('.portal-symbol').length,
+            headers:document.querySelectorAll('.portal-topbar').length,
+            menu:header.querySelectorAll('#homeAccountMenu:not([hidden])').length,
+            competingMenu:header.querySelectorAll('#profileAccountMenu').length,
+            logout:header.querySelectorAll('#portalLogout').length,
+            controller:Boolean(window[Symbol.for('portal.citizenMobileHeader')])};
+        }));
         if(homeRedesign) homeContracts.push(await homeControlContract(target));
         // Compare the same control identities and complete colors after responsive DOM moves.
         palettes.push(await target.evaluate(excluded=>[...document.querySelectorAll('button[id],input[id],textarea[id],.status-chip,.privacy-chip')].filter(e=>!e.closest(excluded)).map(e=>{const s=getComputedStyle(e);return {id:e.id,class:e.className,color:s.color,background:s.backgroundColor,border:s.borderColor};}).sort((a,b)=>a.id.localeCompare(b.id)||a.class.localeCompare(b.class)),approvedSurfaces));
@@ -256,6 +268,12 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       }
       expect(nativeContracts[0].controls.find(control=>control.id==='socialNotificationTriggerMobile')?.controls).toBe('socialNotificationPanelMobile');
       expect(nativeContracts[0].account).toEqual([{tag:'a',href:'/perfil/'}]);
+      if(headerRedesign){
+        // Only the four requested mobile headers may change. Every native
+        // control identity and all remaining palettes still compare to base.
+        expect(headerContracts[0]).toEqual({title:'Portal da regulação',logo:1,headers:1,menu:1,competingMenu:0,logout:1,controller:true});
+        await info.attach('approved-shared-mobile-header.json',{body:Buffer.from(JSON.stringify({route,current:headerContracts[0],base:headerContracts[1]},null,2)),contentType:'application/json'});
+      }
       expect(palettes).toHaveLength(2);
       expect(palettes[0]).toEqual(palettes[1]);
       // This existing audit fixture returns synthetic PETS_DISABLED (503); the
