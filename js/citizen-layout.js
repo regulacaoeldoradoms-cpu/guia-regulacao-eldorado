@@ -1,6 +1,7 @@
 "use strict";
 // Presentation only: authorization continues to be enforced by RegulationAuth.
 (() => {
+  const currentPath = () => window.PortalCitizenShell?.active()?.url.pathname || location.pathname;
   const instance = Symbol.for('portal.citizenLayout');
   if (window[instance]) return;
   window[instance] = true;
@@ -75,7 +76,7 @@
         link.dataset.citizenPaw = "true";
         link.setAttribute("aria-label", "Mascotes");
         link.title = "Mascotes";
-        if (location.pathname === "/mascotes/")
+        if (currentPath() === "/mascotes/")
           link.setAttribute("aria-current", "page");
         const icon = document.createElement("span");
         icon.className = "social-nav-icon";
@@ -94,7 +95,7 @@
   // for the same single mount without owning a second navigation controller.
   window.PortalCitizenMobileReady = new Promise(resolve => { finishPresentation = resolve; });
   function loadStyle(path) {
-    const href = new URL(`${path}?v=${version}`, location.href).href;
+    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
     const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
     if (existing?.sheet) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -120,15 +121,15 @@
   async function mountPresentation() {
     if (presentationStarted) return;
     presentationStarted = true;
-    const profileRoute = location.pathname === '/perfil/';
-    const mobileChatOnly = location.pathname === '/mascotes/'
+    const profileRoute = currentPath() === '/perfil/';
+    const mobileChatOnly = currentPath() === '/mascotes/'
       && document.body.hasAttribute('data-citizen-mobile-chat-only');
     try {
       const [navigation, direct, profile, mobileChat] = await Promise.all([
         import(`/js/citizen-mobile-navigation.js?v=${version}`),
-        import(`/js/home-mobile-direct.js?v=${version}`),
-        profileRoute ? import(`/js/profile-mobile-presentation.js?v=${version}`) : null,
-        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=20261010-citizen-prewarm-1`) : null,
+        import(`/js/home-mobile-direct.js?v=20261011-citizen-continuity-3`),
+        profileRoute ? import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-3`) : null,
+        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`) : null,
         loadStyle('/css/citizen-mobile-navigation.css'),
         loadStyle('/css/home-mobile-direct.css'),
         profileRoute ? loadStyle('/css/profile-mobile-presentation.css') : null
@@ -150,9 +151,9 @@
   const apply = (user) => {
     document.body?.classList.toggle(
       "citizen-readable-layout",
-      Boolean(user) && sharedRoutes.has(location.pathname),
+      Boolean(user) && sharedRoutes.has(currentPath()),
     );
-    if (user && sharedRoutes.has(location.pathname)) mountPresentation();
+    if (user && sharedRoutes.has(currentPath())) mountPresentation();
     petNavigation();
   };
   const cached = () => {
@@ -173,23 +174,23 @@
   // imports this script; accepting that result avoids depending on a past event.
   async function enterRoute() {
     await window.PortalCitizenMobileReady;
-    if (location.pathname === '/perfil/') {
-      const profile = await import(`/js/profile-mobile-presentation.js?v=${version}`);
+    if (currentPath() === '/perfil/') {
+      const profile = await import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-3`);
       await loadStyle('/css/profile-mobile-presentation.css');
       profile.mountProfileMobilePresentation()?.sync();
     } else window[Symbol.for('portal.profileMobilePresentation')]?.sync();
-    if (location.pathname === '/mascotes/') {
-      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261010-citizen-prewarm-1`);
+    if (currentPath() === '/mascotes/') {
+      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`);
       chat.mountCitizenMobileChatBootstrap(window[Symbol.for('portal.homeMobileDirect')]);
     }
   }
   async function prepareRoute(path) {
     await window.PortalCitizenMobileReady;
     if (path === '/perfil/') await Promise.all([
-      import(`/js/profile-mobile-presentation.js?v=${version}`),
+      import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-3`),
       loadStyle('/css/profile-mobile-presentation.css')
     ]);
-    if (path === '/mascotes/') await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261010-citizen-prewarm-1`);
+    if (path === '/mascotes/') await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`);
   }
   window.PortalCitizenLayout = Object.freeze({ apply, enterRoute, prepareRoute });
   apply(window.RegulationAuth?.getCachedUser?.() || cached());

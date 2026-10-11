@@ -190,6 +190,7 @@ async function intercept(context, origin, audit) {
 const settle = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 function check(result, name, passed, detail) { result.checks.push({ name, passed:Boolean(passed), ...(detail === undefined ? {} : { detail }) }); }
 async function ready(page, route, candidate = true) {
+  if (candidate && mode !== 'baseline' && /^\/(?:perfil|amigos|mascotes)\//.test(route) && page.viewportSize().width <= 900) await page.waitForFunction(route => window.PortalCitizenShell?.active().url.pathname + (window.PortalCitizenShell?.active().url.search || '') === route && !window.PortalCitizenShell.diagnostics().navigating, route);
   if (route.startsWith('/perfil/')) { await page.locator('#socialProfile:not([hidden])').waitFor(); await page.locator('#profilePosts [data-post-id]').first().waitFor(); }
   if (route === '/') { await page.waitForFunction(() => Boolean(window.PortalHomeReady)); await page.evaluate(() => window.PortalHomeReady); }
   await page.locator('#portalChatLauncher').waitFor({ state:'attached' });
@@ -259,7 +260,7 @@ async function snapshot(page) {
       textLabels:[...node.querySelectorAll(':scope > span')].filter(span => !/icon|badge|avatar|dot|count/.test(span.className) && visible(span) && span.getBoundingClientRect().width > 2).map(span => span.textContent.trim())
     }));
     const input = document.getElementById('portalChatInput'), messages = document.getElementById('portalChatMessages');
-    return { url:location.pathname + location.search, document:window.__refinementDocument,
+    return { url:(window.PortalCitizenShell?.active().url || location).pathname + (window.PortalCitizenShell?.active().url || location).search, document:window.__refinementDocument,
       pagehides:window.__refinementPagehides, scrollY:window.scrollY, width:innerWidth, height:innerHeight,
       overflow:Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
       nav:{ rect:rect(nav), items }, rootCount:document.querySelectorAll('#portalChatRoot').length,
@@ -400,7 +401,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.waitForFunction(() => history.state?.__portalHomeDirect?.depth === 1);
   await page.goBack();
   await page.locator('#portalChatRoot.open').waitFor({ state:'hidden' });
-  check(result, 'browser Back handles list then closed without leaving profile', page.url() === origin + profileRoute && await page.evaluate(() => window.__refinementDocument) === before.document);
+  check(result, 'browser Back handles list then closed without leaving profile', await page.evaluate(route => (window.PortalCitizenShell?.active().url || location).pathname + (window.PortalCitizenShell?.active().url || location).search === route, profileRoute) && await page.evaluate(() => window.__refinementDocument) === before.document);
   await page.locator('#portalChatLauncher').click();
   if (!(await page.locator('#portalChatConversationView').evaluate(node => node.classList.contains('active')))) await page.locator(`[data-chat-user="${friendHandle}"]`).first().click();
   await page.locator('#portalChatConversationView.active').waitFor();
@@ -409,7 +410,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   const departure = draft + ' Edição imediata antes de Amigos.';
   await page.locator('#portalChatInput').fill(departure);
   await page.locator('.social-mobile-nav a[href="/amigos/"]').click();
-  await page.waitForURL(origin + '/amigos/');
+  await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !window.PortalCitizenShell?.diagnostics().navigating);
   await ready(page, '/amigos/');
   if (retainedNavigation) {
     check(result, 'retained Friends route closes Direct without a new document', audit.documents.length === documentsBefore && !await page.locator('#portalChatRoot').evaluate(node => node.classList.contains('open')));
@@ -422,7 +423,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   const returning = departure + ' Edição feita em Amigos.';
   await page.locator('#portalChatInput').fill(returning);
   await page.locator('.social-mobile-nav a[href="/perfil/"]').click();
-  await page.waitForURL(origin + '/perfil/');
+  await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/perfil/' && !window.PortalCitizenShell?.diagnostics().navigating);
   await ready(page, '/perfil/');
   if (retainedNavigation) await page.locator('#portalChatLauncher').click();
   await page.locator('#portalChatConversationView.active').waitFor();
@@ -438,7 +439,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
   await page.waitForFunction(() => !history.state?.__portalHomeDirect);
   await settle(page);
   await page.locator('.social-mobile-nav a[href="/"]').click();
-  await page.waitForURL(origin + '/');
+  await page.waitForFunction(() => (window.PortalCitizenShell?.active().url || location).pathname === '/' && !window.PortalCitizenShell?.diagnostics().navigating);
   await ready(page, '/');
   check(result, 'closed-chat Início follows its normal Home href', new URL(page.url()).pathname === '/' && (retainedNavigation ? audit.documents.length === documentsBefore + 1 : audit.documents.at(-1) === '/'));
   await capture(page, result, 'home');
@@ -493,7 +494,7 @@ async function groupExercise(page, result, audit, route) {
   await page.locator('#portalChatBack').click();
   await page.locator('#portalChatContactsView.active').waitFor();
   await page.waitForFunction(() => history.state?.__portalHomeDirect?.depth === 1);
-  check(result, 'native group Back returns to contact list on the same page', page.url().endsWith(route) && await page.locator('#portalChatRoot').evaluate(node => node.classList.contains('open') && !node.classList.contains('group-open')));
+  check(result, 'native group Back returns to contact list on the same page', await page.evaluate(route => (window.PortalCitizenShell?.active().url || location).pathname + (window.PortalCitizenShell?.active().url || location).search === route, route) && await page.locator('#portalChatRoot').evaluate(node => node.classList.contains('open') && !node.classList.contains('group-open')));
   await page.locator(`[data-group-open="${group.id}"]`).click();
   await page.locator('#portalGroupMessages [data-group-message="24"]').waitFor();
   check(result, 'group draft survives native Back and manual reselection', await page.locator('#portalGroupInput').inputValue() === draft);

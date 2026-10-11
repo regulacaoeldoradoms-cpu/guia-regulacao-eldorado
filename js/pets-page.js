@@ -113,5 +113,7 @@ window.addEventListener('portal:background-refresh',()=>{if(!session&&!initializ
 context?.addController({activate:render,deactivate:()=>session?.runtime.preview(null)});
 return initialize();
 };
-if(globalThis.PortalCitizenShell) globalThis.PortalCitizenShell.register('pets-page',initializePetArea);
-else initializePetArea();
+const startPetArea=()=>globalThis.PortalCitizenShell
+ ? globalThis.PortalCitizenShell.register('pets-page',initializePetArea):initializePetArea();
+if(globalThis.PortalCitizenShellReady)globalThis.PortalCitizenShellReady.then(startPetArea);
+else startPetArea();

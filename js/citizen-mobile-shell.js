@@ -4,10 +4,25 @@
 (() => {
   if (window.PortalCitizenShell) return;
   const screen = matchMedia('screen and (max-width: 900px)');
+  const primaryViews = new Set(['/', '/amigos/', '/perfil/', '/mascotes/']);
+  const auth = window.RegulationAuth;
+  if (!auth || !screen.matches) return;
+  if (!auth.getCachedUser?.()) {
+    if (!primaryViews.has(location.pathname)) return;
+    // Entry controllers wait for this gate; a late account must not miss the
+    // one-time shell bootstrap and then fall back to rebuilding documents.
+    window.PortalCitizenShellReady = auth.requireRole([]).then(initializeShell).catch(() => {});
+  } else {
+    const pending = initializeShell();
+    if (pending?.then) window.PortalCitizenShellReady = pending;
+  }
+
+  function initializeShell() {
   const print = matchMedia('print');
   const user = window.RegulationAuth?.getCachedUser?.();
   if (!screen.matches || print.matches || user?.role !== 'cidadao') return;
   const KEY = '__portalCitizenRoute';
+  const ACCOUNT = '__portalCitizenAccount';
   const entries = {
     '/': ['social-home', 'home'],
     '/amigos/': ['social-friends'],
@@ -37,6 +52,35 @@
   const routeKey = url => url.pathname + url.search;
   const bodyState = () => [...document.body.attributes].filter(attr => attr.name === 'class' || ['data-portal-home-bootstrap', 'data-citizen-mobile-chat-only', 'data-citizen-tab'].includes(attr.name)).map(attr => [attr.name, attr.value]);
   const initialUrl = new URL(location.href);
+  if (primaryViews.has(initialUrl.pathname) && initialUrl.pathname !== '/') {
+    // Legacy links enter the same Home document before any area controller
+    // starts. The fragment is only a one-time, same-origin route handoff.
+    // Suppress the outgoing native document animation for this compatibility
+    // redirect; its screenshot would briefly show the discarded legacy bar.
+    const transitionStyle = document.createElement('style');
+    transitionStyle.textContent = '@view-transition { navigation: none; }';
+    document.head.append(transitionStyle);
+    location.replace('/#citizen-area=' + encodeURIComponent(routeKey(initialUrl)));
+    return new Promise(() => {});
+  }
+  let restoreTarget = null;
+  const routeFrom = value => {
+    try {
+      if (typeof value !== 'string' || value.length > 2048) return null;
+      const url = new URL(value, location.origin);
+      return url.origin === location.origin && primaryViews.has(url.pathname) ? url : null;
+    } catch (_) { return null; }
+  };
+  if (initialUrl.pathname === '/') {
+    if (initialUrl.hash.startsWith('#citizen-area=')) {
+      try { restoreTarget = routeFrom(decodeURIComponent(initialUrl.hash.slice(14))); } catch (_) {}
+      initialUrl.hash = '';
+    } else if (history.state?.[ACCOUNT] === sessionIdentity) restoreTarget = routeFrom(history.state?.[KEY]);
+    if (restoreTarget?.pathname === '/') restoreTarget = null;
+  }
+  const publicAddress = url => screen.matches && primaryViews.has(url.pathname)
+    ? '/' + (url.pathname === '/' ? url.search + url.hash : '')
+    : url.pathname + url.search + url.hash;
   if (!entries[initialUrl.pathname]) return;
   const chrome = selector => /portal-topbar|portal-user|portal-brand|social-(mobile|global)-nav|social-nav-badge|social(?:Confirm|Report)Dialog/.test(selector);
 
@@ -84,6 +128,7 @@
     state.window = new Proxy(window, { get(target, key) {
       if (key in winEvents) return winEvents[key];
       if (key === 'PortalSocial') return state.social;
+      if (key === 'PortalCitizenShell' && target[key]) return { ...target[key], canonicalize: path => target[key].canonicalize(path, state) };
       if (key === 'PortalSocialNavigation' && target[key]) return { ...target[key], mount: (...args) => { if (state.active && valid()) return target[key].mount(...args); } };
       if (key === 'PortalAccountSection' && target[key]) return { ...target[key], mount: options => target[key].mount({ ...options, navigation: state.active && !document.querySelector('.social-mobile-nav') ? options?.navigation : false, root, document: state.document, route: state.url, isCurrent: () => !state.disposed && valid() }) };
       if (key === 'setTimeout') return (fn, delay, ...args) => {
@@ -137,8 +182,8 @@
   active.desktopBrand = sharedBrand?.cloneNode(true);
   active.attributes = bodyState();
   areas.set(routeKey(initialUrl), active);
-  document.body.classList.add('citizen-mobile-shell');
-  history.replaceState({ ...history.state, [KEY]: routeKey(initialUrl) }, '', location.href);
+  document.body.classList.toggle('citizen-mobile-shell', screen.matches && !print.matches);
+  history.replaceState({ ...history.state, [KEY]: routeKey(initialUrl), [ACCOUNT]:sessionIdentity }, '', publicAddress(initialUrl));
   history.scrollRestoration = 'manual';
 
   const name = href => new URL(href, location.href).pathname.split('/').pop().replace(/\.css$/, '');
@@ -221,7 +266,7 @@
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261011-home-speed-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261011-citizen-continuity-3'];
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
       if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
       for (const path of dependencies) {
@@ -229,7 +274,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${['home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-home-speed-1' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${['home', 'social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
@@ -299,7 +344,13 @@
         }
       }
     } catch (_) { /* Session/access failure leaves the current native gate in charge. */ }
-    finally { prewarming = false; }
+    finally {
+      prewarming = false;
+      if (restoreTarget && active.loaded && enabled() && !navigating && navigator.onLine && !document.hidden) {
+        const target = restoreTarget; restoreTarget = null;
+        void navigate(target, true, { restoring:true });
+      }
+    }
   }
   function schedulePrewarm() {
     if (!valid() || document.readyState !== 'complete' || prewarmTimer || prewarming) return;
@@ -315,7 +366,7 @@
     const attrs = Object.fromEntries(area.attributes);
     document.body.className = attrs.class || 'portal-page';
     document.body.classList.add(...previous);
-    document.body.classList.toggle('citizen-mobile-shell', enabled());
+    document.body.classList.toggle('citizen-mobile-shell', valid() && screen.matches && !print.matches);
     if (area.url.pathname === '/' && screen.matches) document.body.classList.add('mobile-home-mode');
     if (area.url.pathname === '/cidadao/' && screen.matches) document.body.classList.add('mobile-citizen-mode');
     for (const [key, value] of area.attributes) if (key.startsWith('data-')) document.body.setAttribute(key, value);
@@ -345,7 +396,7 @@
   }
   function updateNavigation() {
     document.querySelectorAll('.social-mobile-nav a, .social-global-nav a').forEach(link => {
-      if (new URL(link.href).pathname === location.pathname) link.setAttribute('aria-current', 'page');
+      if (new URL(link.href).pathname === active.url.pathname) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
     window.PortalCitizenLayout?.apply(window.RegulationAuth.getCachedUser());
@@ -360,8 +411,9 @@
   }
   const notice = document.createElement('div'); notice.className = 'citizen-route-notice'; notice.hidden = true;
   notice.setAttribute('role', 'status'); notice.setAttribute('aria-live', 'polite'); marker.before(notice);
-  async function navigate(url, pop = false) {
+  async function navigate(url, pop = false, options = {}) {
     if (!entries[url.pathname] || !valid() || !pop && !enabled()) return false;
+    if (!options.restoring) restoreTarget = null;
     if (navigating) { wanted = { url, pop }; return true; }
     navigating = true; navigationKey = routeKey(url);
     const retained = areas.get(routeKey(url));
@@ -373,31 +425,31 @@
       await previous.ready;
       if (!(await gate(url))) return true;
       const direct = window[Symbol.for('portal.homeMobileDirect')];
-      if (document.getElementById('portalChatRoot')?.classList.contains('open')) await direct?.closeToPage?.();
-      previousHistory = { ...history.state, [KEY]:routeKey(previous.url), __portalHomeDirect:undefined };
+      if (!options.restoring && document.getElementById('portalChatRoot')?.classList.contains('open')) await direct?.closeToPage?.();
+      previousHistory = { ...history.state, [KEY]:routeKey(previous.url), [ACCOUNT]:sessionIdentity, ...(!options.restoring ? { __portalHomeDirect:undefined } : {}) };
       const area = await prepare(url);
       if (!valid()) return true;
       if (wanted) return true;
       if (area !== active) deactivate(active);
       active = area;
-      // Give native route gates/controllers the intended URL while mounting,
+      // Record the internal route used by native controllers while mounting,
       // and add the new Back entry only after initialization succeeds.
-      history.replaceState({ ...history.state, [KEY]:routeKey(url), __portalHomeDirect:undefined }, '', url.pathname + url.search + url.hash);
+      history.replaceState({ ...history.state, [KEY]:routeKey(url), [ACCOUNT]:sessionIdentity, ...(!options.restoring ? { __portalHomeDirect:undefined } : {}) }, '', publicAddress(url));
       activate(area);
       await window.PortalCitizenLayout?.enterRoute?.();
       await initialize(area);
       const destination = active.url;
-      const destinationState = { ...history.state, [KEY]:routeKey(destination) };
+      const destinationState = { ...history.state, [KEY]:routeKey(destination), [ACCOUNT]:sessionIdentity };
       if (!pop && !wanted?.pop) {
-        history.replaceState(previousHistory, '', previous.url.pathname + previous.url.search + previous.url.hash);
-        history.pushState(destinationState, '', destination.pathname + destination.search + destination.hash);
+        history.replaceState(previousHistory, '', publicAddress(previous.url));
+        history.pushState(destinationState, '', publicAddress(destination));
       }
       window.PortalSocialFeed?.resume?.(area.root.querySelector('#socialFeedMore, #profilePostsMore'));
       window.PortalPets?.runtime?.attachHabitat?.(area.root.querySelector('#petHabitat'));
       await new Promise(requestAnimationFrame);
       window.scrollTo(...area.scroll);
       const focus = area.focus?.isConnected ? area.focus : area.root.querySelector('h1, h2');
-      if (focus) { if (!focus.hasAttribute('tabindex')) focus.tabIndex = -1; focus.focus({ preventScroll: true }); }
+      if (focus && !options.restoring) { if (!focus.hasAttribute('tabindex')) focus.tabIndex = -1; focus.focus({ preventScroll: true }); }
       notice.hidden = true;
       startUpdates();
     } catch (error) {
@@ -407,7 +459,7 @@
         deactivate(failed);
         if (failed.failed) { areas.delete(routeKey(failed.url)); failed.dispose(); }
         active = previous;
-        history.replaceState(previousHistory, '', previous.url.pathname + previous.url.search + previous.url.hash);
+        history.replaceState(previousHistory, '', publicAddress(previous.url));
         activate(previous);
         window.scrollTo(...previous.scroll);
       }
@@ -431,10 +483,15 @@
     if (url.origin !== location.origin || !entries[url.pathname] || url.hash && routeKey(url) === routeKey(active.url)) return;
     event.preventDefault(); if (routeKey(url) !== routeKey(active.url)) void navigate(url);
   });
-  window.addEventListener('popstate', () => {
+  window.addEventListener('popstate', event => {
     if (!valid()) return;
-    const url = new URL(location.href);
-    if (routeKey(url) !== routeKey(active.url) && entries[url.pathname]) void navigate(url, true);
+    restoreTarget = null;
+    if (event.state?.[ACCOUNT] !== sessionIdentity) {
+      history.replaceState({ ...history.state, [KEY]:routeKey(active.url), [ACCOUNT]:sessionIdentity }, '', publicAddress(active.url));
+      return;
+    }
+    const url = new URL(event.state?.[KEY] || location.href, location.origin);
+    if (url.origin === location.origin && routeKey(url) !== routeKey(active.url) && entries[url.pathname]) void navigate(url, true);
   });
   function syncBrand() {
     if (!sharedBrand || !brandMarker.parentNode) return;
@@ -443,7 +500,11 @@
     const current = brandMarker.nextSibling;
     if (current !== next) { current?.remove(); brandMarker.after(next); }
   }
-  const syncMedia = () => { document.body.classList.toggle('citizen-mobile-shell', enabled()); syncBrand(); };
+  const syncMedia = () => {
+    document.body.classList.toggle('citizen-mobile-shell', enabled());
+    if (valid()) history.replaceState(history.state, '', publicAddress(active.url));
+    syncBrand();
+  };
   screen.addEventListener('change', syncMedia);
   print.addEventListener('change', syncMedia);
   window.addEventListener('beforeprint', () => document.body.classList.remove('citizen-mobile-shell'));
@@ -472,12 +533,13 @@
     }
   });
   window.PortalCitizenShell = Object.freeze({
-    version:'20261011-home-speed-1', enabled, active: () => active, updateNavigation, navigate,
-    canonicalize(path) {
+    ownsElement: element => valid() && [...areas.values()].some(area => !area.disposed && area.root.contains(element)),
+    version:'20261011-citizen-continuity-3', enabled, active: () => active, updateNavigation, navigate,
+    canonicalize(path, area = active) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;
-      areas.delete(routeKey(active.url)); active.url = url; areas.set(routeKey(url), active);
-      history.replaceState({ ...history.state, [KEY]: routeKey(url) }, '', url.pathname + url.search + url.hash);
+      areas.delete(routeKey(area.url)); area.url = url; areas.set(routeKey(url), area);
+      if (area === active) history.replaceState({ ...history.state, [KEY]: routeKey(url), [ACCOUNT]:sessionIdentity }, '', publicAddress(url));
     },
     register(entry, initialize) {
       if (!valid()) return Promise.resolve();
@@ -549,4 +611,5 @@
   else window.addEventListener('load', schedulePrewarm, { once: true });
   document.addEventListener('visibilitychange', schedulePrewarm);
   window.addEventListener('online', schedulePrewarm);
+  }
 })();
