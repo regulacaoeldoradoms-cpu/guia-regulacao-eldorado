@@ -41,6 +41,7 @@ try{
    await page.locator(`.social-mobile-nav a[href="${route}"]`).click();await area(page,route);
    await page.waitForFunction(()=>window.__paintMs!==null);result.clickToPaint.push({route,ms:await page.evaluate(()=>window.__paintMs)});
    check('canonical address after '+route,new URL(page.url()).pathname==='/'&&new URL(page.url()).search==='');
+   if(route==='/perfil/')check('prepared native profile/post photos render without another activation fetch',await page.evaluate(()=>getComputedStyle(document.getElementById('profileAvatar')).backgroundImage!=='none'&&[...document.querySelectorAll('#profilePosts .social-avatar')].every(n=>getComputedStyle(n).backgroundImage!=='none')));
    check('outlined Chat SVG after '+route,await page.evaluate(()=>{const c=getComputedStyle(document.querySelector('#portalChatLauncher svg'));return c.fill==='none'&&c.stroke===c.color&&c.strokeWidth==='1.8px';}));
   }
   await continuity(page,check);check('zero new document requests',audit.documents.length===docs);

@@ -36,8 +36,8 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /portal-interactions\.js\?v=20260923-2/);
     assert.match(html, /social\.css\?v=20260922-2/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
-    assert.match(html, filename === 'admin/social/index.html' ? /social-api\.js\?v=20260910-4/ : /social-api\.js\?v=20261011-home-speed-1/);
-    assert.match(html, filename === 'admin/social/index.html' ? /social-navigation\.js\?v=20261009-pets-1/ : /social-navigation\.js\?v=20261011-citizen-continuity-2/);
+    assert.match(html, filename === 'admin/social/index.html' ? /social-api\.js\?v=20260910-4/ : /social-api\.js\?v=20261011-citizen-continuity-3/);
+    assert.match(html, filename === 'admin/social/index.html' ? /social-navigation\.js\?v=20261009-pets-1/ : /social-navigation\.js\?v=20261011-citizen-continuity-3/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -111,15 +111,15 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(index, /<a href="\/configuracoes\/">Configurações<\/a>/);
   assert.match(index, /<a href="\/conquistas\/">Conquistas<\/a>/);
   assert.doesNotMatch(index, />Ver meu perfil<|>Amigos e pedidos<|>Notificações sociais<|>Privacidade social</);
-  assert.match(index, /social-navigation\.js\?v=20261011-citizen-continuity-2/);
+  assert.match(index, /social-navigation\.js\?v=20261011-citizen-continuity-3/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
-  assert.match(index, /\/js\/social-home\.js\?v=20261011-citizen-continuity-2/);
+  assert.match(index, /\/js\/social-home\.js\?v=20261011-citizen-continuity-3/);
   const socialHome = read('js/social-home.js');
   assert.match(socialHome, /cachedProfile = config\?\.profile/);
   assert.match(socialHome, /avatarVersion: String\(cachedProfile\.avatarVersion/);
   const homeScripts = [...index.matchAll(/<script\b[^>]*\bsrc\s*=\s*(["'])([^"']+)\1[^>]*>/gi)]
     .map((match) => match[2]).filter((source) => new URL(source, 'https://portal.invalid').pathname === '/js/home.js');
-  assert.deepEqual(homeScripts, ['/js/home.js?v=20261011-citizen-continuity-2']);
+  assert.deepEqual(homeScripts, ['/js/home.js?v=20261011-citizen-continuity-3']);
   assert.match(index, /<body class="portal-page home-loading-active" data-portal-home-bootstrap="1">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);
@@ -244,7 +244,7 @@ test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação
   assert.match(html, /value="30">30 por página/);
   assert.match(html, /value="all">Todos/);
   assert.match(html, /id="relationshipPageButtons"/);
-  assert.match(html, /social-friends\.js\?v=20261011-citizen-continuity-2/);
+  assert.match(html, /social-friends\.js\?v=20261011-citizen-continuity-3/);
 
   assert.match(navigation, /preloadRelationshipList\?\.\('friends'\)/);
   assert.match(apiSource, /fetchAllRelationshipPages/);
@@ -317,7 +317,7 @@ test('avatar social reutiliza Cache Storage e baixa novamente somente quando a v
     }
   };
 
-  function runtime() {
+  function runtime(options = {}) {
     const eventListeners = new Map();
     class TestURL extends URL {}
     TestURL.createObjectURL = () => `blob:avatar-${++objectUrlSequence}`;
@@ -326,10 +326,11 @@ test('avatar social reutiliza Cache Storage e baixa novamente somente quando a v
     const window = {
       RegulationAuth: {
         api: async () => ({}),
-        getToken: () => 'sessao-teste',
+        getToken: options.getToken || (() => 'sessao-teste'),
         authorizationHeader: () => ({ Authorization: 'Bearer sessao-teste' }),
         getCachedUser: () => ({ username: 'visualizador.teste' })
       },
+      PortalCitizenShell: options.shell,
       REGULATION_AUTH_CONFIG: { endpoint: 'https://worker.test' },
       location: { origin: 'https://portal.test' },
       caches: {
@@ -397,6 +398,25 @@ test('avatar social reutiliza Cache Storage e baixa novamente somente quando a v
   await secondRuntime.mountAvatar(element(), { ...v1, avatarVersion: 'versao-2' });
   assert.equal(networkRequests, 2, 'uma versão nova deve baixar a foto nova uma única vez');
   assert.equal(stored.size, 1, 'a versão antiga deve ser removida após a atualização');
+
+  const v2 = { ...v1, avatarVersion:'versao-2' };
+  let session = 'sessao-teste';
+  const preparedRuntime = runtime({ getToken:() => session, shell:{ ownsElement:node => node.owned && !node.disposed } });
+  const detached = { ...element(), isConnected:false };
+  await preparedRuntime.mountAvatar(detached, v2);
+  assert.equal(detached.style.backgroundImage, 'none', 'nó desconectado sem dono não recebe foto');
+  detached.owned = true;
+  await preparedRuntime.mountAvatar(detached, v2);
+  assert.match(detached.style.backgroundImage, /blob:avatar-/, 'área cidadã preparada recebe foto pelo cache nativo');
+  detached.disposed = true;
+  await preparedRuntime.mountAvatar(detached, v2);
+  assert.equal(detached.style.backgroundImage, 'none', 'área descartada não aceita resposta tardia');
+  const replaced = element();
+  const pending = preparedRuntime.mountAvatar(replaced, v2);
+  session = 'outra-sessao';
+  await pending;
+  assert.equal(replaced.style.backgroundImage, 'none', 'resposta de avatar não atravessa troca de conta');
+  assert.equal(networkRequests, 2, 'preparo e descarte não criam outro download de avatar');
 });
 
 test('cliente social renderiza texto do usuário sem interpolação HTML', () => {

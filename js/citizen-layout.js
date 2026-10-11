@@ -95,7 +95,7 @@
   // for the same single mount without owning a second navigation controller.
   window.PortalCitizenMobileReady = new Promise(resolve => { finishPresentation = resolve; });
   function loadStyle(path) {
-    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-2' : version}`, location.href).href;
+    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
     const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
     if (existing?.sheet) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -127,9 +127,9 @@
     try {
       const [navigation, direct, profile, mobileChat] = await Promise.all([
         import(`/js/citizen-mobile-navigation.js?v=${version}`),
-        import(`/js/home-mobile-direct.js?v=20261011-citizen-continuity-2`),
-        profileRoute ? import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-2`) : null,
-        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-2`) : null,
+        import(`/js/home-mobile-direct.js?v=20261011-citizen-continuity-3`),
+        profileRoute ? import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-3`) : null,
+        mobileChatOnly ? import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`) : null,
         loadStyle('/css/citizen-mobile-navigation.css'),
         loadStyle('/css/home-mobile-direct.css'),
         profileRoute ? loadStyle('/css/profile-mobile-presentation.css') : null
@@ -175,22 +175,22 @@
   async function enterRoute() {
     await window.PortalCitizenMobileReady;
     if (currentPath() === '/perfil/') {
-      const profile = await import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-2`);
+      const profile = await import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-3`);
       await loadStyle('/css/profile-mobile-presentation.css');
       profile.mountProfileMobilePresentation()?.sync();
     } else window[Symbol.for('portal.profileMobilePresentation')]?.sync();
     if (currentPath() === '/mascotes/') {
-      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-2`);
+      const chat = await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`);
       chat.mountCitizenMobileChatBootstrap(window[Symbol.for('portal.homeMobileDirect')]);
     }
   }
   async function prepareRoute(path) {
     await window.PortalCitizenMobileReady;
     if (path === '/perfil/') await Promise.all([
-      import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-2`),
+      import(`/js/profile-mobile-presentation.js?v=20261011-citizen-continuity-3`),
       loadStyle('/css/profile-mobile-presentation.css')
     ]);
-    if (path === '/mascotes/') await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-2`);
+    if (path === '/mascotes/') await import(`/js/citizen-mobile-chat-bootstrap.js?v=20261011-citizen-continuity-3`);
   }
   window.PortalCitizenLayout = Object.freeze({ apply, enterRoute, prepareRoute });
   apply(window.RegulationAuth?.getCachedUser?.() || cached());

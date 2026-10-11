@@ -266,7 +266,7 @@
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261011-citizen-continuity-2'];
+      const dependencies = ['/js/account-section-shell.js?v=20261011-citizen-continuity-3'];
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
       if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
       for (const path of dependencies) {
@@ -274,7 +274,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${['home', 'social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-2' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${['home', 'social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
@@ -449,7 +449,7 @@
       await new Promise(requestAnimationFrame);
       window.scrollTo(...area.scroll);
       const focus = area.focus?.isConnected ? area.focus : area.root.querySelector('h1, h2');
-      if (focus) { if (!focus.hasAttribute('tabindex')) focus.tabIndex = -1; focus.focus({ preventScroll: true }); }
+      if (focus && !options.restoring) { if (!focus.hasAttribute('tabindex')) focus.tabIndex = -1; focus.focus({ preventScroll: true }); }
       notice.hidden = true;
       startUpdates();
     } catch (error) {
@@ -533,7 +533,8 @@
     }
   });
   window.PortalCitizenShell = Object.freeze({
-    version:'20261011-citizen-continuity-2', enabled, active: () => active, updateNavigation, navigate,
+    ownsElement: element => valid() && [...areas.values()].some(area => !area.disposed && area.root.contains(element)),
+    version:'20261011-citizen-continuity-3', enabled, active: () => active, updateNavigation, navigate,
     canonicalize(path, area = active) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;
