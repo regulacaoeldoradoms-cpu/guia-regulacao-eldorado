@@ -281,13 +281,16 @@
     root.querySelectorAll('*').forEach(node => [...node.attributes].forEach(attr => {
       if (/^on/i.test(attr.name) || /^(href|src)$/i.test(attr.name) && /^javascript:/i.test(attr.value)) node.removeAttribute(attr.name);
     }));
+    if (url.pathname === '/cidadao/') root.querySelectorAll('[data-citizen-native-text]').forEach(node => {
+      node.textContent = node.dataset.citizenNativeText;
+    });
     const area = context(url, root); area.active = false; area.title = doc.title;
     area.desktopBrand = desktopBrand(doc.querySelector('.portal-topbar .portal-brand'));
     root.addEventListener('input', () => { area.dirty = true; });
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261011-shared-header-account-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261011-citizen-startup-1'];
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
       if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
       for (const path of dependencies) {
@@ -295,7 +298,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'home' ? '20261011-shared-header-account-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261011-citizen-startup-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
@@ -394,6 +397,10 @@
     document.title = area.title;
     syncBrand();
     area.styles.forEach(link => { link.disabled = false; link.media = styleMedia.get(link) || ''; });
+    if (area.citizenFirstPaint) {
+      document.body.classList.add('citizen-readable-layout','citizen-mobile-app','citizen-mobile-presentation','citizen-first-paint');
+      area.citizenFirstPaint = false;
+    }
     area.active = true; marker.after(area.root);
     window.PortalPets?.runtime?.attachHabitat?.(area.root.querySelector('#petHabitat'));
     area.dialogs?.forEach(dialog => { if (dialog.isConnected && !dialog.open) dialog.showModal(); });
@@ -449,6 +456,13 @@
       if (!options.restoring && document.getElementById('portalChatRoot')?.classList.contains('open')) await direct?.closeToPage?.();
       previousHistory = { ...history.state, [KEY]:routeKey(previous.url), [ACCOUNT]:sessionIdentity, ...(!options.restoring ? { __portalHomeDirect:undefined } : {}) };
       const area = await prepare(url);
+      // Only this requested citizen surface is prepared before exposure. The
+      // native gate above still owns authorization and fresh account checks.
+      if (url.pathname === '/cidadao/' && screen.matches && window.RegulationAuth.getCachedUser()?.role === 'cidadao' && !area.initialized) {
+        const panel = await window.PortalCitizenLayout?.prepareRoute?.('/cidadao/');
+        panel?.prepareCitizenMobilePresentation(area.root);
+        area.citizenFirstPaint = true;
+      }
       if (!valid()) return true;
       if (wanted) return true;
       if (area !== active) deactivate(active);

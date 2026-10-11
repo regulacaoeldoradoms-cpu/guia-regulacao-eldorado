@@ -66,4 +66,24 @@ body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobi
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option{padding:10px !important;gap:8px !important;flex-direction:column !important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option-icon{width:28px !important;height:28px !important;flex:0 0 28px !important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .privacy-option > span:not(.privacy-option-icon){width:100%;flex:0 0 auto;}
+
+/* Primary action uses the portal teal with explicit interactive states. */
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation{background:#1c7a91 !important;color:#fff !important;border:2px solid #57b9d2 !important;}
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation :is(strong,span){color:inherit !important;}
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation:hover:not(:disabled){background:#197f97 !important;}
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation:active:not(:disabled){background:#0d5368 !important;}
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation:focus-visible{outline:3px solid #8de6ff !important;outline-offset:3px !important;}
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation:disabled{background:#263c4d !important;color:#a6bac8 !important;border-color:#6b8598 !important;opacity:1 !important;cursor:not-allowed;}
+html[data-portal-theme="dark"] body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #openNewManifestation:disabled :is(strong,span){color:#a6bac8 !important;}
+/* Correct geometry is available while the independent controllers load. */
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-topbar{border-bottom-width:1px !important;background:var(--portal-theme-surface,#fff) !important;box-shadow:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-topbar-inner{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;align-items:center !important;gap:8px !important;min-height:56px !important;padding:6px 12px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-brand{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;min-width:0 !important;flex:1 1 auto !important;gap:8px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-brand img{width:30px !important;height:30px !important;flex:0 0 30px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-brand h1{color:var(--portal-theme-text,#173b5d) !important;font-size:17px !important;line-height:1.15 !important;margin:0 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-brand p{display:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-user{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;width:auto !important;border:0 !important;padding:0 !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint .portal-user > :is(.portal-user-meta,.portal-account-area){display:none !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint #portalLogout{font-size:16px !important;min-height:44px !important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation.citizen-first-paint #accountEvolutionNotice{display:none !important;}
 }
