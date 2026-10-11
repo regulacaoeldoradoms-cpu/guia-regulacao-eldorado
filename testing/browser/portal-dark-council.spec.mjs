@@ -248,7 +248,17 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       // Requested mobile geometry replaces the old pixel baseline; semantic colors remain exact.
       expect(palettes).toHaveLength(2);
       expect(palettes[0].length).toBeGreaterThan(6);
-      expect(palettes[0]).toEqual(palettes[1]);
+      // The requested phone copy changes only this action. Assert each
+      // literal explicitly; all other texts and semantic colors stay exact.
+      expect(palettes[0].find(item=>item.selector==='#openNewManifestation')?.text)
+        .toBe('Escrever ao ConselhoSugestão, reclamação, elogio ou denúncia.');
+      expect(palettes[1].find(item=>item.selector==='#openNewManifestation')?.text)
+        .toBe('Nova manifestaçãoRegistre uma sugestão, reclamação, elogio ou denúncia.');
+      const semanticPalette=items=>items.map(item=>{
+        if(item.selector!=='#openNewManifestation')return item;
+        const {text,...colors}=item;return colors;
+      });
+      expect(semanticPalette(palettes[0])).toEqual(semanticPalette(palettes[1]));
       expect(mobileLayout).toEqual({citizen:true,pageFits:true,rows:1,targetsFit:true,panelFits:true});
       expect(result.captureStability.current.snapshotStable).toBe(true);
     }else{
