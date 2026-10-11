@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  if (window.PortalSocialNavigation?.version === '20261011-citizen-continuity-1') return;
+  if (window.PortalSocialNavigation?.version === '20261011-citizen-continuity-2') return;
 
   let activeNotificationPanel = null;
   let activeUserSearch = null;
@@ -643,5 +643,5 @@
     if (role && !role.textContent) role.textContent = labels[user?.role] || user?.role || '';
   }
 
-  window.PortalSocialNavigation = Object.freeze({ version: '20261011-citizen-continuity-1', mount, setNotificationBadges, closeNotificationPanel, renderNotificationItems });
+  window.PortalSocialNavigation = Object.freeze({ version: '20261011-citizen-continuity-2', mount, setNotificationBadges, closeNotificationPanel, renderNotificationItems });
 })();
