@@ -27,7 +27,7 @@ try{
       await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>window.__citizenUseful.dataMs>0);
       await page.waitForTimeout(1500);
-      const timings=await page.evaluate(()=>({...window.__citizenUseful,domContentLoadedMs:performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd}));
+      const timings=await page.evaluate(()=>({...window.__citizenUseful,firstContentfulPaintMs:performance.getEntriesByName('first-contentful-paint')[0]?.startTime,domContentLoadedMs:performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd}));
       const apiCounts={};for(const call of audit.apiCalls)apiCounts[call]=(apiCounts[call] || 0)+1;
       const resources=audit.resources.map(u=>new URL(u,server.origin).pathname);let assetBytes=0;
       for(const resource of resources){if(!/^\/(js|css|assets|vendor)\//.test(resource))continue;try{assetBytes+=(await fs.stat(path.join(source.root,resource))).size;}catch{}}
@@ -38,4 +38,4 @@ try{
   }
 }finally{await browser.close();for(const source of sources)await new Promise(r=>source.server.server.close(r));}
 const median=(key,label)=>{const a=rows.filter(r=>!label || r.label===label).map(r=>r[key]).sort((a,b)=>a-b);return a[Math.floor(a.length/2)];};
-await fs.writeFile(output,JSON.stringify({root,syntheticOnly:true,apiDelayMs:delay,width:390,samples,summary:sources.map(source=>({label:source.label,usefulDataMedianMs:median('dataMs',source.label),actionMedianMs:median('actionMs',source.label),requestedAssetSourceBytesMedian:median('requestedAssetSourceBytes',source.label)})),rows},null,2));
+await fs.writeFile(output,JSON.stringify({root,syntheticOnly:true,apiDelayMs:delay,width:390,samples,summary:sources.map(source=>({label:source.label,firstContentfulPaintMedianMs:median('firstContentfulPaintMs',source.label),usefulDataMedianMs:median('dataMs',source.label),actionMedianMs:median('actionMs',source.label),requestedAssetSourceBytesMedian:median('requestedAssetSourceBytes',source.label)})),rows},null,2));

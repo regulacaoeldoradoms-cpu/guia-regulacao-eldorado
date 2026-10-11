@@ -273,8 +273,12 @@ const initializeCitizenArea = (context) => {
     if (isPrimaryCitizen) {
       const eyebrow = document.querySelector('.portal-eyebrow');
       if (eyebrow) eyebrow.textContent = 'Canal do Cidadão';
-      if (heroTitle) heroTitle.textContent = 'Acompanhe suas manifestações.';
-      if (heroText) heroText.textContent = 'Envie sugestões, reclamações, elogios ou denúncias e acompanhe as respostas do Conselho por aqui.';
+      const originals = window[Symbol.for('portal.citizenMobileEarlyCopies')];
+      for (const [node,text] of [[heroTitle,'Acompanhe suas manifestações.'],[heroText,'Envie sugestões, reclamações, elogios ou denúncias e acompanhe as respostas do Conselho por aqui.']]) {
+        if (!node) continue;
+        if (document.body.classList.contains('citizen-first-paint') && originals?.has(node)) originals.set(node,[document.createTextNode(text)]);
+        else node.textContent = text;
+      }
     }
 
     if (homeLink) homeLink.textContent = 'Portal';

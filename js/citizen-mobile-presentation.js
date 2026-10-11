@@ -1,5 +1,15 @@
 'use strict';
 const INSTANCE=Symbol.for('portal.citizenMobilePresentation');
+export function prepareCitizenMobilePresentation(root){
+  const key=Symbol.for('portal.citizenMobileEarlyCopies');
+  const originals=window[key] ||= new Map();
+  for(const [selector,text] of [
+    ['.portal-hero h2','Canal do Cidadão'],
+    ['.portal-hero-copy > p','Fale com o Conselho de Saúde e acompanhe as respostas.'],
+    ['#openNewManifestation strong','Escrever ao Conselho'],
+    ['#openNewManifestation > span:not(.icon) > span','Sugestão, reclamação, elogio ou denúncia.']
+  ]){const node=root.querySelector(selector);if(node){if(!originals.has(node))originals.set(node,node.dataset.citizenNativeText ? [document.createTextNode(node.dataset.citizenNativeText)] : [...node.childNodes]);node.textContent=text;}}
+}
 export function mountCitizenMobilePresentation(){
   if(window[INSTANCE]){window[INSTANCE].sync();return window[INSTANCE];}
   const root=window.PortalCitizenShell?.active()?.root || document;
@@ -26,7 +36,7 @@ export function mountCitizenMobilePresentation(){
       ['#newManifestationModal .form-section:nth-of-type(2) .form-section-head p','Informe o que souber. Estes campos são opcionais.'],
       ['#newManifestationModal .form-section:nth-of-type(3) h3','O que aconteceu?'],
       ['#newManifestationModal .form-section:nth-of-type(3) .form-section-head p','Escreva os detalhes que ajudam o Conselho a entender o assunto.']
-    ]){const node=root.querySelector(selector);if(node)copies.set(node,{text,original:[...node.childNodes]});}
+    ]){const node=root.querySelector(selector);if(node)copies.set(node,{text,original:window[Symbol.for('portal.citizenMobileEarlyCopies')]?.get(node) || [...node.childNodes]});}
     notice=root.querySelector('#accountEvolutionNotice');
     if(notice){
       marker=document.createComment('Original account explanation position');notice.before(marker);
@@ -37,9 +47,12 @@ export function mountCitizenMobilePresentation(){
   }
   function sync(){
     queued=false;
-    const active=path()==='/cidadao/' && media.matches && !printing && !print.matches && bind();
-    document.body.classList.toggle('citizen-mobile-presentation',Boolean(active));
+    const eligible=path()==='/cidadao/' && media.matches && !printing && !print.matches;
+    const active=eligible && bind();
+    const early=eligible && document.body.classList.contains('citizen-first-paint');
+    document.body.classList.toggle('citizen-mobile-presentation',Boolean(active || early));
     if(active){
+      if(document.body.classList.contains('shared-mobile-header'))document.body.classList.remove('citizen-first-paint');
       for(const [node,{text}] of copies)if(node.textContent!==text)node.textContent=text;
       if(help){
         if(!help.isConnected)root.querySelector('.citizen-grid').after(help);

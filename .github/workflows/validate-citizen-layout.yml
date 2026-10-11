@@ -14,6 +14,7 @@ on:
       - "js/citizen-mobile-navigation.js"
       - "js/citizen-mobile-header.js"
       - "js/citizen-mobile-presentation.js"
+      - "js/citizen-mobile-app.js"
       - "js/citizen.js"
       - "js/citizen-account-level.js"
       - "js/citizen-mobile-chat-bootstrap.js"
@@ -77,6 +78,8 @@ jobs:
         run: |
           node testing/citizen-layout/citizen-page-mobile.mjs
           TEXT_SCALE=2 CITIZEN_PAGE_OUTPUT=/tmp/citizen-page-text200 node testing/citizen-layout/citizen-page-mobile.mjs
+      - name: Citizen first frames, cold/warm assets and dark action contrast
+        run: node testing/citizen-layout/citizen-first-paint.mjs
       - name: Single mobile address, native bar clicks and retained controllers
         run: |
           node testing/citizen-layout/citizen-single-address.mjs
@@ -138,6 +141,7 @@ jobs:
           path: |
             .local/shared-account-header/
             .local/citizen-page-mobile/
+            .local/citizen-first-paint/
             /tmp/shared-account-header-text200/
             /tmp/citizen-page-text200/
             .local/citizen-single-address/

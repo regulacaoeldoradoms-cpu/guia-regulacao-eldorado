@@ -253,7 +253,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       expect(palettes[0].find(item=>item.selector==='#openNewManifestation')?.text)
         .toBe('Escrever ao ConselhoSugestão, reclamação, elogio ou denúncia.');
       expect(palettes[1].find(item=>item.selector==='#openNewManifestation')?.text)
-        .toBe('Nova manifestaçãoRegistre uma sugestão, reclamação, elogio ou denúncia.');
+        .toBe('Escrever ao ConselhoSugestão, reclamação, elogio ou denúncia.');
       const semanticPalette=items=>items.map(item=>{
         if(item.selector!=='#openNewManifestation')return item;
         const {text,...colors}=item;return colors;

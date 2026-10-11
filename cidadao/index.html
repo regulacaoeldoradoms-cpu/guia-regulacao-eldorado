@@ -26,7 +26,8 @@
   <script src="/js/portal-theme.js?v=20260923-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
-  <script src="/js/citizen-layout.js?v=20261011-shared-header-account-1" defer></script>
+  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261011-citizen-startup-1" media="screen and (max-width: 900px)">
+  <script src="/js/citizen-layout.js?v=20261011-citizen-startup-1" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
 </head>
 <body class="portal-page">
@@ -39,10 +40,24 @@
       if (mobileUA || compactTouch || compactViewport) {
         document.body.classList.add('mobile-citizen-mode');
         if (window.matchMedia('screen and (max-width: 900px)').matches) {
+          try {
+            const user = JSON.parse(sessionStorage.getItem('regulacao.portal.user') || localStorage.getItem('regulacao.portal.user') || 'null');
+            const token = sessionStorage.getItem('regulacao.portal.session') || localStorage.getItem('regulacao.portal.session');
+            if (token && user?.role === 'cidadao') document.body.classList.add('citizen-readable-layout', 'citizen-mobile-app', 'citizen-mobile-presentation', 'citizen-first-paint');
+          } catch (_) {}
           document.querySelector('link[rel="icon"]').href = '/assets/portal-regulacao-header_180x180.png?v=20260911-1';
         }
       }
     })();
+    window.PortalCitizenInitialCopy = node => {
+      const native = node.dataset.citizenNativeText;
+      if (document.body.classList.contains('citizen-first-paint')) {
+        const key = Symbol.for('portal.citizenMobileEarlyCopies');
+        const originals = window[key] ||= new Map();
+        originals.set(node, [document.createTextNode(native)]);
+        node.textContent = node.dataset.citizenMobileText;
+      } else node.textContent = native;
+    };
   </script>
 
   <div class="portal-shell">
@@ -71,8 +86,8 @@
       <section class="portal-hero">
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Sua participação importa</span>
-          <h2>Acompanhe sua manifestação do início ao fim por aqui.</h2>
-          <p>Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal.</p>
+          <h2 data-citizen-native-text="Acompanhe sua manifestação do início ao fim por aqui." data-citizen-mobile-text="Canal do Cidadão"><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></h2>
+          <p data-citizen-native-text="Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal." data-citizen-mobile-text="Fale com o Conselho de Saúde e acompanhe as respostas."><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></p>
         </div>
         <div class="citizen-hero-status">
           <span class="level-mini-badge bronze" id="accountLevelBadge" hidden>Conta Bronze</span>
@@ -88,7 +103,7 @@
       <section class="citizen-actions" aria-label="Ação principal do Canal do Cidadão">
         <button class="citizen-action" id="openNewManifestation" type="button">
           <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
-          <span><strong>Nova manifestação</strong><span>Registre uma sugestão, reclamação, elogio ou denúncia.</span></span>
+          <span><strong data-citizen-native-text="Nova manifestação" data-citizen-mobile-text="Escrever ao Conselho"><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></strong><span data-citizen-native-text="Registre uma sugestão, reclamação, elogio ou denúncia." data-citizen-mobile-text="Sugestão, reclamação, elogio ou denúncia."><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></span></span>
         </button>
         <button class="citizen-action" id="focusManifestations" type="button" hidden aria-hidden="true" tabindex="-1"></button>
         <button class="citizen-action" id="focusNotifications" type="button" hidden aria-hidden="true" tabindex="-1"><b class="count-badge" id="notificationCount" hidden>0</b></button>
@@ -223,11 +238,11 @@
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/social-api.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
-  <script src="/js/citizen-mobile-shell.js?v=20261011-shared-header-account-1"></script>
+  <script src="/js/citizen-mobile-shell.js?v=20261011-citizen-startup-1"></script>
   <script src="/js/citizen.js?v=20261011-citizen-panel-1"></script>
   <script src="/js/citizen-declaration.js?v=20261010-mobile-shell-1"></script>
   <script src="/js/citizen-account-level.js?v=20261011-citizen-panel-1"></script>
-  <script src="/js/citizen-mobile-app.js?v=20261010-mobile-shell-1"></script>
+  <script src="/js/citizen-mobile-app.js?v=20261011-citizen-startup-1"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261010-mobile-shell-1"></script>
 </body>
