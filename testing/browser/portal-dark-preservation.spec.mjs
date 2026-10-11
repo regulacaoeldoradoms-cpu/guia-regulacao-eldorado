@@ -32,7 +32,10 @@ async function sampleCouncilReflection(page,info){
 const routesWithoutBase = new Set(['/estudos/','/mascotes/']);
 const sharedCitizenRoutes = new Set(['/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/', '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/']);
 function normalizePreservationSelector(selector, route, shared) {
-  const normalized = shared ? selector.replace(/\.citizen-readable-layout(?=[. >:]|$)/g, '') : selector;
+  // The retained area wrapper is display:contents and has no painted box. Only
+  // remove that ancestry segment; all child styles, geometry and pixels remain.
+  const normalized = shared ? selector.replace(/\.citizen-readable-layout(?=[. >:]|$)/g, '')
+    .split(' > ').filter(segment=>!/^div\.citizen-route-area(?::nth-of-type\(\d+\))?$/.test(segment)).join(' > ') : selector;
   // The Home controller marker has no desktop/print styling. Normalize only
   // its BODY identity; retain all computed properties, geometry and pixel gates.
   return route === '/' ? normalized.split(' > ').map(segment => segment.startsWith('body.')
@@ -44,6 +47,56 @@ const approvedHomeSurfaces = '#socialHome,.portal-topbar,#portalChatRoot,.social
 // outside the navigation while the current launcher is moved into it.
 const approvedSharedSurfaces = '.social-mobile-nav,.social-notification-panel,#portalChatRoot,#portalChatLauncher';
 const nativeIdentityKey = 'portal.darkAuditNativeIdentity';
+test('native identity records late Avisos and rejects same-ID replacements',async({page,context})=>{
+  await context.addInitScript(trackNativeControls,nativeIdentityKey);
+  await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><nav class="social-mobile-nav"></nav>'}));
+  await page.goto('/');
+  await page.evaluate(()=>{
+    const button=document.createElement('button');button.id='socialNotificationTriggerMobile';button.type='button';
+    document.querySelector('.social-mobile-nav').append(button);
+    const panel=document.createElement('section');panel.id='socialNotificationPanelMobile';document.body.append(panel);
+  });
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const first=await sharedNativeControlContract(page,'/');
+  for(const id of ['socialNotificationTriggerMobile','socialNotificationPanelMobile'])expect(first.controls.find(c=>c.id===id)?.identityPreserved).toBe(true);
+  await page.evaluate(()=>{for(const id of ['socialNotificationTriggerMobile','socialNotificationPanelMobile']){const node=document.getElementById(id);node.replaceWith(node.cloneNode(true));}});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const replaced=await sharedNativeControlContract(page,'/');
+  for(const id of ['socialNotificationTriggerMobile','socialNotificationPanelMobile']){
+    const control=replaced.controls.find(c=>c.id===id);expect(control.count).toBe(1);expect(control.identityPreserved).toBe(false);
+  }
+});
+function trackNativeControls(nativeIdentityKey) {
+      const original=new Map();
+      const navigation=new WeakMap();
+      window[Symbol.for(nativeIdentityKey)]={byId:original,navigation};
+      const rememberNavigation=nav=>{
+        let controls=navigation.get(nav);
+        if(!controls){controls=new Map();navigation.set(nav,controls);}
+        // Config may add the original Avisos controls after the retained nav was
+        // mounted. Record each first insertion, never overwrite its identity.
+        for(const node of nav.querySelectorAll('[id]'))if(!controls.has(node.id))controls.set(node.id,node);
+        const panel=document.getElementById('socialNotificationPanelMobile');
+        if(panel&&!controls.has(panel.id))controls.set(panel.id,panel);
+      };
+      const remember=node=>{
+        if(!(node instanceof Element))return;
+        if(node.id&&!original.has(node.id))original.set(node.id,node);
+        node.querySelectorAll('[id]').forEach(child=>{if(!original.has(child.id))original.set(child.id,child);});
+        // The native renderer may remount the entire navigation. Track its
+        // original notification controls per nav, never bless replacements
+        // inside an existing nav merely because they reuse the same IDs.
+        if(node.matches('.social-mobile-nav'))rememberNavigation(node);
+        node.querySelectorAll('.social-mobile-nav').forEach(rememberNavigation);
+        const owner=node.closest('.social-mobile-nav');if(owner)rememberNavigation(owner);
+        if(node.id==='socialNotificationPanelMobile'){
+          const nav=document.querySelector('.social-mobile-nav');if(nav)rememberNavigation(nav);
+        }
+      };
+      new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(remember)))
+        .observe(document,{childList:true,subtree:true});
+
+}
 async function sharedNativeControlContract(page, route) {
   return page.evaluate(({ route, nativeIdentityKey }) => {
     const requiredIds = ['portalLogout','portalChatRoot','portalChatLauncher','portalChatUnread','portalChatInput','portalChatClose','portalChatBack','socialNotificationTriggerMobile','socialNotificationPanelMobile'];
@@ -125,32 +178,10 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const palettes=[];
     const homeContracts=[];
     const nativeContracts=[];
-    if(mobileRedesign)await context.addInitScript(nativeIdentityKey=>{
-      const original=new Map();
-      const navigation=new WeakMap();
-      window[Symbol.for(nativeIdentityKey)]={byId:original,navigation};
-      const rememberNavigation=nav=>{
-        if(navigation.has(nav))return;
-        const controls=new Map([...nav.querySelectorAll('[id]')].map(node=>[node.id,node]));
-        const panel=document.getElementById('socialNotificationPanelMobile');
-        if(panel)controls.set(panel.id,panel);
-        navigation.set(nav,controls);
-      };
-      const remember=node=>{
-        if(!(node instanceof Element))return;
-        if(node.id&&!original.has(node.id))original.set(node.id,node);
-        node.querySelectorAll('[id]').forEach(child=>{if(!original.has(child.id))original.set(child.id,child);});
-        // The native renderer may remount the entire navigation. Track its
-        // original notification controls per nav, never bless replacements
-        // inside an existing nav merely because they reuse the same IDs.
-        if(node.matches('.social-mobile-nav'))rememberNavigation(node);
-        node.querySelectorAll('.social-mobile-nav').forEach(rememberNavigation);
-      };
-      new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(remember)))
-        .observe(document,{childList:true,subtree:true});
-    },nativeIdentityKey);
+    if(mobileRedesign)await context.addInitScript(trackNativeControls,nativeIdentityKey);
     let layout;
     const prepare=async target=>{
+      if(shared)expect(await target.locator('.citizen-route-area').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).display==='contents')),'Retained area wrappers must have no painted layout box').toBe(true);
       if(loginRedesign) loginContracts.push(await target.evaluate(()=>({
         form:{action:document.getElementById('loginForm').getAttribute('action'),autocomplete:document.getElementById('loginForm').getAttribute('autocomplete')},
         controls:['loginUsername','loginPassword','loginRemember','loginPasswordToggle','loginSubmit','loginStatus'].map(id=>{

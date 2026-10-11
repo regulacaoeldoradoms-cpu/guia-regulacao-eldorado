@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { inspectSurfaces } from './dark-audit-surfaces.mjs';
+import { waitForAuditRoute } from './dark-audit-route-ready.mjs';
+import { aliasDestinations } from './dark-audit-routes.mjs';
 import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -73,6 +75,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     await targetPage.emulateMedia({media:'screen'});
     await targetPage.mouse.move(-100,-100);
     await targetPage.goto(route,{waitUntil:'load'});
+    await waitForAuditRoute(targetPage,aliasDestinations[route]||route);
     await targetPage.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
     await prepare(targetPage);
     // Auth hydration during preparation may reapply the synthetic account's

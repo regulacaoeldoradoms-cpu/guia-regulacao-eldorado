@@ -4,6 +4,16 @@ import { inspectSurfaces } from './dark-audit-surfaces.mjs';
 import { writeFile } from 'node:fs/promises';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
 import { finishAuditNetwork } from './dark-audit-network.mjs';
+import { waitForAuditRoute } from './dark-audit-route-ready.mjs';
+test('canonical Home URL cannot cover the wrong internal route',async({page})=>{
+  await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><p>Synthetic Home</p>'}));
+  await page.goto('/');
+  await page.evaluate(()=>window.PortalCitizenShell={enabled:()=>true,active:()=>({url:new URL('/',location.href),loaded:true}),diagnostics:()=>({navigating:false})});
+  page.setDefaultTimeout(300);
+  await expect(waitForAuditRoute(page,'/perfil/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>window.PortalCitizenShell.active=()=>({url:new URL('/perfil/',location.href),loaded:true}));
+  await waitForAuditRoute(page,'/perfil/');
+});
 
 test('snapshot identity ignores class insertion order while retaining style regressions',async({page})=>{
   await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<html data-portal-theme="light"><body class="has-social-navigation portal-chat-present"><main><p>Conteúdo sintético</p></main></body></html>'}));
@@ -98,7 +108,7 @@ for (const route of selectedAuditRoutes) {
     expect(response.status()).toBe(200);
     await page.waitForTimeout(700);
     const expectedRoute=aliasDestinations[route]||route;
-    expect(new URL(page.url()).pathname,'An unexpected auth redirect does not count as route coverage').toBe(expectedRoute);
+    await waitForAuditRoute(page,expectedRoute);
     const reports=[];
     for (const [theme,media] of [['dark','screen'],['light','screen'],['dark','print']]) {
       await page.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
