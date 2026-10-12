@@ -15,8 +15,10 @@ if(user&&auth.hasCouncilAccess(user)){
   if(enabled&&batch&&!bulk){bulkAnchor=document.createComment('Native Council selection controls');batch.before(bulkAnchor);bulk=document.createElement('details');bulk.className='council-delete-group';bulk.open=bulkOpen;const title=document.createElement('summary');title.textContent='Selecionar e excluir';bulk.append(title,batch);bulkAnchor.after(bulk);}
   else if(!enabled&&bulk){bulkOpen=bulk.open;bulkAnchor.before(batch);bulk.remove();bulkAnchor.remove();bulk=null;}
   const side=document.querySelector('.council-side'),main=document.querySelector('.council-detail-main'),status=document.getElementById('statusBox'),notes=document.getElementById('internalNotesSection'),history=document.getElementById('historySection');
-  if(!enabled&&!printing&&!print.matches&&side&&status?.parentNode!==side){side.append(status,notes);}
-  else if(enabled&&main&&history&&status?.parentNode!==main){main.insertBefore(status,history);history.after(notes);}
+  if(!document.getElementById('councilDetailModal')?.dataset.councilOrganized){
+   if(!enabled&&!printing&&!print.matches&&side&&status?.parentNode!==side){side.append(status,notes);}
+   else if(enabled&&main&&history&&status?.parentNode!==main){main.insertBefore(status,history);history.after(notes);}
+  }
   document.body.classList.toggle('council-bulk-open',Boolean(enabled&&bulk?.open));
  };
  const sync=()=>{

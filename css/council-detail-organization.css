@@ -1,0 +1,24 @@
+@media screen and (max-width:900px){
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-detail-main{display:block!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-organized-region{display:grid;gap:14px;margin:0 0 28px}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-organized-heading{font-size:21px!important;line-height:1.35;margin:0;padding:0 0 9px;border-bottom:2px solid var(--council-ui-line);color:var(--council-ui-text)}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #detailOverview{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #detailStory{padding:0!important;background:transparent!important;border:0!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #detailAttachmentsSection{padding:10px 0!important;border:0!important;background:transparent!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #detailAttachmentsSection .council-section-head p{display:none}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #detailConversation,#councilDetailModal[data-council-organized] #historySection,#councilDetailModal[data-council-organized] #internalNotesSection{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #councilActionsRegion{border:1px solid var(--council-ui-line);border-radius:12px;padding:14px;background:var(--council-ui-surface)}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-organized-action{margin:0;gap:8px}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-organized-action .council-organized-heading{font-size:18px!important;border:0;padding:0;margin:0}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-reply-heading{padding:0!important;margin:0 0 10px!important;border:0!important;background:transparent!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #officialReplyForm .council-reply-heading strong{display:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #officialReplyForm{margin:0!important;padding:0!important;background:transparent!important;border:0!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #statusBox{padding:16px 0!important;border-width:1px 0 0!important;border-radius:0!important;background:transparent!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #internalNoteForm{padding:0!important;margin:0!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #councilMobileDetailNav{grid-template-columns:repeat(auto-fit,minmax(min(100%,5em),1fr))!important;align-items:center;font-size:13px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] .council-organized-nav-label{grid-column:1/-1;font-size:12px;padding:0 5px;color:var(--council-ui-muted)}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #councilMobileDetailNav button{border:0!important;background:transparent!important;box-shadow:none!important;text-decoration:underline;text-underline-offset:4px;border-radius:0!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] [hidden]{display:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #officialReplyForm label::after{content:none!important;display:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #councilActionsRegion{margin-bottom:calc(var(--council-organized-nav-height,90px) + 90px + env(safe-area-inset-bottom,0px))}
+}
