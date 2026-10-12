@@ -1,0 +1,81 @@
+name: Gnomo — idade privada e animações sintéticas
+on:
+  pull_request:
+    paths:
+      - '_server/**'
+      - '_config.yml'
+      - '_redirects'
+      - 'worker/private-pet-age*'
+      - 'worker/migrations/pets-private-age.sql'
+      - 'worker/pet*.js'
+      - 'worker/auth-management-v2.js'
+      - 'worker/portal-safety.js'
+      - 'worker/tests/gnome*.mjs'
+      - 'worker/tests/private-pet-age.test.mjs'
+      - 'js/gnome*.js'
+      - 'js/pets*.js'
+      - 'js/auth-client.js'
+      - 'js/signup.js'
+      - 'css/pets.css'
+      - 'mascotes/index.html'
+      - 'cadastro/index.html'
+      - 'assets/pets/**'
+      - 'testing/pets/gnome-mobile.mjs'
+      - 'testing/pets/gnome-age-availability.mjs'
+      - 'testing/pets/gnome-council-cache.mjs'
+      - 'conselho/painel/index.html'
+      - '.github/workflows/validate-gnome.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-gnome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual Pages artifact without deploying
+        uses: actions/jekyll-build-pages@v1
+      - name: Server repertoire is absent from the built Pages artifact
+        run: |
+          test -f _site/mascotes/index.html
+          test ! -e _site/_server/gnome-phrases.js
+          test ! -d _site/_server
+          printf 'Pages artifact excludes server repertoire at %s\n' "$GITHUB_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install isolated browser harness
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Browser executable
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
+          const executable=chromium.executablePath();
+          fs.appendFileSync(process.env.GITHUB_ENV,`CHROMIUM_PATH=${executable}\nPETS_BROWSER_EXECUTABLE=${executable}\n`);
+          JS
+      - name: Private age, registration, static exclusions and phrase cycles
+        run: node --test worker/tests/private-pet-age.test.mjs worker/tests/gnome-age-integration.test.mjs worker/tests/gnome-speech.test.mjs worker/tests/gnome-static-content.test.mjs worker/tests/pets.test.mjs
+      - name: Native UI, seven animations, adult gate and text reflow
+        run: node testing/pets/gnome-mobile.mjs /tmp/gnome-mobile
+      - name: Preserve native cats while optional private age is pending or unavailable
+        run: node testing/pets/gnome-age-availability.mjs
+      - name: Citizen Council route uses the same versioned adult companion
+        run: node testing/pets/gnome-council-cache.mjs
+      - name: Preserve original cat navigation, lives and speech
+        run: |
+          PETS_GLOBAL_ARTIFACT_DIR=/tmp/gnome-cat-global node testing/pets/global-navigation.cjs
+          PETS_LIVES_ARTIFACT_DIR=/tmp/gnome-cat-lives node testing/pets/lives.cjs
+          PETS_SPEECH_ARTIFACT_DIR=/tmp/gnome-cat-speech node testing/pets/speech.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-gnome
+          path: |
+            /tmp/gnome-mobile/
+            /tmp/gnome-cat-global/
+            /tmp/gnome-cat-lives/
+            /tmp/gnome-cat-speech/

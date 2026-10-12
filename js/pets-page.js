@@ -1,10 +1,19 @@
 'use strict';
-import {petSession} from './pets-bootstrap.js?v=20261010-mobile-shell-1';
+import {petSession} from './pets-bootstrap.js?v=20261012-gnome-2';
 import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261011-pets-mobile-1';
 import {drawCat} from './pet-cat-frames.js';
+import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;
+const ageDisclosure=document.getElementById('petAgeDisclosure'),petPage=document.querySelector('.pet-page');
+if(ageDisclosure&&petPage){
+ const anchor=document.createComment('Private declaration mobile gallery position');ageDisclosure.before(anchor);
+ const desktop=window.matchMedia('screen and (min-width:901px)');
+ const placeAgeDeclaration=()=>{if(desktop.matches)petPage.after(ageDisclosure);else anchor.after(ageDisclosure);};
+ placeAgeDeclaration();desktop.addEventListener('change',placeAgeDeclaration);
+ context?.addController({activate:placeAgeDeclaration,dispose:()=>desktop.removeEventListener('change',placeAgeDeclaration)});
+}
 const presentation=mountPetsMobilePresentation(context?.root || document);
 context?.addController({activate:()=>presentation?.sync(),dispose:()=>presentation?.dispose()});
 const $=id=>document.getElementById(id);
@@ -17,6 +26,7 @@ function resetPage(){
  $('petLifeStatus').textContent='';
  for(const id of ['petWallet','petAchievement','petProposal'])$(id).textContent='';
  $('petPlacement').hidden=true;$('petPreferences').reset();delete $('petPreferences').dataset.editing;
+ $('petAgeForm')?.reset();if($('petAgeDisclosure'))$('petAgeDisclosure').hidden=true;
  $('petAdopt').disabled=true;message('Entre na sua conta para carregar o mascote.');
 }
 const node=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text||'';if(cls)n.className=cls;return n;};
@@ -29,6 +39,9 @@ async function command(kind,input,success){
 function render(){
  if(!session||!session.api.valid())return;const s=session.runtime.state,c=session.catalog;presentation?.state(s);
  const dead=s.life?.deadAt!=null,living=Boolean(s.pet&&!dead),lives=s.life?.lives??7;
+ const gnome=s.pet?.typeId==='gnome';
+ const intro=document.querySelector('.pet-mobile-intro');if(intro)intro.textContent=gnome?'Cuide do seu Gnomo e acompanhe os cuidados.':'Cuide do seu gato e acompanhe as sete vidas.';
+ $('petHome').querySelector('h2').textContent=gnome?'Seu Gnomo':'Seu gato';
  for(const id of ['petHome','petShop','petSettings'])$(id).hidden=!s.pet;
  $('petLives').replaceChildren();$('petLives').setAttribute('aria-label',lives+' de 7 vidas');
  for(let i=0;i<7;i++){const heart=node('span','','pet-heart');heart.dataset.filled=String(i<lives);heart.setAttribute('aria-hidden','true');$('petLives').append(heart);}
@@ -39,7 +52,7 @@ function render(){
  for(const [key,label] of [['hunger','Comida'],['thirst','Água'],['dirt','Limpeza']]){
   const value=100-s[key],block=node('div',label+': '+Math.round(value)+'%'),meter=node('meter');meter.min=0;meter.max=100;meter.value=value;meter.setAttribute('aria-label',label);block.append(meter);$('petNeeds').append(block);
  }
- $('petAchievement').textContent='Conquista: Cuidar de 7 vidas não é fácil';
+ $('petAchievement').textContent=gnome?'Conquista: Companhia do jardim':'Conquista: Cuidar de 7 vidas não é fácil';
  $('petWallet').textContent=s.balance+' moedas · '+s.daily.coins+'/'+s.rules.dailyCap+' moedas obtidas hoje';
  $('petItems').replaceChildren();
  for(const item of c.items){
@@ -73,23 +86,48 @@ function render(){
  $('petProposal').textContent='Proposta inicial configurável: 1 moeda por '+s.rules.secondsPerCoin/60+' minutos de uso ativo, até '+s.rules.dailyCap+' por dia. A aba aberta sem interação não conta. Preços da loja também são propostas.';
  document.querySelectorAll('[data-care]').forEach(b=>b.disabled=busy||dead||(b.dataset.care==='special-bath'&&!s.inventory['bath-special']));
  $('petAdopt').disabled=busy||!selected||living;
- $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||living);
+ $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||living||b.dataset.assetPending==='true');
  $('petPreferences').querySelector('button').disabled=busy;
  $('petPlacement').querySelectorAll('button').forEach(b=>b.disabled=busy||dead);
+ if($('petAgeSubmit'))$('petAgeSubmit').disabled=busy;
+}
+async function renderGallery(){
+ const owner=session,generation=pageEpoch;
+ if(owner!==session||generation!==pageEpoch||!owner.api.valid())return;
+ $('petGallery').replaceChildren();
+ for(const type of owner.catalog.types)for(const variant of type.variants){
+  const gnome=type.id==='gnome';
+  const button=node('button',gnome?'Gnomo · 18+':variant==='ginger'?'Gato dourado':'Gato cinza','pet-choice'),canvas=document.createElement('canvas');canvas.width=64;canvas.height=gnome?64:48;
+  if(gnome){
+   canvas.dataset.petType='gnome';button.dataset.assetPending='true';button.disabled=true;
+   loadGnomeFrames().then(()=>{if(owner!==session||generation!==pageEpoch||!owner.api.valid()||!button.isConnected)return;drawGnome(canvas.getContext('2d'));delete button.dataset.assetPending;button.disabled=busy||Boolean(owner.runtime.state.pet&&owner.runtime.state.life?.deadAt==null);}).catch(()=>{if(owner===session&&generation===pageEpoch)message('Não foi possível carregar a imagem do Gnomo. Recarregue para tentar novamente.',true);});
+  }else drawCat(canvas.getContext('2d'),'idle',0,variant);
+  button.prepend(canvas);button.setAttribute('aria-pressed',String(selected?.typeId===type.id&&selected.variant===variant));
+  button.addEventListener('click',()=>{selected={typeId:type.id,variant};for(const b of $('petGallery').children)b.setAttribute('aria-pressed',String(b===button));$('petAdopt').disabled=busy;message('Selecionado. Confirme no botão Adotar.');});$('petGallery').append(button);
+ }
 }
 async function initialize(){
  if(initializing)return;initializing=true;const generation=pageEpoch;pageToken=window.RegulationAuth?.getToken?.()||null;
  try{
  const user=await window.PortalAccountSection?.mount();if(!user||generation!==pageEpoch)return;
  const next=await petSession();if(generation!==pageEpoch)return;session=next;if(!session){message('Mascotes ainda não disponíveis neste ambiente.',true);return;}
- $('petGallery').replaceChildren();$('petDays').replaceChildren();
- for(const type of session.catalog.types)for(const variant of type.variants){
-  const button=node('button',variant==='ginger'?'Gato dourado':'Gato cinza','pet-choice'),canvas=document.createElement('canvas');canvas.width=64;canvas.height=48;drawCat(canvas.getContext('2d'),'idle',0,variant);button.prepend(canvas);button.setAttribute('aria-pressed','false');
-  button.addEventListener('click',()=>{selected={typeId:type.id,variant};for(const b of $('petGallery').children)b.setAttribute('aria-pressed',String(b===button));$('petAdopt').disabled=busy;message('Selecionado. Confirme no botão Adotar.');});$('petGallery').append(button);
- }
+ await renderGallery();$('petDays').replaceChildren();
+ // Availability of the optional private declaration cannot block existing cats.
+ // Catalog/adoption/speech authorization remains entirely server-owned.
+ if($('petAgeDisclosure')){const owner=session;owner.api.get('age').then(age=>{if(owner===session&&generation===pageEpoch&&owner.api.valid())$('petAgeDisclosure').hidden=age.ageStatus!=='unknown';}).catch(()=>{});}
  for(const [i,label] of ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].entries()){const l=node('label',label),input=document.createElement('input');input.type='checkbox';input.value=i;input.checked=i>=1&&i<=5;l.prepend(input);$('petDays').append(l);}
  if(!bound){bound=true;
- $('petAdopt').addEventListener('click',()=>{if(selected)command('adopt',{...selected,expectedPetRevision:session.runtime.state.petRevision},'Adoção confirmada. Cuidar de 7 vidas não é fácil');});
+ $('petAgeForm')?.addEventListener('submit',async event=>{
+  event.preventDefault();if(busy||!session?.api.valid())return;
+  const owner=session,generation=pageEpoch,button=$('petAgeSubmit');button.disabled=true;
+  try{const age=await owner.api.declareAge($('petAgeBirthDate').value);if(owner!==session||generation!==pageEpoch)return;
+   session.catalog=await owner.api.get('catalog');if(owner!==session||generation!==pageEpoch)return;
+   $('petAgeForm').reset();$('petAgeDisclosure').hidden=true;await renderGallery();
+   message(age.ageStatus==='adult'?'Idade registrada de forma privada. O Gnomo está disponível na galeria.':'Idade registrada de forma privada. Os gatos continuam disponíveis.');
+  }catch(e){if(owner===session&&generation===pageEpoch)message(e.message,true);}
+  finally{if(owner===session&&generation===pageEpoch)button.disabled=false;}
+ });
+ $('petAdopt').addEventListener('click',()=>{if(selected)command('adopt',{...selected,expectedPetRevision:session.runtime.state.petRevision},selected.typeId==='gnome'?'Adoção do Gnomo confirmada.':'Adoção confirmada. Cuidar de 7 vidas não é fácil');});
  for(const button of document.querySelectorAll('[data-care]'))button.addEventListener('click',()=>command('care',{action:button.dataset.care,expectedPetRevision:session.runtime.state.petRevision},'Cuidado realizado.'));
  const position=()=>{const s=session.runtime.state;return {...s.placement,x:Number($('bedX').value),y:Number($('bedY').value)};};
  for(const id of ['bedX','bedY'])$(id).addEventListener('input',()=>{$('petPlacement').dataset.editing='true';session.runtime.preview(position());});
@@ -104,7 +142,7 @@ async function initialize(){
  });
  window.addEventListener('portal:pets-updated',render);
  }
- render();message(session.runtime.state.pet&&session.runtime.state.life?.deadAt==null?'Seu gato está com você.':'Escolha seu companheiro.');
+ render();message(session.runtime.state.pet&&session.runtime.state.life?.deadAt==null?(session.runtime.state.pet.typeId==='gnome'?'Seu Gnomo está com você.':'Seu gato está com você.'):'Escolha seu companheiro.');
  }finally{initializing=false;if(generation!==pageEpoch&&window.RegulationAuth?.getToken?.())initialize();}
 }
 window.addEventListener('portal:session-cleared',resetPage);

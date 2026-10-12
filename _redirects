@@ -1,0 +1,2 @@
+# Keep server-only gnome content out of Cloudflare Pages static responses.
+/_server/* /404.html 200

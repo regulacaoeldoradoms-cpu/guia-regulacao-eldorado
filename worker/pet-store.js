@@ -1,4 +1,5 @@
 'use strict';
+import {readPrivatePetAge} from './private-pet-age-store.js';
 import {initialPetState,applyPetCommand,publicPetState,PetError} from './pet-domain.js';
 const OPERATION=/^[a-z0-9-]{16,96}$/i;
 async function hash(value){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');}
@@ -23,8 +24,12 @@ export async function persistPetCommand(db,user,kind,input,env={}){
  ON CONFLICT(auth_username) DO NOTHING`).bind(JSON.stringify(initialPetState()),user.username,user.sessionVersion).run();
  const row=await db.prepare('SELECT state_json,balance,revision FROM pet_accounts WHERE auth_username=?').bind(user.username).first();
  if(!row)throw new PetError('SESSION_REQUIRED','Sessão inválida.',401);
+ const current=JSON.parse(row.state_json);
+ const requiresAdult=input.typeId==='gnome'||current.pet?.typeId==='gnome';
+ const adultEligible=requiresAdult&&(await readPrivatePetAge(db,user.username))==='adult';
+ if(requiresAdult&&!adultEligible)throw new PetError('ADULT_AGE_REQUIRED','Este mascote está disponível somente para maiores de 18 anos.',403);
  let transition,error;
- try{transition=applyPetCommand(JSON.parse(row.state_json),row.balance,kind,{...input,actualRevision:row.revision,sessionVersion:user.sessionVersion},now,env);}
+ try{transition=applyPetCommand(current,row.balance,kind,{...input,actualRevision:row.revision,sessionVersion:user.sessionVersion},now,env,{adultEligible});}
  catch(e){if(!(e instanceof PetError))throw e;error=e;}
  const proposed=error?{ok:false,code:error.code,error:error.message,status:error.status}:transition.result;
  const statements=[db.prepare(`INSERT INTO pet_operations

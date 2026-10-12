@@ -275,7 +275,10 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       const native=controls=>controls.filter(control=>!paginationIds.includes(control.id));
       expect(native(councilContracts[0])).toEqual(native(councilContracts[1]));
       expect(councilContracts[0].filter(control=>paginationIds.includes(control.id)).map(control=>({id:control.id,tag:control.tag,type:control.type,count:control.count}))).toEqual(paginationIds.map(id=>({id,tag:'button',type:'button',count:1})));
-      expect(councilContracts[1].some(control=>paginationIds.includes(control.id))).toBe(false);
+      // PR642 is now in main: its pagination must retain the complete native
+      // contract, rather than be treated as a new control absent from baseline.
+      expect(councilContracts[0].filter(control=>paginationIds.includes(control.id)))
+        .toEqual(councilContracts[1].filter(control=>paginationIds.includes(control.id)));
       expect(councilContracts[0].every(n=>n.count===1)).toBe(true);
       expect(result.captureStability.current.snapshotStable).toBe(true);
       await info.attach('approved-council-mobile-form-contract.json',{body:Buffer.from(JSON.stringify(councilContracts)),contentType:'application/json'});
