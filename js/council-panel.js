@@ -24,7 +24,14 @@
   }
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
-  const state = { manifestations: [], selectedProtocol: '', detail: null };
+  const state = { manifestations: [], selectedProtocol: '', detail: null, page:0, nextPageToken:'', loadedPages:1, listGeneration:0, detailGeneration:0, loading:false, checkedAt:0 };
+  const phone = matchMedia('screen and (max-width:900px)');
+  const pageSize=20,drafts=new Map();
+  const rowSignatures=new WeakMap();
+  const tableContainer=document.querySelector('#councilRows').closest('table').parentElement;
+  const pager=document.createElement('div');pager.id='councilPager';pager.className='council-pager';pager.hidden=true;
+  pager.innerHTML='<span id="councilPageCount" role="status" aria-live="polite"></span><div><button id="councilPreviousPage" type="button">Anterior</button><button id="councilNextPage" type="button">Próxima</button></div><button id="councilLoadMore" type="button" hidden>Carregar mais manifestações</button><small id="councilListChecked"></small>';
+  tableContainer.after(pager);
   const isPresident = user.councilRole === 'presidente';
   const statusLabels = {
     recebida: 'Recebida', em_analise: 'Em análise', aguardando_cidadao: 'Aguardando cidadão',
@@ -65,15 +72,27 @@
 
   function openModal() {
     const modal = document.getElementById('councilDetailModal');
+    if(modal.classList.contains('open'))return;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
+    modal.setAttribute('aria-modal', 'true');
+    window.PortalPets?.runtime?.render?.();
+    if(phone.matches)modal.querySelector('[data-close-modal]')?.focus({preventScroll:true});
   }
 
   function closeModal() {
+    rememberDraft();
+    state.detailGeneration++;
     const modal = document.getElementById('councilDetailModal');
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('aria-modal', 'false');
+    window.PortalPets?.runtime?.render?.();
     document.querySelector(`#councilRows [data-protocol="${CSS.escape(state.selectedProtocol)}"] .council-open-detail`)?.focus({ preventScroll: true });
+  }
+  function rememberDraft(){
+    if(!phone.matches||!state.selectedProtocol||!state.detail)return;
+    drafts.set(state.selectedProtocol,{statusDetail:document.getElementById('statusDetail').value,internalNoteText:document.getElementById('internalNoteText').value,officialReply:document.getElementById('officialReply').value,status:document.getElementById('statusSelect').value!==state.detail.manifestation.status?document.getElementById('statusSelect').value:null});
   }
 
   function identitySummary(item) {
@@ -111,35 +130,61 @@
 
   function renderRows() {
     const rows = document.getElementById('councilRows');
-    const items = filtered();
+    const all=filtered();state.page=Math.max(0,Math.min(state.page,Math.max(0,Math.ceil(all.length/pageSize)-1)));
+    const items=phone.matches?all.slice(state.page*pageSize,(state.page+1)*pageSize):all;
+    pager.hidden=!phone.matches;
+    document.getElementById('councilPageCount').textContent=all.length?`${state.page*pageSize+1}–${Math.min(all.length,(state.page+1)*pageSize)} de ${all.length} encontradas · ${state.manifestations.length} carregadas`:'Nenhum resultado nos registros carregados';
+    document.getElementById('councilPreviousPage').disabled=state.loading||state.page===0;
+    document.getElementById('councilNextPage').disabled=state.loading||(state.page+1)*pageSize>=all.length;
+    document.getElementById('councilLoadMore').hidden=!state.nextPageToken;
+    document.getElementById('councilLoadMore').disabled=state.loading;
+    document.getElementById('councilListChecked').textContent=state.loading?'Consultando o servidor…':state.checkedAt?`Última consulta: ${new Date(state.checkedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${state.nextPageToken?' · Há mais registros para carregar.':''}`:'';
     if (!items.length) {
       rows.innerHTML = '<tr><td colspan="5">Nenhuma manifestação corresponde aos filtros.</td></tr>';
       return;
     }
-    rows.innerHTML = items.map((item) => {
+    const existing=new Map([...rows.querySelectorAll(':scope > tr[data-protocol]')].map(row=>[row.dataset.protocol,row]));
+    const next=items.map((item) => {
       const secondary = item.service || identitySummary(item) || item.authorLabel || 'Identidade protegida';
-      return `<tr data-protocol="${escapeHtml(item.protocol)}">
+      const html=`<tr data-protocol="${escapeHtml(item.protocol)}">
       <td><strong>${escapeHtml(item.protocol)}</strong><small>${escapeHtml(formatDate(item.createdAt))}</small></td>
       <td><strong>${escapeHtml(item.subject || 'Sem assunto')}</strong><small>${escapeHtml(secondary)}</small></td>
       <td>${escapeHtml(typeLabels[item.type] || item.type)}</td>
       <td><span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span></td>
       <td>${escapeHtml(formatDate(item.lastActivityAt || item.updatedAt || item.createdAt))}</td>
     </tr>`;
-    }).join('');
+      const prior=existing.get(item.protocol);if(prior&&rowSignatures.get(prior)===html)return prior;
+      const temporary=document.createElement('tbody');temporary.innerHTML=html;const row=temporary.firstElementChild;rowSignatures.set(row,html);return row;
+    });
+    let at=rows.firstChild;for(const row of next){if(row===at)at=at.nextSibling;else rows.insertBefore(row,at);}while(at){const following=at.nextSibling;at.remove();at=following;}
   }
 
+  function preserveListPosition(){
+    const row=[...document.querySelectorAll('#councilRows tr[data-protocol]')].find(n=>n.getBoundingClientRect().bottom>0);
+    return {protocol:row?.dataset.protocol,top:row?.getBoundingClientRect().top,scroll:scrollY};
+  }
+  function restoreListPosition(anchor){if(!phone.matches||!anchor)return;requestAnimationFrame(()=>{const row=anchor.protocol&&document.querySelector(`#councilRows tr[data-protocol="${CSS.escape(anchor.protocol)}"]`);if(row)scrollBy(0,row.getBoundingClientRect().top-anchor.top);else scrollTo(0,anchor.scroll);});}
   async function loadAll(preloaded = null) {
-    document.getElementById('councilRows').innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
+    const generation=++state.listGeneration,anchor=preserveListPosition(),pages=state.loadedPages;
+    state.loading=true;
+    if(!state.manifestations.length)document.getElementById('councilRows').innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
+    else renderRows();
     try {
       const result = preloaded ? await preloaded : { data: await auth.api('/api/council/all', { method: 'GET' }) };
-      if (auth.getToken() !== initialToken) return;
+      if (auth.getToken() !== initialToken||generation!==state.listGeneration) return;
       if (result.error) throw result.error;
       const payload = result.data;
-      state.manifestations = Array.isArray(payload?.manifestations) ? payload.manifestations : [];
+      const records=new Map((Array.isArray(payload?.manifestations)?payload.manifestations:[]).map(item=>[item.protocol,item]));
+      let cursor=payload?.nextPageToken||'',loaded=1;
+      while(phone.matches&&loaded<pages&&cursor){const next=await auth.api('/api/council/all?'+new URLSearchParams({pageToken:cursor}),{method:'GET'});if(auth.getToken()!==initialToken||generation!==state.listGeneration)return;for(const item of next.manifestations||[])records.set(item.protocol,item);cursor=next.nextPageToken||'';loaded++;}
+      state.manifestations=[...records.values()];state.nextPageToken=cursor;state.loadedPages=loaded;state.checkedAt=Date.now();state.loading=false;
+      if(phone.matches&&anchor.protocol){const index=filtered().findIndex(item=>item.protocol===anchor.protocol);if(index>=0)state.page=Math.floor(index/pageSize);}
       renderMetrics();
       renderRows();
       document.getElementById('firebaseNotice').hidden = true;
+      if(anchor.protocol)restoreListPosition(anchor);
     } catch (error) {
+      if(generation!==state.listGeneration||auth.getToken()!==initialToken)return;
       if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
         location.replace(error.verificationPath || `/seguranca/?verificar-email=1&next=${encodeURIComponent('/conselho/painel/')}`);
         return;
@@ -149,9 +194,28 @@
         notice.textContent = 'O painel já está instalado, mas o projeto Firebase do Conselho ainda precisa ser conectado para começar a armazenar manifestações.';
         notice.hidden = false;
       }
-      document.getElementById('councilRows').innerHTML = `<tr><td colspan="5">${escapeHtml(error.message || 'Não foi possível carregar as manifestações.')}</td></tr>`;
-    }
+      if(state.manifestations.length){const notice=document.getElementById('firebaseNotice');notice.textContent='A atualização falhou. A lista exibida é da consulta anterior. '+(error.message||'Tente novamente.');notice.hidden=false;}
+      else document.getElementById('councilRows').innerHTML = `<tr><td colspan="5">${escapeHtml(error.message || 'Não foi possível carregar as manifestações.')}</td></tr>`;
+    }finally{if(generation===state.listGeneration&&auth.getToken()===initialToken){state.loading=false;if(state.manifestations.length)renderRows();}}
   }
+  async function loadMore(){
+    if(state.loading||!state.nextPageToken)return;
+    const generation=++state.listGeneration,cursor=state.nextPageToken,anchor=preserveListPosition();state.loading=true;renderRows();
+    try{const payload=await auth.api('/api/council/all?'+new URLSearchParams({pageToken:cursor}),{method:'GET'});if(auth.getToken()!==initialToken||generation!==state.listGeneration)return;
+      const records=new Map(state.manifestations.map(item=>[item.protocol,item]));for(const item of payload.manifestations||[]){const prior=records.get(item.protocol);if(!prior||Date.parse(item.updatedAt||item.createdAt)>=Date.parse(prior.updatedAt||prior.createdAt))records.set(item.protocol,item);}
+      state.manifestations=[...records.values()];state.nextPageToken=payload.nextPageToken||'';state.loadedPages++;renderMetrics();restoreListPosition(anchor);
+    }catch(error){if(generation===state.listGeneration){const notice=document.getElementById('firebaseNotice');notice.textContent='Não foi possível carregar o próximo lote. '+error.message;notice.hidden=false;}}
+    finally{if(generation===state.listGeneration&&auth.getToken()===initialToken){state.loading=false;renderRows();}}
+  }
+  function updateLoadedDetail(item){
+    if(!item)return;const anchor=preserveListPosition();const index=state.manifestations.findIndex(row=>row.protocol===item.protocol);if(index>=0)state.manifestations[index]=item;renderMetrics();renderRows();restoreListPosition(anchor);
+  }
+  document.getElementById('councilPreviousPage').addEventListener('click',()=>{state.page--;renderRows();tableContainer.scrollIntoView({block:'start'});});
+  document.getElementById('councilNextPage').addEventListener('click',()=>{state.page++;renderRows();tableContainer.scrollIntoView({block:'start'});});
+  document.getElementById('councilLoadMore').addEventListener('click',loadMore);
+  phone.addEventListener('change',renderRows);
+  addEventListener('portal:session-cleared',()=>{state.listGeneration++;state.detailGeneration++;state.manifestations=[];state.detail=null;state.selectedProtocol='';drafts.clear();pager.hidden=true;document.getElementById('councilRows').innerHTML='<tr><td colspan="5">Sessão encerrada.</td></tr>';document.getElementById('detailContent').hidden=true;for(const id of ['statusDetail','officialReply','internalNoteText'])document.getElementById(id).value='';closeModal();});
+  addEventListener('portal:session-ready',()=>{const fresh=auth.getCachedUser(),effectiveRole=fresh?.role==='admin'?'presidente':fresh?.councilRole;if(auth.getToken()!==initialToken||fresh?.username!==user.username||fresh?.role!==user.role||effectiveRole!==user.councilRole)location.replace(location.href);});
 
   function renderMessages(messages) {
     const el = document.getElementById('messageThread');
@@ -201,6 +265,7 @@
   }
 
   async function openDetail(protocol) {
+    rememberDraft();const generation=++state.detailGeneration;
     state.selectedProtocol = protocol;
     state.detail = null;
     openModal();
@@ -209,6 +274,7 @@
     document.getElementById('detailContent').hidden = true;
     try {
       const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}`, { method: 'GET' });
+      if(generation!==state.detailGeneration||auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       state.detail = payload;
       const item = payload.manifestation;
       const identity = identitySummary(item);
@@ -228,13 +294,18 @@
       document.getElementById('detailDescription').textContent = item.description || '';
       document.getElementById('statusSelect').value = item.status || 'recebida';
       document.getElementById('statusDetail').value = '';
+      const draft=phone.matches&&drafts.get(protocol);
+      for(const id of ['internalNoteText','officialReply'])document.getElementById(id).value=draft?.[id]||'';
+      if(draft){document.getElementById('statusDetail').value=draft.statusDetail;if(draft.status)document.getElementById('statusSelect').value=draft.status;}
       renderMessages(payload.messages || []);
       renderTimeline(payload.events || []);
       renderNotes(payload.internalNotes || []);
       renderAttachments(payload.attachments || []);
       document.getElementById('detailLoading').hidden = true;
       document.getElementById('detailContent').hidden = false;
+      if(phone.matches)updateLoadedDetail(item);
     } catch (error) {
+      if(generation!==state.detailGeneration||auth.getToken()!==initialToken)return;
       if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
         location.replace(error.verificationPath || `/seguranca/?verificar-email=1&next=${encodeURIComponent('/conselho/painel/')}`);
         return;
@@ -247,7 +318,7 @@
     const row = event.target.closest('[data-protocol]');
     if (row) openDetail(row.dataset.protocol);
   });
-  ['councilSearch', 'councilType', 'councilStatus'].forEach((id) => document.getElementById(id).addEventListener(id === 'councilSearch' ? 'input' : 'change', renderRows));
+  ['councilSearch', 'councilType', 'councilStatus'].forEach((id) => document.getElementById(id).addEventListener(id === 'councilSearch' ? 'input' : 'change', ()=>{state.page=0;renderRows();}));
   document.getElementById('refreshCouncil').addEventListener('click', () => loadAll());
   document.querySelector('[data-close-modal]').addEventListener('click', closeModal);
   document.getElementById('councilDetailModal').addEventListener('click', (event) => { if (event.target.id === 'councilDetailModal') closeModal(); });
@@ -256,14 +327,17 @@
     event.preventDefault();
     if (!state.selectedProtocol) return;
     const status = document.getElementById('internalNoteStatus');
+    const protocol=state.selectedProtocol,body=document.getElementById('internalNoteText').value;
     try {
-      await auth.api(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/internal-notes`, {
-        method: 'POST', body: JSON.stringify({ body: document.getElementById('internalNoteText').value })
+      await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}/internal-notes`, {
+        method: 'POST', body: JSON.stringify({ body })
       });
-      document.getElementById('internalNoteText').value = '';
+      if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
+      if(document.getElementById('internalNoteText').value===body)document.getElementById('internalNoteText').value = '';
       showStatus(status, 'Observação interna registrada.', 'success');
-      await openDetail(state.selectedProtocol);
+      await openDetail(protocol);
     } catch (error) {
+      if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       if (error.code === 'EMAIL_VERIFICATION_REQUIRED') return location.replace(error.verificationPath || '/seguranca/?verificar-email=1');
       showStatus(status, error.message || 'Não foi possível registrar.', 'error');
     }
@@ -272,16 +346,19 @@
   document.getElementById('saveStatus').addEventListener('click', async () => {
     if (!isPresident || !state.selectedProtocol) return;
     const statusEl = document.getElementById('statusUpdateMessage');
+    const protocol=state.selectedProtocol,button=document.getElementById('saveStatus');if(button.disabled)return;button.disabled=true;
     try {
-      await auth.api(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}`, {
+      await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}`, {
         method: 'PATCH', body: JSON.stringify({ status: document.getElementById('statusSelect').value, detail: document.getElementById('statusDetail').value })
       });
+      if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       showStatus(statusEl, 'Andamento atualizado.', 'success');
-      await Promise.all([openDetail(state.selectedProtocol), loadAll()]);
+      await Promise.all([openDetail(protocol), ...(!phone.matches?[loadAll()]:[])]);
     } catch (error) {
+      if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       if (error.code === 'EMAIL_VERIFICATION_REQUIRED') return location.replace(error.verificationPath || '/seguranca/?verificar-email=1');
       showStatus(statusEl, error.message || 'Não foi possível atualizar.', 'error');
-    }
+    }finally{button.disabled=false;}
   });
 
   document.getElementById('officialReplyForm').addEventListener('submit', async (event) => {
@@ -289,15 +366,18 @@
     if (!isPresident || !state.selectedProtocol) return;
     const button = document.getElementById('officialReplyButton');
     const statusEl = document.getElementById('officialReplyStatus');
+    const protocol=state.selectedProtocol,body=document.getElementById('officialReply').value;
     button.disabled = true;
     try {
-      await auth.api(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/messages`, {
-        method: 'POST', body: JSON.stringify({ body: document.getElementById('officialReply').value })
+      await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}/messages`, {
+        method: 'POST', body: JSON.stringify({ body })
       });
-      document.getElementById('officialReply').value = '';
+      if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
+      if(document.getElementById('officialReply').value===body)document.getElementById('officialReply').value = '';
       showStatus(statusEl, 'Resposta enviada ao cidadão.', 'success');
-      await Promise.all([openDetail(state.selectedProtocol), loadAll()]);
+      await Promise.all([openDetail(protocol), ...(!phone.matches?[loadAll()]:[])]);
     } catch (error) {
+      if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       if (error.code === 'EMAIL_VERIFICATION_REQUIRED') return location.replace(error.verificationPath || '/seguranca/?verificar-email=1');
       showStatus(statusEl, error.message || 'Não foi possível enviar.', 'error');
     } finally {

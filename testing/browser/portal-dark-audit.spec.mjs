@@ -85,7 +85,7 @@ test('Shared navigation initials mask classification retains unrelated surfaces'
   const report=await inspectSurfaces(page);
   expect(report.allowed.map(({selector,pseudo})=>selector+pseudo).sort()).toEqual(['#shared-valid::after','#shared-white-base::after']);
   expect(report.bright.map(({selector,pseudo})=>selector+pseudo).sort()).toEqual(['#shared-extra::after','#shared-outside::after','#shared-oversized::after','#shared-panel','#shared-rectangle::after','#shared-scaled::after','#shared-unmarked::after','#shared-white-base','#shared-wrong-text::after']);
-  for(const route of ['/', '/cidadao/', '/amigos/', '/ferramentas/', '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/']){
+  for(const route of ['/', '/cidadao/', '/amigos/', '/ferramentas/', '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/', '/conselho/painel/']){
     await page.evaluate(route=>history.replaceState(null,'',route),route);
     expect((await inspectSurfaces(page)).allowed.map(({selector})=>selector)).toContain('#shared-valid');
   }

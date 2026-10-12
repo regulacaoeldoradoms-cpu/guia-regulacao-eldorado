@@ -148,7 +148,7 @@ export async function inspectSurfaces(page) {
       } catch {return false;}
     };
     const sharedNavigationInitialsGlyph=(el,style,area)=>{
-      const routes=['/','/cidadao/','/amigos/','/ferramentas/','/perfil/','/seguranca/','/conquistas/','/configuracoes/','/notificacoes/','/mascotes/'];
+      const routes=['/','/cidadao/','/amigos/','/ferramentas/','/perfil/','/seguranca/','/conquistas/','/configuracoes/','/notificacoes/','/mascotes/','/conselho/painel/'];
       if(!routes.includes(location.pathname)||!matchMedia('screen and (max-width: 900px)').matches||matchMedia('print').matches
         ||style.backgroundImage!=='none'||style.maskRepeat!=='no-repeat'||style.maskPosition!=='50% 50%'
         ||style.maskSize!=='100% 100%'||style.transform!=='none'||!['""',"''"].includes(style.content))return false;

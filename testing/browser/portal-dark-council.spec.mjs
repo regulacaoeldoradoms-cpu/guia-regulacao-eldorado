@@ -180,6 +180,7 @@ test('Conselho: detalhe, status, nota, carta e exclusão cancelada',async({page,
   await capture(page,info,'council-praise-dialog');
   await page.locator('#cancelPraiseRecipient').click();
   await page.locator('#councilDetailModal [data-close-modal]').click();
+  if(page.viewportSize().width<=900)await page.locator('.council-delete-group > summary').click();
   await page.locator('.council-row-delete').click();
   await expect(page.locator('#councilDeleteDialog')).toBeVisible();
   await capture(page,info,'council-delete-dialog');
@@ -268,7 +269,12 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       // The requested Council phone layout replaces only its mobile geometry.
       // Preserve every native form, field, option and value; desktop/print below
       // retain the full unchanged computed and two-pixel/one-channel gates.
-      expect(councilContracts).toHaveLength(2);expect(councilContracts[0]).toEqual(councilContracts[1]);
+      expect(councilContracts).toHaveLength(2);
+      const paginationIds=['councilLoadMore','councilNextPage','councilPreviousPage'];
+      const native=controls=>controls.filter(control=>!paginationIds.includes(control.id));
+      expect(native(councilContracts[0])).toEqual(native(councilContracts[1]));
+      expect(councilContracts[0].filter(control=>paginationIds.includes(control.id)).map(control=>({id:control.id,tag:control.tag,type:control.type,count:control.count}))).toEqual(paginationIds.map(id=>({id,tag:'button',type:'button',count:1})));
+      expect(councilContracts[1].some(control=>paginationIds.includes(control.id))).toBe(false);
       expect(councilContracts[0].every(n=>n.count===1)).toBe(true);
       expect(result.captureStability.current.snapshotStable).toBe(true);
       await info.attach('approved-council-mobile-form-contract.json',{body:Buffer.from(JSON.stringify(councilContracts)),contentType:'application/json'});

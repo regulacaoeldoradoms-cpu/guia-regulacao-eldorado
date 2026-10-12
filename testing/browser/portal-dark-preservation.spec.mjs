@@ -333,8 +333,12 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       // control, option, value, permission owner and node identity remains gated;
       // desktop/print and every other route keep exact computed/pixel comparisons.
       expect(councilContracts).toHaveLength(2);
-      expect(councilContracts[0]).toEqual(councilContracts[1]);
-      expect(councilContracts[0].every(control=>control.count===1&&control.identityPreserved)).toBe(true);
+      const paginationIds=['councilLoadMore','councilNextPage','councilPreviousPage'];
+      const native=controls=>controls.filter(control=>!paginationIds.includes(control.id));
+      expect(native(councilContracts[0])).toEqual(native(councilContracts[1]));
+      expect(native(councilContracts[0]).every(control=>control.count===1&&control.identityPreserved)).toBe(true);
+      expect(councilContracts[0].filter(control=>paginationIds.includes(control.id)).map(control=>({id:control.id,tag:control.tag,type:control.type,count:control.count}))).toEqual(paginationIds.map(id=>({id,tag:'button',type:'button',count:1})));
+      expect(councilContracts[1].some(control=>paginationIds.includes(control.id))).toBe(false);
       expect(comparison.captureStability.current.snapshotStable).toBe(true);
       await info.attach('approved-council-mobile-native-contract.json',{body:Buffer.from(JSON.stringify({current:councilContracts[0],base:councilContracts[1]})),contentType:'application/json'});
     }else if(loginRedesign){

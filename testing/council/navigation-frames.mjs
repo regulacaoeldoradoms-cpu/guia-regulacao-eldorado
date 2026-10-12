@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {openVisual} from './visual-fixtures.mjs';
+import {user} from './mobile-fixtures.mjs';
+const output=process.argv[2]||'.local/council-navigation-frames';await fs.mkdir(output,{recursive:true});const results=[];
+for(const developer of [false,true])for(const theme of ['light','dark']){
+ const s=await openVisual(process.cwd(),{width:320,theme,count:3,slow:true,developer,role:developer?'':'presidente'}),{page}=s;
+ try{
+  await s.context.addInitScript(()=>{window.__councilBars=[];const sample=()=>{const nav=document.querySelector('.social-mobile-nav'),visible=node=>{const r=node.getBoundingClientRect(),c=getComputedStyle(node);return r.width>0&&r.height>0&&c.display!=='none'&&c.visibility==='visible'&&Number(c.opacity)>0;};if(nav){const names=[...nav.querySelectorAll(':scope > .social-mobile-nav-link')].filter(visible).map(n=>n.getAttribute('aria-label')||n.textContent.trim());if(names.length)window.__councilBars.push({names,chatInBar:nav.contains(document.getElementById('portalChatLauncher')),marker:nav.dataset.homeIconNavigation});}requestAnimationFrame(sample);};requestAnimationFrame(sample);});
+  await page.goto(s.origin+'/conselho/painel/');await page.waitForFunction(()=>document.body.classList.contains('council-navigation-ready')&&document.querySelector('.social-mobile-nav a[href="/mascotes/"]'));await page.waitForTimeout(100);
+  await page.locator('#portalChatLauncher').click();await page.locator('#portalChatRoot.open').waitFor();await page.locator('.social-mobile-nav a[href="/amigos/"]').click();await page.waitForURL(s.origin+'/amigos/');assert.equal(await page.locator('#portalChatRoot.open').count(),0);await page.goto(s.origin+'/conselho/painel/');await page.waitForFunction(()=>document.body.classList.contains('council-navigation-ready'));await page.reload();await page.waitForFunction(()=>document.body.classList.contains('council-navigation-ready'));await page.waitForTimeout(100);
+  const frames=await page.evaluate(()=>window.__councilBars);assert(frames.length>0);for(const f of frames){assert(!f.names.includes('Ferramentas'));assert(f.chatInBar);assert.equal(f.marker,'true');assert.deepEqual(f.names.filter(n=>n!=='Mascotes'),['Início','Amigos','Chat','Avisos','Perfil']);}
+  assert.equal(await page.locator('#portalChatLauncher').count(),1);assert.equal(s.result.errors.length,0);results.push({developer,theme,frames:frames.length});console.log(JSON.stringify({developer,theme,passed:true}));
+ }finally{await s.close();}
+}
+for(const theme of ['light','dark']){
+ const s=await openVisual(process.cwd(),{width:320,theme,count:3,role:'presidente'}),{page}=s;let authenticated=false,loginCount=0;
+ try{
+  await s.context.addInitScript(()=>{if(location.pathname==='/login/'){sessionStorage.removeItem('regulacao.portal.session');sessionStorage.removeItem('regulacao.portal.user');sessionStorage.removeItem('regulacao.portal.user.validatedAt');}});
+  await s.context.route('**/api/auth/**',async route=>{const request=route.request(),path=new URL(request.url()).pathname;if(path==='/api/auth/login'){assert.equal(request.method(),'POST');assert.equal(JSON.parse(request.postData()).username,user.username);authenticated=true;loginCount++;return route.fulfill({contentType:'application/json',body:JSON.stringify({token:'synthetic-council-login-only',user:{...user,councilRole:'presidente'}})});}if(path==='/api/auth/me'&&!authenticated)return route.fulfill({status:401,contentType:'application/json',body:'{"error":"Sessão sintética ausente"}'});return route.fallback();});
+  await page.goto(s.origin+'/login/?next=%2Fconselho%2Fpainel%2F');await page.locator('#loginUsername').fill(user.username);await page.locator('#loginPassword').fill('synthetic-password-never-production');await page.locator('#loginSubmit').click();await page.waitForURL(s.origin+'/conselho/painel/',{timeout:15000});await page.waitForFunction(()=>document.body.classList.contains('council-navigation-ready'));assert.equal(loginCount,1);assert.equal(await page.locator('#councilRows tr[data-protocol]').count(),3);assert.equal(await page.locator('.social-mobile-nav #portalChatLauncher').count(),1);assert.equal(await page.locator('.social-mobile-nav a[href="/ferramentas/"]').count(),0);assert.equal(s.result.errors.length,0);results.push({afterLogin:true,theme});console.log(JSON.stringify({afterLogin:true,theme,passed:true}));
+ }finally{await s.close();}
+}
+await fs.writeFile(`${output}/results.json`,JSON.stringify(results,null,2));
