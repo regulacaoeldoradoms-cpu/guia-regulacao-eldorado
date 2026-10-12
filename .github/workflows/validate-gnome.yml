@@ -22,6 +22,8 @@ on:
       - 'assets/pets/**'
       - 'testing/pets/gnome-mobile.mjs'
       - 'testing/pets/gnome-age-availability.mjs'
+      - 'testing/pets/gnome-council-cache.mjs'
+      - 'conselho/painel/index.html'
       - '.github/workflows/validate-gnome.yml'
 permissions:
   contents: read
@@ -61,6 +63,8 @@ jobs:
         run: node testing/pets/gnome-mobile.mjs /tmp/gnome-mobile
       - name: Preserve native cats while optional private age is pending or unavailable
         run: node testing/pets/gnome-age-availability.mjs
+      - name: Citizen Council route uses the same versioned adult companion
+        run: node testing/pets/gnome-council-cache.mjs
       - name: Preserve original cat navigation, lives and speech
         run: |
           PETS_GLOBAL_ARTIFACT_DIR=/tmp/gnome-cat-global node testing/pets/global-navigation.cjs
