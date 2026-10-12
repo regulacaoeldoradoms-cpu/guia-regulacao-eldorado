@@ -1,6 +1,6 @@
 'use strict';
 import {PetApi} from './pets-api.js?v=20261012-gnome-2';
-import {PetRuntime} from './pets-runtime.js?v=20261012-gnome-frame-wrap-1';
+import {PetRuntime} from './pets-runtime.js?v=20261012-pet-depth-speech-1';
 import {petSpeechForSession} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
 import {loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-frame-wrap-1';
 let current=null,running=null,epoch=0;
