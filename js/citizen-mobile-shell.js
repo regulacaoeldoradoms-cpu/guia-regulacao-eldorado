@@ -44,7 +44,7 @@
   };
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
-    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'pets-mobile-presentation', 'profile-mobile-presentation', 'tools-mobile-presentation', 'citizen-mobile-shell']);
+    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'pets-mobile-presentation', 'profile-mobile-presentation', 'tools-mobile-presentation', 'citizen-compose-mobile', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
@@ -237,7 +237,7 @@
   }
   async function styles(doc, area) {
     await Promise.all([...doc.querySelectorAll('link[rel="stylesheet"]')].map(async source => {
-      const persistentPresentation = ['pets-mobile-presentation', 'profile-mobile-presentation', 'tools-mobile-presentation'].includes(name(source.href));
+      const persistentPresentation = ['pets-mobile-presentation', 'profile-mobile-presentation', 'tools-mobile-presentation', 'citizen-compose-mobile'].includes(name(source.href));
       if (sharedStyles.has(name(source.href)) && !persistentPresentation) return;
       const href = new URL(source.getAttribute('href'), location.origin).href;
       const key = 'css:' + href;
@@ -307,7 +307,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261012-profile-tools-3' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261012-citizen-compose-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
