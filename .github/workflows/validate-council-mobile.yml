@@ -7,6 +7,8 @@ on:
       - 'js/council*.js'
       - 'js/auth-client.js'
       - 'testing/council/**'
+      - 'worker/council*.js'
+      - 'worker/tests/council-detail-prefetch.test.mjs'
       - '.github/workflows/validate-council-mobile.yml'
   push:
     branches: [main]
@@ -15,6 +17,8 @@ on:
       - 'css/council*.css'
       - 'js/council*.js'
       - 'testing/council/**'
+      - 'worker/council*.js'
+      - 'worker/tests/council-detail-prefetch.test.mjs'
       - '.github/workflows/validate-council-mobile.yml'
 permissions:
   contents: read
@@ -48,6 +52,14 @@ jobs:
         run: node testing/council/visual-extras.mjs /tmp/council-visual-extras
       - name: Selection across pages and out-of-order responses
         run: node testing/council/visual-state.mjs /tmp/council-visual-state
+      - name: Detail snapshots, bounds, current authorization and side effects
+        run: node --test testing/council/detail-cache.test.mjs worker/tests/council-detail-prefetch.test.mjs
+      - name: Detail phone reading, drafts and rapid case changes
+        run: node testing/council/detail-review.mjs /tmp/council-detail-review
+      - name: Detail keyboard, text200, errors, sessions and member access
+        run: node testing/council/detail-validation.mjs /tmp/council-detail-validation
+      - name: Detail lifecycle and optional cache asset failure
+        run: node testing/council/detail-lifecycle.mjs
       - name: Painted navigation frames, roles, chat and reentries
         run: node testing/council/navigation-frames.mjs /tmp/council-navigation-frames
       - uses: actions/upload-artifact@v4
@@ -60,3 +72,5 @@ jobs:
             /tmp/council-visual-extras/
             /tmp/council-visual-state/
             /tmp/council-navigation-frames/
+            /tmp/council-detail-review/
+            /tmp/council-detail-validation/

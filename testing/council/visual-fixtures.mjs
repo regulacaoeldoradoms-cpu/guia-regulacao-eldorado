@@ -3,8 +3,8 @@ export function records(count){
  const types=['sugestao','reclamacao','elogio','denuncia'],statuses=['recebida','em_analise','aguardando_cidadao','encaminhada','aguardando_retorno','respondida','concluida','arquivada'];
  return Array.from({length:count},(_,i)=>({protocol:`CMS-2026-${String(i+1).padStart(6,'0')}`,subject:i%7===0?'Sugestão fictícia para organizar os horários e as informações do atendimento ao público de forma acessível e fácil de consultar':`Manifestação fictícia ${i+1} sobre informações ao público`,description:'Este relato é inteiramente sintético e não descreve pessoas, pacientes ou fatos reais. '.repeat(i%7===0?25:3),service:i%5===0?'Serviço municipal fictício de informações e orientação ao público':'Serviço municipal fictício',type:types[i%4],status:statuses[i%8],privacyMode:'anonima',authorLabel:'Identidade protegida',createdAt:new Date(Date.UTC(2026,9,12,12)-i*60000).toISOString(),updatedAt:new Date(Date.UTC(2026,9,12,13)-i*60000).toISOString()}));
 }
-export async function openVisual(root,{width=390,theme='light',count=253,slow=false,role='presidente',developer=false}={}){
- const scene=await open(root,width,theme,slow,role,{user:developer?{username:'desenvolvedor',role:'admin'}:{}}),items=records(count),messages=new Map(),notes=new Map();
+export async function openVisual(root,{width=390,theme='light',count=253,slow=false,role='presidente',developer=false,seedOnce=false}={}){
+ const scene=await open(root,width,theme,slow,role,{seedOnce,user:developer?{username:'desenvolvedor',role:'admin'}:{}}),items=records(count),messages=new Map(),notes=new Map();
  const requests=[],detailRequests=[],mutations=[];let tick=0,failNextList=false;
  await scene.context.route('**/api/council/**',async route=>{
   const request=route.request(),url=new URL(request.url()),method=request.method();requests.push({path:url.pathname,query:url.search,method,at:Date.now()});
