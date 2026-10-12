@@ -107,6 +107,7 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/documents/drive/list') data = { items:[], nextPageToken:'' };
     else if (url.pathname === '/api/documents/preferences') data = { preferences:{} };
     else if (url.pathname === '/api/documents/ai/config') data = { enabled:false };
+    else if (url.pathname === '/api/council/config') data = {detailPrefetch:false};
     else if (url.pathname === '/api/council/all' || url.pathname === '/api/council/my') data = { manifestations:[] };
     else if (url.pathname === '/api/admin/usage') data = { doctors:[{username:'synthetic.doctor',name:'PROFISSIONAL FICTÍCIO',jobTitle:'Perfil fictício',active:true,online:true,lastSeen:'2026-09-24T12:00:00Z',history:[{usageDate:'2026-09-24',guideVisits:2,visits:2,firstSeen:'2026-09-24T10:00:00Z',lastSeen:'2026-09-24T12:00:00Z'}]}] };
     else if(url.pathname==='/api/admin/readiness')data={readyForControlledDeploy:false,blockers:['synthetic'],generatedAt:'2026-09-24T12:00:00Z',checks:[{label:'Teste pronto',detail:'Estado sintético pronto',ok:true},{label:'Teste pendente',detail:'Estado sintético pendente',ok:false,requiredBeforeDeploy:true},{label:'Teste informativo',detail:'Estado sintético informativo',ok:false,requiredBeforeDeploy:false}]};
