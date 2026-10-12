@@ -2,7 +2,7 @@
 const INSTANCE = Symbol.for('portal.homeMobileDirect');
 const HISTORY_KEY = '__portalHomeDirect';
 
-export function mountHomeMobileDirect() {
+export function mountHomeMobileDirect({homeLeavesPage=false}={}) {
   if (window[INSTANCE]) {
     window[INSTANCE].refresh();
     return window[INSTANCE];
@@ -427,7 +427,7 @@ export function mountHomeMobileDirect() {
       event.stopImmediatePropagation();
       // Close through the native owner, including its History handoff. Only
       // the latest area intent is replayed after drafts/focus are preserved.
-      pendingBarControl = barControl.getAttribute('href') === '/' ? null : barControl;
+      pendingBarControl = barControl.getAttribute('href') === '/' && !homeLeavesPage ? null : barControl;
       void closeToPage().then(() => {
         if (pendingBarControl !== barControl || !barControl.isConnected || !enabled()) return;
         pendingBarControl = null;
