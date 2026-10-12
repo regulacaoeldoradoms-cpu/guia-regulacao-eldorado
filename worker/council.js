@@ -305,10 +305,11 @@ async function citizenList(env, user, origin) {
   return json({ manifestations }, 200, origin);
 }
 
-async function councilList(env, user, origin) {
+async function councilList(env, user, origin, pageToken = '') {
   if (!councilAccess(user)) return json({ error: 'Acesso restrito aos membros autorizados do Conselho.' }, 403, origin);
   if (!firebaseConfigured(env)) return json({ error: 'Firebase do Conselho ainda não configurado.', code: 'FIREBASE_PENDING' }, 503, origin);
-  const result = await firestoreList(env, 'council_manifestations', { pageSize: 100, orderBy: 'createdAt desc' });
+  if (pageToken.length > 4096) return json({error:'Cursor de listagem inválido.'},400,origin);
+  const result = await firestoreList(env, 'council_manifestations', { pageSize: 100, orderBy: 'createdAt desc', pageToken });
   return json({ manifestations: result.documents.map(protectedManifestation), nextPageToken: result.nextPageToken }, 200, origin);
 }
 
@@ -507,7 +508,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   if (url.pathname === '/api/council/my' && request.method === 'GET') return citizenList(env, user, origin);
   if (url.pathname === '/api/council/all' && request.method === 'GET') {
     if (asCitizen) return json({ error: 'A listagem institucional do Conselho não está disponível na área de acompanhamento das próprias manifestações.' }, 403, origin);
-    return councilList(env, user, origin);
+    return councilList(env, user, origin, url.searchParams.get('pageToken') || '');
   }
   if (url.pathname === '/api/council/notifications' && (request.method === 'GET' || request.method === 'PATCH')) return notifications(request, env, user, origin);
 
