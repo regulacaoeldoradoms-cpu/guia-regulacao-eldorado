@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="/css/council-detail-desktop-v2.css?v=20260924-dark-final-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
+  <link rel="stylesheet" href="/css/council-mobile-list.css?v=20261012-council-mobile-1">
 </head>
 <body class="portal-page">
   <script>
@@ -76,6 +77,43 @@
         <div class="council-metric"><strong id="metricWaiting">0</strong><span>Aguardando retorno</span></div>
         <div class="council-metric"><strong id="metricDone">0</strong><span>Concluídas</span></div>
       </section>
+      <script>
+      // Parse-time mobile presentation, restoring the same nodes for desktop/print.
+      (() => {
+        const media = matchMedia('screen and (max-width:900px)');
+        const heading = document.querySelector('.portal-hero h2');
+        const paragraph = document.querySelector('.portal-hero-copy > p');
+        const metrics = document.querySelector('.council-metrics');
+        const titleNodes = [...heading.childNodes];
+        const paragraphAnchor = document.createComment('council explanation');
+        const metricsAnchor = document.createComment('council metrics');
+        paragraph.before(paragraphAnchor); metrics.before(metricsAnchor);
+        const help = document.createElement('details'); help.className = 'council-page-help';
+        const helpSummary = document.createElement('summary'); helpSummary.textContent = 'Sobre o painel'; help.append(helpSummary);
+        const details = document.createElement('details'); details.id = 'councilSummary'; details.className = 'council-mobile-summary';
+        const summary = document.createElement('summary'); summary.append(document.createTextNode('Resumo · '));
+        const count = document.createElement('span'); count.id = 'councilSummaryCount'; count.textContent = '0';
+        summary.append(count,document.createTextNode(' manifestações')); details.append(summary);
+        let active = false, mobileOpen = false, printing = false;
+        const sync = () => {
+          const enabled = media.matches && !printing;
+          if (enabled && !active) {
+            heading.textContent = 'Manifestações'; paragraphAnchor.after(help); help.append(paragraph);
+            metricsAnchor.after(details); details.append(metrics); details.open = mobileOpen;
+            count.textContent = document.getElementById('metricTotal').textContent;
+          } else if (!enabled && active) {
+            heading.replaceChildren(...titleNodes); paragraphAnchor.after(paragraph); help.remove();
+            metricsAnchor.after(metrics); details.remove();
+          }
+          active = enabled;
+        };
+        details.addEventListener('toggle', () => { if (media.matches && !printing) mobileOpen = details.open; });
+        media.addEventListener('change', sync);
+        addEventListener('beforeprint', () => { printing = true; sync(); });
+        addEventListener('afterprint', () => { printing = false; sync(); });
+        sync();
+      })();
+      </script>
 
       <section class="citizen-card">
         <div class="citizen-card-head"><h2>Manifestações</h2><button class="portal-button secondary" id="refreshCouncil" type="button">Atualizar</button></div>
@@ -206,15 +244,15 @@
     </div>
   </div>
 
-  <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20261001-v34-8"></script>
-  <script src="/js/portal-interactions.js?v=20260923-2"></script>
-  <script src="/js/council-access-policy.js?v=20260827-1855"></script>
-  <script src="/js/council-panel.js?v=20260910-2"></script>
-  <script src="/js/council-delete.js?v=20260828-1435"></script>
-  <script src="/js/council-export.js?v=20260906-1"></script>
-  <script src="/js/council-export-signature.js?v=20260828-1815"></script>
-  <script src="/js/council-detail-mobile.js?v=20260827-1855"></script>
+  <script src="/js/auth-config.js?v=20260815-1" defer></script>
+  <script src="/js/auth-client.js?v=20261001-v34-8" defer></script>
+  <script src="/js/portal-interactions.js?v=20260923-2" defer></script>
+  <script src="/js/council-access-policy.js?v=20261012-council-mobile-1" defer></script>
+  <script src="/js/council-panel.js?v=20261012-council-mobile-1" defer></script>
+  <script src="/js/council-delete.js?v=20261012-council-mobile-1" defer></script>
+  <script src="/js/council-export.js?v=20260906-1" defer></script>
+  <script src="/js/council-export-signature.js?v=20260828-1815" defer></script>
+  <script src="/js/council-detail-mobile.js?v=20260827-1855" defer></script>
   <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js"></script>
 </body>

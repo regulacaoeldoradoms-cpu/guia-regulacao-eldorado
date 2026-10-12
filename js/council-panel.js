@@ -1,8 +1,14 @@
 'use strict';
 
 (async () => {
-  const auth = window.RegulationAuth;
-  const user = await auth.me({ allowCached: false }).catch(() => null);
+  const auth = window.PortalCouncilAuth || window.RegulationAuth;
+  const initialToken = auth.getToken();
+  const cached = auth.getCachedUser();
+  // The endpoint independently authorizes this read. Only a fresh authorized
+  // session below may expose its result, and a token change discards it.
+  const initialList = initialToken && auth.hasCouncilAccess(cached)
+    ? auth.api('/api/council/all', { method: 'GET' }).then(data => ({data}), error => ({error})) : null;
+  const user = await (auth.initialUser || auth.me({ allowCached: false }).catch(() => null));
   if (!user) {
     location.replace(`/login/?next=${encodeURIComponent(location.pathname)}`);
     return;
@@ -67,6 +73,7 @@
     const modal = document.getElementById('councilDetailModal');
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    document.querySelector(`#councilRows [data-protocol="${CSS.escape(state.selectedProtocol)}"] .council-open-detail`)?.focus({ preventScroll: true });
   }
 
   function identitySummary(item) {
@@ -94,6 +101,8 @@
   function renderMetrics() {
     const items = state.manifestations;
     document.getElementById('metricTotal').textContent = String(items.length);
+    const summaryCount = document.getElementById('councilSummaryCount');
+    if (summaryCount) summaryCount.textContent = String(items.length);
     document.getElementById('metricNew').textContent = String(items.filter((item) => item.status === 'recebida').length);
     document.getElementById('metricAnalysis').textContent = String(items.filter((item) => item.status === 'em_analise').length);
     document.getElementById('metricWaiting').textContent = String(items.filter((item) => ['aguardando_cidadao', 'aguardando_retorno', 'encaminhada'].includes(item.status)).length);
@@ -111,7 +120,7 @@
       const secondary = item.service || identitySummary(item) || item.authorLabel || 'Identidade protegida';
       return `<tr data-protocol="${escapeHtml(item.protocol)}">
       <td><strong>${escapeHtml(item.protocol)}</strong><small>${escapeHtml(formatDate(item.createdAt))}</small></td>
-      <td><strong>${escapeHtml(item.subject || 'Sem assunto')}</strong><small>${escapeHtml(secondary)}</small></td>
+      <td><strong><button type="button" class="council-open-detail" aria-label="Abrir manifestação ${escapeHtml(item.protocol)}">${escapeHtml(item.subject || 'Sem assunto')}</button></strong><small>${escapeHtml(secondary)}</small></td>
       <td>${escapeHtml(typeLabels[item.type] || item.type)}</td>
       <td><span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span></td>
       <td>${escapeHtml(formatDate(item.lastActivityAt || item.updatedAt || item.createdAt))}</td>
@@ -119,10 +128,13 @@
     }).join('');
   }
 
-  async function loadAll() {
+  async function loadAll(preloaded = null) {
     document.getElementById('councilRows').innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
     try {
-      const payload = await auth.api('/api/council/all', { method: 'GET' });
+      const result = preloaded ? await preloaded : { data: await auth.api('/api/council/all', { method: 'GET' }) };
+      if (auth.getToken() !== initialToken) return;
+      if (result.error) throw result.error;
+      const payload = result.data;
       state.manifestations = Array.isArray(payload?.manifestations) ? payload.manifestations : [];
       renderMetrics();
       renderRows();
@@ -236,7 +248,7 @@
     if (row) openDetail(row.dataset.protocol);
   });
   ['councilSearch', 'councilType', 'councilStatus'].forEach((id) => document.getElementById(id).addEventListener(id === 'councilSearch' ? 'input' : 'change', renderRows));
-  document.getElementById('refreshCouncil').addEventListener('click', loadAll);
+  document.getElementById('refreshCouncil').addEventListener('click', () => loadAll());
   document.querySelector('[data-close-modal]').addEventListener('click', closeModal);
   document.getElementById('councilDetailModal').addEventListener('click', (event) => { if (event.target.id === 'councilDetailModal') closeModal(); });
 
@@ -325,5 +337,5 @@
     location.replace('/login/');
   });
 
-  await loadAll();
+  await loadAll(initialList);
 })();

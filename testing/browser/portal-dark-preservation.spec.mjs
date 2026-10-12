@@ -98,6 +98,20 @@ function trackNativeControls(nativeIdentityKey) {
         .observe(document,{childList:true,subtree:true});
 
 }
+async function councilNativeControlContract(page) {
+  return page.evaluate(key => {
+    const original = window[Symbol.for(key)]?.byId;
+    return [...document.querySelectorAll('.portal-main :is(form,button,input,textarea,select)[id],#councilDetailModal :is(form,button,input,textarea,select)[id],#portalLogout')].map(node => ({
+      id:node.id, count:document.querySelectorAll('#'+CSS.escape(node.id)).length,
+      identityPreserved:original?.get(node.id)===node,
+      tag:node.localName, type:node.getAttribute('type'), name:node.getAttribute('name'),
+      required:node.required||false, maxlength:node.getAttribute('maxlength'),
+      form:node.form?.id||null, value:node.value||'',
+      options:node.localName==='select'?[...node.options].map(option=>({value:option.value,text:option.textContent})):null
+    })).sort((a,b)=>a.id.localeCompare(b.id));
+  },nativeIdentityKey);
+}
+
 async function sharedNativeControlContract(page, route) {
   return page.evaluate(({ route, nativeIdentityKey }) => {
     const requiredIds = ['portalLogout','portalChatRoot','portalChatLauncher','portalChatUnread','portalChatInput','portalChatClose','portalChatBack','socialNotificationTriggerMobile','socialNotificationPanelMobile'];
@@ -175,6 +189,9 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const shared=sharedCitizenRoutes.has(route);
     const mobileRedesign=shared&&isMobile&&theme==='light'&&media==='screen';
     const loginRedesign=route==='/login/'&&isMobile;
+    const councilRedesign=route==='/conselho/painel/'&&isMobile&&media==='screen'&&theme==='light';
+    const councilContracts=[];
+    if(councilRedesign)await context.addInitScript(trackNativeControls,nativeIdentityKey);
     const loginContracts=[];
     // The approved presentation covers shared mobile navigation/Direct and
     // the requested common Home header on the nine requested views. Native controls remain compared to
@@ -219,6 +236,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
         await target.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       }
       if(route==='/conselho/painel/')await sampleCouncilReflection(target,info);
+      if(councilRedesign)councilContracts.push(await councilNativeControlContract(target));
       if(mobileRedesign){
         if(nativeContracts.length===0)await target.waitForFunction(()=>typeof window.PortalCitizenMobileReady?.then==='function');
         const sharedReady=await target.evaluate(async()=>window.PortalCitizenMobileReady===undefined?null:Boolean(await window.PortalCitizenMobileReady));
@@ -310,6 +328,15 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       }
       expect(layout.active).toBe(true);expect(layout.fits).toBe(true);expect(layout.navFits).toBe(true);expect(layout.rows).toBeLessThanOrEqual(1);
       expect(comparison.captureStability.current.snapshotStable).toBe(true);
+    }else if(councilRedesign){
+      // Explicitly requested Council phone presentation. Every original form
+      // control, option, value, permission owner and node identity remains gated;
+      // desktop/print and every other route keep exact computed/pixel comparisons.
+      expect(councilContracts).toHaveLength(2);
+      expect(councilContracts[0]).toEqual(councilContracts[1]);
+      expect(councilContracts[0].every(control=>control.count===1&&control.identityPreserved)).toBe(true);
+      expect(comparison.captureStability.current.snapshotStable).toBe(true);
+      await info.attach('approved-council-mobile-native-contract.json',{body:Buffer.from(JSON.stringify({current:councilContracts[0],base:councilContracts[1]})),contentType:'application/json'});
     }else if(loginRedesign){
       // The requested phone redesign changes copy/layout deliberately. Keep
       // exact native form semantics/colors against base; dedicated phone tests
@@ -321,6 +348,6 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       await info.attach('approved-mobile-login-contract.json',{body:Buffer.from(JSON.stringify({current:loginContracts[0],base:loginContracts[1],approved:'Login phone copy/layout; native form semantics and palette preserved'})),contentType:'application/json'});
     }else expect(comparison.differences,'Computed styles must equal the base commit').toEqual([]);
     expect(comparison.newErrors,'No new JavaScript errors beyond the measured base commit').toEqual([]);
-    if(!mobileRedesign&&!loginRedesign)expect(comparison.pixelComparison.gateAccepted,'Stable raster sources must remain within 2 pixels / 1 channel; nondeterministic Linux raster is diagnostic only when computed/layout snapshots are exact').toBe(true);
+    if(!mobileRedesign&&!loginRedesign&&!councilRedesign)expect(comparison.pixelComparison.gateAccepted,'Stable raster sources must remain within 2 pixels / 1 channel; nondeterministic Linux raster is diagnostic only when computed/layout snapshots are exact').toBe(true);
   });
 }

@@ -1,8 +1,10 @@
 'use strict';
 
 (() => {
-  const auth = window.RegulationAuth;
-  if (!auth) return;
+  if (!window.RegulationAuth) return;
+  // Page-local adapter: the shared authentication client is immutable.
+  const auth = window.PortalCouncilAuth = { ...window.RegulationAuth };
+  const initialToken = auth.getToken();
 
   const originalMe = typeof auth.me === 'function' ? auth.me.bind(auth) : null;
   const originalHasCouncilAccess = typeof auth.hasCouncilAccess === 'function'
@@ -25,6 +27,11 @@
     user?.role === 'admin'
     || (originalHasCouncilAccess ? originalHasCouncilAccess(user) : ['membro', 'presidente'].includes(user?.councilRole))
   );
+
+  // One fresh session read for this document, discarded on a token change.
+  // This contains identity/permissions only; no manifestation data is cached.
+  const initialRead = auth.me({ allowCached: false }).catch(() => null);
+  auth.initialUser = initialRead.then(user => auth.getToken() === initialToken ? user : null);
 
   function attachmentHeading() {
     const list = document.getElementById('attachmentList');
@@ -136,11 +143,11 @@
 
   async function applyPolicyUi() {
     if (!originalMe) return;
-    const realUser = await originalMe({ allowCached: false }).catch(() => null);
+    const realUser = await auth.initialUser;
     if (!realUser) return;
 
     if (realUser.role === 'admin') {
-      applyDeveloperUi();
+      if (realUser.developerCouncilOverride) applyDeveloperUi();
       return;
     }
     if (realUser.councilRole === 'membro') {

@@ -1,0 +1,62 @@
+.council-mobile-summary { display:contents; }
+.council-mobile-summary > summary { display:none; }
+/* Final, route-scoped mobile presentation; native desktop and print retained. */
+.council-open-detail { border:0; padding:0; background:transparent; color:inherit; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
+@media screen and (max-width:900px) {
+body.mobile-council-mode { font-size:16px; line-height:1.5; }
+body.mobile-council-mode .portal-main { width:calc(100% - 24px) !important; margin:16px auto 24px !important; }
+body.mobile-council-mode .portal-brand img { width:32px !important; height:32px !important; flex-basis:32px !important; }
+body.mobile-council-mode .portal-brand h1 { font-size:18px !important; white-space:normal !important; overflow-wrap:anywhere; }
+body.mobile-council-mode .portal-hero { padding:16px !important; border-radius:14px !important; }
+body.mobile-council-mode .council-page-help > summary { min-height:48px; display:flex; align-items:center; cursor:pointer; font-size:16px; }
+body.mobile-council-mode .council-mobile-summary { display:block; margin:12px 0; border:1px solid var(--council-ui-line,#d6e2e9); border-radius:12px; padding:0 12px; }
+body.mobile-council-mode .council-mobile-summary > summary { display:flex; flex-wrap:wrap; align-items:center; gap:4px; min-height:48px; font-size:16px; cursor:pointer; }
+body.mobile-council-mode .portal-hero h2 { font-size:24px !important; line-height:1.25 !important; margin:12px 0 8px !important; }
+body.mobile-council-mode .portal-hero p { font-size:16px !important; line-height:1.5 !important; }
+body.mobile-council-mode .council-role-badge.is-president-image { width:160px !important; max-width:100% !important; min-height:0 !important; padding:0 !important; }
+body.mobile-council-mode .council-metrics { gap:8px !important; margin:12px 0 !important; }
+body.mobile-council-mode .council-metric, body.mobile-council-mode .council-metric:first-child { min-height:72px !important; padding:12px !important; border-radius:12px !important; box-shadow:none !important; }
+body.mobile-council-mode .council-metric strong { font-size:28px !important; line-height:1.2 !important; }
+body.mobile-council-mode .council-metric span { font-size:16px !important; line-height:1.3 !important; overflow-wrap:anywhere; }
+body.mobile-council-mode .citizen-card-head { padding:14px !important; flex-wrap:wrap !important; gap:8px !important; }
+body.mobile-council-mode .citizen-card-head h2 { font-size:22px !important; }
+body.mobile-council-mode .council-toolbar { padding:12px !important; gap:8px !important; }
+body.mobile-council-mode .council-toolbar :is(input,select) { min-height:48px !important; font-size:16px !important; min-width:0 !important; max-width:100% !important; }
+body.mobile-council-mode .council-table tbody { padding:12px !important; }
+body.mobile-council-mode .council-table tbody tr { padding:14px !important; gap:10px !important; border-radius:12px !important; border-left-width:4px !important; box-shadow:none !important; }
+body.mobile-council-mode .council-table td { font-size:16px !important; overflow-wrap:anywhere; min-width:0; }
+body.mobile-council-mode .council-table td::before { font-size:13px !important; }
+body.mobile-council-mode .council-table strong { font-size:18px !important; line-height:1.3 !important; }
+body.mobile-council-mode .council-table small { font-size:14px !important; }
+body.mobile-council-mode .council-table .status-chip { font-size:14px !important; padding:6px 8px !important; white-space:normal !important; }
+body.mobile-council-mode .council-open-detail { min-height:48px; display:block; max-width:100%; overflow-wrap:anywhere; }
+body.mobile-council-mode .council-row-select { min-width:48px !important; min-height:48px !important; }
+body.mobile-council-mode .council-row-delete { min-width:48px !important; min-height:48px !important; }
+body.mobile-council-mode #councilDetailModal .citizen-modal-panel { width:100% !important; max-width:100% !important; margin:0 !important; border-radius:0 !important; }
+body.mobile-council-mode #councilDetailModal .citizen-modal-head { padding:12px !important; gap:8px !important; }
+body.mobile-council-mode #councilDetailModal .citizen-modal-head h2 { font-size:22px !important; overflow-wrap:anywhere; }
+body.mobile-council-mode #councilDetailModal .citizen-modal-head small { font-size:14px !important; overflow-wrap:anywhere; }
+body.mobile-council-mode #councilDetailModal .citizen-modal-close { width:48px !important; height:48px !important; flex-basis:48px !important; }
+body.mobile-council-mode #councilDetailModal .citizen-modal-content { padding:12px 12px 116px !important; }
+body.mobile-council-mode #councilDetailModal .council-detail-card { padding:14px !important; border-radius:12px !important; }
+body.mobile-council-mode #councilDetailModal :is(.detail-title,.detail-section-title) { font-size:22px !important; line-height:1.3 !important; overflow-wrap:anywhere; }
+body.mobile-council-mode #councilDetailModal :is(.detail-description,.detail-service,.council-detail-story p,#detailDescription,#detailService,#attachmentList.attachment-list) { font-size:16px !important; line-height:1.5 !important; overflow-wrap:anywhere; }
+body.mobile-council-mode #councilDetailModal :is(input,select,textarea) { min-width:0 !important; max-width:100% !important; font-size:16px !important; }
+body.mobile-council-mode #councilDetailModal :is(button,input,select) { min-height:48px !important; white-space:normal; }
+body.mobile-council-mode :is(button,a,input,textarea,select):focus-visible { outline:3px solid var(--council-ui-link,#126cb5) !important; outline-offset:2px; }
+}
+@media screen and (max-width:900px) {
+  body.mobile-council-mode .council-toolbar { grid-template-columns:repeat(auto-fit,minmax(min(100%,9em),1fr)) !important; }
+  body.mobile-council-mode .council-toolbar #councilSearch { grid-column:1 / -1 !important; }
+  body.mobile-council-mode .council-delete-toolbar { padding:10px !important; gap:8px !important; }
+  body.mobile-council-mode .council-delete-selected { min-height:48px !important; width:auto !important; flex:1 1 9em; font-size:16px !important; }
+  body.mobile-council-mode .council-select-all { min-height:48px; display:flex; align-items:center; font-size:16px; }
+  body.mobile-council-mode :is(.council-page-help,.council-mobile-summary) > summary::after { content:'⌄'; margin-left:auto; padding-left:8px; }
+}
+@media screen and (max-width:900px) {
+  /* Preserve a full touch target without placing selection over the protocol. */
+  body.mobile-council-mode .council-table td.council-protocol-cell { padding:0 0 0 56px !important; }
+  body.mobile-council-mode .council-row-select { left:0 !important; top:0 !important; transform:none !important; }
+  body.mobile-council-mode .council-table td.council-update-cell { padding:0 56px 0 0 !important; min-width:0 !important; }
+  body.mobile-council-mode .council-row-delete { right:0 !important; }
+}

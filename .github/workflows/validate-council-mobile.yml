@@ -1,0 +1,42 @@
+name: Council mobile presentation
+on:
+  pull_request:
+    paths:
+      - 'conselho/painel/**'
+      - 'css/council*.css'
+      - 'js/council*.js'
+      - 'js/auth-client.js'
+      - 'testing/council/**'
+      - '.github/workflows/validate-council-mobile.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'conselho/painel/**'
+      - 'css/council*.css'
+      - 'js/council*.js'
+      - 'testing/council/**'
+      - '.github/workflows/validate-council-mobile.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-council-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+        working-directory: testing/browser
+      - run: npx playwright install --with-deps chromium
+        working-directory: testing/browser
+      - name: Select installed Chromium
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
+          fs.appendFileSync(process.env.GITHUB_ENV, 'CHROMIUM_PATH=' + chromium.executablePath() + '\n');
+          JS
+      - name: Mobile frames, filters, native actions and read-only roles
+        run: node testing/council/mobile-list.mjs
