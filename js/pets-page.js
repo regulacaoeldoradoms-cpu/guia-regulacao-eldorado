@@ -104,7 +104,9 @@ async function initialize(){
  const user=await window.PortalAccountSection?.mount();if(!user||generation!==pageEpoch)return;
  const next=await petSession();if(generation!==pageEpoch)return;session=next;if(!session){message('Mascotes ainda não disponíveis neste ambiente.',true);return;}
  await renderGallery();$('petDays').replaceChildren();
- if($('petAgeDisclosure')){const age=await session.api.get('age');if(generation!==pageEpoch)return;$('petAgeDisclosure').hidden=age.ageStatus!=='unknown';}
+ // Availability of the optional private declaration cannot block existing cats.
+ // Catalog/adoption/speech authorization remains entirely server-owned.
+ if($('petAgeDisclosure')){const owner=session;owner.api.get('age').then(age=>{if(owner===session&&generation===pageEpoch&&owner.api.valid())$('petAgeDisclosure').hidden=age.ageStatus!=='unknown';}).catch(()=>{});}
  for(const [i,label] of ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].entries()){const l=node('label',label),input=document.createElement('input');input.type='checkbox';input.value=i;input.checked=i>=1&&i<=5;l.prepend(input);$('petDays').append(l);}
  if(!bound){bound=true;
  $('petAgeForm')?.addEventListener('submit',async event=>{

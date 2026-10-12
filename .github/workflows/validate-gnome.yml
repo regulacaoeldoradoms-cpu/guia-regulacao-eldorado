@@ -21,6 +21,7 @@ on:
       - 'cadastro/index.html'
       - 'assets/pets/**'
       - 'testing/pets/gnome-mobile.mjs'
+      - 'testing/pets/gnome-age-availability.mjs'
       - '.github/workflows/validate-gnome.yml'
 permissions:
   contents: read
@@ -30,6 +31,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Build actual Pages artifact without deploying
+        uses: actions/jekyll-build-pages@v1
+      - name: Server repertoire is absent from the built Pages artifact
+        run: |
+          test -f _site/mascotes/index.html
+          test ! -e _site/_server/gnome-phrases.js
+          test ! -d _site/_server
+          printf 'Pages artifact excludes server repertoire at %s\n' "$GITHUB_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -50,6 +59,8 @@ jobs:
         run: node --test worker/tests/private-pet-age.test.mjs worker/tests/gnome-age-integration.test.mjs worker/tests/gnome-speech.test.mjs worker/tests/gnome-static-content.test.mjs worker/tests/pets.test.mjs
       - name: Native UI, seven animations, adult gate and text reflow
         run: node testing/pets/gnome-mobile.mjs /tmp/gnome-mobile
+      - name: Preserve native cats while optional private age is pending or unavailable
+        run: node testing/pets/gnome-age-availability.mjs
       - name: Preserve original cat navigation, lives and speech
         run: |
           PETS_GLOBAL_ARTIFACT_DIR=/tmp/gnome-cat-global node testing/pets/global-navigation.cjs
