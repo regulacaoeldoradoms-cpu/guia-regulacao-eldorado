@@ -10,28 +10,70 @@ body.citizen-readable-layout.profile-mobile-layout.shared-mobile-navigation {
   background: var(--profile-surface);
   color: var(--profile-text);
 }
-body.profile-mobile-layout.shared-mobile-navigation .social-shell { width: 100%; max-width: 680px; margin: 0 auto; padding: 0; }
-body.profile-mobile-layout.shared-mobile-navigation #socialProfile { border: 0; border-radius: 0; box-shadow: none; }
-body.profile-mobile-layout.shared-mobile-navigation #socialStatus { margin: 12px; }
-body.profile-mobile-layout.shared-mobile-navigation #profileCover { min-height: 0; padding: 24px 16px 18px; border-radius: 0; }
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-identity { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
-body.profile-mobile-layout.shared-mobile-navigation .profile-avatar-wrap { width: 80px; height: 80px; flex: 0 0 80px; align-self: center; }
-body.profile-mobile-layout.shared-mobile-navigation .profile-avatar-wrap > .social-avatar { width: 80px !important; height: 80px !important; }
-body.profile-mobile-layout.shared-mobile-navigation .profile-photo-camera { width: 44px; height: 44px; min-height: 44px; right: -5px; bottom: -6px; }
+[data-profile-mobile-layout] { width: 100%; max-width: 680px; margin: 0 auto; padding: 0; }
+[data-profile-mobile-layout] #socialProfile { border: 0; border-radius: 0; box-shadow: none; }
+[data-profile-mobile-layout] #socialStatus { margin: 12px; }
+[data-profile-mobile-layout] #profileCover { min-height: 0; padding: 20px 16px; border-radius: 0; }
+[data-profile-mobile-layout] .social-profile-identity { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+[data-profile-mobile-layout] .profile-avatar-wrap { width: 80px; height: 80px; flex: 0 0 80px; align-self: center; }
+[data-profile-mobile-layout] .profile-avatar-wrap > .social-avatar { width: 80px !important; height: 80px !important; }
+[data-profile-mobile-layout] .profile-photo-camera { width: 48px; height: 48px; min-height: 48px; right: -5px; bottom: -6px; }
 /* A text-relative basis moves the name below the avatar as reading text grows. */
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-name { min-width: 0; flex: 1 1 8em; }
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-name h1 { font-size: 24px; line-height: 1.2; overflow-wrap: anywhere; }
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-name p { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-actions { flex: 1 0 100%; justify-content: stretch; gap: 8px; }
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-actions .social-button { flex: 1 1 8.75em; min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
-body.profile-mobile-layout.shared-mobile-navigation #profileModules { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 16px; }
-body.profile-mobile-layout.shared-mobile-navigation .social-profile-module { min-width: 0; padding: 16px; border-radius: 12px; }
-body.profile-mobile-layout.shared-mobile-navigation #profileEditor { margin: 0 12px 16px !important; padding: 16px; scroll-margin-top: 90px; border-radius: 12px; }
-body.profile-mobile-layout.shared-mobile-navigation #profileEditor :is(h2, h3, p, label, legend, small) { overflow-wrap: anywhere; }
-body.profile-mobile-layout.shared-mobile-navigation #profileEditor .social-section-heading { display: block; }
-body.profile-mobile-layout.shared-mobile-navigation #profileEditor :is(input, textarea, select, button) { min-width: 0; max-width: 100%; }
-body.profile-mobile-layout.shared-mobile-navigation #profileEditor :is(button, .social-module-order-row label) { min-height: 44px; white-space: normal; overflow-wrap: anywhere; }
-body.profile-mobile-layout.shared-mobile-navigation #profilePhotoDialog { width: calc(100vw - 24px); max-width: 480px !important; }
-body.profile-mobile-layout.shared-mobile-navigation #profilePhotoDialog .social-dialog-actions > * { flex: 1 1 140px; min-width: 0; white-space: normal; }
-body.profile-mobile-layout.shared-mobile-navigation :is(summary, a, button, input, textarea, select):focus-visible { outline: 3px solid var(--profile-accent); outline-offset: 2px; }
+[data-profile-mobile-layout] .social-profile-name { min-width: 0; flex: 1 1 8em; }
+[data-profile-mobile-layout] .social-profile-name h1 { font-size: 26px; line-height: 1.2; overflow-wrap: anywhere; }
+[data-profile-mobile-layout] .social-profile-name p { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+[data-profile-mobile-layout] .social-profile-actions { flex: 1 0 100%; justify-content: stretch; gap: 8px; }
+[data-profile-mobile-layout] .social-profile-actions .social-button { flex: 1 1 8.75em; min-height: 48px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+[data-profile-mobile-layout] #profileModules { grid-template-columns: minmax(0, 1fr); padding: 12px; gap: 12px; }
+[data-profile-mobile-layout] .social-profile-module { min-width: 0; padding: 16px; border-radius: 12px; }
+[data-profile-mobile-layout] #profileEditor { margin: 0 12px 16px !important; padding: 16px; scroll-margin-top: 90px; border-radius: 12px; }
+[data-profile-mobile-layout] #profileEditor :is(h2, h3, p, label, legend, small) { overflow-wrap: anywhere; }
+[data-profile-mobile-layout] #profileEditor .social-section-heading { display: block; }
+[data-profile-mobile-layout] #profileEditor :is(input, textarea, select, button) { min-width: 0; max-width: 100%; }
+[data-profile-mobile-layout] #profileEditor :is(button, .social-module-order-row label) { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
+body.profile-mobile-layout #profilePhotoDialog { width: calc(100vw - 24px); max-width: 480px !important; }
+body.profile-mobile-layout #profilePhotoDialog .social-dialog-actions > * { flex: 1 1 140px; min-width: 0; white-space: normal; }
+[data-profile-mobile-layout] :is(summary, a, button, input, textarea, select):focus-visible { outline: 3px solid var(--profile-accent); outline-offset: 2px; }
+}
+
+@media screen and (max-width: 900px) {
+[data-profile-mobile-layout] [hidden] { display: none !important; }
+[data-profile-mobile-layout] #profileEditorForm { grid-template-columns: minmax(0, 1fr); }
+[data-profile-mobile-layout] .profile-editor-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+[data-profile-mobile-layout] .profile-editor-actions > button { flex: 1 1 9em; }
+[data-profile-mobile-layout] #profileModulePosts .social-section-heading { padding: 16px; }
+[data-profile-mobile-layout] #profileEditCancel { display: inline-flex; }
+}
+@media screen and (min-width: 901px), print { #profileEditCancel { display: none; } }
+
+@media screen and (max-width:900px) {
+ /* Keep the native header compact while the shared account controller loads. */
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-topbar{background:var(--portal-theme-surface,#fff) !important;box-shadow:none !important;border-bottom-width:1px !important}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-topbar-inner{display:flex !important;flex-direction:row !important;flex-wrap:nowrap !important;align-items:center !important;gap:8px !important;min-height:56px !important;padding:6px 12px !important}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-brand{font-size:17px !important;line-height:1.15 !important;min-width:0;width:auto !important;flex:1 1 auto;color:var(--portal-theme-text,#243d50) !important;text-decoration:none}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-brand h1{font-size:17px !important;line-height:1.15 !important;margin:0}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-brand{display:flex;align-items:center;gap:8px}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-brand img{width:30px !important;height:30px !important;flex:0 0 30px}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-brand p{display:none}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-user{width:auto !important;flex-wrap:nowrap !important;padding:0;border:0}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) .portal-user > :is(.portal-user-meta,.portal-account-area){display:none !important}
+ body:has([data-profile-mobile-layout]):not(.shared-mobile-header) #portalLogout{font-size:16px;min-height:44px;padding:8px 10px}
+}
+/* Opening the native print editor must not retain a mobile font transition. */
+@media print {
+  [data-profile-mobile-layout] #profileEditor,
+  [data-profile-mobile-layout] #profileEditor * { transition: none !important; animation: none !important; }
+}
+
+@media screen and (max-width:900px) {
+  body:has([data-profile-mobile-layout]) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]) .social-mobile-nav > * { transition:none !important; animation:none !important; }
+  /* Explicit child visibility avoids a stale inherited hidden frame in Blink,
+     and keeps the original launcher's visibility override inside this gate. */
+  body:has([data-profile-mobile-layout]).shared-mobile-navigation:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]).shared-mobile-navigation:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher) .social-mobile-nav > .social-mobile-nav-link { visibility:visible !important; }
+  body:has([data-profile-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav > *,
+  body:has([data-profile-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav > * { visibility:hidden !important; }
 }

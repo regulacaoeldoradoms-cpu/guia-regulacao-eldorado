@@ -19,8 +19,9 @@
   <link rel="stylesheet" href="/css/social.css?v=20260922-2">
   <link rel="stylesheet" href="/css/social-notification-panel.css?v=20260910-1">
   <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
-  <script src="/js/citizen-layout.js?v=20261011-citizen-privacy-help-1" defer></script>
+  <script src="/js/citizen-layout.js?v=20261012-profile-tools-4" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
+  <link rel="stylesheet" href="/css/tools-mobile-presentation.css?v=20261012-profile-tools-4">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -33,7 +34,7 @@
         <div class="portal-user"><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div>
       </div>
     </header>
-    <main class="portal-main">
+    <main class="portal-main" data-tools-mobile-layout>
       <section class="portal-hero">
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Ferramentas</span>
@@ -41,6 +42,21 @@
           <p>Esta página usa o mesmo catálogo e as mesmas permissões do hub anterior. Ela funciona sem depender do feed ou das APIs sociais.</p>
         </div>
       </section>
+      <script>
+      // Presentation only: cached role prepares copy; the native owner authorizes.
+      (() => {
+        try {
+          const user = JSON.parse(sessionStorage.getItem('regulacao.portal.user') || localStorage.getItem('regulacao.portal.user') || 'null');
+          const token = sessionStorage.getItem('regulacao.portal.session') || localStorage.getItem('regulacao.portal.session');
+          if (user?.role !== 'cidadao' || !token || !matchMedia('screen and (max-width:900px)').matches) return;
+          const hero = document.querySelector('[data-tools-mobile-layout] .portal-hero-copy');
+          const heading = hero.querySelector('h2'), paragraph = hero.querySelector('p');
+          const saved = window[Symbol.for('portal.toolsEarlyCopies')] ||= new WeakMap();
+          saved.set(hero,{ heading:[...heading.childNodes], paragraph:[...paragraph.childNodes] });
+          heading.textContent = 'Seus atalhos'; paragraph.textContent = 'Acesse os serviços disponíveis para sua conta.';
+        } catch (_) {}
+      })();
+      </script>
       <section class="portal-section" aria-labelledby="toolsTitle">
         <div class="portal-section-heading"><h2 id="toolsTitle">Ferramentas autorizadas</h2></div>
         <div class="portal-grid" id="toolsGrid"><div class="portal-note info">Carregando ferramentas...</div></div>
@@ -54,8 +70,8 @@
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/social-api.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
-<script src="/js/citizen-mobile-shell.js?v=20261012-pets-mobile-3"></script>
-  <script src="/js/tools.js?v=20261010-mobile-shell-1"></script>
+<script src="/js/citizen-mobile-shell.js?v=20261012-profile-tools-3"></script>
+  <script src="/js/tools.js?v=20261012-profile-tools-3"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261010-mobile-shell-1"></script>
 </body>

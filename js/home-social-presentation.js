@@ -1,4 +1,4 @@
-import { mountCitizenMobileHeader } from '/js/citizen-mobile-header.js?v=20261011-shared-header-account-1';
+import { mountCitizenMobileHeader } from '/js/citizen-mobile-header.js?v=20261012-profile-tools-1';
 'use strict';
 
 // Home-only presentation. Existing authentication, forms and post actions retain

@@ -28,6 +28,42 @@ const initializeCitizenArea = async (context) => {
   const requested = String(new URLSearchParams(context?.url.search ?? location.search).get('u') || '').replace(/^@/, '');
   let profile;
   let identityLoaded = false;
+  const editorMedia = matchMedia('screen and (max-width: 900px)');
+  if (user.role !== 'cidadao') document.querySelector('[data-profile-mobile-layout]')?.removeAttribute('data-profile-mobile-layout');
+  let editing = false;
+  let editToggle = null;
+  let printingEditor = false;
+  const cancelEdit = document.getElementById('profileEditCancel');
+  const cancelParent = cancelEdit?.parentElement;
+  function syncEditor(focus = false) {
+    const editor = document.getElementById('profileEditor');
+    editor.hidden = !profile?.isSelf || (user.role === 'cidadao' && editorMedia.matches && !printingEditor && !editing);
+    const edit = editToggle;
+    const mobileEditor = user.role === 'cidadao' && editorMedia.matches && !printingEditor;
+    if (mobileEditor && cancelEdit && !cancelEdit.isConnected) cancelParent.append(cancelEdit);
+    if (!mobileEditor) cancelEdit?.remove();
+    cancelParent?.classList.toggle('profile-editor-actions', mobileEditor);
+    if (edit) {
+      const label = edit.querySelector(':scope > span') || edit;
+      const text = mobileEditor ? 'Editar perfil' : 'Personalizar perfil';
+      if (label.textContent !== text) label.textContent = text;
+      if (mobileEditor) { edit.id = 'profileEditToggle'; edit.setAttribute('aria-controls','profileEditor'); edit.setAttribute('aria-expanded',String(!editor.hidden)); }
+      else { edit.removeAttribute('id'); edit.removeAttribute('aria-controls'); edit.removeAttribute('aria-expanded'); }
+    }
+    if (focus) (editor.hidden ? edit : document.getElementById('profileEditStatus'))?.focus({preventScroll:true});
+  }
+  const onEditorMediaChange = () => syncEditor();
+  editorMedia.addEventListener('change', onEditorMediaChange);
+  context?.controllers?.push({ dispose: () => editorMedia.removeEventListener('change', onEditorMediaChange) });
+  window.addEventListener('beforeprint', () => { printingEditor = true; syncEditor(); });
+  window.addEventListener('afterprint', () => { printingEditor = false; syncEditor(); });
+  cancelEdit?.addEventListener('click', () => {
+    editing = false;
+    fillEditor();
+    identityLoaded = false;
+    loadIdentity(true);
+    syncEditor(true);
+  });
 
   const photoCamera = document.getElementById('profilePhotoCamera');
   const photoDialog = document.getElementById('profilePhotoDialog');
@@ -213,11 +249,16 @@ const initializeCitizenArea = async (context) => {
   function renderActions() {
     const area = document.getElementById('profileActions');
     area.innerHTML = '';
+    editToggle = null;
     if (profile.isSelf) {
-      const edit = action('Personalizar perfil', () => document.getElementById('profileEditor').scrollIntoView({
-        behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-        block: 'start'
-      }));
+      const edit = action(user.role === 'cidadao' && editorMedia.matches ? 'Editar perfil' : 'Personalizar perfil', () => {
+        editing = true;
+        syncEditor(true);
+        document.getElementById('profileEditor').scrollIntoView({
+          behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'
+        });
+      });
+      editToggle = edit;
       area.appendChild(edit);
       return;
     }
@@ -299,7 +340,7 @@ const initializeCitizenArea = async (context) => {
 
   function fillEditor() {
     const editor = document.getElementById('profileEditor');
-    editor.hidden = !profile.isSelf;
+    syncEditor();
     if (!profile.isSelf) return;
     document.getElementById('profileEditStatus').value = profile.status || '';
     document.getElementById('profileEditBio').value = profile.bio || '';
@@ -414,7 +455,9 @@ const initializeCitizenArea = async (context) => {
         })
       });
       profile = payload.profile;
+      editing = false;
       render();
+      syncEditor(true);
       social.status('Personalização salva.', 'success');
     } catch (error) {
       social.status(error.message || 'Não foi possível salvar a personalização.', 'error');
@@ -433,7 +476,9 @@ const initializeCitizenArea = async (context) => {
       renderIdentity(payload.identity || {});
       identityLoaded = true;
       accountStatus(identityStatus, 'Nome e @ atualizados.', 'success');
+      editing = false;
       await load();
+      syncEditor(true);
     } catch (error) {
       accountStatus(identityStatus, error.message || 'Não foi possível atualizar o nome e @.', 'error');
     } finally {

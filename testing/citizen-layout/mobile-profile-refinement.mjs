@@ -316,9 +316,9 @@ async function profileActions(page, result, own) {
   await page.locator('#homeAccountMenu > summary').click();
   await page.locator('#homeAccountPanel').waitFor({ state:'visible' });
   await capture(page, result, 'account');
-  check(result, 'expanded shared account retains one Tools destination', await page.locator('#homeAccountPanel a[href="/ferramentas/"]:visible').count() === 1);
+  check(result, 'expanded profile account keeps Tools available only through Home', await page.locator('#homeAccountPanel a[href="/ferramentas/"]:visible').count() === 0);
   const blocked = [];
-  for (const action of await page.locator('#homeAccountPanel a, #homeAccountPanel button').all()) {
+  for (const action of await page.locator('#homeAccountPanel a:visible, #homeAccountPanel button:visible').all()) {
     try { await action.click({ trial:true, timeout:1200 }); } catch { blocked.push(await action.innerText()); }
   }
   check(result, 'account actions remain reachable at current scale', !blocked.length, blocked);
@@ -349,7 +349,7 @@ async function profileActions(page, result, own) {
     await page.getByRole('button', { name:'Escolher foto', exact:true }).click({ trial:true });
     await page.locator('#profilePhotoDialog').getByRole('button', { name:'Cancelar', exact:true }).click();
     check(result, 'native photo dialog closes to original camera', await page.locator('#profilePhotoCamera').evaluate(node => document.activeElement === node));
-    await page.getByRole('button', { name:'Personalizar perfil', exact:true }).click();
+    await page.getByRole('button', { name:'Editar perfil', exact:true }).click();
     await page.locator('#profileEditBio').fill('Bio sintética ainda não salva.');
     const form = await page.evaluate(() => ({ id:document.getElementById('profileEditorForm') === window.__originalRefinementNodes.profileEditorForm, value:document.getElementById('profileEditBio').value }));
     check(result, 'original profile form accepts an unsaved draft', form.id && form.value === 'Bio sintética ainda não salva.');
@@ -450,6 +450,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
 }
 
 async function groupExercise(page, result, audit, route) {
+  await page.getByRole('button',{name:'Editar perfil',exact:true}).click();
   await page.locator('#profileEditBio').fill('Bio sintética antes do grupo.');
   await page.evaluate(() => scrollTo(0, 320));
   const before = await snapshot(page), loads = audit.documents.length;

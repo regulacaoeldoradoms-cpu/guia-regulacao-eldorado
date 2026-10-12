@@ -22,7 +22,7 @@ try{
   // Prepared Mascotes and Home reserve two protected slots; remaining clean
   // prepared areas must be evicted before any edited profile can be lost.
   await page.waitForFunction(()=>window.PortalCitizenShell.diagnostics().ready.includes('/mascotes/')&&!window.PortalCitizenShell.diagnostics().prewarming);
-  for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);await page.locator('#profileEditBio').fill('draft-'+i);}
+  for(let i=0;i<14;i++){await go(page,'/perfil/?draft='+i);await page.getByRole('button',{name:'Editar perfil',exact:true}).click();await page.locator('#profileEditBio').fill('draft-'+i);}
   check('cache reaches16 including protected Home and Mascotes',await page.evaluate(()=>window.PortalCitizenShell.diagnostics().routes===16));
   await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/perfil/?draft=overflow',location.href)));
   check('overflow explicitly refused without changing area',await page.evaluate(()=>(window.PortalCitizenShell?.active().url || location).search==='?draft=13'&&window.PortalCitizenShell.diagnostics().routes===16&&document.querySelector('.citizen-route-notice').textContent.includes('Conclua os rascunhos')));

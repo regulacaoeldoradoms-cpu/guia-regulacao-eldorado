@@ -100,6 +100,7 @@ test('social states: profile editor, native photo dialog, settings success and t
   const network=await installAuditFixture(context);
   await page.goto('/perfil/');
   await expect(page.locator('#profileEditor')).toBeVisible();
+  if(await page.locator('#profileEditor').isHidden()) await page.getByRole('button',{name:'Editar perfil',exact:true}).click();
   await page.locator('#profileEditBio').fill('BIO FICTÍCIA EM EDIÇÃO');
   await capture(page,info,'profile-editor-focus');
   await page.locator('#profilePhotoCamera').click();

@@ -8,6 +8,7 @@ on:
       - "css/citizen-mobile-presentation.css"
       - "css/pets-mobile-presentation.css"
       - "css/profile-mobile-presentation.css"
+      - "css/tools-mobile-presentation.css"
       - "css/home-tools-carousel.css"
       - "css/home-mobile-direct.css"
       - "index.html"
@@ -82,6 +83,8 @@ jobs:
         run: |
           node testing/citizen-layout/citizen-page-mobile.mjs
           TEXT_SCALE=2 CITIZEN_PAGE_OUTPUT=/tmp/citizen-page-text200 node testing/citizen-layout/citizen-page-mobile.mjs
+      - name: Profile editor and compact authorized tools, first frames and returns
+        run: node testing/citizen-layout/profile-tools-mobile.mjs
       - name: Citizen first frames, cold/warm assets and dark action contrast
         run: node testing/citizen-layout/citizen-first-paint.mjs
       - name: Pets mobile first frames, native actions and repeated navigation
