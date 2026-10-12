@@ -59,7 +59,7 @@ export class PetRuntime{
     if(rect.width&&rect.height&&rect.top<=sceneTop+120&&rect.bottom>sceneTop)ceiling=Math.max(ceiling,rect.bottom-sceneTop);
    }
    const bottom=Math.max(104,height-24);
-   return {left:88,right:Math.max(88,width-88),top:Math.min(bottom,ceiling+104),bottom};
+   return {left:88,right:Math.max(88,width-88),top:Math.min(bottom,ceiling+(this.state.pet?.typeId==='gnome'?136:104)),bottom};
   }
   return {left:88,right:Math.max(88,width-88),top:164,bottom:Math.max(164,height-24)};
  }

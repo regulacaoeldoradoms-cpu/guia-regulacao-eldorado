@@ -12,6 +12,8 @@ try{
   const f=fixture();f.sql.exec(await fs.readFile(new URL('../../worker/migrations/pets-private-age.sql',import.meta.url),'utf8'));f.sql.prepare('INSERT INTO auth_users(username) VALUES(?)').run(user.username);f.user={username:user.username,sessionVersion:1};
   if(age!=='unknown')await declarePrivatePetAge(f.db,f.user,age==='adult'?'1990-01-01':'2015-01-01');
   const result={age,width,theme,scale,errors:[],writes:[],requests:[],assets:[]};const {page,context}=await newPage(browser,{width,theme},server.origin,result);await page.emulateMedia({reducedMotion:'no-preference'});page.on('request',request=>{if(new URL(request.url()).pathname.includes('gnome-sheet'))result.assets.push(request.url());});
+  let releaseSprite;
+  if(age==='adult'&&width===320&&theme==='light'&&scale===1){const gate=new Promise(resolve=>releaseSprite=resolve);await page.route('**/assets/pets/gnome-sheet.png*',async route=>{await gate;return route.fallback();});}
   const router=createPetRouter({validateSession:async request=>request.headers.get('Authorization')?f.user:null});
   await context.route('**/api/pets/**',async route=>{
    const request=route.request(),pathname=new URL(request.url()).pathname;result.requests.push(pathname);if(request.method()==='POST')result.writes.push(pathname);
@@ -19,7 +21,8 @@ try{
    return route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});
   });
   try{
-   await page.goto(server.origin+'/mascotes/');await ready(page,'/mascotes/');await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert.equal(await page.evaluate(()=>RegulationAuth.getCachedUser().role),'cidadao');
+   await page.goto(server.origin+'/mascotes/',{waitUntil:'domcontentloaded'});await ready(page,'/mascotes/');await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert.equal(await page.evaluate(()=>RegulationAuth.getCachedUser().role),'cidadao');
+   if(releaseSprite){assert(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).isDisabled());result.catsReadyBeforeGnomeAsset=true;releaseSprite();}
    process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
    if(age!=='adult'){
     assert.equal(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).count(),0);assert(!result.requests.includes('/api/pets/gnome-speech'));assert.equal(result.assets.length,0);
@@ -41,7 +44,7 @@ try{
     await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href)));await ready(page,'/');await page.emulateMedia({media:'print'});assert.equal(await page.locator('.pet-stage-global').evaluate(n=>getComputedStyle(n).display),'none');await page.emulateMedia({media:'screen'});
    }
    assert.equal(result.errors.length,0);results.push(result);console.log(JSON.stringify({age,width,theme,scale,passed:true}));
-  }catch(error){console.log(JSON.stringify({age,error:String(error),requests:result.requests,errors:result.errors,page:await page.evaluate(()=>({message:document.getElementById('petMessage')?.textContent,pet:window.PortalPets?.runtime.state.pet,speech:window.PortalPets?.runtime.speech?.catalog,epoch:window.PortalPets?.runtime.speechEpoch}))}));throw error;}finally{await context.close();f.close();}
+  }catch(error){releaseSprite?.();console.log(JSON.stringify({age,error:String(error),requests:result.requests,errors:result.errors,page:await page.evaluate(()=>({message:document.getElementById('petMessage')?.textContent,pet:window.PortalPets?.runtime.state.pet,speechCount:window.PortalPets?.runtime.speech?.catalog?.phrases.length,epoch:window.PortalPets?.runtime.speechEpoch}))}));throw error;}finally{await context.close();f.close();}
  }
  await fs.writeFile(`${output}/results.json`,JSON.stringify(results,null,2));
 }finally{await browser.close();await new Promise(r=>server.server.close(r));}

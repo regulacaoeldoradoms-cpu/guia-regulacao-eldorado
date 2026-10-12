@@ -78,20 +78,22 @@ function render(){
  $('petProposal').textContent='Proposta inicial configurável: 1 moeda por '+s.rules.secondsPerCoin/60+' minutos de uso ativo, até '+s.rules.dailyCap+' por dia. A aba aberta sem interação não conta. Preços da loja também são propostas.';
  document.querySelectorAll('[data-care]').forEach(b=>b.disabled=busy||dead||(b.dataset.care==='special-bath'&&!s.inventory['bath-special']));
  $('petAdopt').disabled=busy||!selected||living;
- $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||living);
+ $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||living||b.dataset.assetPending==='true');
  $('petPreferences').querySelector('button').disabled=busy;
  $('petPlacement').querySelectorAll('button').forEach(b=>b.disabled=busy||dead);
  if($('petAgeSubmit'))$('petAgeSubmit').disabled=busy;
 }
 async function renderGallery(){
  const owner=session,generation=pageEpoch;
- if(owner.catalog.types.some(type=>type.id==='gnome'))await loadGnomeFrames();
  if(owner!==session||generation!==pageEpoch||!owner.api.valid())return;
  $('petGallery').replaceChildren();
  for(const type of owner.catalog.types)for(const variant of type.variants){
   const gnome=type.id==='gnome';
   const button=node('button',gnome?'Gnomo · 18+':variant==='ginger'?'Gato dourado':'Gato cinza','pet-choice'),canvas=document.createElement('canvas');canvas.width=64;canvas.height=gnome?64:48;
-  if(gnome){canvas.dataset.petType='gnome';drawGnome(canvas.getContext('2d'));}else drawCat(canvas.getContext('2d'),'idle',0,variant);
+  if(gnome){
+   canvas.dataset.petType='gnome';button.dataset.assetPending='true';button.disabled=true;
+   loadGnomeFrames().then(()=>{if(owner!==session||generation!==pageEpoch||!owner.api.valid()||!button.isConnected)return;drawGnome(canvas.getContext('2d'));delete button.dataset.assetPending;button.disabled=busy||Boolean(owner.runtime.state.pet&&owner.runtime.state.life?.deadAt==null);}).catch(()=>{if(owner===session&&generation===pageEpoch)message('Não foi possível carregar a imagem do Gnomo. Recarregue para tentar novamente.',true);});
+  }else drawCat(canvas.getContext('2d'),'idle',0,variant);
   button.prepend(canvas);button.setAttribute('aria-pressed',String(selected?.typeId===type.id&&selected.variant===variant));
   button.addEventListener('click',()=>{selected={typeId:type.id,variant};for(const b of $('petGallery').children)b.setAttribute('aria-pressed',String(b===button));$('petAdopt').disabled=busy;message('Selecionado. Confirme no botão Adotar.');});$('petGallery').append(button);
  }
