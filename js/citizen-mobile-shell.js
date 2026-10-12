@@ -44,7 +44,7 @@
   };
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
-    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'citizen-mobile-shell']);
+    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'pets-mobile-presentation', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
@@ -237,12 +237,16 @@
   }
   async function styles(doc, area) {
     await Promise.all([...doc.querySelectorAll('link[rel="stylesheet"]')].map(async source => {
-      if (sharedStyles.has(name(source.href))) return;
+      const petPresentation = name(source.href) === 'pets-mobile-presentation';
+      if (sharedStyles.has(name(source.href)) && !petPresentation) return;
       const href = new URL(source.getAttribute('href'), location.origin).href;
       const key = 'css:' + href;
       let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
       if (!link) {
-        link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; link.media = 'not all';
+        link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href;
+        // This sheet is fully scoped to the Pet surface. Keep it active before
+        // insertion and across returns, avoiding Blink's deferred media switch.
+        link.media = petPresentation ? (source.media || '') : 'not all';
         styleMedia.set(link, '');
         const loading = new Promise((resolve, reject) => {
           const timeout = setTimeout(() => { link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); }, 15000);
@@ -254,7 +258,7 @@
       }
       if (resources.has(key)) await resources.get(key);
       if (!styleMedia.has(link)) styleMedia.set(link, link.media);
-      area.styles.push(link);
+      if (!petPresentation) area.styles.push(link);
     }));
   }
   async function prepare(url) {

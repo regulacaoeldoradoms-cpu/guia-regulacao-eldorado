@@ -1,5 +1,5 @@
 /* The route's own HTML provides these styles before its first visible frame. */
-.pet-mobile-intro{display:none}
+.pet-page .pet-mobile-intro{display:none}
 @media screen and (max-width:900px){
  body .pet-page[data-pet-mobile-layout]{display:flex;flex-direction:column;gap:12px;width:calc(100% - 24px);max-width:680px;margin:20px auto 24px;font-size:16px;line-height:1.5;overflow-wrap:anywhere}
  body .pet-page[data-pet-mobile-layout] > header{order:0}
