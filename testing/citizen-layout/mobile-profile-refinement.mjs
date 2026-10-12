@@ -616,6 +616,8 @@ async function mascotesFreshComparison(page, result, audit, scenario, browser, b
 
 async function mascotesBreakpoints(page, result, audit) {
   await navChecks(page, result, 'Mascotes mobile before transition');
+  const preferences=page.locator('#petSettings > .pet-mobile-disclosure');
+  if(await preferences.count())await preferences.locator(':scope > summary').click();
   await page.locator('#petStart').focus();
   await page.evaluate(() => scrollTo(0, 300));
   const before = await snapshot(page), documentLoads = audit.documents.length;

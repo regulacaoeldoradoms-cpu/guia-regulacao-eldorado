@@ -3,6 +3,7 @@ import { installAuditFixture } from './dark-audit-fixture.mjs';
 import { compareAgainstBase } from './dark-audit-base-comparison.mjs';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
 import { writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 
 async function sampleCouncilReflection(page,info){
   // council.css preserves this 4.8s infinite reflection unchanged. Sampling
@@ -186,6 +187,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const homeContracts=[];
     const nativeContracts=[];
     let friendsSource=0;
+    const baseFriendsNotice=route==='/amigos/' ? execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:amigos/index.html`],{encoding:'utf8'}).includes('Descoberta protegida') : false;
     if(mobileRedesign)await context.addInitScript(trackNativeControls,nativeIdentityKey);
     let layout;
     const prepare=async target=>{
@@ -193,7 +195,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
         // The user approved removing this exact explanatory card on mobile and desktop.
         // Normalize only the historical card; all remaining pixels/controls still compare exactly.
         const card=target.locator('aside > section').filter({has:target.getByRole('heading',{name:'Descoberta protegida',exact:true})});
-        await expect(card).toHaveCount(friendsSource++===0?0:1);
+        await expect(card).toHaveCount(friendsSource++===0?0:Number(baseFriendsNotice));
         if(await card.count()){
           await expect(card.locator('p')).toHaveText('Cidadãos não recebem um diretório de profissionais. Perfis profissionais ficam disponíveis somente no contexto profissional autorizado, inclusive pelo chat.');
           await card.evaluate(e=>e.remove());

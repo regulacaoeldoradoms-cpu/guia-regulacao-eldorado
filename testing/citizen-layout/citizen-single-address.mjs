@@ -84,7 +84,7 @@ try{
   await continuity(page,check);check('alias entry makes zero new document requests',audit.documents.length===docs);
  });
  for(const entry of ['/amigos/','/perfil/','/perfil/?u=fixture.friend','/mascotes/'])await run('legacy-'+entry.replaceAll('/','_'),390,entry,'cached',async(page,context,audit,check)=>{
-  await prepared(page);await area(page,entry);check('legacy link restores intended area at Home address',new URL(page.url()).pathname==='/');check('only one initial compatibility redirect',audit.documents.length===2);
+  await prepared(page);await area(page,entry);check('legacy link restores intended area at Home address',new URL(page.url()).pathname==='/');check('Mascotes enters its styled document directly; other legacy links redirect once',audit.documents.length===(entry==='/mascotes/'?1:2));
   await owners(page);const docs=audit.documents.length;await page.locator('.social-mobile-nav a[href="/amigos/"]').click();await area(page,'/amigos/');await page.locator('.social-mobile-nav a[href="/mascotes/"]').click();await area(page,'/mascotes/');
   await page.goBack();await area(page,'/amigos/');await page.goForward();await area(page,'/mascotes/');await continuity(page,check);check('Back/Forward retain document',audit.documents.length===docs);
   await page.reload({waitUntil:'domcontentloaded'});await ready(page,'/mascotes/');await area(page,'/mascotes/');check('refresh restores area through account-scoped History',new URL(page.url()).pathname==='/'&&audit.documents.length===docs+1);

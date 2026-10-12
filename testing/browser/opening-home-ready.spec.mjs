@@ -164,6 +164,9 @@ test('global chat bootstrap load failure uses the existing bounded navigation fa
   await expect(page.locator('#portalOpening')).toBeVisible();
   await page.locator('#portalOpeningVideo').evaluate(video => video.dispatchEvent(new Event('ended')));
   await expect(page).toHaveURL('http://127.0.0.1:4174/');
+  // The same-document opening may update History before its bounded hard
+  // navigation commits. Wait for the new document before evaluating its marker.
+  await page.waitForFunction(() => window.__openingDocument === undefined);
   await expect(page.locator('#socialIdentityName')).toHaveText('Perfil carregado');
   expect(await page.evaluate(() => window.__openingDocument)).toBeUndefined();
   expect(calls.filter(call => call.path === '/api/auth/login')).toHaveLength(1);

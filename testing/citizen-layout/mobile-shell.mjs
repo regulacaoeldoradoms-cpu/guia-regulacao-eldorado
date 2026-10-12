@@ -57,6 +57,8 @@ try {
     check('friends native controller loaded', await page.locator('#socialSearchForm').count() === 1);
     await page.locator('#socialSearchInput').fill('Busca sem enviar');
     await go(page, '/mascotes/');
+    const preferences=page.locator('#petSettings > .pet-mobile-disclosure');
+    if(await preferences.count()&&!await preferences.evaluate(e=>e.open))await preferences.locator(':scope > summary').click();
     await page.locator('#petDays input').first().waitFor();
     await page.locator('#petTimezone').selectOption('America/Sao_Paulo');
     await page.evaluate(() => document.getElementById('petPreferences').dataset.editing = 'true');
@@ -113,7 +115,7 @@ try {
   });
   await run('mascotes-deep-link', 390, '/mascotes/', async (page, audit, check) => {
     await go(page, '/'); await go(page, '/amigos/'); await go(page, '/mascotes/');
-    check('Mascotes direct entry supports return journey after one initial Home handoff', audit.documents.length === 2);
+    check('Mascotes direct entry supports return journey without an intermediate Home document', audit.documents.length === 1);
   });
   await run('desktop-native', 1440, '/', async (page, audit, check) => {
     check('desktop shell inactive', await page.evaluate(() => !window.PortalCitizenShell));
@@ -144,6 +146,8 @@ try {
     // its route presenters. Count repeat loads only after the first real visit.
     await go(page, '/mascotes/');
     await page.evaluate(() => window.PortalCitizenMobileChatReady);
+    const preferences=page.locator('#petSettings > .pet-mobile-disclosure');
+    if(await preferences.count()&&!await preferences.evaluate(e=>e.open))await preferences.locator(':scope > summary').click();
     await page.locator('#petDays input').first().waitFor();
     await go(page, '/');
     // Optional global PWA/observability owners can start later independently.

@@ -6,6 +6,7 @@ on:
       - "css/citizen-mobile-navigation.css"
       - "css/citizen-mobile-header.css"
       - "css/citizen-mobile-presentation.css"
+      - "css/pets-mobile-presentation.css"
       - "css/profile-mobile-presentation.css"
       - "css/home-tools-carousel.css"
       - "css/home-mobile-direct.css"
@@ -14,6 +15,8 @@ on:
       - "js/citizen-mobile-navigation.js"
       - "js/citizen-mobile-header.js"
       - "js/citizen-mobile-presentation.js"
+      - "js/pets-mobile-presentation.js"
+      - "js/pets-page.js"
       - "js/citizen-mobile-app.js"
       - "js/citizen.js"
       - "js/citizen-account-level.js"
@@ -42,6 +45,7 @@ permissions:
 jobs:
   synthetic-citizen:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       # The focused Home checks use the same synthetic-only browser fixture.
       - uses: actions/checkout@v4
@@ -80,6 +84,10 @@ jobs:
           TEXT_SCALE=2 CITIZEN_PAGE_OUTPUT=/tmp/citizen-page-text200 node testing/citizen-layout/citizen-page-mobile.mjs
       - name: Citizen first frames, cold/warm assets and dark action contrast
         run: node testing/citizen-layout/citizen-first-paint.mjs
+      - name: Pets mobile first frames, native actions and repeated navigation
+        run: |
+          node testing/citizen-layout/pets-mobile-presentation.mjs
+          TEXT_SCALE=2 PETS_MOBILE_OUTPUT=/tmp/pets-mobile-text200 node testing/citizen-layout/pets-mobile-presentation.mjs
       - name: Single mobile address, native bar clicks and retained controllers
         run: |
           node testing/citizen-layout/citizen-single-address.mjs
@@ -142,6 +150,8 @@ jobs:
             .local/shared-account-header/
             .local/citizen-page-mobile/
             .local/citizen-first-paint/
+            .local/pets-mobile/
+            /tmp/pets-mobile-text200/
             /tmp/shared-account-header-text200/
             /tmp/citizen-page-text200/
             .local/citizen-single-address/

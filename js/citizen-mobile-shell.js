@@ -44,7 +44,7 @@
   };
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
-    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'citizen-mobile-shell']);
+    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'pets-mobile-presentation', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
@@ -62,7 +62,12 @@
   // The login transition can mount the Home document at either legacy alias.
   // Normalize the internal entry before selecting its controllers and History.
   if (homeAliases.has(initialUrl.pathname)) initialUrl.pathname = '/';
-  if (screen.matches && primaryViews.has(initialUrl.pathname) && initialUrl.pathname !== '/') {
+  // Direct Mascotes now starts in its own document; prepare the Home factory
+  // in the background so its first retained tap has the same readiness contract.
+  if(initialUrl.pathname==='/mascotes/')backgroundControllers.add('/');
+  if (screen.matches && primaryViews.has(initialUrl.pathname) && !['/','/mascotes/'].includes(initialUrl.pathname)) {
+    // Mascotes already has first-frame mobile styles and can own its initial
+    // area directly. History still exposes '/' without painting an intervening Home.
     // Legacy links enter the same Home document before any area controller
     // starts. The fragment is only a one-time, same-origin route handoff.
     // Suppress the outgoing native document animation for this compatibility
@@ -232,12 +237,16 @@
   }
   async function styles(doc, area) {
     await Promise.all([...doc.querySelectorAll('link[rel="stylesheet"]')].map(async source => {
-      if (sharedStyles.has(name(source.href))) return;
+      const petPresentation = name(source.href) === 'pets-mobile-presentation';
+      if (sharedStyles.has(name(source.href)) && !petPresentation) return;
       const href = new URL(source.getAttribute('href'), location.origin).href;
       const key = 'css:' + href;
       let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
       if (!link) {
-        link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; link.media = 'not all';
+        link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href;
+        // This sheet is fully scoped to the Pet surface. Keep it active before
+        // insertion and across returns, avoiding Blink's deferred media switch.
+        link.media = petPresentation ? (source.media || '') : 'not all';
         styleMedia.set(link, '');
         const loading = new Promise((resolve, reject) => {
           const timeout = setTimeout(() => { link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); }, 15000);
@@ -249,7 +258,7 @@
       }
       if (resources.has(key)) await resources.get(key);
       if (!styleMedia.has(link)) styleMedia.set(link, link.media);
-      area.styles.push(link);
+      if (!petPresentation) area.styles.push(link);
     }));
   }
   async function prepare(url) {
@@ -298,7 +307,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261011-citizen-startup-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : ['social-home', 'social-friends', 'social-profile', 'pets-page'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261012-pets-mobile-3' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {

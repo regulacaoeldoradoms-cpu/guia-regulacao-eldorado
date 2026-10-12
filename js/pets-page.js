@@ -1,9 +1,12 @@
 'use strict';
 import {petSession} from './pets-bootstrap.js?v=20261010-mobile-shell-1';
+import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261011-pets-mobile-1';
 import {drawCat} from './pet-cat-frames.js';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;
+const presentation=mountPetsMobilePresentation(context?.root || document);
+context?.addController({activate:()=>presentation?.sync(),dispose:()=>presentation?.dispose()});
 const $=id=>document.getElementById(id);
 const message=(text,error=false)=>{$('petMessage').textContent=text;$('petMessage').dataset.error=String(error);};
 let session,selected=null,busy=false,initializing=false,bound=false,pageEpoch=0,pageToken=null;
@@ -24,7 +27,7 @@ async function command(kind,input,success){
  finally{if(session===owner&&generation===pageEpoch){busy=false;render();}}
 }
 function render(){
- if(!session||!session.api.valid())return;const s=session.runtime.state,c=session.catalog;
+ if(!session||!session.api.valid())return;const s=session.runtime.state,c=session.catalog;presentation?.state(s);
  const dead=s.life?.deadAt!=null,living=Boolean(s.pet&&!dead),lives=s.life?.lives??7;
  for(const id of ['petHome','petShop','petSettings'])$(id).hidden=!s.pet;
  $('petLives').replaceChildren();$('petLives').setAttribute('aria-label',lives+' de 7 vidas');
