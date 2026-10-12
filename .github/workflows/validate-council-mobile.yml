@@ -58,6 +58,10 @@ jobs:
         run: node testing/council/detail-review.mjs /tmp/council-detail-review
       - name: Detail keyboard, text200, errors, sessions and member access
         run: node testing/council/detail-validation.mjs /tmp/council-detail-validation
+      - name: Detail organization, roles, print, text200 and native actions
+        run: |
+          node testing/council/detail-organization.mjs
+          node testing/council/detail-organization-actions.mjs
       - name: Detail lifecycle and optional cache asset failure
         run: node testing/council/detail-lifecycle.mjs
       - name: Painted navigation frames, roles, chat and reentries
