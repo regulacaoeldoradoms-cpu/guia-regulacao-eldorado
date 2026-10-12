@@ -19,7 +19,7 @@
  new ResizeObserver(headerSize).observe(head);headerSize();
  const viewport=()=>{if(media.matches)document.body.style.setProperty('--council-detail-viewport',`${Math.round(window.visualViewport?.height||innerHeight)}px`);};
  window.visualViewport?.addEventListener('resize',viewport);addEventListener('resize',viewport);viewport();
- const editing=()=>{document.body.classList.toggle('council-detail-editing',media.matches&&!printing.matches&&!beforePrint&&modal.classList.contains('open')&&modal.contains(document.activeElement)&&document.activeElement.matches('input,textarea'));};
+ const editing=()=>{document.body.classList.toggle('council-detail-editing',media.matches&&!printing.matches&&!beforePrint&&modal.classList.contains('open')&&modal.contains(document.activeElement)&&Boolean(document.activeElement.closest('#officialReplyForm,#internalNoteForm,#statusBox'))&&document.activeElement.matches('input,textarea,select,button'));};
  modal.addEventListener('focusin',editing);modal.addEventListener('focusout',()=>setTimeout(editing,0));new MutationObserver(editing).observe(modal,{attributes:true,attributeFilter:['class']});
  modal.addEventListener('click',event=>{
   const button=event.target.closest('[data-council-scroll="detailConversation"]'),reply=document.getElementById('officialReplyForm');
