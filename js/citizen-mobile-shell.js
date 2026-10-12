@@ -44,7 +44,7 @@
   };
   const sharedStyles = new Set(['portal', 'profile-account-link', 'portal-chat', 'portal-interactions',
     'social', 'social-notification-panel', 'citizen-readable-layout', 'citizen-mobile-navigation',
-    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'pets-mobile-presentation', 'citizen-mobile-shell']);
+    'home-mobile-direct', 'citizen-mobile-header', 'citizen-mobile-presentation', 'pets', 'pets-mobile-presentation', 'profile-mobile-presentation', 'tools-mobile-presentation', 'citizen-mobile-shell']);
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
@@ -237,16 +237,16 @@
   }
   async function styles(doc, area) {
     await Promise.all([...doc.querySelectorAll('link[rel="stylesheet"]')].map(async source => {
-      const petPresentation = name(source.href) === 'pets-mobile-presentation';
-      if (sharedStyles.has(name(source.href)) && !petPresentation) return;
+      const persistentPresentation = ['pets-mobile-presentation', 'profile-mobile-presentation', 'tools-mobile-presentation'].includes(name(source.href));
+      if (sharedStyles.has(name(source.href)) && !persistentPresentation) return;
       const href = new URL(source.getAttribute('href'), location.origin).href;
       const key = 'css:' + href;
       let link = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
       if (!link) {
         link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href;
-        // This sheet is fully scoped to the Pet surface. Keep it active before
-        // insertion and across returns, avoiding Blink's deferred media switch.
-        link.media = petPresentation ? (source.media || '') : 'not all';
+        // These sheets are scoped to their own content roots. Keep them active
+        // before insertion and across returns to avoid a deferred media switch.
+        link.media = persistentPresentation ? (source.media || '') : 'not all';
         styleMedia.set(link, '');
         const loading = new Promise((resolve, reject) => {
           const timeout = setTimeout(() => { link.remove(); reject(new Error('Não foi possível carregar o visual desta área.')); }, 15000);
@@ -258,7 +258,7 @@
       }
       if (resources.has(key)) await resources.get(key);
       if (!styleMedia.has(link)) styleMedia.set(link, link.media);
-      if (!petPresentation) area.styles.push(link);
+      if (!persistentPresentation) area.styles.push(link);
     }));
   }
   async function prepare(url) {
@@ -307,7 +307,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261012-pets-mobile-3' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261012-profile-tools-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : entry === 'social-profile' ? '20261012-profile-tools-1' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {

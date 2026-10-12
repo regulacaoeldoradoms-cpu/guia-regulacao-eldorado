@@ -20,8 +20,9 @@
   <link rel="stylesheet" href="/css/social-notification-panel.css?v=20260910-1">
   <link rel="stylesheet" href="/css/account-sections.css?v=20260911-1">
   <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
-  <script src="/js/citizen-layout.js?v=20261011-citizen-privacy-help-1" defer></script>
+  <script src="/js/citizen-layout.js?v=20261012-profile-tools-1" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
+  <link rel="stylesheet" href="/css/profile-mobile-presentation.css?v=20261012-profile-tools-1">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -34,7 +35,7 @@
         <div class="portal-user"><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div>
       </div>
     </header>
-    <main class="social-shell">
+    <main class="social-shell" data-profile-mobile-layout>
       <div class="social-status info" id="socialStatus" role="status" aria-live="polite">Carregando perfil...</div>
       <section class="social-card" id="socialProfile" hidden>
         <div class="social-profile-cover theme-aurora pattern-waves" id="profileCover">
@@ -77,7 +78,7 @@
           <div class="social-field"><label for="profileEditTheme">Tema da capa</label><select class="social-select" id="profileEditTheme"><option value="aurora">Aurora</option><option value="oceano">Oceano</option><option value="serra">Serra</option><option value="ipê">Ipê</option></select></div>
           <div class="social-field"><label for="profileEditPattern">Padrão da capa</label><select class="social-select" id="profileEditPattern"><option value="waves">Ondas</option><option value="rings">Círculos</option><option value="grid">Grade</option><option value="none">Sem padrão</option></select></div>
           <fieldset class="social-field wide" style="border:0;padding:0;margin:0"><legend style="font-size:.75rem;font-weight:850;color:#38566c;margin-bottom:7px">Módulos visíveis e ordem</legend><div class="social-module-order" id="profileModuleOrderEditor"></div><small style="color:#667d90">Marque os módulos desejados e use Subir/Descer para definir a ordem.</small></fieldset>
-          <div class="social-field wide"><button class="social-button primary" type="submit">Salvar personalização</button></div>
+          <div class="social-field wide profile-editor-actions"><button class="social-button primary" type="submit">Salvar personalização</button><button class="social-button secondary" id="profileEditCancel" type="button">Cancelar edição</button></div>
         </form>
 
         <div class="profile-identity-editor" id="profileIdentityEditor" hidden>
@@ -115,9 +116,9 @@
   <script src="/js/tools-catalog.js?v=20260910-2"></script>
   <script src="/js/social-api.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
-<script src="/js/citizen-mobile-shell.js?v=20261012-pets-mobile-3"></script>
+<script src="/js/citizen-mobile-shell.js?v=20261012-profile-tools-1"></script>
   <script src="/js/social-feed.js?v=20261010-mobile-shell-1"></script>
-  <script src="/js/social-profile.js?v=20261011-citizen-continuity-3"></script>
+  <script src="/js/social-profile.js?v=20261012-profile-tools-1"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261010-mobile-shell-1"></script>
 </body>

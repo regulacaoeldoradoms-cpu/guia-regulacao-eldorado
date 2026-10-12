@@ -48,6 +48,7 @@ export function mountCitizenMobileHeader() {
     mark(account); mark(logout); mark(sideLinks);
     document.body.classList.toggle('shared-mobile-header',active);
     menu.hidden=!active;
+    tools.hidden = currentPath() !== '/';
     if (active) {
       copy.classList.add('portal-brand-copy'); logo?.classList.add('portal-symbol');
       if (nativeLogo?.src.includes('canal-cidadao-icon')) {
