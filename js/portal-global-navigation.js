@@ -131,7 +131,7 @@
       try { return new URL(element.src).pathname === '/js/pets-bootstrap.js'; }
       catch (_) { return false; }
     });
-    import(declaredPetsBootstrap?.src || '/js/pets-bootstrap.js?v=20261012-gnome-coexist-1').then(async (pets) => {
+    import(declaredPetsBootstrap?.src || '/js/pets-bootstrap.js?v=20261012-gnome-frame-wrap-1').then(async (pets) => {
       const session = await pets.petSession();
       session?.runtime.layout();
     }).catch(() => {});

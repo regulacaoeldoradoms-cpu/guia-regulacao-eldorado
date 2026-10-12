@@ -3,7 +3,8 @@ import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist
 import {PetSpeechCoordinator} from './pet-speech-coordinator.js?v=20261012-gnome-coexist-1';
 import {drawCat,drawBed} from './pet-cat-frames.js';
 import {PetSpeech} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
-import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
+import {drawGnome,loadGnomeFrames,GNOME_CANVAS_SIZE,GNOME_RENDER_SIZE,GNOME_ANCHOR_X,GNOME_ANCHOR_Y} from './gnome-frames.js?v=20261012-gnome-frame-wrap-1';
+import {gnomeFrame,gnomeDuration,gnomeTravel} from './gnome-motion.mjs?v=20261012-gnome-frame-wrap-1';
 import {gnomeSpeechForSession} from './gnome-speech.js?v=20261012-gnome-2';
 function compatiblePetState(state){if(state.gnomeCompanion&&state.rules?.gnomeCompanionSlots!==1){const {gnomeCompanion,...compatible}=state;return compatible;}return state;}
 export class PetRuntime{
@@ -26,10 +27,10 @@ export class PetRuntime{
   window.addEventListener('resize',()=>this.layout(),{signal});window.visualViewport?.addEventListener('resize',()=>this.layout(),{signal});
   window.visualViewport?.addEventListener('scroll',()=>this.layout(),{signal});
   this.observer=new ResizeObserver(()=>this.layout());this.observer.observe(this.root);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.coordinator?.suspend();this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);this.sample(false);}else{this.coordinator?.resume();this.lastPaint=0;this.refresh();this.start();}},{signal});
-  window.addEventListener('pagehide',()=>{this.coordinator?.suspend();this.sample(false);cancelAnimationFrame(this.frame);},{signal});
-  window.addEventListener('pageshow',()=>{this.coordinator?.resume();this.start();this.refresh();},{signal});
-  this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.reduced.addEventListener('change',()=>{this.layout();this.start();},{signal});
+  document.addEventListener('visibilitychange',()=>{this.gnomePause(document.hidden,'hidden');if(document.hidden){this.coordinator?.suspend();this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);this.sample(false);}else{this.coordinator?.resume();this.lastPaint=0;this.refresh();this.start();}},{signal});
+  window.addEventListener('pagehide',()=>{this.gnomePause(true,'pagehide');this.coordinator?.suspend();this.sample(false);cancelAnimationFrame(this.frame);},{signal});
+  window.addEventListener('pageshow',()=>{this.gnomePause(false,'pagehide');this.coordinator?.resume();this.start();this.refresh();},{signal});
+  this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.reduced.addEventListener('change',()=>{this.gnomePause(this.reduced.matches,'reduced');this.layout();this.start();},{signal});
   this.timer=this.secondary?null:setInterval(()=>this.sample(),60000);this.syncSpecies();this.layout();this.start();if(!this.secondary)this.syncCompanion();
  }
  syncCompanion(){
@@ -45,7 +46,7 @@ export class PetRuntime{
  }
  syncSpecies(){
   const generation=++this.speechEpoch,gnome=this.state.pet?.typeId==='gnome';
-  this.root.dataset.petType=gnome?'gnome':'cat';this.cat.height=gnome?64:48;
+  this.root.dataset.petType=gnome?'gnome':'cat';this.cat.width=gnome?GNOME_CANVAS_SIZE:64;this.cat.height=gnome?GNOME_CANVAS_SIZE:48;if(!gnome){this.gnomePauses=null;this.gnomePausedAt=null;this.gnomeLastMotionAt=null;for(const property of ['width','height','transform-origin'])this.cat.style.removeProperty(property);}
   if(!gnome){this.speech=this.catSpeech;return;}
   this.speech={text:()=>'',advance:()=>false};
   Promise.all([loadGnomeFrames(),gnomeSpeechForSession(this.api)]).then(([,speech])=>{if(!this.closed&&generation===this.speechEpoch&&this.state.pet?.typeId==='gnome'){this.speech=speech;this.render();}}).catch(()=>{});
@@ -68,6 +69,12 @@ export class PetRuntime{
  safeRect(){
   // Both scenes use the same logical grid and scale; the global scene follows the viewport.
   const width=this.root.clientWidth||176,height=this.root.clientHeight||224;
+  if(this.state.pet?.typeId==='gnome'){
+   let ceiling=0;if(this.ownsHabitat){const sceneTop=this.root.getBoundingClientRect().top;for(const header of document.querySelectorAll('.portal-topbar,.site-header,.social-global-nav')){const rect=header.getBoundingClientRect();if(rect.width&&rect.height&&rect.top<=sceneTop+120&&rect.bottom>sceneTop)ceiling=Math.max(ceiling,rect.bottom-sceneTop);}}
+   const scale=Math.min(1,Math.max(1,width-2)/176,Math.max(1,height-ceiling-2)/GNOME_RENDER_SIZE);this.gnomeGeometry={size:GNOME_RENDER_SIZE*scale,x:GNOME_ANCHOR_X*scale,y:GNOME_ANCHOR_Y*scale};
+   const side=Math.ceil(Math.max(this.gnomeGeometry.x,this.gnomeGeometry.size-this.gnomeGeometry.x)+1),bottom=height-(this.gnomeGeometry.size-this.gnomeGeometry.y)-1,top=ceiling+this.gnomeGeometry.y+1;
+   return {left:side,right:Math.max(side,width-side),top:Math.min(bottom,Math.max(top,this.ownsHabitat?ceiling+136*scale:164*scale)),bottom};
+  }
   if(this.ownsHabitat){
    let ceiling=0;const sceneTop=this.root.getBoundingClientRect().top;
    for(const header of document.querySelectorAll('.portal-topbar,.site-header,.social-global-nav')){
@@ -93,10 +100,10 @@ export class PetRuntime{
   }
   const r=this.safeRect();this.bounds=r;this.x=Math.max(r.left,Math.min(r.right,this.x));this.y=Math.max(r.top,Math.min(r.bottom,this.y));
   const placement=this.previewPlacement||this.state.placement;
-  if(!this.ownsHabitat&&this.root.hasAttribute('data-pet-pair-present')&&!placement&&(!this.state.preferences.motionEnabled||this.reduced.matches)){this.x=this.secondary?r.right:r.left;this.y=this.secondary&&r.right-r.left<136?r.top:r.bottom;}
+  if(!this.ownsHabitat&&this.root.hasAttribute('data-pet-pair-present')&&!placement&&(!this.state.preferences.motionEnabled||this.reduced.matches)&&!(this.state.pet?.typeId==='gnome'&&this.actionStarted!=null)){this.x=this.secondary?r.right:r.left;this.y=this.secondary&&r.right-r.left<136?r.top:r.bottom;}
   this.bedPoint=placement?{x:r.left+(r.right-r.left)*placement.x,y:r.top+(r.bottom-r.top)*placement.y}:null;
-  if(this.bedPoint&&this.action==='sleep'){this.x=this.bedPoint.x;this.y=this.bedPoint.y-12;}
-  if(this.bedPoint&&this.goingToBed)this.target={x:this.bedPoint.x,y:this.bedPoint.y-12};
+  if(this.bedPoint&&this.action==='sleep'){this.x=this.bedPoint.x;this.y=this.bedPoint.y-12;if(this.state.pet?.typeId==='gnome')this.y=Math.max(r.top,Math.min(r.bottom,this.y));}
+  if(this.bedPoint&&this.goingToBed)this.target={x:this.bedPoint.x,y:this.state.pet?.typeId==='gnome'?Math.max(r.top,Math.min(r.bottom,this.bedPoint.y-12)):this.bedPoint.y-12};
   else if(this.target)this.target={x:Math.max(r.left,Math.min(r.right,this.target.x)),y:Math.max(r.top,Math.min(r.bottom,this.target.y))};
   this.bed.hidden=this.ownsHabitat||!placement; if(placement){
    this.bed.style.left=(this.bedPoint.x-80)+'px';this.bed.style.top=(this.bedPoint.y-40)+'px';drawBed(this.bed.getContext('2d'),placement.itemId);
@@ -106,6 +113,13 @@ export class PetRuntime{
  preview(p){this.previewPlacement=p;this.layout();}
  choose(now){
   const tired=this.state.awakeSeconds>=this.state.rules.sleepAfterSeconds;
+  if(tired&&this.state.pet?.typeId==='gnome'){
+   const target=this.bedPoint?{x:this.bedPoint.x,y:Math.max(this.bounds.top,Math.min(this.bounds.bottom,this.bedPoint.y-12))}:null;
+   const distance=target?Math.hypot(target.x-this.x,target.y-this.y):0;
+   this.actionStarted=now;this.gnomeLastMotionAt=now;
+   if(target&&distance>8){const duration=gnomeDuration('walk',distance/42*1000);this.target=target;this.gnomeBedSpeed=distance/(duration/1000);this.action='walk';this.goingToBed=true;this.until=now+duration;return;}
+   this.gnomeBedSpeed=null;this.target=null;this.action='sleep';this.until=now+45000;this.rest();return;
+  }
   if(tired){
    if(this.bedPoint&&Math.hypot(this.x-this.bedPoint.x,this.y-this.bedPoint.y+12)>8){
     this.target={x:this.bedPoint.x,y:this.bedPoint.y-12};this.action='walk';this.goingToBed=true;this.until=now+45000;return;
@@ -116,13 +130,32 @@ export class PetRuntime{
   this.queue=routines[Math.floor(Math.random()*routines.length)].slice();this.advance(now);
  }
  advance(now){
-  this.action=this.queue.shift()||'idle';
+  this.action=this.queue.shift()||'idle';if(this.state.pet?.typeId==='gnome')this.gnomeBedSpeed=null;
   this.actionStarted=now;
   const durations={walk:7000,run:3500,sit:1100,lick:6000,lie:1200,roll:1200,belly:6000,wake:1400,stretch:3000,idle:5000,scratch:4500,trip:2000,laugh:4000,dance:6000,nap:8000};
-  this.until=now+(durations[this.action]||5000);
+  this.until=now+(this.state.pet?.typeId==='gnome'?gnomeDuration(this.action,durations[this.action]||5000):(durations[this.action]||5000));if(this.state.pet?.typeId==='gnome')this.gnomeLastMotionAt=now;
   if(['walk','run'].includes(this.action)){
    const r=this.bounds;this.target=this.ownsHabitat?{x:r.left+(r.right-r.left)*Math.random(),y:r.top+(r.bottom-r.top)*Math.random()}:{x:Math.max(r.left,Math.min(r.right,this.x+(Math.random()-.5)*300)),y:this.y};
   }
+ }
+ gnomePause(paused,reason){
+  if(this.state.pet?.typeId!=='gnome')return;const now=performance.now();this.gnomePauses||=new Set();const was=this.gnomePauses.size>0;if(paused)this.gnomePauses.add(reason);else this.gnomePauses.delete(reason);
+  if(!was&&this.gnomePauses.size)this.gnomePausedAt=now;
+  if(was&&!this.gnomePauses.size){const delay=Math.max(0,now-this.gnomePausedAt);if(this.actionStarted!=null)this.actionStarted+=delay;if(this.until)this.until+=delay;this.gnomeLastMotionAt=now;this.gnomePausedAt=null;}
+ }
+ gnomeMove(now){
+  if(this.gnomePauses?.size){this.gnomeLastMotionAt=now;return;}
+  const previous=this.gnomeLastMotionAt??now;this.gnomeLastMotionAt=now;
+  let travel=gnomeTravel(this.action,Math.max(previous,now-120)-(this.actionStarted||0),Math.min(now,this.until||now)-(this.actionStarted||0));
+  if(this.goingToBed&&this.gnomeBedSpeed)travel*=this.gnomeBedSpeed/42;
+  if(!travel)return;
+  const r=this.bounds;
+  for(let turn=0;turn<4&&travel>0;turn++){
+   if(!this.target||Math.hypot(this.target.x-this.x,this.target.y-this.y)<.001){const leftDistance=this.x-r.left,rightDistance=r.right-this.x;const nextX=leftDistance>rightDistance?r.left:r.right;this.target={x:nextX,y:this.ownsHabitat?r.top+(r.bottom-r.top)*Math.random():this.y};if(Math.hypot(this.target.x-this.x,this.target.y-this.y)<.001)return;}
+   const dx=this.target.x-this.x,dy=this.target.y-this.y,d=Math.hypot(dx,dy),step=Math.min(d,travel);this.x+=dx/d*step;this.y+=dy/d*step;if(Math.abs(dx)>.001)this.facing=dx<0?-1:1;travel-=step;
+   if(step>=d-1e-7){this.x=this.target.x;this.y=this.target.y;if(this.goingToBed){this.goingToBed=false;this.action='sleep';this.actionStarted=now;this.until=now+45000;this.target=null;this.rest();return;}this.target=null;break;}
+  }
+  this.x=Math.max(r.left,Math.min(r.right,this.x));this.y=Math.max(r.top,Math.min(r.bottom,this.y));
  }
  async rest(){
   if(this.resting||this.closed||this.state.life?.deadAt!=null)return;this.resting=true;
@@ -152,9 +185,9 @@ export class PetRuntime{
   this.bubble.hidden=!this.bubble.textContent;
   const action=motion?this.action:(s.awakeSeconds>=s.rules.sleepAfterSeconds?'sleep':'idle');
   this.speech.setSuppressed?.(this.root.hidden||document.hidden||!motion||Boolean(alert)||Boolean(this.coordinator?.blocked(this.speaker)));
-  if(s.pet?.typeId==='gnome'){const elapsed=Math.max(0,(performance.now()-(this.actionStarted||0))/160);drawGnome(this.cat.getContext('2d'),action,motion?(action==='trip'?Math.min(7,elapsed):elapsed):0);}
+  if(s.pet?.typeId==='gnome'){this.gnomePause(!motion,'motion');this.gnomePause(this.root.hidden,'hidden-root');const time=this.gnomePausedAt??performance.now(),elapsed=Math.max(0,time-(this.actionStarted||0));drawGnome(this.cat.getContext('2d'),action,motion?gnomeFrame(action,elapsed):0);const g=this.gnomeGeometry;this.cat.style.width=g.size+'px';this.cat.style.height=g.size+'px';this.cat.style.transformOrigin=g.x+'px '+g.y+'px';}
   else drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
-  this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-(s.pet?.typeId==='gnome'?120:88))+'px';
+  this.cat.style.left=(this.x-(s.pet?.typeId==='gnome'?this.gnomeGeometry.x:64))+'px';this.cat.style.top=(this.y-(s.pet?.typeId==='gnome'?this.gnomeGeometry.y:88))+'px';
   this.cat.style.transform=this.facing===-1?'scaleX(-1)':'';
   if(!this.secondary)this.gnomeRuntime?.render();
   this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=(this.ownsHabitat?Math.max(8,this.y-150):12)+'px';
@@ -166,9 +199,10 @@ export class PetRuntime{
    if(now-this.lastPaint>=80){
     if(this.ownsHabitat&&(!this.lastLayout||now-this.lastLayout>=500)){this.lastLayout=now;this.layout();}
     const dt=Math.min(.12,(now-this.lastPaint)/1000||.08);this.lastPaint=now;
-    if(this.state.preferences.motionEnabled&&!this.reduced.matches){
+    if(this.state.pet?.typeId==='gnome'){this.render();this.gnomeMove(now);}
+    if(this.state.preferences.motionEnabled&&!this.reduced.matches&&!this.gnomePauses?.size){
      if(!this.until||now>=this.until){if(this.queue.length)this.advance(now);else this.choose(now);}
-     if(['walk','run'].includes(this.action)&&this.target){
+     if(this.state.pet?.typeId!=='gnome'&&['walk','run'].includes(this.action)&&this.target){
       const dx=this.target.x-this.x,dy=this.target.y-this.y,d=Math.hypot(dx,dy),speed=this.action==='run'?85:42;
       if(d>2){this.x+=dx/d*Math.min(d,speed*dt);this.y+=dy/d*Math.min(d,speed*dt);this.facing=dx<0?-1:1;}
       else if(this.goingToBed){this.goingToBed=false;this.action='sleep';this.until=now+45000;this.rest();}
