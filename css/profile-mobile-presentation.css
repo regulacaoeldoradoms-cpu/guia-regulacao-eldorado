@@ -64,3 +64,9 @@ body.profile-mobile-layout #profilePhotoDialog .social-dialog-actions > * { flex
   [data-profile-mobile-layout] #profileEditor,
   [data-profile-mobile-layout] #profileEditor * { transition: none !important; animation: none !important; }
 }
+
+@media screen and (max-width:900px) {
+  /* Expose the native bar after the shared icon and Chat owners are ready. */
+  body:has([data-profile-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav { visibility:hidden !important; }
+  body:has([data-profile-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav { visibility:hidden !important; }
+}

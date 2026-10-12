@@ -10,10 +10,11 @@ try {
 for(const width of [320,360,390])for(const theme of ['light','dark'])for(const scale of [1,2]){
  const result={width,theme,scale,checks:[]};const {page,context,audit}=await newPage(browser,{width,theme},server.origin,result);
  await context.route(`${server.origin}/**/*`,async route=>{const url=new URL(route.request().url());if(/\.(css|js)$/.test(url.pathname))await new Promise(r=>setTimeout(r,url.pathname.endsWith('.css')?150:300));await route.fallback();});
- await context.addInitScript(()=>{window.__profileFrames=[];const sample=()=>{const profile=document.querySelector('[data-profile-mobile-layout] #socialProfile:not([hidden])');const tools=document.querySelector('[data-tools-mobile-layout] #toolsGrid .hub-card');if(profile&&!window.__intentionalEdit)window.__profileFrames.push({editorVisible:!document.querySelector('#profileEditor').hidden,font:getComputedStyle(document.querySelector('#profileName')).fontSize});if(tools)window.__profileFrames.push({icon:getComputedStyle(tools.querySelector('.hub-card-icon')).width});requestAnimationFrame(sample);};requestAnimationFrame(sample);});
+ await context.addInitScript(()=>{window.__profileFrames=[];window.__navFrames=[];const sample=()=>{const nav=document.querySelector(".social-mobile-nav");if(document.querySelector("[data-profile-mobile-layout],[data-tools-mobile-layout]")&&nav&&getComputedStyle(nav).visibility!=="hidden")window.__navFrames.push([...nav.children].map(n=>n.getAttribute("aria-label")));const profile=document.querySelector('[data-profile-mobile-layout] #socialProfile:not([hidden])');const tools=document.querySelector('[data-tools-mobile-layout] #toolsGrid .hub-card');if(profile&&!window.__intentionalEdit)window.__profileFrames.push({editorVisible:!document.querySelector('#profileEditor').hidden,font:getComputedStyle(document.querySelector('#profileName')).fontSize});if(tools)window.__profileFrames.push({icon:getComputedStyle(tools.querySelector('.hub-card-icon')).width});requestAnimationFrame(sample);};requestAnimationFrame(sample);});
  await page.goto(server.origin+'/perfil/');await ready(page,'/perfil/');
  assert.equal(await page.locator('#profileEditor').isVisible(),false);
  const firstFrames=await page.evaluate(()=>window.__profileFrames);assert(firstFrames.length);assert(firstFrames.every(f=>f.editorVisible!==true&&(!f.font||f.font==='26px')));
+ const assertNavigationFrames=async()=>assert((await page.evaluate(()=>window.__navFrames)).every(names=>JSON.stringify(names)===JSON.stringify(['Início','Amigos','Chat','Avisos','Mascotes','Perfil'])));await assertNavigationFrames();
  const documentId=await page.evaluate(()=>window.__refinementDocument);
  process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
  await page.screenshot({path:`${output}/profile-${width}-${theme}-${scale}.png`,fullPage:true});
@@ -38,7 +39,7 @@ for(const width of [320,360,390])for(const theme of ['light','dark'])for(const s
  const toolsFrames=await page.evaluate(()=>window.__profileFrames.filter(f=>f.icon));assert(toolsFrames.length);assert(toolsFrames.every(f=>f.icon==='44px'));
  for(let n=0;n<2;n++){await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/',location.href)));await ready(page,'/');await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/ferramentas/',location.href)));await ready(page,'/ferramentas/');assert(await page.locator('#toolsGrid .hub-card-icon').first().evaluate(n=>getComputedStyle(n).width==='44px'));}
  await page.goto(server.origin+'/perfil/');await ready(page,'/perfil/');assert(await page.locator('#profileEditor').isHidden());
- await page.goto(server.origin+'/ferramentas/');await ready(page,'/ferramentas/');assert(await page.locator('#toolsGrid .hub-card-icon').first().evaluate(n=>getComputedStyle(n).width==='44px'));
+ await page.goto(server.origin+'/ferramentas/');await ready(page,'/ferramentas/');assert(await page.locator('#toolsGrid .hub-card-icon').first().evaluate(n=>getComputedStyle(n).width==='44px'));await assertNavigationFrames();
  results.push({...result,firstFrames:firstFrames.length,toolsFrames:toolsFrames.length,tools,entries:11,unmappedApiCalls:audit.unmappedApiCalls});await context.close();console.log(JSON.stringify({width,theme,scale,passed:true}));
 }
 await fs.writeFile(`${output}/results.json`,JSON.stringify(results,null,2));
