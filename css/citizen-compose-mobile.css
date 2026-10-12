@@ -6,7 +6,7 @@ body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobi
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-panel {
   width:100% !important; max-width:560px !important; height:100% !important; max-height:100% !important; margin:0 auto !important; border-radius:14px !important; overflow:auto !important; overscroll-behavior:contain; scroll-padding:12px;
 }
-body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head { position:relative !important; padding:16px !important; gap:12px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head { position:static !important; padding:16px !important; gap:12px !important; }
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head h2 { font-size:22px !important; line-height:1.25 !important; }
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head small { font-size:16px !important; line-height:1.45 !important; }
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-content { padding:0 12px 16px !important; overflow:visible !important; max-height:none !important; }
