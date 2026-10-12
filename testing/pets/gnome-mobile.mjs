@@ -11,7 +11,7 @@ try{
  for(const {age,width,theme,scale} of cases){
   const f=fixture();f.sql.exec(await fs.readFile(new URL('../../worker/migrations/pets-private-age.sql',import.meta.url),'utf8'));f.sql.prepare('INSERT INTO auth_users(username) VALUES(?)').run(user.username);f.user={username:user.username,sessionVersion:1};
   if(age!=='unknown')await declarePrivatePetAge(f.db,f.user,age==='adult'?'1990-01-01':'2015-01-01');
-  const result={age,width,theme,scale,errors:[],writes:[],requests:[],assets:[]};const {page,context}=await newPage(browser,{width,theme},server.origin,result);await page.emulateMedia({reducedMotion:'no-preference'});page.on('request',request=>{if(new URL(request.url()).pathname.includes('gnome-sheet'))result.assets.push(request.url());});
+  const result={age,width,theme,scale,errors:[],writes:[],requests:[],assets:[]};const {page,context}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);await page.emulateMedia({reducedMotion:'no-preference'});page.on('request',request=>{if(new URL(request.url()).pathname.includes('gnome-sheet'))result.assets.push(request.url());});
   let releaseSprite;
   if(age==='adult'&&width===320&&theme==='light'&&scale===1){const gate=new Promise(resolve=>releaseSprite=resolve);await page.route('**/assets/pets/gnome-sheet.png*',async route=>{await gate;return route.fallback();});}
   const router=createPetRouter({validateSession:async request=>request.headers.get('Authorization')?f.user:null});
@@ -43,6 +43,10 @@ try{
     const speech=await page.evaluate(()=>{const r=PortalPets.runtime;r.speech.nextAt=Date.now();r.speech.advance();r.render();return {text:r.bubble.textContent,until:r.speech.bubbleUntil,now:Date.now()};});assert(speech.until-speech.now>=5900);assert(speech.text);
     await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href)));await ready(page,'/');await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/mascotes/',location.href)));await ready(page,'/mascotes/');assert.equal(await page.locator('.pet-stage[data-pet-type=gnome]').count(),1);
     await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href)));await ready(page,'/');await page.emulateMedia({media:'print'});assert.equal(await page.locator('.pet-stage-global').evaluate(n=>getComputedStyle(n).display),'none');await page.emulateMedia({media:'screen'});
+    if(age==='adult'&&width===390&&theme==='dark'&&scale===1){
+     const stored=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith('portal:pets:gnome-speech:')).map(([,value])=>value));assert(stored.length>0);assert(stored.every(value=>!value.includes(speech.text)&&!value.includes('1990-01-01')));
+     await page.evaluate(()=>RegulationAuth.logout());await page.waitForFunction(()=>!window.PortalPets&&!document.querySelector('.pet-stage[data-pet-type="gnome"]'));assert.equal(await page.locator('.pet-bubble').count(),0);assert.equal(await page.evaluate(()=>RegulationAuth.getToken()),'');result.logoutClearedAdultRuntime=true;
+    }
    }
    assert.equal(result.errors.length,0);results.push(result);console.log(JSON.stringify({age,width,theme,scale,passed:true}));
   }catch(error){releaseSprite?.();console.log(JSON.stringify({age,error:String(error),requests:result.requests,errors:result.errors,page:await page.evaluate(()=>({message:document.getElementById('petMessage')?.textContent,pet:window.PortalPets?.runtime.state.pet,speechCount:window.PortalPets?.runtime.speech?.catalog?.phrases.length,epoch:window.PortalPets?.runtime.speechEpoch}))}));throw error;}finally{await context.close();f.close();}
