@@ -1,3 +1,4 @@
+#councilDeleteDialog[hidden] { display:none !important; }
 .council-mobile-summary { display:contents; }
 .council-mobile-summary > summary { display:none; }
 /* Final, route-scoped mobile presentation; native desktop and print retained. */

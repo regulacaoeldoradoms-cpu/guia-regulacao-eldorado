@@ -7,6 +7,7 @@ for(const width of (process.env.COUNCIL_EXTRA_ONLY==='1'?[]:[320,360,390]))for(c
  try{
  await context.addInitScript(()=>{window.__councilFrames=[];new MutationObserver(()=>{if(!window.__councilUseful&&document.querySelector('#councilRows tr[data-protocol]'))window.__councilUseful=performance.now();}).observe(document,{subtree:true,childList:true});const sample=()=>{if(document.querySelector('#councilRows tr[data-protocol]')&&!window.__councilScaled)window.__councilFrames.push({font:getComputedStyle(document.querySelector('.council-open-detail')).fontSize,summary:document.querySelector('#councilSummary').open});requestAnimationFrame(sample);};requestAnimationFrame(sample);});
  await page.goto(s.origin+'/conselho/painel/');await page.locator('#councilRows tr[data-protocol]').first().waitFor();await page.waitForFunction(()=>window.__councilFrames.length);
+ await page.locator('#councilDeleteDialog[hidden]').waitFor({state:'attached'});assert(await page.locator('#councilDeleteDialog').isHidden());
  assert(await page.evaluate(()=>Object.isFrozen(window.RegulationAuth)));assert.equal(s.result.errors.length,0);assert(await page.locator('#councilSummary').evaluate(n=>!n.open));
  const frames=await page.evaluate(()=>window.__councilFrames);assert(frames.every(f=>f.font==='18px'&&!f.summary));
  const useful=await page.evaluate(()=>window.__councilUseful);await page.evaluate(()=>window.__councilScaled=true);process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
