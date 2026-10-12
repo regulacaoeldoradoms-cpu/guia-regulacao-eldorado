@@ -6,6 +6,9 @@ import { writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 
 async function sampleCouncilReflection(page,info){
+  // Both sources must finish native Council navigation before switching to print.
+  // The role badge can paint before the async presentation controller finishes.
+  await page.waitForFunction(()=>!matchMedia('screen and (max-width:900px)').matches||document.body.classList.contains('council-navigation-ready'));
   // council.css preserves this 4.8s infinite reflection unchanged. Sampling
   // wall-clock time can see opacity 0 on one navigation and an active pseudo
   // on the other. Compare both at 70%, where the original reflection is visible.
