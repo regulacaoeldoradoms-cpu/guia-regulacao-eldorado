@@ -34,8 +34,8 @@ try{
     await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).click();await page.locator('#petAdopt').click();await page.waitForFunction(()=>PortalPets?.runtime.state.pet?.typeId==='gnome'&&PortalPets.runtime.speech.catalog?.phrases?.length===54);
     assert.equal(await page.locator('.pet-stage[data-pet-type=gnome]').count(),1);assert(await page.locator('#petAdopt').isDisabled());
     const hashes=await page.evaluate(async()=>{
-     const {drawGnome,GNOME_ACTIONS}=await import('/js/gnome-frames.js');const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;const ctx=canvas.getContext('2d');
-     const rows=[];for(const action of GNOME_ACTIONS){const frames=[];for(let i=0;i<8;i++){drawGnome(ctx,action,i);const pixels=ctx.getImageData(0,0,64,64).data;const hash=await crypto.subtle.digest('SHA-256',pixels);frames.push([...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join(''));}rows.push({action,frames});}return rows;
+     const {GNOME_ACTIONS}=await import('/js/gnome-frames.js?v=20261012-gnome-2');const runtime=PortalPets.runtime,ctx=runtime.cat.getContext('2d'),saved={action:runtime.action,actionStarted:runtime.actionStarted,until:runtime.until};cancelAnimationFrame(runtime.frame);
+     const rows=[];try{for(const action of GNOME_ACTIONS){const frames=[];for(let i=0;i<8;i++){runtime.action=action;runtime.actionStarted=performance.now()-(i+.1)*160;runtime.until=performance.now()+10000;runtime.render();const pixels=ctx.getImageData(0,0,64,64).data;const hash=await crypto.subtle.digest('SHA-256',pixels);frames.push([...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join(''));}rows.push({action,frames});}}finally{Object.assign(runtime,saved);runtime.start();}return rows;
     });
     for(const row of hashes)assert(new Set(row.frames).size>=3,`${row.action} must have multiple actually drawn frames`);
     result.animationFrames=hashes;await applyTextScale(page);assert(await page.locator('.pet-page').evaluate(n=>n.scrollWidth<=n.clientWidth+1));await page.screenshot({path:`${output}/${age}-${width}-${theme}-${scale}.png`});
