@@ -214,7 +214,7 @@ async function newPage(browser, scenario, origin, result) {
   }
   const context = await browser.newContext({ viewport:{ width:scenario.width, height }, screen:scenario.screen || { width:scenario.width, height },
     hasTouch:scenario.hasTouch ?? scenario.width <= 900, isMobile:scenario.isMobile ?? scenario.width <= 900,
-    ...(scenario.userAgent ? {userAgent:scenario.userAgent} : {}), deviceScaleFactor:1, reducedMotion:'reduce',
+    ...(scenario.userAgent ? {userAgent:scenario.userAgent} : {}), deviceScaleFactor:scenario.deviceScaleFactor ?? 1, reducedMotion:'reduce',
     colorScheme:scenario.theme, locale:'pt-BR', timezoneId:'UTC', serviceWorkers:'allow' });
   context.on('serviceworker', worker => { audit.worker = worker; });
   await context.addInitScript(({ user, theme, syntheticToken, seedOnce, maxTouchPoints }) => {

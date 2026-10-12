@@ -13,7 +13,7 @@ try{
   if(age!=='unknown')await declarePrivatePetAge(f.db,f.user,age==='adult'?'1990-01-01':'2015-01-01');
   const result={age,width,theme,scale,errors:[],writes:[],requests:[],assets:[]};const {page,context}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);await page.emulateMedia({reducedMotion:'no-preference'});page.on('request',request=>{if(new URL(request.url()).pathname.includes('gnome-sheet'))result.assets.push(request.url());});
   let releaseSprite;
-  if(age==='adult'&&width===320&&theme==='light'&&scale===1){const gate=new Promise(resolve=>releaseSprite=resolve);await page.route('**/assets/pets/gnome-sheet.png*',async route=>{await gate;return route.fallback();});}
+  if(age==='adult'&&width===320&&theme==='light'&&scale===1){const gate=new Promise(resolve=>releaseSprite=resolve);await page.route('**/assets/pets/gnome-sheet-isolated.png*',async route=>{await gate;return route.fallback();});}
   const router=createPetRouter({validateSession:async request=>request.headers.get('Authorization')?f.user:null});
   await context.route('**/api/pets/**',async route=>{
    const request=route.request(),pathname=new URL(request.url()).pathname;result.requests.push(pathname);if(request.method()==='POST')result.writes.push(pathname);
