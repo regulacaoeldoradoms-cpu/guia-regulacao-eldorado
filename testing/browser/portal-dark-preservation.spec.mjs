@@ -358,7 +358,10 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       expect(native(councilContracts[0])).toEqual(native(councilContracts[1]));
       expect(native(councilContracts[0]).every(control=>control.count===1&&control.identityPreserved)).toBe(true);
       expect(councilContracts[0].filter(control=>paginationIds.includes(control.id)).map(control=>({id:control.id,tag:control.tag,type:control.type,count:control.count}))).toEqual(paginationIds.map(id=>({id,tag:'button',type:'button',count:1})));
-      expect(councilContracts[1].some(control=>paginationIds.includes(control.id))).toBe(false);
+      // PR642 is now in main: its pagination must retain the complete native
+      // contract, rather than be treated as a new control absent from baseline.
+      expect(councilContracts[0].filter(control=>paginationIds.includes(control.id)))
+        .toEqual(councilContracts[1].filter(control=>paginationIds.includes(control.id)));
       expect(comparison.captureStability.current.snapshotStable).toBe(true);
       await info.attach('approved-council-mobile-native-contract.json',{body:Buffer.from(JSON.stringify({current:councilContracts[0],base:councilContracts[1]})),contentType:'application/json'});
     }else if(loginRedesign){
