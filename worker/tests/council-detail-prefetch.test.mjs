@@ -21,13 +21,15 @@ test('speculative details have no view effects; every opening revalidates live p
   };
   const call=query=>handleCouncilRoute(new Request('https://synthetic.test/api/council/manifestations/'+protocol+query,{headers:{Authorization:`Bearer ${token}`}}),env,'',true);
   const auditCount=()=>env.AUTH_DB.database.prepare("SELECT count(*) AS count FROM council_audit_log WHERE action='manifestation.view'").get().count;
-  const prefetch=await call('?prefetch=1');assert.equal(prefetch.status,200);assert.equal(prefetch.headers.get('Cache-Control'),'no-store');const cached=await prefetch.json();assert.match(cached.detailRevision,/^[a-f0-9]{64}$/);assert.equal(cached.internalNotes[0].body,note);assert.equal(auditCount(),0);assert(reads.every(path=>!path.includes('storage')));
+  const prefetch=await call('/prefetch');assert.equal(prefetch.status,200);assert.equal(prefetch.headers.get('Cache-Control'),'no-store');const cached=await prefetch.json();assert.match(cached.detailRevision,/^[a-f0-9]{64}$/);assert.equal(cached.internalNotes[0].body,note);assert.equal(auditCount(),0);assert(reads.every(path=>!path.includes('storage')));
   const unchanged=await call('?'+new URLSearchParams({cacheRevision:cached.detailRevision}));assert.equal(unchanged.status,200);assert.deepEqual(await unchanged.json(),{notModified:true,detailRevision:cached.detailRevision,protocol});assert.equal(auditCount(),1,'only real opening records a view');
+  await call('?prefetch=1');assert.equal(auditCount(),2,'ordinary detail reads retain view auditing even with a legacy query flag');
+  assert.equal((await call('/prefetch?as=citizen')).status,403);assert.equal(auditCount(),2);
   note='Outra nota fictícia, sem alteração do documento pai.';const changed=await (await call('?'+new URLSearchParams({cacheRevision:cached.detailRevision}))).json();assert.equal(changed.internalNotes[0].body,note);assert.notEqual(changed.detailRevision,cached.detailRevision,'child changes cannot reuse the previous snapshot');
   await env.AUTH_DB.prepare("UPDATE auth_users SET council_role='membro' WHERE username=?").bind('synthetic.detail').run();
   const member=await (await call('?'+new URLSearchParams({cacheRevision:changed.detailRevision}))).json();assert.equal(member.notModified,undefined);assert.equal(member.manifestation.authorIdentity,undefined);assert.equal(member.manifestation.authorUsername,undefined);assert.deepEqual(member.internalNotes,[]);assert.deepEqual(member.attachments,[]);assert.equal(member.accessPolicy.canInteract,false);assert.notEqual(member.detailRevision,changed.detailRevision);
-  const before=auditCount();await call('?prefetch=1');assert.equal(auditCount(),before,'read-only member prefetch is also effect free');
-  await env.AUTH_DB.prepare("UPDATE auth_users SET council_role='' WHERE username=?").bind('synthetic.detail').run();assert.equal((await call('?prefetch=1')).status,404);assert.equal((await call('?'+new URLSearchParams({cacheRevision:cached.detailRevision}))).status,404);assert.equal(auditCount(),before);
-  await env.AUTH_DB.prepare('UPDATE auth_users SET active=0 WHERE username=?').bind('synthetic.detail').run();assert.equal((await call('?prefetch=1')).status,401);
+  const before=auditCount();await call('/prefetch');assert.equal(auditCount(),before,'read-only member prefetch is also effect free');
+  await env.AUTH_DB.prepare("UPDATE auth_users SET council_role='' WHERE username=?").bind('synthetic.detail').run();assert.equal((await call('/prefetch')).status,403);assert.equal((await call('?'+new URLSearchParams({cacheRevision:cached.detailRevision}))).status,404);assert.equal(auditCount(),before);
+  await env.AUTH_DB.prepare('UPDATE auth_users SET active=0 WHERE username=?').bind('synthetic.detail').run();assert.equal((await call('/prefetch')).status,401);
  }finally{globalThis.fetch=originalFetch;env.AUTH_DB.database.close();}
 });

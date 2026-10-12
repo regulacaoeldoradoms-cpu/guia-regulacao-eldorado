@@ -27,7 +27,7 @@
         if (background.has(protocol) || (entry && Date.now() - entry.at < ttl) || Date.now() - (failures.get(protocol) || 0) < ttl) continue;
         const controller = new AbortController(), generation = epoch;
         background.set(protocol, controller);
-        request(path(protocol) + '?prefetch=1', {method:'GET', signal:controller.signal})
+        request(path(protocol) + '/prefetch', {method:'GET', signal:controller.signal})
           .then(payload => { if (usable() && generation === epoch && !controller.signal.aborted) remember(protocol, payload); })
           .catch(error => {
             if (generation !== epoch || controller.signal.aborted) return;
@@ -79,6 +79,7 @@
         foreground.set(protocol, {promise, controller});
         return promise;
       },
+      cancelSpeculation() { for (const controller of background.values()) controller.abort(); background.clear(); clearTimeout(timer); timer=null; },
       cancelOpening() { for (const flight of foreground.values()) flight.controller.abort(); foreground.clear(); schedule(); },
       invalidate(protocol) { remove(protocol); failures.delete(protocol); },
       clear,

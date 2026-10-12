@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {openDetails} from './detail-fixtures.mjs';
+const baselineRoot=process.env.COUNCIL_DETAIL_BASELINE_ROOT;if(!baselineRoot)throw new Error('Defina COUNCIL_DETAIL_BASELINE_ROOT com um checkout da versão anterior.');
 const out=process.argv[2]||'.local/detail-performance';await fs.mkdir(out,{recursive:true});const samples=[];
 for(let repeat=0;repeat<5;repeat++)for(const mode of ['baseline-cold','new-cold','new-prefetched']){
- const root=mode==='baseline-cold'?'/workspace/council-mobile-visual-review':process.cwd();
+ const root=mode==='baseline-cold'?baselineRoot:process.cwd();
  const scene=await openDetails(root,{width:390,rtt:100,throughput:50*1024,longMessages:true,capability:mode==='new-prefetched'}),{page}=scene;
  try{
   const start=Date.now();await page.goto(scene.origin+'/conselho/painel/');await page.locator('#councilRows tr[data-protocol]').first().waitFor();const listReady=Date.now()-start;

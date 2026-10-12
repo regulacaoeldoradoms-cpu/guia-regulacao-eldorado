@@ -510,8 +510,13 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   }
   if (url.pathname === '/api/council/notifications' && (request.method === 'GET' || request.method === 'PATCH')) return notifications(request, env, user, origin);
 
-  let match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);
-  if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen, !asCitizen && url.searchParams.get('prefetch') === '1');
+  let match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/prefetch$/);
+  if (match && request.method === 'GET') {
+    if (asCitizen || !councilAccess(user)) return json({error:'Pré-carregamento restrito ao painel do Conselho.'},403,origin);
+    return detail(env,user,match[1],origin,false,true);
+  }
+  match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);
+  if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen);
   if (match && request.method === 'PATCH') {
     if (asCitizen) return json({ error: 'Ações institucionais não estão disponíveis na área de acompanhamento das próprias manifestações.' }, 403, origin);
     return changeStatus(request, env, user, match[1], origin, executionContext);

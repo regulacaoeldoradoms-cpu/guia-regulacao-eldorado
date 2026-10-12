@@ -11,8 +11,8 @@ export async function openDetails(root,options={}){
  };
  await scene.context.route('**/api/council/**',async route=>{
   const url=new URL(route.request().url());if(url.pathname==='/api/council/config')return route.fulfill({json:{detailPrefetch:capability}});
-  const match=url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);if(!match||route.request().method()!=='GET')return route.fallback();
-  const protocol=match[1],prefetch=url.searchParams.get('prefetch')==='1',started=Date.now();
+  const match=url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})(?:\/prefetch)?$/);if(!match||route.request().method()!=='GET')return route.fallback();
+  const protocol=match[1],prefetch=url.pathname.endsWith('/prefetch'),started=Date.now();
   const record={protocol,prefetch,query:url.search,started,bytes:0};reads.push(record);if(!prefetch)views.push(protocol);
   const hold=pending.get(protocol);if(hold)await hold.promise;
   if(failure&&(failure.mode==='all'||failure.mode===(prefetch?'prefetch':'open')))return route.fulfill({status:failure.status,json:{error:'Falha inteiramente sintética.'}});

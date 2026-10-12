@@ -5,8 +5,8 @@ for(const width of [320,360,390])for(const theme of ['light','dark']){
  const scene=await openVisual(process.cwd(),{width,theme,count:253,slow:true}),{page}=scene,reads=[],views=[];let active=0,maxActive=0,deny=false;
  await scene.context.route('**/api/council/**',async route=>{
   const url=new URL(route.request().url());if(url.pathname==='/api/council/config')return route.fulfill({json:{detailPrefetch:true}});
-  const match=url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);if(!match||route.request().method()!=='GET')return route.fallback();
-  const protocol=match[1],prefetch=url.searchParams.get('prefetch')==='1';reads.push({protocol,prefetch,query:url.search,at:Date.now()});if(prefetch){active++;maxActive=Math.max(maxActive,active);}else views.push(protocol);
+  const match=url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})(?:\/prefetch)?$/);if(!match||route.request().method()!=='GET')return route.fallback();
+  const protocol=match[1],prefetch=url.pathname.endsWith('/prefetch');reads.push({protocol,prefetch,query:url.search,at:Date.now()});if(prefetch){active++;maxActive=Math.max(maxActive,active);}else views.push(protocol);
   try{
    await new Promise(resolve=>setTimeout(resolve,450));if(deny)return route.fulfill({status:403,json:{error:'Permissão sintética revogada.'}});
    const item=scene.items.find(item=>item.protocol===protocol);const payload={manifestation:{...item},messages:[],events:[{type:'created',detail:'Histórico inteiramente sintético.',createdAt:item.createdAt}],internalNotes:[],attachments:[{id:'synthetic-attachment',displayName:'Arquivo fictício.pdf'}]};
@@ -22,6 +22,7 @@ for(const width of [320,360,390])for(const theme of ['light','dark']){
   assert.equal(await page.locator('#detailProtocol').textContent(),'CMS-2026-000001');assert(reads.some(item=>!item.prefetch&&item.query.includes('cacheRevision=')));
   const geometry=await page.evaluate(()=>({subject:document.getElementById('detailSubject').getBoundingClientRect().top,description:document.getElementById('detailDescription').getBoundingClientRect().top,reply:document.getElementById('officialReply').getBoundingClientRect().top,headHeight:document.querySelector('#councilDetailModal .citizen-modal-head').getBoundingClientRect().height,navRows:new Set([...document.querySelectorAll('#councilMobileDetailNav button:not([hidden])')].map(n=>Math.round(n.getBoundingClientRect().top))).size}));
   await page.screenshot({path:`${output}/${width}-${theme}.png`});assert(await page.locator('#councilDetailModal .citizen-modal-panel').evaluate(node=>node.scrollWidth<=node.clientWidth+1));assert.equal(geometry.navRows,1);
+  assert.equal(await page.locator('#councilMobileDetailNav [data-council-scroll="detailConversation"]').textContent(),'Responder');
   assert(await page.locator('#exportManifestationPdf').isHidden());await page.locator('.council-detail-document > summary').click();assert(await page.locator('#exportManifestationPdf').isVisible());
   await page.locator('#officialReply').fill('Rascunho inteiramente fictício.');assert(await page.locator('#councilMobileDetailNav').isHidden());await page.keyboard.press('Escape');assert.equal(await page.locator('#councilDetailModal').getAttribute('aria-hidden'),'true');
   await page.locator('#councilRows .council-open-detail').first().click();await page.locator('#detailContent:not([hidden])').waitFor();assert.equal(await page.locator('#officialReply').inputValue(),'Rascunho inteiramente fictício.');

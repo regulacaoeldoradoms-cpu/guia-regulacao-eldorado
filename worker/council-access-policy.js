@@ -324,7 +324,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   // collection and current access on opening, including notes and attachments;
   // a browser snapshot never substitutes for the server permission check.
   if (institutional && request.method === 'GET' && response.ok &&
-      /^\/api\/council\/manifestations\/CMS-\d{4}-\d{6}$/.test(url.pathname)) {
+      /^\/api\/council\/manifestations\/CMS-\d{4}-\d{6}(?:\/prefetch)?$/.test(url.pathname)) {
     const payload = await response.json();
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
     const digest = await crypto.subtle.digest('SHA-256', bytes);

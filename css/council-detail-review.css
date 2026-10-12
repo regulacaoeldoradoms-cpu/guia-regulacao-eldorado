@@ -35,3 +35,9 @@
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailMeta{font-size:13px!important;line-height:1.45!important;margin-top:3px!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailSubject{font-size:18px!important;line-height:1.4!important}
 }
+
+@media screen and (max-width:900px) {
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-tall-header] .citizen-modal-head{position:relative!important;top:auto!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-tall-header] .citizen-modal-head > div{padding-right:64px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-tall-header] .citizen-modal-close{position:fixed!important;right:12px!important;top:12px!important;z-index:8}
+}
