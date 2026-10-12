@@ -21,8 +21,9 @@ try{
    return route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});
   });
   try{
-   await page.goto(server.origin+'/mascotes/',{waitUntil:'domcontentloaded'});await ready(page,'/mascotes/');await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert.equal(await page.evaluate(()=>RegulationAuth.getCachedUser().role),'cidadao');
-   if(releaseSprite){assert(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).isDisabled());result.catsReadyBeforeGnomeAsset=true;releaseSprite();}
+   await page.goto(server.origin+'/mascotes/',{waitUntil:'domcontentloaded'});
+   if(releaseSprite){await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).isDisabled());result.catsReadyBeforeGnomeAsset=true;releaseSprite();}
+   await ready(page,'/mascotes/');await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert.equal(await page.evaluate(()=>RegulationAuth.getCachedUser().role),'cidadao');
    process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
    if(age!=='adult'){
     assert.equal(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).count(),0);assert(!result.requests.includes('/api/pets/gnome-speech'));assert.equal(result.assets.length,0);
