@@ -89,7 +89,7 @@ pet.petRevision = 1;
 pet.preferences.motionEnabled = false;
 const petState = publicPetState(pet, 120, 1, 1791540000);
 const documents = new Set(['/', '/amigos/']);
-const mime = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.png': 'image/png',
+const mime = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.png': 'image/png',
   '.svg': 'image/svg+xml', '.webp': 'image/webp', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer(async (request, response) => {
   try {

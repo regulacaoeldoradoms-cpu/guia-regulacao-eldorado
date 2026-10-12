@@ -79,6 +79,7 @@ const server = http.createServer(async (req, res) => {
     const type =
       {
         ".js": "text/javascript",
+        ".mjs": "text/javascript",
         ".css": "text/css",
         ".html": "text/html",
         ".png": "image/png",

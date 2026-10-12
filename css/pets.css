@@ -31,3 +31,11 @@
 
 html[data-portal-theme=dark] .pet-stage[data-alert=hunger] .pet-bubble{background:#433b20;border-color:#b79535;color:#fff1b5}
 html[data-portal-theme=dark] .pet-stage[data-alert=thirst] .pet-bubble{background:#44262d;border-color:#c35d64;color:#ffd6dc}
+
+.pet-habitat[data-pet-pair]{position:relative;height:320px}
+.pet-habitat[data-pet-pair]>.pet-stage:not(.pet-stage-secondary){height:320px}
+.pet-stage-secondary:not(.pet-stage-global){position:absolute;inset:0;height:100%;z-index:1}
+.pet-care-target{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.pet-care-target button[aria-pressed=true]{background:var(--portal-theme-selected,#e6f3ff);border-color:#246dab;font-weight:700}
+
+.pet-stage[data-pet-pair-present] .pet-bubble::before{content:attr(data-speaker);display:block;font-weight:700;margin-bottom:3px}

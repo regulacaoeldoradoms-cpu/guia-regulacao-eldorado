@@ -14,6 +14,8 @@ on:
       - 'worker/tests/private-pet-age.test.mjs'
       - 'js/gnome*.js'
       - 'js/pets*.js'
+      - 'js/pet-companions.mjs'
+      - 'js/pet-speech-coordinator.js'
       - 'js/auth-client.js'
       - 'js/signup.js'
       - 'css/pets.css'
@@ -21,6 +23,8 @@ on:
       - 'cadastro/index.html'
       - 'assets/pets/**'
       - 'testing/pets/gnome-mobile.mjs'
+      - 'testing/pets/gnome-coexist-mobile.mjs'
+      - 'testing/pets/coexist*.mjs'
       - 'testing/pets/gnome-age-availability.mjs'
       - 'testing/pets/gnome-council-cache.mjs'
       - 'conselho/painel/index.html'
@@ -38,6 +42,7 @@ jobs:
       - name: Server repertoire is absent from the built Pages artifact
         run: |
           test -f _site/mascotes/index.html
+          test -f _site/js/pet-companions.mjs
           test ! -e _site/_server/gnome-phrases.js
           test ! -d _site/_server
           printf 'Pages artifact excludes server repertoire at %s\n' "$GITHUB_SHA"
@@ -65,6 +70,15 @@ jobs:
         run: node testing/pets/gnome-age-availability.mjs
       - name: Citizen Council route uses the same versioned adult companion
         run: node testing/pets/gnome-council-cache.mjs
+      - name: Companion slot and shared speech coordination
+        run: node --test worker/tests/gnome-companion.test.mjs testing/pets/coexist-speech.test.mjs
+      - name: Native companion adoption, visual coexistence, speech and account isolation
+        run: |
+          node testing/pets/gnome-coexist-mobile.mjs /tmp/gnome-coexist-mobile
+          node testing/pets/coexist-visual.mjs /tmp/gnome-coexist-visual
+          node testing/pets/coexist-balloons.mjs /tmp/gnome-coexist-balloons
+          node testing/pets/coexist-navigation-cache.mjs /tmp/gnome-coexist-navigation-cache
+          node testing/pets/coexist-legacy-worker.mjs
       - name: Preserve original cat navigation, lives and speech
         run: |
           PETS_GLOBAL_ARTIFACT_DIR=/tmp/gnome-cat-global node testing/pets/global-navigation.cjs
@@ -76,6 +90,10 @@ jobs:
           name: synthetic-gnome
           path: |
             /tmp/gnome-mobile/
+            /tmp/gnome-coexist-mobile/
+            /tmp/gnome-coexist-visual/
+            /tmp/gnome-coexist-balloons/
+            /tmp/gnome-coexist-navigation-cache/
             /tmp/gnome-cat-global/
             /tmp/gnome-cat-lives/
             /tmp/gnome-cat-speech/

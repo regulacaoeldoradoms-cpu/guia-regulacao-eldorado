@@ -11,7 +11,9 @@ function canonical(value){
 export async function readPetAccount(db,username,env={}){
  const now=Number((await db.prepare('SELECT unixepoch() AS now').first()).now);
  const row=await db.prepare('SELECT state_json,balance,revision FROM pet_accounts WHERE auth_username=?').bind(username).first();
- return publicPetState(row?JSON.parse(row.state_json):initialPetState(),row?.balance||0,row?.revision||0,now,env);
+ const state=publicPetState(row?JSON.parse(row.state_json):initialPetState(),row?.balance||0,row?.revision||0,now,env);
+ if(state.gnomeCompanion&&(await readPrivatePetAge(db,username))!=='adult')delete state.gnomeCompanion;
+ return state;
 }
 export async function persistPetCommand(db,user,kind,input,env={}){
  if(!OPERATION.test(input.operationId||''))throw new PetError('OPERATION_INVALID','Identificador inválido.');
@@ -25,8 +27,8 @@ export async function persistPetCommand(db,user,kind,input,env={}){
  const row=await db.prepare('SELECT state_json,balance,revision FROM pet_accounts WHERE auth_username=?').bind(user.username).first();
  if(!row)throw new PetError('SESSION_REQUIRED','Sessão inválida.',401);
  const current=JSON.parse(row.state_json);
- const requiresAdult=input.typeId==='gnome'||current.pet?.typeId==='gnome';
- const adultEligible=requiresAdult&&(await readPrivatePetAge(db,user.username))==='adult';
+ const requiresAdult=input.typeId==='gnome'||input.petTarget==='gnome'||current.pet?.typeId==='gnome';
+ const adultEligible=(requiresAdult||Boolean(current.gnomeCompanion))&&(await readPrivatePetAge(db,user.username))==='adult';
  if(requiresAdult&&!adultEligible)throw new PetError('ADULT_AGE_REQUIRED','Este mascote está disponível somente para maiores de 18 anos.',403);
  let transition,error;
  try{transition=applyPetCommand(current,row.balance,kind,{...input,actualRevision:row.revision,sessionVersion:user.sessionVersion},now,env,{adultEligible});}

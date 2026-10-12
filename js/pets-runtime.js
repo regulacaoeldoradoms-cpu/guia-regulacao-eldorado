@@ -1,13 +1,17 @@
 'use strict';
+import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist-1';
+import {PetSpeechCoordinator} from './pet-speech-coordinator.js?v=20261012-gnome-coexist-1';
 import {drawCat,drawBed} from './pet-cat-frames.js';
 import {PetSpeech} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
 import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 import {gnomeSpeechForSession} from './gnome-speech.js?v=20261012-gnome-2';
+function compatiblePetState(state){if(state.gnomeCompanion&&state.rules?.gnomeCompanionSlots!==1){const {gnomeCompanion,...compatible}=state;return compatible;}return state;}
 export class PetRuntime{
- constructor(api,state,onChange=()=>{},speech=new PetSpeech()){
-  this.api=api;this.state=state;this.onChange=onChange;this.closed=false;this.action='idle';this.queue=[];this.until=0;this.x=150;this.y=innerHeight-130;
+ constructor(api,state,onChange=()=>{},speech=new PetSpeech(),options={}){
+  this.secondary=Boolean(options.secondary);this.speaker=this.secondary?'gnome':'primary';this.coordinator=options.coordinator||null;this.gnomeRuntime=null;
+  this.api=api;this.state=compatiblePetState(state);this.onChange=onChange;this.closed=false;this.action='idle';this.queue=[];this.until=0;this.x=150;this.y=innerHeight-130;
   this.tabId=crypto.randomUUID();this.sequence=0;this.leaseToken='';this.lastInteraction=0;this.eligibleBefore=false;this.frame=0;this.lastPaint=0;this.speech=speech;this.catSpeech=speech;this.speechEpoch=0;
-  this.root=document.createElement('div');this.root.className='pet-stage';this.root.setAttribute('aria-hidden','true');
+  this.root=document.createElement('div');this.root.className='pet-stage';if(this.secondary)this.root.classList.add('pet-stage-secondary');if(this.secondary)this.root.setAttribute('data-pet-pair-present','');this.root.setAttribute('aria-hidden','true');
   this.cat=document.createElement('canvas');this.cat.width=64;this.cat.height=48;this.cat.className='pet-cat';
   this.bed=document.createElement('canvas');this.bed.width=80;this.bed.height=30;this.bed.className='pet-bed';
   this.bubble=document.createElement('span');this.bubble.className='pet-bubble';this.root.append(this.bed,this.cat,this.bubble);
@@ -22,11 +26,22 @@ export class PetRuntime{
   window.addEventListener('resize',()=>this.layout(),{signal});window.visualViewport?.addEventListener('resize',()=>this.layout(),{signal});
   window.visualViewport?.addEventListener('scroll',()=>this.layout(),{signal});
   this.observer=new ResizeObserver(()=>this.layout());this.observer.observe(this.root);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);this.sample(false);}else{this.lastPaint=0;this.refresh();this.start();}},{signal});
-  window.addEventListener('pagehide',()=>{this.sample(false);cancelAnimationFrame(this.frame);},{signal});
-  window.addEventListener('pageshow',()=>{this.start();this.refresh();},{signal});
-  this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.reduced.addEventListener('change',()=>{this.render();this.start();},{signal});
-  this.timer=setInterval(()=>this.sample(),60000);this.syncSpecies();this.layout();this.start();
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.coordinator?.suspend();this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);this.sample(false);}else{this.coordinator?.resume();this.lastPaint=0;this.refresh();this.start();}},{signal});
+  window.addEventListener('pagehide',()=>{this.coordinator?.suspend();this.sample(false);cancelAnimationFrame(this.frame);},{signal});
+  window.addEventListener('pageshow',()=>{this.coordinator?.resume();this.start();this.refresh();},{signal});
+  this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.reduced.addEventListener('change',()=>{this.layout();this.start();},{signal});
+  this.timer=this.secondary?null:setInterval(()=>this.sample(),60000);this.syncSpecies();this.layout();this.start();if(!this.secondary)this.syncCompanion();
+ }
+ syncCompanion(){
+  const child=gnomeCompanionState(this.state),present=Boolean(child?.pet&&child.life?.deadAt==null);
+  this.root.toggleAttribute('data-pet-pair-present',present);
+  if(!present){if(this.gnomeRuntime){this.coordinator?.remove('gnome');this.gnomeRuntime.close();this.gnomeRuntime=null;}this.coordinator?.close();this.coordinator=null;if(!this.ownsHabitat)this.habitat.removeAttribute('data-pet-pair');return;}
+  if(!this.coordinator){this.coordinator=new PetSpeechCoordinator();this.render();}
+  if(!this.ownsHabitat)this.habitat.dataset.petPair='true';
+  if(this.gnomeRuntime){this.gnomeRuntime.update(child);return;}
+  const parent=this,api={token:this.api.token,valid:()=>parent.api.valid(),get:path=>parent.api.get(path),command:async(kind,input,options)=>{const result=await parent.api.command(kind,{...input,petTarget:'gnome'},options);if(!parent.closed)parent.update(result.state);return {...result,state:gnomeCompanionState(result.state)};}};
+  this.gnomeRuntime=new PetRuntime(api,child,()=>{},this.catSpeech,{secondary:true,coordinator:this.coordinator});
+  this.gnomeRuntime.x=this.gnomeRuntime.bounds.right;this.gnomeRuntime.y=this.y-140;this.gnomeRuntime.layout();
  }
  syncSpecies(){
   const generation=++this.speechEpoch,gnome=this.state.pet?.typeId==='gnome';
@@ -36,19 +51,20 @@ export class PetRuntime{
   Promise.all([loadGnomeFrames(),gnomeSpeechForSession(this.api)]).then(([,speech])=>{if(!this.closed&&generation===this.speechEpoch&&this.state.pet?.typeId==='gnome'){this.speech=speech;this.render();}}).catch(()=>{});
  }
  update(s){
+  s=compatiblePetState(s);
   if(s.revision<this.state.revision)return; // A delayed response cannot revive an older life state.
   if(s.petRevision!==this.state.petRevision){this.queue=[];this.until=0;this.goingToBed=false;this.target=null;this.action='idle';}
   const changed=s.pet?.typeId!==this.state.pet?.typeId;
-  this.state=s;if(changed)this.syncSpecies();this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();
+  this.state=s;if(changed)this.syncSpecies();if(!this.secondary)this.syncCompanion();this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();
  }
  attachHabitat(habitat){
   if(this.closed)return;
   this.ownsHabitat=!habitat;this.habitat=habitat||this.root;
   this.root.classList.toggle('pet-stage-global',this.ownsHabitat);
   for(const property of ['left','top','width','height'])this.root.style.removeProperty(property);
-  (habitat||document.body).append(this.root);this.previewPlacement=null;this.layout();
+  (habitat||document.body).append(this.root);this.previewPlacement=null;if(habitat&&!this.secondary&&this.gnomeRuntime)habitat.dataset.petPair='true';this.layout();if(!this.secondary&&this.gnomeRuntime){this.gnomeRuntime.attachHabitat(habitat);if(habitat){this.x=this.bounds.left;this.y=this.bounds.bottom;this.gnomeRuntime.x=this.gnomeRuntime.bounds.right;this.gnomeRuntime.y=this.gnomeRuntime.x-this.x>=136?this.y:this.gnomeRuntime.bounds.top;this.gnomeRuntime.layout();this.render();}}
  }
- close(){this.closed=true;this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
+ close(){if(!this.secondary){this.gnomeRuntime?.close();this.coordinator?.close();}else this.coordinator?.remove(this.speaker);this.closed=true;this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else if(!this.secondary)this.habitat.hidden=true;}
  safeRect(){
   // Both scenes use the same logical grid and scale; the global scene follows the viewport.
   const width=this.root.clientWidth||176,height=this.root.clientHeight||224;
@@ -77,6 +93,7 @@ export class PetRuntime{
   }
   const r=this.safeRect();this.bounds=r;this.x=Math.max(r.left,Math.min(r.right,this.x));this.y=Math.max(r.top,Math.min(r.bottom,this.y));
   const placement=this.previewPlacement||this.state.placement;
+  if(!this.ownsHabitat&&this.root.hasAttribute('data-pet-pair-present')&&!placement&&(!this.state.preferences.motionEnabled||this.reduced.matches)){this.x=this.secondary?r.right:r.left;this.y=this.secondary&&r.right-r.left<136?r.top:r.bottom;}
   this.bedPoint=placement?{x:r.left+(r.right-r.left)*placement.x,y:r.top+(r.bottom-r.top)*placement.y}:null;
   if(this.bedPoint&&this.action==='sleep'){this.x=this.bedPoint.x;this.y=this.bedPoint.y-12;}
   if(this.bedPoint&&this.goingToBed)this.target={x:this.bedPoint.x,y:this.bedPoint.y-12};
@@ -112,9 +129,9 @@ export class PetRuntime{
   try{const result=await this.api.command('care',{action:'rest',expectedPetRevision:this.state.petRevision});if(!this.closed)this.update(result.state);}
   catch{}finally{this.resting=false;}
  }
- async refresh(){try{const p=await this.api.get('me');if(!this.closed)this.update(p.state);}catch{}}
+ async refresh(){if(this.secondary)return;try{const p=await this.api.get('me');if(!this.closed)this.update(p.state);}catch{}}
  async sample(force){
-  if(this.closed||!this.state.pet||this.sampling)return;
+  if(this.secondary||this.closed||!this.state.pet||this.sampling)return;
   const eligible=force!==false&&!document.hidden&&document.hasFocus()&&performance.now()-this.lastInteraction<=60000&&this.lastInteraction>0;
   if(!eligible&&!this.eligibleBefore)return;
   this.sampling=true;this.eligibleBefore=eligible;
@@ -126,19 +143,20 @@ export class PetRuntime{
  }
  render(){
   const modalOpen=this.ownsHabitat&&[...document.querySelectorAll('dialog[open],[aria-modal="true"]')].some(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0;});
-  const s=this.state;this.root.hidden=!s.pet||s.life?.deadAt!=null||!s.preferences.visible||modalOpen;this.habitat.hidden=this.root.hidden;
+  const s=this.state;this.root.hidden=!s.pet||s.life?.deadAt!=null||!s.preferences.visible||modalOpen;if(this.ownsHabitat)this.habitat.hidden=this.root.hidden;else if(!this.secondary)this.habitat.hidden=this.root.hidden&&!(s.gnomeCompanion?.pet&&s.gnomeCompanion.life?.deadAt==null&&s.preferences.visible);
   const motion=s.preferences.motionEnabled&&!this.reduced.matches;
   const alert=s.thirst>=70?'Estou com sede. Água é gratuita.':s.hunger>=70?'Estou com fome. Comida é gratuita.':s.dirt>=70?'Hora de um banho. Higiene básica é gratuita.':'';
   this.needsAlert=alert;
   this.root.dataset.alert=s.thirst>=70?'thirst':s.hunger>=70?'hunger':'';
-  this.bubble.textContent=alert||this.speech.text();
+  const time=Date.now();if(this.root.hidden&&(!s.pet||s.life?.deadAt!=null))this.coordinator?.remove(this.speaker);this.bubble.dataset.speaker=s.pet?.typeId==='gnome'?'Gnomo':'Gato';this.bubble.textContent=this.coordinator?this.coordinator.present(this.speaker,{active:!this.root.hidden&&!document.hidden,neutralAllowed:motion,alert,text:this.speech.text(),until:this.speech.bubbleUntil||0,due:time>=this.speech.nextAt},time):alert||this.speech.text();
   this.bubble.hidden=!this.bubble.textContent;
   const action=motion?this.action:(s.awakeSeconds>=s.rules.sleepAfterSeconds?'sleep':'idle');
-  this.speech.setSuppressed?.(this.root.hidden||document.hidden||!motion||Boolean(alert));
+  this.speech.setSuppressed?.(this.root.hidden||document.hidden||!motion||Boolean(alert)||Boolean(this.coordinator?.blocked(this.speaker)));
   if(s.pet?.typeId==='gnome'){const elapsed=Math.max(0,(performance.now()-(this.actionStarted||0))/160);drawGnome(this.cat.getContext('2d'),action,motion?(action==='trip'?Math.min(7,elapsed):elapsed):0);}
   else drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
   this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-(s.pet?.typeId==='gnome'?120:88))+'px';
   this.cat.style.transform=this.facing===-1?'scaleX(-1)':'';
+  if(!this.secondary)this.gnomeRuntime?.render();
   this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=(this.ownsHabitat?Math.max(8,this.y-150):12)+'px';
  }
  start(){
@@ -157,7 +175,7 @@ export class PetRuntime{
      }
     }
     this.render();
-    if(this.state.preferences.motionEnabled&&!this.reduced.matches&&!this.root.hidden&&!this.needsAlert&&this.speech.advance())this.render();
+    if(this.state.preferences.motionEnabled&&!this.reduced.matches&&!this.root.hidden&&!this.needsAlert&&(!this.coordinator||this.coordinator.canAdvance(this.speaker))&&this.speech.advance())this.render();
    }
    if(this.state.preferences.motionEnabled&&!this.reduced.matches)this.frame=requestAnimationFrame(tick);
   };

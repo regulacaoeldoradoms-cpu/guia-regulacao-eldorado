@@ -1,6 +1,6 @@
 'use strict';
 import {PetApi} from './pets-api.js?v=20261012-gnome-2';
-import {PetRuntime} from './pets-runtime.js?v=20261012-gnome-2';
+import {PetRuntime} from './pets-runtime.js?v=20261012-gnome-coexist-1';
 import {petSpeechForSession} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
 import {loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 let current=null,running=null,epoch=0;
@@ -30,7 +30,7 @@ async function mount(){
    const speech=await petSpeechForSession(api.token);
    if(payload.state.pet?.typeId==='gnome')await loadGnomeFrames();
    if(generation!==epoch||!api.valid()){api.close();return;}
-   if(!document.getElementById('petsStyles')){const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=pets-gnome-v2';document.head.append(css);}
+   if(!document.getElementById('petsStyles')){const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=pets-gnome-coexist-v1';document.head.append(css);}
    const runtime=new PetRuntime(api,payload.state,s=>window.dispatchEvent(new CustomEvent('portal:pets-updated',{detail:{state:s}})),speech);
    current={api,runtime,catalog};window.PortalPets=current;navigation(true);return current;
   }catch{api.close();}

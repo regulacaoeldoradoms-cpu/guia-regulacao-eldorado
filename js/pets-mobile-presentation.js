@@ -40,7 +40,7 @@ export function mountPetsMobilePresentation(root = document) {
   }else if(!active&&mobile){
    introMarker.before(intro);introMarker.remove();
    for(const {marker,details,nodes} of wrappers){for(const node of nodes)marker.before(node);details.remove();marker.remove();}
-   wrappers.length=0;home.replaceChildren(...homeOrder);page.replaceChildren(...originalOrder);delete page.dataset.petMobileReady;
+   wrappers.length=0;const careTarget=home.querySelector('#petCareTarget');home.replaceChildren(...homeOrder);if(careTarget)home.querySelector('h2').after(careTarget);page.replaceChildren(...originalOrder);delete page.dataset.petMobileReady;
   }
   mobile=active;
  }

@@ -30,5 +30,5 @@ export function petRules(env={}) {
 }
 export function petCatalog(env={}, {adultEligible=false}={}) {
  const multiplier=integer(env.PETS_PRICE_PERCENT,100,0,1000);
- return {version:PET_VERSION,types:adultEligible?[...PET_TYPES,GNOME_TYPE]:PET_TYPES,items:PET_ITEMS.map(i=>({...i,price:Math.ceil(i.price*multiplier/100)})),rules:petRules(env)};
+ return {version:PET_VERSION,types:adultEligible?[...PET_TYPES,GNOME_TYPE]:PET_TYPES,items:PET_ITEMS.map(i=>({...i,price:Math.ceil(i.price*multiplier/100)})),rules:{...petRules(env),gnomeCompanionSlots:1}};
 }

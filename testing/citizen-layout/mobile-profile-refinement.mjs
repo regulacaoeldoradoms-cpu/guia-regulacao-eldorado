@@ -105,7 +105,7 @@ pet.petRevision = 1;
 pet.preferences.motionEnabled = false;
 const petState = publicPetState(pet, 120, 1, 1791540000);
 const documents = new Set(['/', '/home/', '/perfil/', '/amigos/', '/cidadao/', '/ferramentas/', '/mascotes/']);
-const mime = { '.js':'text/javascript', '.css':'text/css', '.html':'text/html', '.svg':'image/svg+xml',
+const mime = { '.js':'text/javascript', '.mjs':'text/javascript', '.css':'text/css', '.html':'text/html', '.svg':'image/svg+xml',
   '.png':'image/png', '.webp':'image/webp', '.woff2':'font/woff2', '.webmanifest':'application/manifest+json' };
 
 for (const route of ['/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/login/']) documents.add(route);
