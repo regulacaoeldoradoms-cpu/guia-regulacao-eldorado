@@ -176,7 +176,11 @@ export function applyPetCommand(current,balance,kind,input,now,env={},eligibilit
   const eligible=input.visible&&input.focused&&input.recentlyInteracted;
   const elapsed=owns&&previous.eligible&&eligible&&now>=previous.at&&now-previous.at<=rules.leaseSeconds?Math.min(rules.sampleSeconds,now-previous.at):0;
   const activeSeconds=g.ageClockEligible===false?0:Math.min(elapsed,Math.max(0,now-(g.adoptedAt??now)));g.ageClockEligible=true;
-  if(!current.sleepUntil&&current.life?.startedAt>previous?.at)s.awakeSeconds=Math.min(rules.sleepAfterSeconds,current.awakeSeconds+Math.min(elapsed,Math.max(0,now-current.life.startedAt)));
+  if(current.life?.startedAt>previous?.at){
+   const bornSeconds=Math.min(elapsed,Math.max(0,now-current.life.startedAt));
+   if(!current.sleepUntil)s.awakeSeconds=Math.min(rules.sleepAfterSeconds,current.awakeSeconds+bornSeconds);
+   if(!s.preferences.needsPaused&&s.preferences.schedule&&s.life.deadAt===null){let bornTicks=0;for(let t=now-bornSeconds+1;t<=now;t++)if(withinSchedule(t,s.preferences.schedule))bornTicks++;s.dirt=Math.min(100,current.dirt+bornTicks*70/(rules.dirtHours*3600));}
+  }
   initializePetLives(g,now);const ticks=[];
   if(!s.preferences.needsPaused&&s.preferences.schedule)for(let t=now-activeSeconds+1;t<=now;t++)if(withinSchedule(t,s.preferences.schedule))ticks.push(t);
   advancePetLives(g,ticks);
