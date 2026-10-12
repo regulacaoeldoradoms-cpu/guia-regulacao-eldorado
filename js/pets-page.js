@@ -6,6 +6,14 @@ import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;
+const ageDisclosure=document.getElementById('petAgeDisclosure'),petPage=document.querySelector('.pet-page');
+if(ageDisclosure&&petPage){
+ const anchor=document.createComment('Private declaration mobile gallery position');ageDisclosure.before(anchor);
+ const desktop=window.matchMedia('screen and (min-width:901px)');
+ const placeAgeDeclaration=()=>{if(desktop.matches)petPage.after(ageDisclosure);else anchor.after(ageDisclosure);};
+ placeAgeDeclaration();desktop.addEventListener('change',placeAgeDeclaration);
+ context?.addController({activate:placeAgeDeclaration,dispose:()=>desktop.removeEventListener('change',placeAgeDeclaration)});
+}
 const presentation=mountPetsMobilePresentation(context?.root || document);
 context?.addController({activate:()=>presentation?.sync(),dispose:()=>presentation?.dispose()});
 const $=id=>document.getElementById(id);

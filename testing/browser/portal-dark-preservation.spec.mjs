@@ -204,10 +204,29 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const homeContracts=[];
     const nativeContracts=[];
     let friendsSource=0;
+    let signupSource=0;
+    const signupContracts=[];
     const baseFriendsNotice=route==='/amigos/' ? execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:amigos/index.html`],{encoding:'utf8'}).includes('Descoberta protegida') : false;
     if(mobileRedesign)await context.addInitScript(trackNativeControls,nativeIdentityKey);
     let layout;
     const prepare=async target=>{
+      if(route==='/cadastro/'){
+        const current=signupSource++===0,field=target.locator('#signupBirthDate');
+        signupContracts.push(await target.evaluate(()=>{const form=document.getElementById('signupForm');return{action:form.getAttribute('action'),method:form.getAttribute('method'),autocomplete:form.getAttribute('autocomplete'),noValidate:form.noValidate,controls:[...form.elements].filter(n=>n.id!=='signupBirthDate').map(n=>({id:n.id,count:document.querySelectorAll('#'+CSS.escape(n.id)).length,tag:n.localName,type:n.getAttribute('type'),name:n.getAttribute('name'),required:Boolean(n.required),minlength:n.getAttribute('minlength'),maxlength:n.getAttribute('maxlength'),autocomplete:n.getAttribute('autocomplete'),role:n.getAttribute('role'),live:n.getAttribute('aria-live'),label:n.labels?.[0]?.textContent.trim()}))};}));
+        expect(await field.count()).toBe(current?1:0);
+        if(current){
+          const birth=await field.evaluate(node=>({id:node.id,type:node.type,required:node.required,autocomplete:node.autocomplete,form:node.form?.id,label:node.labels?.[0]?.textContent,fields:node.closest('.portal-field')?.querySelectorAll('input,select,textarea').length}));
+          expect(birth).toEqual({id:'signupBirthDate',type:'date',required:true,autocomplete:'bday',form:'signupForm',label:'Data de nascimento',fields:1});
+          await info.attach('approved-private-birth-field.json',{body:Buffer.from(JSON.stringify(birth)),contentType:'application/json'});
+          // Project only the explicitly approved new private field and its
+          // exact explanatory caption. Every prior node/style/pixel remains
+          // subject to the unchanged baseline comparison below.
+          await field.evaluate(node=>node.closest('.portal-field').remove());
+          const caption=target.locator('#signupForm > p');
+          await expect(caption).toHaveText('Escolha um nome de usuário e uma senha. Sua data de nascimento é privada.');
+          await caption.evaluate(node=>node.textContent='Você precisa informar somente um nome de usuário e uma senha.');
+        }
+      }
       if(route==='/amigos/'){
         // The user approved removing this exact explanatory card on mobile and desktop.
         // Normalize only the historical card; all remaining pixels/controls still compare exactly.
@@ -284,6 +303,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       }
     };
     const comparison=await compareAgainstBase({page,context,info,route,theme,media,prepare,normalizeSelector:selector=>normalizePreservationSelector(selector,route,shared)});
+    if(route==='/cadastro/'){expect(signupContracts).toHaveLength(2);expect(signupContracts[0]).toEqual(signupContracts[1]);await info.attach('native-signup-controls-preserved.json',{body:Buffer.from(JSON.stringify(signupContracts)),contentType:'application/json'});}
     if(route==='/' && (!isMobile || media==='print')) expect(await page.locator('body').evaluate(body=>body.classList.contains('home-social-mobile')), 'Desktop and print must restore the original Home presentation').toBe(false);
     expect(network.unexpected,'Unknown fixture endpoints invalidate the comparison').toEqual([]);
     if(mobileRedesign){

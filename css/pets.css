@@ -13,6 +13,11 @@
 .pet-stage[data-pet-type=gnome] .pet-cat,.pet-choice canvas[data-pet-type=gnome]{height:128px}
 #petAgeDisclosure[hidden]{display:none!important}
 #petAgeDisclosure{margin-top:16px;font-size:16px}
+@media screen and (min-width:901px){
+ #petAgeDisclosure{box-sizing:border-box;max-width:1000px;width:calc(100% - 40px);margin:16px auto 24px;padding:16px;border:1px solid var(--portal-theme-border,#b9cad7);border-radius:12px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#243d50)}
+ #petAgeDisclosure summary{min-height:48px;display:flex;align-items:center;cursor:pointer}
+ #petAgeDisclosure :is(input,button){box-sizing:border-box;min-height:48px;padding:10px 14px;border:1px solid var(--portal-theme-border,#b9cad7);border-radius:10px;font:inherit;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#243d50)}
+}
 #petAgeForm{display:grid;gap:12px;max-width:32rem}
 #petAgeForm input,#petAgeForm button,#petAgeDisclosure summary{min-height:48px;font-size:16px;max-width:100%;box-sizing:border-box}
 .pet-stage[data-alert=hunger] .pet-bubble{background:#fff6cc;border-color:#b79535;color:#594811}.pet-stage[data-alert=thirst] .pet-bubble{background:#ffe5e5;border-color:#c35d64;color:#6e2930}
