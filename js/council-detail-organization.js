@@ -21,7 +21,7 @@
  }
  function sync(){if(!regions)return;const readonly=document.getElementById('statusBox').hidden||document.body.classList.contains('council-member-readonly');regions[2].hidden=readonly;if(buttons[2])buttons[2].hidden=readonly;document.getElementById('councilReplyAction').hidden=document.getElementById('officialReplyForm').hidden;document.getElementById('councilNoteAction').hidden=document.getElementById('internalNotesSection').hidden;}
  function restore(){if(!regions)return;for(const {node,marker}of anchors.reverse()){if(node.isConnected)marker.after(node);marker.remove();}anchors=[];for(const section of regions)section.remove();regions=null;const nav=document.getElementById('councilMobileDetailNav');if(nav){nav.replaceChildren(...navNodes);nav.setAttribute('aria-label','Atalhos da manifestação');}buttons=[];navNodes=[];delete modal.dataset.councilOrganized;}
- function init(){compose();observer=new MutationObserver(sync);for(const node of nodes)if(node)observer.observe(node,{attributes:true,attributeFilter:['hidden']});}
+ function init(){compose();const nav=document.getElementById('councilMobileDetailNav');if(nav)new ResizeObserver(()=>modal.style.setProperty('--council-organized-nav-height',`${Math.ceil(nav.getBoundingClientRect().height)}px`)).observe(nav);observer=new MutationObserver(sync);for(const node of nodes)if(node)observer.observe(node,{attributes:true,attributeFilter:['hidden']});}
  phone.addEventListener('change',compose);print.addEventListener('change',compose);addEventListener('beforeprint',()=>{beforePrint=true;restore();});addEventListener('afterprint',()=>{beforePrint=false;compose();});
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

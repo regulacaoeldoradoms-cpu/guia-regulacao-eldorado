@@ -20,4 +20,5 @@
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #councilMobileDetailNav button{border:0!important;background:transparent!important;box-shadow:none!important;text-decoration:underline;text-underline-offset:4px;border-radius:0!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] [hidden]{display:none!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #officialReplyForm label::after{content:none!important;display:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-organized] #councilActionsRegion{margin-bottom:calc(var(--council-organized-nav-height,90px) + 90px + env(safe-area-inset-bottom,0px))}
 }
