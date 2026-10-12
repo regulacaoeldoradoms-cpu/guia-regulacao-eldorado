@@ -1,4 +1,4 @@
-import {petSession} from './pets-bootstrap.js?v=20261010-mobile-shell-1';
+import {petSession} from './pets-bootstrap.js?v=20261012-gnome-1';
 const initializePetAchievements = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;

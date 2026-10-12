@@ -1,22 +1,33 @@
-# Preparação do Gnomo e da idade privada
+# Gnomo e idade privada — implementação local
 
-Estado: componentes isolados, ainda sem integração funcional ou publicação. O catálogo e o runtime atuais dos gatos não foram alterados.
+Estado: implementação em branch isolada, sem merge ou publicação. Migração produtiva não executada. O lançamento depende da migração privada e de todos os gates de preservação.
 
-## Componentes preparados
+## Idade e privacidade
 
-- `worker/private-pet-age.js`: data de nascimento civil estrita, rejeição de datas inválidas/futuras, estado desconhecido fechado, aniversário de 18 anos no calendário de America/Campo_Grande. Nascimento em 29/02 permanece bloqueado até 01/03 nos anos não bissextos (decisão conservadora de produto, sem alegação de interpretação legal).
-- `js/gnome-reading-time.js`: 180 palavras/minuto mais 2 segundos, mínimo de 6 segundos, duração individual sem teto para frases longas. Configurável; duração dos gatos intacta.
-- `worker/gnome-phrases.js`: 38 falas aprovadas, versionadas e apenas no servidor. Nenhum import em assets do navegador nem endpoint entregando esse conteúdo.
-- Testes sintéticos de aniversário, madrugada UTC versus data local, ano bissexto, dados inválidos e tempo de leitura.
+Data civil validada no servidor, com aniversários no calendário de America/Campo_Grande. Datas ausentes, inválidas e futuras falham fechadas. Nascimento em 29/02 permanece bloqueado até01/03 em anos não bissextos, escolha conservadora de produto sem alegação legal.
 
-## Integração que ainda precisa ser concluída
+Nova coleta no cadastro é privada; conta e declaração são inseridas na mesma transação. O endpoint antigo sem data continua criando uma conta com idade desconhecida e acesso aos gatos, preservando compatibilidade. A interface nova exige a data. A tabela `pet_private_age` é separada; publicUser, tokens e perfil social não incluem a data. Contas existentes usam um formulário autenticado na Galeria, aberto somente por escolha do titular. A declaração não pode ser trocada por autoatendimento; ela não é verificação documental.
 
-O cadastro atual não coleta nascimento e `sanitizeCitizenRegistrationRequest` preserva somente username/password. O cadastro, a sanitização e a persistência devem ser atualizados juntos, com armazenamento privado separado e inserção atômica com a conta; não inserir uma conta incompleta em caso de falha. Contas existentes precisam de coleta mínima autenticada e declaração imutável por autoatendimento para evitar alteração trivial após uma negativa.
+Catálogo, adoção e endpoint de falas rechecados no servidor. Nenhuma data é lida do cache do cliente como prova de idade. Idade desconhecida/menor não recebe o Gnomo nem falas adultas. Adoção ainda preserva um mascote ativo, transações idempotentes e sessões atuais. A regra de cuidados e a economia existentes são reutilizadas; preços, vidas e itens dos gatos não foram alterados.
 
-O catálogo atual exige sessão, mas não idade; `persistPetCommand` é a fronteira de adoção e precisa verificar a elegibilidade novamente no servidor, inclusive operação idempotente e mudanças de sessão. Nenhuma frase adulta deve constar de payloads de menores/idade desconhecida, bundle público ou estado genérico de gatos. Data de nascimento nunca deve aparecer em publicUser, perfil social, logs ou analytics. A declaração de nascimento não equivale a verificação documental.
+A migração `worker/migrations/pets-private-age.sql` só foi aplicada em SQLite sintético. Antes da publicação, precisa de uma execução autorizada pelo fluxo protegido. Sem ela, o catálogo dos gatos continua disponível e o Gnomo falha fechado; o cadastro com data não cria conta parcial se a transação falhar. Rollback do código pode deixar a tabela privada intacta, sem exportar nem apagar declarações.
 
-Faltam migração reversível, cadastro e coleta legada, endpoints/gates de catálogo/adoção/falas, ciclos sem repetição imediata e armazenamento de prazos compatível com sessão. Preservar pausa em aba oculta, prioridade de necessidades urgentes e continuidade de módulo; testar revogação, cliente adulterado, conta menor e desconhecida.
+## Arte, ações e falas
 
-Arte e runtime ainda precisam implementar as sete ações aprovadas como animações reais: caminhar rebolando, correr segurando chapéu, coçar barba, tropeçar/disfarçar, rir sacudindo barriga, dançar e cochilar encostado em cogumelo. Criar arte via imagegen com tamanho/âncora consistentes e frames leves; não tratar poses estáticas como animação concluída. Preservar um mascote ativo, economia, vidas e itens; não inventar preços ou alterar os gatos.
+Sprite gerado via imagegen, oito ações com oito quadros cada: idle, caminhar rebolando, correr segurando chapéu, coçar barba, tropeçar/disfarçar, rir, dançar e cochilar no cogumelo. Imagem transparente1254×1254, PNG2204338bytes, carregada apenas na galeria adulta ou para o Gnomo adotado; não foi chamada de asset leve ou atribuída melhoria de bytes sem medição.
 
-Publicação depende de pacote completo do bloqueio e de todos os gates existentes, com o pipeline protegido do Worker. Estes componentes isolados não tornam o recurso pronto para produção.
+54 falas únicas aprovadas no módulo `_server/gnome-phrases.js`, importado apenas pelo Worker, com IDs e versão estáveis, sem atribuição a autores. Não importadas pelo navegador: o cliente recebe o repertório por endpoint autenticado somente após idade adulta e adoção. Ciclo completo evita repetição imediata, inclusive entre ciclos; sessionStorage persiste IDs e prazos, não textos nem nascimento.
+
+Duração individual:180palavras/minuto mais2segundos, mínimo6segundos, sem teto para textos longos. Os sete segundos dos gatos permanecem intactos. O Gnomo pausa os prazos em aba oculta, necessidades urgentes, movimento reduzido ou mascote oculto; a próxima fala só vem depois do término da atual e de um intervalo.
+
+## Evidência e pendências
+
+- 14 contratos existentes de domínio dos gatos passaram.
+- 73 testes de regressão de auth/social/grupos/documentos passaram com a alteração do cadastro.
+- Datas-limite, catálogo e adoção negados para desconhecido/menor, declaração imutável, atomicidade do cadastro e rollback sem migração,54falas e dois ciclos de leitura testados em fixtures.
+- Teste nativo `node testing/pets/gnome-mobile.mjs`: desconhecido com coleta legada, menor e adulto; adoção, endpoint real comSQLitesintético, oito quadros distintos por ação, um companheiro após Home↔Mascotes. Repetido com a arte pixel final.
+- Um defeito de duas instâncias de bootstrap foi reproduzido e corrigido unificando URLs da apresentação cidadã e do fallback. Não houve reescrita de política global de cache.
+
+Ainda obrigatórios: matriz visual ampla320/360/390 claro/escuro/texto200, desktop/print, gates originais de navegação/vidas/falas, higiene final dos entrypoints sobre a PR640 publicada, revisão da migração e CI completo. Não considerar aceito em aparelho real ou pronto para lançar antes dessas etapas.
+
+O repertório fica em `_server/`, excluído pelo build Jekyll de Pages. O `_redirects` adiciona uma regra exclusiva para impedir que Cloudflare Pages entregue esse diretório como conteúdo estático quando usa a raiz diretamente. Fontes: https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll e https://developers.cloudflare.com/pages/configuration/redirects/. A disponibilidade desses arquivos por URLs estáticas deve ser rechecadas nos artefatos e no deploy antes do lançamento; o repositório de código permanece público, o bloqueio é do serviço do Portal.

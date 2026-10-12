@@ -1,10 +1,12 @@
 'use strict';
 import {drawCat,drawBed} from './pet-cat-frames.js';
 import {PetSpeech} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
+import {drawGnome,loadGnomeFrames} from './gnome-frames.js';
+import {gnomeSpeechForSession} from './gnome-speech.js';
 export class PetRuntime{
  constructor(api,state,onChange=()=>{},speech=new PetSpeech()){
   this.api=api;this.state=state;this.onChange=onChange;this.closed=false;this.action='idle';this.queue=[];this.until=0;this.x=150;this.y=innerHeight-130;
-  this.tabId=crypto.randomUUID();this.sequence=0;this.leaseToken='';this.lastInteraction=0;this.eligibleBefore=false;this.frame=0;this.lastPaint=0;this.speech=speech;
+  this.tabId=crypto.randomUUID();this.sequence=0;this.leaseToken='';this.lastInteraction=0;this.eligibleBefore=false;this.frame=0;this.lastPaint=0;this.speech=speech;this.catSpeech=speech;this.speechEpoch=0;
   this.root=document.createElement('div');this.root.className='pet-stage';this.root.setAttribute('aria-hidden','true');
   this.cat=document.createElement('canvas');this.cat.width=64;this.cat.height=48;this.cat.className='pet-cat';
   this.bed=document.createElement('canvas');this.bed.width=80;this.bed.height=30;this.bed.className='pet-bed';
@@ -20,16 +22,24 @@ export class PetRuntime{
   window.addEventListener('resize',()=>this.layout(),{signal});window.visualViewport?.addEventListener('resize',()=>this.layout(),{signal});
   window.visualViewport?.addEventListener('scroll',()=>this.layout(),{signal});
   this.observer=new ResizeObserver(()=>this.layout());this.observer.observe(this.root);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(this.frame);this.sample(false);}else{this.lastPaint=0;this.refresh();this.start();}},{signal});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);this.sample(false);}else{this.lastPaint=0;this.refresh();this.start();}},{signal});
   window.addEventListener('pagehide',()=>{this.sample(false);cancelAnimationFrame(this.frame);},{signal});
   window.addEventListener('pageshow',()=>{this.start();this.refresh();},{signal});
   this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.reduced.addEventListener('change',()=>{this.render();this.start();},{signal});
-  this.timer=setInterval(()=>this.sample(),60000);this.layout();this.start();
+  this.timer=setInterval(()=>this.sample(),60000);this.syncSpecies();this.layout();this.start();
+ }
+ syncSpecies(){
+  const generation=++this.speechEpoch,gnome=this.state.pet?.typeId==='gnome';
+  this.root.dataset.petType=gnome?'gnome':'cat';this.cat.height=gnome?64:48;
+  if(!gnome){this.speech=this.catSpeech;return;}
+  this.speech={text:()=>'',advance:()=>false};
+  Promise.all([loadGnomeFrames(),gnomeSpeechForSession(this.api)]).then(([,speech])=>{if(!this.closed&&generation===this.speechEpoch&&this.state.pet?.typeId==='gnome'){this.speech=speech;this.render();}}).catch(()=>{});
  }
  update(s){
   if(s.revision<this.state.revision)return; // A delayed response cannot revive an older life state.
   if(s.petRevision!==this.state.petRevision){this.queue=[];this.until=0;this.goingToBed=false;this.target=null;this.action='idle';}
-  this.state=s;this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();
+  const changed=s.pet?.typeId!==this.state.pet?.typeId;
+  this.state=s;if(changed)this.syncSpecies();this.onChange(s);this.layout();this.render();if(s.pet&&s.preferences.visible&&!document.hidden)this.start();
  }
  attachHabitat(habitat){
   if(this.closed)return;
@@ -38,7 +48,7 @@ export class PetRuntime{
   for(const property of ['left','top','width','height'])this.root.style.removeProperty(property);
   (habitat||document.body).append(this.root);this.previewPlacement=null;this.layout();
  }
- close(){this.closed=true;cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
+ close(){this.closed=true;this.speech.setSuppressed?.(true);cancelAnimationFrame(this.frame);clearInterval(this.timer);this.controller.abort();this.observer.disconnect();this.root.remove();if(this.ownsHabitat)this.habitat.remove();else this.habitat.hidden=true;}
  safeRect(){
   // Both scenes use the same logical grid and scale; the global scene follows the viewport.
   const width=this.root.clientWidth||176,height=this.root.clientHeight||224;
@@ -85,12 +95,13 @@ export class PetRuntime{
    }
    this.action='sleep';this.until=now+45000;this.rest();return;
   }
-  const routines=[['walk'],['run','idle'],['sit','lick','idle'],['lie','roll','belly','roll','wake'],['stretch','idle'],['idle']];
+  const routines=this.state.pet?.typeId==='gnome'?[['walk'],['run','idle'],['scratch','idle'],['walk','trip','idle'],['laugh','idle'],['dance','idle'],['nap','idle']]:[['walk'],['run','idle'],['sit','lick','idle'],['lie','roll','belly','roll','wake'],['stretch','idle'],['idle']];
   this.queue=routines[Math.floor(Math.random()*routines.length)].slice();this.advance(now);
  }
  advance(now){
   this.action=this.queue.shift()||'idle';
-  const durations={walk:7000,run:3500,sit:1100,lick:6000,lie:1200,roll:1200,belly:6000,wake:1400,stretch:3000,idle:5000};
+  this.actionStarted=now;
+  const durations={walk:7000,run:3500,sit:1100,lick:6000,lie:1200,roll:1200,belly:6000,wake:1400,stretch:3000,idle:5000,scratch:4500,trip:2000,laugh:4000,dance:6000,nap:8000};
   this.until=now+(durations[this.action]||5000);
   if(['walk','run'].includes(this.action)){
    const r=this.bounds;this.target=this.ownsHabitat?{x:r.left+(r.right-r.left)*Math.random(),y:r.top+(r.bottom-r.top)*Math.random()}:{x:Math.max(r.left,Math.min(r.right,this.x+(Math.random()-.5)*300)),y:this.y};
@@ -123,8 +134,10 @@ export class PetRuntime{
   this.bubble.textContent=alert||this.speech.text();
   this.bubble.hidden=!this.bubble.textContent;
   const action=motion?this.action:(s.awakeSeconds>=s.rules.sleepAfterSeconds?'sleep':'idle');
-  drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
-  this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-88)+'px';
+  this.speech.setSuppressed?.(this.root.hidden||document.hidden||!motion||Boolean(alert));
+  if(s.pet?.typeId==='gnome'){const elapsed=Math.max(0,(performance.now()-(this.actionStarted||0))/160);drawGnome(this.cat.getContext('2d'),action,motion?(action==='trip'?Math.min(7,elapsed):elapsed):0);}
+  else drawCat(this.cat.getContext('2d'),action,motion?performance.now()/160:0,s.pet?.variant,s.collar);
+  this.cat.style.left=(this.x-64)+'px';this.cat.style.top=(this.y-(s.pet?.typeId==='gnome'?120:88))+'px';
   this.cat.style.transform=this.facing===-1?'scaleX(-1)':'';
   this.bubble.style.left=Math.max(8,Math.min(this.root.clientWidth-this.bubble.offsetWidth-8,this.x-110))+'px';this.bubble.style.top=(this.ownsHabitat?Math.max(8,this.y-150):12)+'px';
  }

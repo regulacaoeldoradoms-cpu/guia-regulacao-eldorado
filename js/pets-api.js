@@ -4,6 +4,7 @@ export class PetApi{
  close(){this.closed=true;this.controller.abort();}
  valid(){return !this.closed&&this.token===this.auth.getToken();}
  async get(path){if(!this.valid())throw new Error('Sessão alterada.');const payload=await this.auth.api('/api/pets/'+path,{signal:this.controller.signal});if(!this.valid())throw new Error('Sessão alterada.');return payload;}
+ async declareAge(birthDate){if(!this.valid())throw new Error('Sessão alterada.');const payload=await this.auth.api('/api/pets/age',{method:'POST',body:JSON.stringify({birthDate}),signal:this.controller.signal});if(!this.valid())throw new Error('Sessão alterada.');return payload;}
  async command(kind,input,options={}){
   const body=JSON.stringify({...input,operationId:crypto.randomUUID()});
   for(let attempt=0;attempt<2;attempt++){
