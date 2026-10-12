@@ -3,7 +3,7 @@
 // Server-only content. Never import this module from browser assets.
 // The future authenticated endpoint must check the private adult gate first.
 // Original/invented jokes approved for this character; no author attribution.
-export const GNOME_PHRASE_VERSION = 'gnome-phrases-20261012-1';
+export const GNOME_PHRASE_VERSION = 'gnome-phrases-20261012-2';
 const phrases = [
   'Coitado é o cachorro que tem 4 sovacos e enfiam o termômetro no caneco dele.',
   'Malandro é o sapo, que mora na lagoa pra ver perereca molhada.',
@@ -58,7 +58,8 @@ const phrases = [
   'Um cogumelo, dois quartos e infiltração. O aluguel ainda aumentou.',
   'Fui varrer a casa e encontrei uma folha. Tive que chamar um guincho.',
   'Se eu tirar o chapéu, o pombo acha que abriu uma vaga.',
-  'Hoje não vou trabalhar. A lesma que me dá carona atrasou.'
+  'Hoje não vou trabalhar. A lesma que me dá carona atrasou.',
+  'Mais desconfiado que cego em suruba.'
 ];
 export const GNOME_PHRASE_CATALOG = Object.freeze(phrases.map((text, index) =>
   Object.freeze({id:`gnome-${String(index + 1).padStart(3, '0')}`, text})

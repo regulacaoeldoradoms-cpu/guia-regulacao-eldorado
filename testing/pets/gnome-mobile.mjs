@@ -31,7 +31,7 @@ try{
     }else assert(await page.locator('#petAgeDisclosure').isHidden());
    }
    if(age==='adult'||age==='unknown'){
-    await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).click();await page.locator('#petAdopt').click();await page.waitForFunction(()=>PortalPets?.runtime.state.pet?.typeId==='gnome'&&PortalPets.runtime.speech.catalog?.phrases?.length===54);
+    await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).click();await page.locator('#petAdopt').click();await page.waitForFunction(()=>PortalPets?.runtime.state.pet?.typeId==='gnome'&&PortalPets.runtime.speech.catalog?.phrases?.length===55);
     assert.equal(await page.locator('.pet-stage[data-pet-type=gnome]').count(),1);assert(await page.locator('#petAdopt').isDisabled());
     const hashes=await page.evaluate(async()=>{
      const {GNOME_ACTIONS}=await import('/js/gnome-frames.js?v=20261012-gnome-2');const runtime=PortalPets.runtime,ctx=runtime.cat.getContext('2d'),saved={action:runtime.action,actionStarted:runtime.actionStarted,until:runtime.until};cancelAnimationFrame(runtime.frame);

@@ -8,8 +8,8 @@ const catalog={version:GNOME_PHRASE_VERSION,phrases:GNOME_PHRASE_CATALOG};
 test('two complete cycles deliver every approved phrase without immediate repetition',()=>{
  let now=0;const speech=new GnomeSpeech(catalog,null,null,{now:()=>now,random:()=>0.25});let last;
  for(let cycle=0;cycle<2;cycle++){
-  const seen=new Set();for(let i=0;i<54;i++){now=speech.nextAt;assert(speech.advance());assert.notEqual(speech.lastId,last);seen.add(speech.lastId);last=speech.lastId;assert.equal(speech.bubbleUntil-now,gnomeReadingDuration(speech.text()));assert(!speech.advance(now+1));}
-  assert.equal(seen.size,54);
+  const seen=new Set();for(let i=0;i<55;i++){now=speech.nextAt;assert(speech.advance());assert.notEqual(speech.lastId,last);seen.add(speech.lastId);last=speech.lastId;assert.equal(speech.bubbleUntil-now,gnomeReadingDuration(speech.text()));assert(!speech.advance(now+1));}
+  assert.equal(seen.size,55);
  }
  assert.equal(PET_SPEECH_TIMING.bubbleMs,7000);
 });

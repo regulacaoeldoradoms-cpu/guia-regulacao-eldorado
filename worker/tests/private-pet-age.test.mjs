@@ -32,9 +32,9 @@ test('each phrase gets reading time, including long phrases without a cap', () =
   assert(gnomeReadingDuration(Array(40).fill('palavra').join(' ')) > gnomeReadingDuration(Array(30).fill('palavra').join(' ')));
   assert.equal(gnomeReadingDuration('Olá.', {wordsPerMinute:0, marginMs:-1, minimumMs:Infinity}), 6000);
 });
-test('approved repertoire has 54 unique phrases and distinct stable identifiers', () => {
-  assert.equal(GNOME_PHRASE_CATALOG.length, 54);
-  assert.equal(new Set(GNOME_PHRASE_CATALOG.map(p => p.id)).size, 54);
-  assert.equal(new Set(GNOME_PHRASE_CATALOG.map(p => p.text)).size, 54);
+test('approved repertoire has 55 unique phrases and distinct stable identifiers', () => {
+  assert.equal(GNOME_PHRASE_CATALOG.length, 55);
+  assert.equal(new Set(GNOME_PHRASE_CATALOG.map(p => p.id)).size, 55);
+  assert.equal(new Set(GNOME_PHRASE_CATALOG.map(p => p.text)).size, 55);
   for (const {text} of GNOME_PHRASE_CATALOG) assert(gnomeReadingDuration(text) >= 6000);
 });

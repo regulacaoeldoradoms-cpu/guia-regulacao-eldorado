@@ -16,7 +16,7 @@ A migração `worker/migrations/pets-private-age.sql` só foi aplicada em SQLite
 
 Sprite gerado via imagegen, oito ações com oito quadros cada: idle, caminhar rebolando, correr segurando chapéu, coçar barba, tropeçar/disfarçar, rir, dançar e cochilar no cogumelo. Imagem transparente1254×1254, PNG2204338bytes, carregada apenas na galeria adulta ou para o Gnomo adotado; não foi chamada de asset leve ou atribuída melhoria de bytes sem medição.
 
-54 falas únicas aprovadas no módulo `_server/gnome-phrases.js`, importado apenas pelo Worker, com IDs e versão estáveis, sem atribuição a autores. Não importadas pelo navegador: o cliente recebe o repertório por endpoint autenticado somente após idade adulta e adoção. Ciclo completo evita repetição imediata, inclusive entre ciclos; sessionStorage persiste IDs e prazos, não textos nem nascimento.
+55 falas únicas aprovadas no módulo `_server/gnome-phrases.js`, importado apenas pelo Worker, com IDs e versão estáveis, sem atribuição a autores. Não importadas pelo navegador: o cliente recebe o repertório por endpoint autenticado somente após idade adulta e adoção. Ciclo completo evita repetição imediata, inclusive entre ciclos; sessionStorage persiste IDs e prazos, não textos nem nascimento.
 
 Duração individual:180palavras/minuto mais2segundos, mínimo6segundos, sem teto para textos longos. Os sete segundos dos gatos permanecem intactos. O Gnomo pausa os prazos em aba oculta, necessidades urgentes, movimento reduzido ou mascote oculto; a próxima fala só vem depois do término da atual e de um intervalo.
 
@@ -24,7 +24,7 @@ Duração individual:180palavras/minuto mais2segundos, mínimo6segundos, sem tet
 
 - 14 contratos existentes de domínio dos gatos passaram.
 - 73 testes de regressão de auth/social/grupos/documentos passaram com a alteração do cadastro.
-- Datas-limite, catálogo e adoção negados para desconhecido/menor, declaração imutável, atomicidade do cadastro e rollback sem migração,54falas e dois ciclos de leitura testados em fixtures.
+- Datas-limite, catálogo e adoção negados para desconhecido/menor, declaração imutável, atomicidade do cadastro e rollback sem migração,55falas e dois ciclos de leitura testados em fixtures.
 - Teste nativo `node testing/pets/gnome-mobile.mjs`: desconhecido com coleta legada, menor e adulto; adoção, endpoint real comSQLitesintético, oito quadros distintos por ação, um companheiro após Home↔Mascotes. Repetido com a arte pixel final.
 - Um defeito de duas instâncias de bootstrap foi reproduzido e corrigido unificando URLs da apresentação cidadã e do fallback. Não houve reescrita de política global de cache.
 

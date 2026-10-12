@@ -40,7 +40,7 @@ test('adult gate requires current owner, adoption and fresh session; replay pres
   const speech=()=>route(new Request('https://synthetic.test/api/pets/gnome-speech'),env);
   assert.equal((await speech()).status,403);
   const input=adoption();const adopted=await persistPetCommand(f.db,f.user,'adopt',input),replay=await persistPetCommand(f.db,f.user,'adopt',input);assert.equal(adopted.state.pet.typeId,'gnome');assert.deepEqual(adopted.receipt,replay.receipt);
-  const data=await (await speech()).json();assert.equal(data.phrases.length,54);assert(!JSON.stringify(data).includes('1990-01-01'));
+  const data=await (await speech()).json();assert.equal(data.phrases.length,55);assert(!JSON.stringify(data).includes('1990-01-01'));
   await assert.rejects(persistPetCommand(f.db,{username:'demo-b',sessionVersion:1},'adopt',adoption()),{code:'ADULT_AGE_REQUIRED'});
   const second=await persistPetCommand(f.db,f.user,'adopt',{...adoption(),expectedPetRevision:1});assert.equal(second.receipt.code,'PET_ALREADY_ADOPTED');
   f.sql.exec("UPDATE auth_users SET session_version=2 WHERE username='demo-a'");
