@@ -1,0 +1,1493 @@
+{
+  "sourceSha256": "f1b6502c75b9e5cdb71ff0a316b2e0615685143daa1daf8d3f7a478a76660554",
+  "atlasSha256": "47d875990fb21ce80bee2ee3684efd5f11f28aeb0b1be821a85d22808375e53e",
+  "sourceSize": [
+    1254,
+    1254
+  ],
+  "tileSize": 192,
+  "padding": [
+    8,
+    16
+  ],
+  "coreAlpha": 128,
+  "haloRadius": 8,
+  "visibleAlpha": 16,
+  "visiblePixelsRetained": 789191,
+  "oldCutCorePixels": 2514,
+  "oldForeignCorePixels": 2514,
+  "frames": [
+    {
+      "row": 0,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        0
+      ],
+      "coreBounds": [
+        21,
+        12,
+        134,
+        158
+      ],
+      "packedBounds": [
+        23,
+        20,
+        150,
+        182
+      ],
+      "visiblePixelsRetained": 11518,
+      "oldCutCorePixels": 66,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        0
+      ],
+      "coreBounds": [
+        177,
+        12,
+        290,
+        158
+      ],
+      "packedBounds": [
+        23,
+        20,
+        149,
+        182
+      ],
+      "visiblePixelsRetained": 11750,
+      "oldCutCorePixels": 32,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        0
+      ],
+      "coreBounds": [
+        334,
+        12,
+        448,
+        158
+      ],
+      "packedBounds": [
+        20,
+        20,
+        148,
+        182
+      ],
+      "visiblePixelsRetained": 11673,
+      "oldCutCorePixels": 45,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        0
+      ],
+      "coreBounds": [
+        490,
+        12,
+        604,
+        158
+      ],
+      "packedBounds": [
+        20,
+        20,
+        150,
+        182
+      ],
+      "visiblePixelsRetained": 11603,
+      "oldCutCorePixels": 45,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        0
+      ],
+      "coreBounds": [
+        645,
+        13,
+        760,
+        158
+      ],
+      "packedBounds": [
+        21,
+        21,
+        149,
+        181
+      ],
+      "visiblePixelsRetained": 11536,
+      "oldCutCorePixels": 37,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        0
+      ],
+      "coreBounds": [
+        804,
+        13,
+        917,
+        158
+      ],
+      "packedBounds": [
+        25,
+        21,
+        149,
+        182
+      ],
+      "visiblePixelsRetained": 11600,
+      "oldCutCorePixels": 56,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        0
+      ],
+      "coreBounds": [
+        959,
+        15,
+        1075,
+        158
+      ],
+      "packedBounds": [
+        19,
+        28,
+        148,
+        182
+      ],
+      "visiblePixelsRetained": 11474,
+      "oldCutCorePixels": 53,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 0,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        0
+      ],
+      "coreBounds": [
+        1116,
+        12,
+        1231,
+        158
+      ],
+      "packedBounds": [
+        19,
+        23,
+        150,
+        182
+      ],
+      "visiblePixelsRetained": 11684,
+      "oldCutCorePixels": 52,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 1,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        157
+      ],
+      "coreBounds": [
+        19,
+        167,
+        140,
+        310
+      ],
+      "packedBounds": [
+        21,
+        22,
+        155,
+        177
+      ],
+      "visiblePixelsRetained": 11373,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 66
+    },
+    {
+      "row": 1,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        157
+      ],
+      "coreBounds": [
+        175,
+        170,
+        298,
+        310
+      ],
+      "packedBounds": [
+        18,
+        23,
+        157,
+        177
+      ],
+      "visiblePixelsRetained": 11176,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 32
+    },
+    {
+      "row": 1,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        157
+      ],
+      "coreBounds": [
+        333,
+        167,
+        455,
+        310
+      ],
+      "packedBounds": [
+        19,
+        21,
+        157,
+        176
+      ],
+      "visiblePixelsRetained": 11221,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 45
+    },
+    {
+      "row": 1,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        157
+      ],
+      "coreBounds": [
+        487,
+        167,
+        609,
+        310
+      ],
+      "packedBounds": [
+        17,
+        22,
+        152,
+        177
+      ],
+      "visiblePixelsRetained": 11075,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 45
+    },
+    {
+      "row": 1,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        157
+      ],
+      "coreBounds": [
+        637,
+        170,
+        765,
+        309
+      ],
+      "packedBounds": [
+        10,
+        23,
+        153,
+        176
+      ],
+      "visiblePixelsRetained": 11052,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 37
+    },
+    {
+      "row": 1,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        157
+      ],
+      "coreBounds": [
+        802,
+        170,
+        925,
+        309
+      ],
+      "packedBounds": [
+        18,
+        23,
+        157,
+        176
+      ],
+      "visiblePixelsRetained": 11434,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 56
+    },
+    {
+      "row": 1,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        157
+      ],
+      "coreBounds": [
+        960,
+        167,
+        1079,
+        309
+      ],
+      "packedBounds": [
+        20,
+        22,
+        155,
+        176
+      ],
+      "visiblePixelsRetained": 11002,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 53
+    },
+    {
+      "row": 1,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        157
+      ],
+      "coreBounds": [
+        1110,
+        167,
+        1233,
+        310
+      ],
+      "packedBounds": [
+        18,
+        22,
+        151,
+        176
+      ],
+      "visiblePixelsRetained": 11439,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 52
+    },
+    {
+      "row": 2,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        314
+      ],
+      "coreBounds": [
+        19,
+        318,
+        150,
+        459
+      ],
+      "packedBounds": [
+        23,
+        12,
+        166,
+        169
+      ],
+      "visiblePixelsRetained": 12118,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        314
+      ],
+      "coreBounds": [
+        174,
+        318,
+        298,
+        459
+      ],
+      "packedBounds": [
+        17,
+        12,
+        157,
+        169
+      ],
+      "visiblePixelsRetained": 11553,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        314
+      ],
+      "coreBounds": [
+        334,
+        319,
+        465,
+        456
+      ],
+      "packedBounds": [
+        20,
+        14,
+        165,
+        166
+      ],
+      "visiblePixelsRetained": 11865,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        314
+      ],
+      "coreBounds": [
+        486,
+        319,
+        618,
+        460
+      ],
+      "packedBounds": [
+        19,
+        14,
+        164,
+        170
+      ],
+      "visiblePixelsRetained": 11948,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        314
+      ],
+      "coreBounds": [
+        645,
+        319,
+        773,
+        461
+      ],
+      "packedBounds": [
+        19,
+        15,
+        162,
+        171
+      ],
+      "visiblePixelsRetained": 11898,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        314
+      ],
+      "coreBounds": [
+        802,
+        319,
+        931,
+        460
+      ],
+      "packedBounds": [
+        18,
+        13,
+        163,
+        170
+      ],
+      "visiblePixelsRetained": 12061,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        314
+      ],
+      "coreBounds": [
+        960,
+        319,
+        1089,
+        459
+      ],
+      "packedBounds": [
+        20,
+        14,
+        163,
+        169
+      ],
+      "visiblePixelsRetained": 11951,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 2,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        314
+      ],
+      "coreBounds": [
+        1108,
+        319,
+        1243,
+        459
+      ],
+      "packedBounds": [
+        11,
+        15,
+        162,
+        169
+      ],
+      "visiblePixelsRetained": 11685,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        470
+      ],
+      "coreBounds": [
+        16,
+        471,
+        143,
+        623
+      ],
+      "packedBounds": [
+        19,
+        9,
+        157,
+        177
+      ],
+      "visiblePixelsRetained": 12973,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        470
+      ],
+      "coreBounds": [
+        173,
+        472,
+        291,
+        623
+      ],
+      "packedBounds": [
+        16,
+        10,
+        150,
+        177
+      ],
+      "visiblePixelsRetained": 11567,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        470
+      ],
+      "coreBounds": [
+        329,
+        475,
+        458,
+        624
+      ],
+      "packedBounds": [
+        15,
+        13,
+        160,
+        175
+      ],
+      "visiblePixelsRetained": 12689,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        470
+      ],
+      "coreBounds": [
+        484,
+        475,
+        609,
+        624
+      ],
+      "packedBounds": [
+        18,
+        13,
+        151,
+        175
+      ],
+      "visiblePixelsRetained": 12143,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        470
+      ],
+      "coreBounds": [
+        637,
+        475,
+        772,
+        624
+      ],
+      "packedBounds": [
+        10,
+        13,
+        159,
+        175
+      ],
+      "visiblePixelsRetained": 12707,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        470
+      ],
+      "coreBounds": [
+        795,
+        472,
+        919,
+        624
+      ],
+      "packedBounds": [
+        11,
+        10,
+        151,
+        178
+      ],
+      "visiblePixelsRetained": 12457,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        470
+      ],
+      "coreBounds": [
+        954,
+        473,
+        1079,
+        624
+      ],
+      "packedBounds": [
+        14,
+        11,
+        155,
+        177
+      ],
+      "visiblePixelsRetained": 12492,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 3,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        470
+      ],
+      "coreBounds": [
+        1109,
+        473,
+        1233,
+        624
+      ],
+      "packedBounds": [
+        13,
+        11,
+        151,
+        178
+      ],
+      "visiblePixelsRetained": 12358,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 4,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        627
+      ],
+      "coreBounds": [
+        23,
+        637,
+        156,
+        773
+      ],
+      "packedBounds": [
+        23,
+        18,
+        171,
+        170
+      ],
+      "visiblePixelsRetained": 11482,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 4,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        627
+      ],
+      "coreBounds": [
+        170,
+        649,
+        325,
+        770
+      ],
+      "packedBounds": [
+        13,
+        30,
+        184,
+        166
+      ],
+      "visiblePixelsRetained": 11872,
+      "oldCutCorePixels": 279,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 4,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        627
+      ],
+      "coreBounds": [
+        325,
+        658,
+        481,
+        773
+      ],
+      "packedBounds": [
+        11,
+        40,
+        182,
+        170
+      ],
+      "visiblePixelsRetained": 11113,
+      "oldCutCorePixels": 188,
+      "oldForeignCorePixels": 317
+    },
+    {
+      "row": 4,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        627
+      ],
+      "coreBounds": [
+        492,
+        686,
+        642,
+        773
+      ],
+      "packedBounds": [
+        24,
+        67,
+        186,
+        170
+      ],
+      "visiblePixelsRetained": 9329,
+      "oldCutCorePixels": 339,
+      "oldForeignCorePixels": 223
+    },
+    {
+      "row": 4,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        627
+      ],
+      "coreBounds": [
+        650,
+        666,
+        785,
+        773
+      ],
+      "packedBounds": [
+        23,
+        47,
+        172,
+        170
+      ],
+      "visiblePixelsRetained": 10978,
+      "oldCutCorePixels": 20,
+      "oldForeignCorePixels": 339
+    },
+    {
+      "row": 4,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        627
+      ],
+      "coreBounds": [
+        798,
+        644,
+        941,
+        773
+      ],
+      "packedBounds": [
+        14,
+        25,
+        173,
+        170
+      ],
+      "visiblePixelsRetained": 11845,
+      "oldCutCorePixels": 10,
+      "oldForeignCorePixels": 58
+    },
+    {
+      "row": 4,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        627
+      ],
+      "coreBounds": [
+        961,
+        633,
+        1087,
+        773
+      ],
+      "packedBounds": [
+        21,
+        15,
+        162,
+        170
+      ],
+      "visiblePixelsRetained": 12394,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 10
+    },
+    {
+      "row": 4,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        627
+      ],
+      "coreBounds": [
+        1112,
+        633,
+        1246,
+        773
+      ],
+      "packedBounds": [
+        17,
+        16,
+        165,
+        170
+      ],
+      "visiblePixelsRetained": 12542,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        784
+      ],
+      "coreBounds": [
+        24,
+        785,
+        147,
+        930
+      ],
+      "packedBounds": [
+        24,
+        9,
+        163,
+        170
+      ],
+      "visiblePixelsRetained": 12513,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        784
+      ],
+      "coreBounds": [
+        170,
+        784,
+        299,
+        931
+      ],
+      "packedBounds": [
+        13,
+        8,
+        158,
+        170
+      ],
+      "visiblePixelsRetained": 12884,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        784
+      ],
+      "coreBounds": [
+        328,
+        782,
+        465,
+        930
+      ],
+      "packedBounds": [
+        14,
+        8,
+        163,
+        170
+      ],
+      "visiblePixelsRetained": 12849,
+      "oldCutCorePixels": 38,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        784
+      ],
+      "coreBounds": [
+        487,
+        782,
+        622,
+        928
+      ],
+      "packedBounds": [
+        17,
+        10,
+        168,
+        168
+      ],
+      "visiblePixelsRetained": 12791,
+      "oldCutCorePixels": 35,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        784
+      ],
+      "coreBounds": [
+        642,
+        784,
+        776,
+        931
+      ],
+      "packedBounds": [
+        17,
+        9,
+        165,
+        170
+      ],
+      "visiblePixelsRetained": 12112,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        784
+      ],
+      "coreBounds": [
+        802,
+        782,
+        931,
+        931
+      ],
+      "packedBounds": [
+        18,
+        6,
+        163,
+        171
+      ],
+      "visiblePixelsRetained": 13315,
+      "oldCutCorePixels": 38,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        784
+      ],
+      "coreBounds": [
+        954,
+        784,
+        1085,
+        930
+      ],
+      "packedBounds": [
+        14,
+        10,
+        161,
+        169
+      ],
+      "visiblePixelsRetained": 12454,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 5,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        784
+      ],
+      "coreBounds": [
+        1118,
+        784,
+        1236,
+        930
+      ],
+      "packedBounds": [
+        21,
+        9,
+        152,
+        170
+      ],
+      "visiblePixelsRetained": 12204,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        940
+      ],
+      "coreBounds": [
+        23,
+        943,
+        157,
+        1084
+      ],
+      "packedBounds": [
+        23,
+        13,
+        173,
+        168
+      ],
+      "visiblePixelsRetained": 12776,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        940
+      ],
+      "coreBounds": [
+        174,
+        945,
+        305,
+        1084
+      ],
+      "packedBounds": [
+        17,
+        14,
+        164,
+        168
+      ],
+      "visiblePixelsRetained": 12435,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        940
+      ],
+      "coreBounds": [
+        334,
+        942,
+        465,
+        1084
+      ],
+      "packedBounds": [
+        20,
+        12,
+        164,
+        168
+      ],
+      "visiblePixelsRetained": 12199,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        940
+      ],
+      "coreBounds": [
+        494,
+        943,
+        622,
+        1084
+      ],
+      "packedBounds": [
+        24,
+        11,
+        168,
+        168
+      ],
+      "visiblePixelsRetained": 12335,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        940
+      ],
+      "coreBounds": [
+        639,
+        942,
+        785,
+        1085
+      ],
+      "packedBounds": [
+        12,
+        13,
+        173,
+        169
+      ],
+      "visiblePixelsRetained": 12971,
+      "oldCutCorePixels": 3,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        940
+      ],
+      "coreBounds": [
+        798,
+        942,
+        931,
+        1084
+      ],
+      "packedBounds": [
+        14,
+        10,
+        163,
+        168
+      ],
+      "visiblePixelsRetained": 12312,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 3
+    },
+    {
+      "row": 6,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        940
+      ],
+      "coreBounds": [
+        948,
+        942,
+        1090,
+        1084
+      ],
+      "packedBounds": [
+        9,
+        10,
+        163,
+        168
+      ],
+      "visiblePixelsRetained": 12855,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 6,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        940
+      ],
+      "coreBounds": [
+        1110,
+        942,
+        1243,
+        1085
+      ],
+      "packedBounds": [
+        15,
+        11,
+        162,
+        169
+      ],
+      "visiblePixelsRetained": 12311,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 7,
+      "column": 0,
+      "sourceOrigin": [
+        0,
+        1097
+      ],
+      "coreBounds": [
+        15,
+        1100,
+        167,
+        1234
+      ],
+      "packedBounds": [
+        15,
+        11,
+        179,
+        159
+      ],
+      "visiblePixelsRetained": 15315,
+      "oldCutCorePixels": 221,
+      "oldForeignCorePixels": 0
+    },
+    {
+      "row": 7,
+      "column": 1,
+      "sourceOrigin": [
+        157,
+        1097
+      ],
+      "coreBounds": [
+        169,
+        1100,
+        324,
+        1234
+      ],
+      "packedBounds": [
+        13,
+        11,
+        180,
+        159
+      ],
+      "visiblePixelsRetained": 15144,
+      "oldCutCorePixels": 258,
+      "oldForeignCorePixels": 221
+    },
+    {
+      "row": 7,
+      "column": 2,
+      "sourceOrigin": [
+        314,
+        1097
+      ],
+      "coreBounds": [
+        329,
+        1105,
+        483,
+        1234
+      ],
+      "packedBounds": [
+        15,
+        16,
+        181,
+        159
+      ],
+      "visiblePixelsRetained": 14855,
+      "oldCutCorePixels": 313,
+      "oldForeignCorePixels": 258
+    },
+    {
+      "row": 7,
+      "column": 3,
+      "sourceOrigin": [
+        470,
+        1097
+      ],
+      "coreBounds": [
+        484,
+        1104,
+        634,
+        1234
+      ],
+      "packedBounds": [
+        15,
+        15,
+        176,
+        160
+      ],
+      "visiblePixelsRetained": 14595,
+      "oldCutCorePixels": 111,
+      "oldForeignCorePixels": 313
+    },
+    {
+      "row": 7,
+      "column": 4,
+      "sourceOrigin": [
+        627,
+        1097
+      ],
+      "coreBounds": [
+        636,
+        1100,
+        790,
+        1234
+      ],
+      "packedBounds": [
+        9,
+        11,
+        176,
+        161
+      ],
+      "visiblePixelsRetained": 14961,
+      "oldCutCorePixels": 106,
+      "oldForeignCorePixels": 111
+    },
+    {
+      "row": 7,
+      "column": 5,
+      "sourceOrigin": [
+        784,
+        1097
+      ],
+      "coreBounds": [
+        794,
+        1100,
+        947,
+        1234
+      ],
+      "packedBounds": [
+        10,
+        11,
+        175,
+        159
+      ],
+      "visiblePixelsRetained": 15264,
+      "oldCutCorePixels": 115,
+      "oldForeignCorePixels": 106
+    },
+    {
+      "row": 7,
+      "column": 6,
+      "sourceOrigin": [
+        940,
+        1097
+      ],
+      "coreBounds": [
+        948,
+        1100,
+        1101,
+        1234
+      ],
+      "packedBounds": [
+        10,
+        11,
+        174,
+        159
+      ],
+      "visiblePixelsRetained": 14933,
+      "oldCutCorePixels": 54,
+      "oldForeignCorePixels": 115
+    },
+    {
+      "row": 7,
+      "column": 7,
+      "sourceOrigin": [
+        1097,
+        1097
+      ],
+      "coreBounds": [
+        1106,
+        1102,
+        1248,
+        1235
+      ],
+      "packedBounds": [
+        9,
+        13,
+        165,
+        159
+      ],
+      "visiblePixelsRetained": 14178,
+      "oldCutCorePixels": 0,
+      "oldForeignCorePixels": 54
+    }
+  ]
+}

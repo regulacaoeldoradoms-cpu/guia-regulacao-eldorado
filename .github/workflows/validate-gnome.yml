@@ -13,6 +13,7 @@ on:
       - 'worker/tests/gnome*.mjs'
       - 'worker/tests/private-pet-age.test.mjs'
       - 'js/gnome*.js'
+      - 'js/gnome*.mjs'
       - 'js/pets*.js'
       - 'js/pet-companions.mjs'
       - 'js/pet-speech-coordinator.js'
@@ -23,6 +24,7 @@ on:
       - 'cadastro/index.html'
       - 'assets/pets/**'
       - 'testing/pets/gnome-mobile.mjs'
+      - 'testing/pets/gnome-*.mjs'
       - 'testing/pets/gnome-coexist-mobile.mjs'
       - 'testing/pets/coexist*.mjs'
       - 'testing/pets/gnome-age-availability.mjs'
@@ -43,6 +45,8 @@ jobs:
         run: |
           test -f _site/mascotes/index.html
           test -f _site/js/pet-companions.mjs
+          test -f _site/js/gnome-motion.mjs
+          test -f _site/assets/pets/gnome-sheet-isolated.png
           test ! -e _site/_server/gnome-phrases.js
           test ! -d _site/_server
           printf 'Pages artifact excludes server repertoire at %s\n' "$GITHUB_SHA"
@@ -64,6 +68,13 @@ jobs:
           JS
       - name: Private age, registration, static exclusions and phrase cycles
         run: node --test worker/tests/private-pet-age.test.mjs worker/tests/gnome-age-integration.test.mjs worker/tests/gnome-speech.test.mjs worker/tests/gnome-static-content.test.mjs worker/tests/pets.test.mjs
+      - name: Isolated atlas, complete body, movement and fall phase
+        run: |
+          node --test testing/pets/gnome-motion.test.mjs
+          node testing/pets/gnome-frame-matrix.mjs /tmp/gnome-frame-matrix
+          node testing/pets/gnome-motion-browser.mjs /tmp/gnome-motion-browser
+          node testing/pets/gnome-pixels-pause.mjs /tmp/gnome-pixels-pause
+          node testing/pets/gnome-live-cadence.mjs /tmp/gnome-live-cadence
       - name: Native UI, seven animations, adult gate and text reflow
         run: node testing/pets/gnome-mobile.mjs /tmp/gnome-mobile
       - name: Preserve native cats while optional private age is pending or unavailable
@@ -90,6 +101,10 @@ jobs:
           name: synthetic-gnome
           path: |
             /tmp/gnome-mobile/
+            /tmp/gnome-frame-matrix/
+            /tmp/gnome-motion-browser/
+            /tmp/gnome-pixels-pause/
+            /tmp/gnome-live-cadence/
             /tmp/gnome-coexist-mobile/
             /tmp/gnome-coexist-visual/
             /tmp/gnome-coexist-balloons/

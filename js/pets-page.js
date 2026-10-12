@@ -1,9 +1,9 @@
 'use strict';
 import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist-1';
-import {petSession} from './pets-bootstrap.js?v=20261012-gnome-coexist-1';
+import {petSession} from './pets-bootstrap.js?v=20261012-gnome-frame-wrap-1';
 import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261012-gnome-coexist-1';
 import {drawCat} from './pet-cat-frames.js';
-import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
+import {drawGnome,loadGnomeFrames,GNOME_CANVAS_SIZE,GNOME_RENDER_SIZE} from './gnome-frames.js?v=20261012-gnome-frame-wrap-1';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;
@@ -105,7 +105,7 @@ async function renderGallery(){
  $('petGallery').replaceChildren();
  for(const type of owner.catalog.types)for(const variant of type.variants){
   const gnome=type.id==='gnome';
-  const button=node('button',gnome?'Gnomo · 18+':variant==='ginger'?'Gato dourado':'Gato cinza','pet-choice'),canvas=document.createElement('canvas');canvas.width=64;canvas.height=gnome?64:48;
+  const button=node('button',gnome?'Gnomo · 18+':variant==='ginger'?'Gato dourado':'Gato cinza','pet-choice'),canvas=document.createElement('canvas');canvas.width=gnome?GNOME_CANVAS_SIZE:64;canvas.height=gnome?GNOME_CANVAS_SIZE:48;if(gnome){canvas.style.width=GNOME_RENDER_SIZE+'px';canvas.style.height=GNOME_RENDER_SIZE+'px';}
   if(gnome){
    canvas.dataset.petType='gnome';button.dataset.assetPending='true';button.disabled=true;
    loadGnomeFrames().then(()=>{if(owner!==session||generation!==pageEpoch||!owner.api.valid()||!button.isConnected)return;drawGnome(canvas.getContext('2d'));delete button.dataset.assetPending;button.disabled=busy||!canAdopt(type.id);}).catch(()=>{if(owner===session&&generation===pageEpoch)message('Não foi possível carregar a imagem do Gnomo. Recarregue para tentar novamente.',true);});
