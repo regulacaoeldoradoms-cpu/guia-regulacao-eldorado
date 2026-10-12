@@ -8,7 +8,7 @@ export function mountHomeMobileComposition(user, context) {
   const document = context?.document || globalThis.document;
   const MutationObserver = context?.MutationObserver || globalThis.MutationObserver;
   const window = context?.window || globalThis;
-  let routeActive = true;
+  let routeActive = context?.active !== false;
   if (mountedComposition) {
     mountedComposition.sync();
     return mountedComposition;

@@ -45,6 +45,7 @@ permissions:
 jobs:
   synthetic-citizen:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       # The focused Home checks use the same synthetic-only browser fixture.
       - uses: actions/checkout@v4

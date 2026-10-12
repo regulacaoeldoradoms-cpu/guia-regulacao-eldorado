@@ -26,8 +26,8 @@ const initializeHome = async (context) => {
     // Reuse the existing controls; mobile composition changes no account permissions.
     try {
       const [presentation, composition] = await Promise.all([
-        import('/js/home-social-presentation.js?v=20261011-shared-header-account-1'),
-        import('/js/home-mobile-composition.js?v=20261010-mobile-shell-1')
+        import('/js/home-social-presentation.js?v=20261012-pets-home-context-1'),
+        import('/js/home-mobile-composition.js?v=20261012-pets-home-context-1')
       ]);
       const presenter = presentation.mountHomeSocialPresentation(user, context);
       context?.addController(presenter);

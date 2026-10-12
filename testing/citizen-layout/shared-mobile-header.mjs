@@ -10,15 +10,30 @@ await fs.mkdir(output, {recursive:true});
 const server = await serve(root);
 const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium', args:['--no-sandbox']});
 const rows = [];
+let watchdog;
+function checkpoint(state){
+  clearTimeout(watchdog);console.log(JSON.stringify({headerCheckpoint:state}));
+  // Every asset/API is local and normal waits already have bounded timeouts.
+  // Catch a never-resolving browser/bootstrap promise instead of hanging CI.
+  watchdog=setTimeout(()=>{
+    console.error(JSON.stringify({headerStalled:state,timeoutSeconds:120}));
+    void browser.close().finally(()=>process.exit(1));
+    setTimeout(()=>process.exit(1),3000);
+  },120000);
+}
 try {
   for (const theme of ['light','dark']) for (const width of (process.env.WIDTHS || '320,390,900,1440').split(',').map(Number)) {
     const result = {theme,width,errors:[],states:[]};
+    checkpoint({theme,width,phase:'browser context'});
     const {page,context,audit} = await newPage(browser,{width,theme},server.origin,result);
     try {
+      checkpoint({theme,width,route:'/',phase:'initial ready'});
       await page.goto(server.origin + '/'); await ready(page,'/');
+      checkpoint({theme,width,route:'/',phase:'background preparation'});
       await page.waitForFunction(() => !window.PortalCitizenShell || !window.PortalCitizenShell.diagnostics().prewarming);
       await page.evaluate(() => { window.__headerNodes={doc:document,header:document.querySelector('.portal-topbar'),brand:document.querySelector('.portal-brand'),menu:document.querySelector('#homeAccountMenu'),nav:document.querySelector('.social-mobile-nav'),logout:document.querySelector('#portalLogout'),controller:window[Symbol.for('portal.citizenMobileHeader')]}; });
       for (const route of ['/', '/amigos/', '/perfil/', '/mascotes/', '/perfil/', '/', '/mascotes/', '/amigos/', '/']) {
+        checkpoint({theme,width,route,phase:'route and header'});
         if (route !== (await page.evaluate(() => window.PortalCitizenShell?.active().url.pathname || location.pathname))) {
           if (width<=900) await page.locator(`.social-mobile-nav a[href="${route}"]`).click();
           else await page.goto(server.origin+route);
@@ -54,6 +69,7 @@ try {
       }
       if (!process.env.HEADER_BASELINE && width<=900) {
         for (const source of ['/', '/amigos/', '/perfil/', '/mascotes/']) {
+          checkpoint({theme,width,route:source,phase:'native account menu'});
           if (source!==await page.evaluate(()=>PortalCitizenShell.active().url.pathname)) {
             await page.locator(`.social-mobile-nav a[href="${source}"]`).click(); await ready(page,source);
           }
@@ -66,6 +82,6 @@ try {
       assert.deepEqual(result.errors,[]); assert.deepEqual(audit.unmappedApiCalls,[]);
       if (!process.env.HEADER_BASELINE && width<=900) assert.equal(audit.documents.length,1,'No document reload across shared views');
       rows.push(result); console.log(JSON.stringify({theme,width,states:result.states.length,errors:result.errors}));
-    } finally { await context.close(); await fs.writeFile(path.join(output,'results.json'),JSON.stringify(rows,null,2)); }
+    } finally { checkpoint({theme,width,phase:'context cleanup'});await context.close(); await fs.writeFile(path.join(output,'results.json'),JSON.stringify(rows,null,2));clearTimeout(watchdog); }
   }
-} finally { await browser.close(); await new Promise(r=>server.server.close(r)); }
+} finally { checkpoint({phase:'browser/server cleanup'});await browser.close(); await new Promise(r=>server.server.close(r));clearTimeout(watchdog); }

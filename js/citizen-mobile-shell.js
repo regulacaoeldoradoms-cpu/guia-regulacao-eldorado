@@ -307,7 +307,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261011-citizen-privacy-help-1' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261011-citizen-startup-1' : entry === 'home' ? '20261012-pets-mobile-3' : ['citizen','citizen-account-level'].includes(entry) ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261011-pets-mobile-1' : ['social-home', 'social-friends', 'social-profile'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
