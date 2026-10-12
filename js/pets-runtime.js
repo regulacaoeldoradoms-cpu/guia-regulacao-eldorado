@@ -1,8 +1,8 @@
 'use strict';
 import {drawCat,drawBed} from './pet-cat-frames.js';
 import {PetSpeech} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
-import {drawGnome,loadGnomeFrames} from './gnome-frames.js';
-import {gnomeSpeechForSession} from './gnome-speech.js';
+import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
+import {gnomeSpeechForSession} from './gnome-speech.js?v=20261012-gnome-2';
 export class PetRuntime{
  constructor(api,state,onChange=()=>{},speech=new PetSpeech()){
   this.api=api;this.state=state;this.onChange=onChange;this.closed=false;this.action='idle';this.queue=[];this.until=0;this.x=150;this.y=innerHeight-130;

@@ -1,8 +1,8 @@
 'use strict';
-import {PetApi} from './pets-api.js';
-import {PetRuntime} from './pets-runtime.js?v=20261012-gnome-1';
+import {PetApi} from './pets-api.js?v=20261012-gnome-2';
+import {PetRuntime} from './pets-runtime.js?v=20261012-gnome-2';
 import {petSpeechForSession} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
-import {loadGnomeFrames} from './gnome-frames.js';
+import {loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 let current=null,running=null,epoch=0;
 function navigation(enabled){
  document.querySelectorAll('[data-pet-navigation]').forEach(link=>link.remove());

@@ -1,8 +1,8 @@
 'use strict';
-import {petSession} from './pets-bootstrap.js?v=20261012-gnome-1';
+import {petSession} from './pets-bootstrap.js?v=20261012-gnome-2';
 import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261011-pets-mobile-1';
 import {drawCat} from './pet-cat-frames.js';
-import {drawGnome,loadGnomeFrames} from './gnome-frames.js';
+import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;
