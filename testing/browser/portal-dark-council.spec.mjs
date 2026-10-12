@@ -180,6 +180,7 @@ test('Conselho: detalhe, status, nota, carta e exclusão cancelada',async({page,
   await capture(page,info,'council-praise-dialog');
   await page.locator('#cancelPraiseRecipient').click();
   await page.locator('#councilDetailModal [data-close-modal]').click();
+  if(page.viewportSize().width<=900)await page.locator('.council-delete-group > summary').click();
   await page.locator('.council-row-delete').click();
   await expect(page.locator('#councilDeleteDialog')).toBeVisible();
   await capture(page,info,'council-delete-dialog');
