@@ -1,0 +1,41 @@
+/* Presentation of the existing citizen compose form only. */
+@media screen and (max-width:900px) {
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal {
+  top:var(--compose-viewport-top,0px) !important; bottom:auto !important; height:var(--compose-viewport-height,100dvh) !important; padding:8px !important; box-sizing:border-box;
+}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-panel {
+  width:100% !important; max-width:560px !important; height:100% !important; max-height:100% !important; margin:0 auto !important; border-radius:14px !important; overflow:auto !important; overscroll-behavior:contain; scroll-padding:12px;
+}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head { position:relative !important; padding:16px !important; gap:12px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head h2 { font-size:22px !important; line-height:1.25 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-head small { font-size:16px !important; line-height:1.45 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-modal-content { padding:0 12px 16px !important; overflow:visible !important; max-height:none !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section { padding:14px 0 !important; border-width:0 0 1px !important; background:transparent !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head { margin-bottom:12px !important; gap:8px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-step { width:28px !important; height:28px !important; min-width:28px !important; font-size:16px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head h3 { font-size:20px !important; line-height:1.3 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-section-head p { font-size:16px !important; line-height:1.45 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.manifestation-type-card,.privacy-option) { display:grid !important; grid-template-columns:20px 28px minmax(0,1fr) !important; align-items:start !important; min-height:72px !important; gap:8px !important; padding:12px !important; border-radius:12px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.manifestation-type-card,.privacy-option) > input { position:relative !important; pointer-events:auto !important; z-index:1; opacity:1 !important; width:20px !important; height:20px !important; margin:4px 0 0 !important; flex:none !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.manifestation-type-card,.privacy-option) > span:last-child { width:auto !important; min-width:0 !important; flex:none !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.type-icon,.privacy-option-icon) { width:28px !important; height:28px !important; min-width:28px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.manifestation-type-card,.privacy-option) strong { font-size:17px !important; line-height:1.3 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.manifestation-type-card,.privacy-option) small { font-size:15px !important; line-height:1.45 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .citizen-form-grid { grid-template-columns:minmax(0,1fr) !important; gap:14px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .portal-field { margin:0 0 14px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .portal-field label { font-size:16px !important; line-height:1.4 !important; margin-bottom:6px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.field-optional,.field-footer,.privacy-choice-head span,.file-drop span) { font-size:14px !important; line-height:1.4 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .portal-field :is(input,select,textarea) { min-height:48px !important; font-size:16px !important; padding:10px 12px !important; min-width:0 !important; max-width:100% !important; border-radius:10px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .portal-field textarea { min-height:128px !important; resize:vertical; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .file-drop { padding:12px !important; gap:8px !important; border-radius:12px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.file-drop strong,.privacy-choice-head strong) { font-size:17px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal #manifestationFiles { width:100% !important; min-height:48px !important; max-width:100% !important; font-size:16px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal :is(.form-alert,.privacy-summary,.form-confirm) { font-size:15px !important; line-height:1.5 !important; padding:12px !important; gap:8px !important; border-radius:10px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-confirm { min-height:48px !important; align-items:start !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .form-confirm input { min-width:24px !important; margin:3px 0 0 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-form-footer { padding:14px 0 0 !important; gap:12px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-form-footer strong { font-size:17px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .manifestation-form-footer span { font-size:15px !important; line-height:1.5 !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .account-actions { display:flex !important; flex-wrap:wrap !important; gap:8px !important; }
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation #newManifestationModal .account-actions > button { flex:1 1 9em; min-height:48px !important; font-size:16px !important; padding:10px 12px !important; white-space:normal !important; width:auto !important; }
+}

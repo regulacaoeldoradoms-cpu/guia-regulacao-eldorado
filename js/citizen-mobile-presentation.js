@@ -17,6 +17,14 @@ export function mountCitizenMobilePresentation(){
   const media=matchMedia('screen and (max-width: 900px)'),print=matchMedia('print');
   const copies=new Map();let bound=false,mobile=false,queued=false,printing=false;
   let notice,marker,help;
+  const compose=root.querySelector('#newManifestationModal');
+  function composeViewport(active){
+    if(!compose)return;
+    if(active){
+      compose.style.setProperty('--compose-viewport-height',`${window.visualViewport?.height || innerHeight}px`);
+      compose.style.setProperty('--compose-viewport-top',`${window.visualViewport?.offsetTop || 0}px`);
+    }else{compose.style.removeProperty('--compose-viewport-height');compose.style.removeProperty('--compose-viewport-top');}
+  }
   const path=()=>window.PortalCitizenShell?.active()?.url.pathname || location.pathname;
   function bind(){
     if(bound)return true;
@@ -63,11 +71,14 @@ export function mountCitizenMobilePresentation(){
       for(const [node,{original}] of copies)node.replaceChildren(...original);
       if(help){marker.parentNode.insertBefore(notice,marker.nextSibling);help.remove();}
     }
+    composeViewport(Boolean(active));
     mobile=Boolean(active);
   }
   function schedule(){if(!queued){queued=true;queueMicrotask(sync);}}
   new MutationObserver(schedule).observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
   media.addEventListener('change',sync);print.addEventListener('change',sync);
+  const viewportChanged=()=>{sync();const focused=document.activeElement;if(mobile&&compose?.classList.contains('open')&&compose.contains(focused)&&focused?.matches('input,select,textarea'))requestAnimationFrame(()=>focused.scrollIntoView({block:'nearest',inline:'nearest'}));};
+  window.visualViewport?.addEventListener('resize',viewportChanged);window.visualViewport?.addEventListener('scroll',viewportChanged);
   window.addEventListener('beforeprint',()=>{printing=true;sync();});window.addEventListener('afterprint',()=>{printing=false;sync();});
   window.addEventListener('portal:citizen-route',sync);
   const controller=Object.freeze({sync});window[INSTANCE]=controller;sync();return controller;
