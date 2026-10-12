@@ -5,6 +5,9 @@ export const GNOME_CANVAS_SIZE=78;
 export const GNOME_RENDER_SIZE=128*192/(1254/8);
 export const GNOME_ANCHOR_X=64+8*128/(1254/8);
 export const GNOME_ANCHOR_Y=120+16*128/(1254/8);
+// All eight idle core-alpha bounds share floor174 in the isolated tile.
+// Keep animation origin unchanged; depth uses the actual stable foot baseline.
+export const GNOME_GROUND_Y=174*128/(1254/8);
 let sheet,pending;
 export function loadGnomeFrames(){
   if(sheet)return Promise.resolve(sheet);if(pending)return pending;

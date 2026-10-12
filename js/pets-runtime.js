@@ -5,7 +5,7 @@ import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist
 import {PetSpeechCoordinator} from './pet-speech-coordinator.js?v=20261012-pet-depth-speech-1';
 import {drawCat,drawBed} from './pet-cat-frames.js';
 import {PetSpeech} from './pet-phrases.js?v=pet-phrases-20261009-cycle-1';
-import {drawGnome,loadGnomeFrames,GNOME_CANVAS_SIZE,GNOME_RENDER_SIZE,GNOME_ANCHOR_X,GNOME_ANCHOR_Y} from './gnome-frames.js?v=20261012-gnome-frame-wrap-1';
+import {drawGnome,loadGnomeFrames,GNOME_CANVAS_SIZE,GNOME_RENDER_SIZE,GNOME_ANCHOR_X,GNOME_ANCHOR_Y,GNOME_GROUND_Y} from './gnome-frames.js?v=20261012-pet-depth-speech-1';
 import {gnomeFrame,gnomeDuration,gnomeTravel} from './gnome-motion.mjs?v=20261012-gnome-frame-wrap-1';
 import {gnomeSpeechForSession} from './gnome-speech.js?v=20261012-gnome-2';
 function compatiblePetState(state){if(state.gnomeCompanion&&state.rules?.gnomeCompanionSlots!==1){const {gnomeCompanion,...compatible}=state;return compatible;}return state;}
@@ -112,10 +112,11 @@ export class PetRuntime{
   }
   this.render();
  }
+ groundY(){return (this.sceneTop||0)+this.y+(this.state.pet?.typeId==='gnome'?(GNOME_GROUND_Y-GNOME_ANCHOR_Y)*(this.gnomeGeometry?.size/GNOME_RENDER_SIZE||1):0);}
  syncDepth(){
   if(this.secondary)return this.depthOwner.syncDepth();
   const companion=this.gnomeRuntime;if(!companion||companion.closed)return;
-  this.frontPet=frontPet((this.sceneTop||0)+this.y,(companion.sceneTop||0)+companion.y,this.frontPet);
+  this.frontPet=frontPet(this.groundY(),companion.groundY(),this.frontPet);
   for(const pet of [this,companion]){const value=String((pet.ownsHabitat?11999:0)+(this.frontPet===pet.speaker?1:0));if(pet.root.style.zIndex!==value)pet.root.style.zIndex=value;}
  }
  keepSpeechReading(time){if(!this.root.hidden&&!document.hidden&&this.bubble.hasAttribute('data-scrollable')&&(this.bubbleReading.focus||this.bubbleReading.hover)&&!this.bubble.hidden&&this.bubble.style.visibility!=='hidden'){this.coordinator?.keepReading(this.speaker,time);if(!this.coordinator)this.speech.bubbleUntil=Math.max(this.speech.bubbleUntil||0,time+1000);}}
@@ -129,7 +130,7 @@ export class PetRuntime{
   const rect=this.root.getBoundingClientRect(),vp=window.visualViewport;scene.left=Math.max(8,(vp?.offsetLeft||0)-rect.left+8);scene.right=Math.min(scene.width-8,(vp?.offsetLeft||0)+(vp?.width||innerWidth)-rect.left-8);scene.top=Math.max(scene.top,(vp?.offsetTop||0)-rect.top+8);scene.bottom=Math.min(scene.height-8,(vp?.offsetTop||0)+(vp?.height||innerHeight)-rect.top-8);for(const nav of document.querySelectorAll('.social-mobile-nav')){const n=nav.getBoundingClientRect();if(n.width&&n.height&&n.bottom>=(vp?.offsetTop||0)+(vp?.height||innerHeight)-20)scene.bottom=Math.min(scene.bottom,n.top-rect.top-8);}
   if(scene.right-scene.left<26||scene.bottom-scene.top<40||sprite.right<=scene.left||sprite.left>=scene.right||sprite.bottom<=scene.top||sprite.top>=scene.bottom){this.bubble.style.visibility='hidden';return;}this.bubble.style.visibility='';
   const baseWidth=Math.floor(Math.min(260,scene.right-scene.left));
-  const signature=`${this.bubble.textContent}:${baseWidth}:${font}`;
+  const signature=`${this.bubble.dataset.speaker}:${this.bubble.textContent}:${baseWidth}:${font}`;
   if(this.speechSignature!==signature){this.bubble.style.width=baseWidth+'px';this.bubble.style.maxWidth=baseWidth+'px';this.bubble.style.removeProperty('max-height');this.naturalSpeech={width:this.bubble.offsetWidth,height:this.bubble.offsetHeight};this.speechFitCache=new Map();this.speechSignature=signature;}
   let size=this.naturalSpeech,position=speechPosition(sprite,size,scene),width=baseWidth+'px';
   if(position.side==='below'){const free=Math.max(sprite.left-scene.left-12,scene.right-sprite.right-12),pixels=Math.floor(free);if(pixels>=Math.max(72,parseFloat(getComputedStyle(this.bubble).fontSize)*4)){let candidate=this.speechFitCache.get(pixels);if(!candidate){this.bubble.style.width=pixels+'px';this.bubble.style.maxWidth=pixels+'px';this.bubble.style.removeProperty('max-height');candidate={width:this.bubble.offsetWidth,height:this.bubble.offsetHeight};this.speechFitCache.set(pixels,candidate);}if(candidate.height<=scene.bottom-scene.top){size=candidate;position=speechPosition(sprite,size,scene);width=pixels+'px';}}}

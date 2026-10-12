@@ -21,3 +21,5 @@ test('Speech sits above actual head, then chooses a clear side at top edge, with
 test('Near the top, a full-width bubble may fit wholly below the visible body when neither side fits',()=>{const p=speechPosition({left:80,right:190,top:40,bottom:180},{width:250,height:100},{width:268,height:320});assert.equal(p.side,'below');assert.equal(p.top,192);assert(p.top+100<=312);});
 
 test('Reading extends only the visible owner lease and does not create another bubble or backlog',()=>{let now=0;const c=new PetSpeechCoordinator({now:()=>now});c.present('gnome',{active:true,neutralAllowed:true,text:'Texto sintético.',until:1000});now=5000;c.keepReading('primary',now);assert.equal(c.current.until,1000);c.keepReading('gnome',now);assert.equal(c.current.until,6000);assert.equal(c.present('primary',{active:true,neutralAllowed:true,text:'Outro.',until:20000}), '');assert.equal(c.current.id,'gnome');c.remove('gnome');assert.equal(c.current,null);});
+
+test('Subpixel round-off at equal ground anchors retains the previous actor',()=>{assert.equal(frontPet(673.59375,673.5937499999999,'gnome'),'gnome');assert.equal(frontPet(100,100.01,'primary'),'gnome');});

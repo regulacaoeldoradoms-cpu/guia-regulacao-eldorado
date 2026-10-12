@@ -3,7 +3,7 @@ import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist
 import {petSession} from './pets-bootstrap.js?v=20261012-pet-depth-speech-1';
 import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261012-gnome-coexist-1';
 import {drawCat} from './pet-cat-frames.js';
-import {drawGnome,loadGnomeFrames,GNOME_CANVAS_SIZE,GNOME_RENDER_SIZE} from './gnome-frames.js?v=20261012-gnome-frame-wrap-1';
+import {drawGnome,loadGnomeFrames,GNOME_CANVAS_SIZE,GNOME_RENDER_SIZE} from './gnome-frames.js?v=20261012-pet-depth-speech-1';
 const initializePetArea = (context) => {
 const window=context?.window||globalThis;
 const document=context?.document||globalThis.document;
