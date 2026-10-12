@@ -12,7 +12,7 @@ Estado fica na memória da sessão: filtros/página/posição e rascunhos por ca
 
 ## Evidências e próximos gates
 
-Antes em .local/before-preserved e depois em .local/after-detail-review,320/360/390. Comparação emparelhada com o mesmo primeiro lote100 de253registros longos: primeira linha320:874,3→588,4px;360:860,9→476,6px;390:804,9→476,6px. Altura da primeira linha390:465,9→308,7px. Os dois temas tiveram a mesma geometria. Capturas: .local/council-matched-capture; estes números não representam ganho de rede. Detalhe teve a hierarquia e o espaço do resumo/PDF revistos. Fluxo foi validado com253registros sintéticos, status variados, assuntos/relatos longos e rede lenta.
+Antes em .local/before-preserved e depois em .local/after-detail-review,320/360/390. Comparação emparelhada com o mesmo primeiro lote100 de253registros longos: primeira linha320:874,3→568,9px;360:860,9→476,6px;390:804,9→476,6px. Altura da primeira linha390:465,9→308,7px. Os dois temas tiveram a mesma geometria. Capturas: .local/council-matched-capture; estes números não representam ganho de rede. Detalhe teve a hierarquia e o espaço do resumo/PDF revistos. Fluxo foi validado com253registros sintéticos, status variados, assuntos/relatos longos e rede lenta.
 
 A imagem Librarylibfile_f28f73ba886881918ffe6c19feacbb2e não foi visualizada: duas materializações suportadas falharam. A comparação usa a tela atual do código com fixtures, sem alegar correspondência à imagem.
 
