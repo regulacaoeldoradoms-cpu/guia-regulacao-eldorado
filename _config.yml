@@ -1,0 +1,3 @@
+# Server-only content is bundled by the Worker, never copied into Pages output.
+exclude:
+  - _server

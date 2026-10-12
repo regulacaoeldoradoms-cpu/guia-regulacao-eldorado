@@ -3,6 +3,8 @@ import {validatePortalSession} from './auth-management-v2.js';
 import {petCatalog} from './pet-catalog.js';
 import {PetError} from './pet-domain.js';
 import {readPetAccount,persistPetCommand} from './pet-store.js';
+import {readPrivatePetAge,declarePrivatePetAge} from './private-pet-age-store.js';
+import {GNOME_PHRASE_CATALOG,GNOME_PHRASE_VERSION} from '../_server/gnome-phrases.js';
 export const isPetsApi=path=>path==='/api/pets'||path.startsWith('/api/pets/');
 const fields={
  adopt:['operationId','typeId','variant','expectedPetRevision'],
@@ -26,12 +28,29 @@ export function createPetRouter({validateSession=validatePortalSession}={}){
    if(user.mustChangePassword)return json({code:'FIRST_ACCESS_REQUIRED',error:'Conclua a etapa de segurança.'},403);
    const part=new URL(request.url).pathname.replace(/^\/api\/pets\/?/,'');
    if(request.method==='GET'){
-    if(part==='catalog')return json(petCatalog(env));
-    if(part==='me')return json({state:await readPetAccount(env.AUTH_DB,user.username,env)});
+    if(part==='age')return json({ageStatus:await readPrivatePetAge(env.AUTH_DB,user.username)});
+    if(part==='catalog')return json(petCatalog(env,{adultEligible:(await readPrivatePetAge(env.AUTH_DB,user.username))==='adult'}));
+    if(part==='me'){
+     const state=await readPetAccount(env.AUTH_DB,user.username,env);
+     if(state.pet?.typeId==='gnome'&&(await readPrivatePetAge(env.AUTH_DB,user.username))!=='adult')return json({code:'ADULT_AGE_REQUIRED',error:'Este mascote está disponível somente para maiores de 18 anos.'},403);
+     return json({state});
+    }
+    if(part==='gnome-speech'){
+     if((await readPrivatePetAge(env.AUTH_DB,user.username))!=='adult')return json({code:'ADULT_AGE_REQUIRED',error:'Este mascote está disponível somente para maiores de 18 anos.'},403);
+     const state=await readPetAccount(env.AUTH_DB,user.username,env);
+     if(state.pet?.typeId!=='gnome')return json({code:'GNOME_REQUIRED',error:'Adote o Gnomo primeiro.'},403);
+     return json({version:GNOME_PHRASE_VERSION,phrases:GNOME_PHRASE_CATALOG});
+    }
     if(part==='achievements'){
      const result=await env.AUTH_DB.prepare('SELECT type_id AS typeId,title,unlocked_at AS unlockedAt FROM pet_achievements WHERE auth_username=? ORDER BY unlocked_at').bind(user.username).all();
      return json({achievements:result.results||[]});
     }
+   }
+   if(request.method==='POST'&&part==='age'){
+    const raw=await request.text();if(raw.length>256)throw new PetError('PAYLOAD_LIMIT','Pedido muito grande.',413);
+    let input;try{input=JSON.parse(raw);}catch{throw new PetError('PAYLOAD_INVALID','Pedido inválido.');}
+    if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>k!=='birthDate'))throw new PetError('PAYLOAD_INVALID','Campos inválidos.');
+    return json(await declarePrivatePetAge(env.AUTH_DB,user,input.birthDate));
    }
    if(request.method==='POST'&&fields[part]){
     const raw=await request.text();if(raw.length>4096)throw new PetError('PAYLOAD_LIMIT','Pedido muito grande.',413);

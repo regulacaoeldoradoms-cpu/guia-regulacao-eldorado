@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/js/portal-performance.js?v=20260923-1" async></script>
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
-  <link rel="preload" href="/js/auth-client.js?v=20261001-v34-8" as="script">
+  <link rel="preload" href="/js/auth-client.js?v=20261012-gnome-age-1" as="script">
 <meta name="theme-color" content="#0d3157">
   <title>Criar conta | Portal da Regulação</title>
   <link rel="icon" href="/assets/canal-cidadao-icon.png?v=20260817-1" type="image/png">
@@ -37,7 +37,7 @@
       <form class="login-card" id="signupForm" autocomplete="off">
         <a href="/login/" style="display:inline-block;margin-bottom:16px;color:#275d88;text-decoration:none">← Voltar ao login</a>
         <h2>Criar conta de cidadão</h2>
-        <p>Você precisa informar somente um nome de usuário e uma senha.</p>
+        <p>Escolha um nome de usuário e uma senha. Sua data de nascimento é privada.</p>
 
         <div class="portal-note info" style="margin-bottom:16px">
           <strong>Se quiser preservar sua identificação:</strong> não use seu nome completo, CPF, telefone, e-mail, data de nascimento ou outro dado pessoal como nome de usuário.
@@ -56,6 +56,11 @@
           <label for="signupConfirm">Confirmar senha</label>
           <input id="signupConfirm" type="password" autocomplete="new-password" required minlength="8" maxlength="160">
         </div>
+        <div class="portal-field">
+          <label for="signupBirthDate">Data de nascimento</label>
+          <input id="signupBirthDate" type="date" required autocomplete="bday">
+          <small>Usada somente para liberar mascotes destinados a maiores de 18 anos. Não aparece no seu perfil nem nas manifestações.</small>
+        </div>
 
         <div class="portal-note info" style="margin:4px 0 16px"><strong>Você começará como Conta Bronze.</strong><br>Não é preciso informar e-mail agora. A evolução para Prata será opcional e poderá ser feita depois em <em>Minha conta</em>.</div>
 
@@ -71,8 +76,8 @@
   </main>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20261001-v34-8"></script>
+  <script src="/js/auth-client.js?v=20261012-gnome-age-1"></script>
   <script src="/js/portal-interactions.js?v=20260923-2"></script>
-  <script src="/js/signup.js?v=20260906-1"></script>
+  <script src="/js/signup.js?v=20261012-gnome-age-1"></script>
 </body>
 </html>

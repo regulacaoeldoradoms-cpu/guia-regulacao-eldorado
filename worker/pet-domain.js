@@ -36,8 +36,8 @@ export function validateSchedule(v){
   fail('SCHEDULE_INVALID','Selecione dias e um intervalo válido de expediente.');
  return {timezone:v.timezone,days:[...new Set(v.days)].sort(),start:v.start,end:v.end};
 }
-export function applyPetCommand(current,balance,kind,input,now,env={}){
- const s=structuredClone(current),catalog=petCatalog(env),rules=catalog.rules;
+export function applyPetCommand(current,balance,kind,input,now,env={},eligibility={}){
+ const s=structuredClone(current),catalog=petCatalog(env,eligibility),rules=catalog.rules;
  if(s.pet)initializePetLives(s,now);
  let nextBalance=balance,delta=0,achievement=null,detail={};
  if(kind==='adopt'){

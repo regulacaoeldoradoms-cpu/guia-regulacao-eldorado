@@ -180,7 +180,8 @@ export async function sanitizeCitizenRegistrationRequest(request) {
 
   const cleanBody = {
     username: body.username,
-    password: body.password
+    password: body.password,
+    ...(Object.prototype.hasOwnProperty.call(body,'birthDate') ? {birthDate:body.birthDate} : {})
   };
 
   const headers = new Headers(request.headers);
