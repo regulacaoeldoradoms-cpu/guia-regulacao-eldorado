@@ -75,6 +75,8 @@
     if(modal.classList.contains('open'))return;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
+    modal.setAttribute('aria-modal', 'true');
+    window.PortalPets?.runtime?.render?.();
     if(phone.matches)modal.querySelector('[data-close-modal]')?.focus({preventScroll:true});
   }
 
@@ -84,6 +86,8 @@
     const modal = document.getElementById('councilDetailModal');
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('aria-modal', 'false');
+    window.PortalPets?.runtime?.render?.();
     document.querySelector(`#councilRows [data-protocol="${CSS.escape(state.selectedProtocol)}"] .council-open-detail`)?.focus({ preventScroll: true });
   }
   function rememberDraft(){
