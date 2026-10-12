@@ -319,6 +319,20 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   let response = await baseHandleCouncilRoute(request, effectiveEnv, origin, originAllowed, executionContext);
   response = await filterDeletedResponse(response);
 
-  if (isMember) return protectMemberResponse(response);
+  if (isMember) response = await protectMemberResponse(response);
+  // Revisions describe only the final authorized projection. Revalidate every
+  // collection and current access on opening, including notes and attachments;
+  // a browser snapshot never substitutes for the server permission check.
+  if (institutional && request.method === 'GET' && response.ok &&
+      /^\/api\/council\/manifestations\/CMS-\d{4}-\d{6}$/.test(url.pathname)) {
+    const payload = await response.json();
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const detailRevision = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+    const unchanged = url.searchParams.get('cacheRevision') === detailRevision;
+    return new Response(JSON.stringify(unchanged
+      ? { notModified: true, detailRevision, protocol }
+      : { ...payload, detailRevision }), { status: response.status, headers: response.headers });
+  }
   return response;
 }

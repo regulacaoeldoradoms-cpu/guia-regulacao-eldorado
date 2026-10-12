@@ -1,0 +1,37 @@
+/* Native detail controls; phone layout only, desktop and print retain their source. */
+@media screen and (max-width:900px) {
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .citizen-modal-panel{height:var(--council-detail-viewport,100dvh)!important;max-height:var(--council-detail-viewport,100dvh)!important;scroll-padding-top:90px;scroll-padding-bottom:150px}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .citizen-modal-head{padding:10px 12px!important;align-items:start!important;gap:8px!important;background:var(--council-ui-surface)!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .citizen-modal-head h2{font-size:16px!important;line-height:1.35!important;margin:0!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .citizen-modal-head small{font-size:13px!important;line-height:1.45!important;margin-top:3px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .citizen-modal-content{padding:12px 12px calc(var(--council-detail-nav-space,64px) + 20px)!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-main{gap:12px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-summary{padding:10px 12px!important;gap:8px!important;border-radius:12px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .detail-chips{gap:6px!important;padding:0!important;border:0!important;display:flex!important;flex-wrap:wrap!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .detail-chips > span{font-size:13px!important;line-height:1.4!important;max-width:100%;overflow-wrap:anywhere}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-card{padding:14px!important;border-radius:12px!important;box-shadow:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal :is(.detail-title,.detail-section-title,.council-section-head h3){font-size:18px!important;line-height:1.4!important;margin-bottom:8px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-section-kicker{font-size:12px!important;line-height:1.4!important;letter-spacing:.02em!important;margin-bottom:6px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal :is(#detailDescription,#detailService,.thread-body,.timeline,.internal-notes-list,.council-section-head p,.council-reply-heading span){font-size:16px!important;line-height:1.55!important;overflow-wrap:anywhere}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailService{padding-top:8px!important;margin-bottom:12px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailDescription{margin:0!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #attachmentList{font-size:15px!important;min-height:44px!important;padding:8px 0!important;flex-wrap:wrap!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .attachment-link{max-width:100%;min-height:44px;white-space:normal!important;overflow-wrap:anywhere}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal :is(.reply-form,.council-reply-heading){margin-top:16px!important;padding:12px!important;border-radius:10px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal textarea{font-size:16px!important;line-height:1.5!important;min-height:7em!important;resize:vertical!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal :is(#officialReplyButton,#saveStatus,#internalNoteButton){width:100%!important;min-height:48px!important;font-size:16px!important;line-height:1.4!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-mobile-detail-nav{grid-template-columns:repeat(auto-fit,minmax(min(100%,5em),1fr))!important;padding:6px!important;gap:4px!important;font-size:13px!important;background:var(--council-ui-surface)!important;border-top:1px solid var(--council-ui-line)!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-mobile-detail-nav button{font-size:inherit!important;line-height:1.35!important;min-height:48px!important;padding:6px 3px!important;overflow-wrap:anywhere}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-document{border:1px solid var(--council-ui-line);border-radius:10px;background:var(--council-ui-surface);padding:0 12px;color:var(--council-ui-text)}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-document > summary{min-height:48px;display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;cursor:pointer}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-document > summary::after{content:'⌄';margin-left:auto}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-detail-document .council-export-actions{padding:0 0 12px!important;margin:0!important;gap:8px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal .council-export-hint{font-size:14px!important;line-height:1.5!important}
+ body.mobile-council-mode[data-council-detail-reviewed].council-detail-editing #councilDetailModal .council-mobile-detail-nav{display:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed].council-detail-editing #councilDetailModal .citizen-modal-content{padding-bottom:24px!important}
+}
+@media screen and (max-width:900px) {
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailProtocol{font-size:16px!important;line-height:1.35!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailMeta{font-size:13px!important;line-height:1.45!important;margin-top:3px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal #detailSubject{font-size:18px!important;line-height:1.4!important}
+}

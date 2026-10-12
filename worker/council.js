@@ -313,24 +313,21 @@ async function councilList(env, user, origin, pageToken = '') {
   return json({ manifestations: result.documents.map(protectedManifestation), nextPageToken: result.nextPageToken }, 200, origin);
 }
 
-async function detail(env, user, protocol, origin, asCitizen = false) {
+async function detail(env, user, protocol, origin, asCitizen = false, prefetch = false) {
   const own = await ownership(env, protocol, user.username);
   const isCouncil = !asCitizen && councilAccess(user);
   if (asCitizen && !own) return json({ error: 'Manifestação não encontrada ou sem permissão de acesso.' }, 404, origin);
   if (!isCouncil && !own) return json({ error: 'Manifestação não encontrada ou sem permissão de acesso.' }, 404, origin);
   const doc = await firestoreGet(env, `council_manifestations/${protocol}`);
   if (!doc) return json({ error: 'Manifestação não encontrada.' }, 404, origin);
-  const [messages, events, attachments] = await Promise.all([
+  const [messages, events, attachments, internalNotes] = await Promise.all([
     firestoreList(env, `council_manifestations/${protocol}/messages`, { pageSize: 100, orderBy: 'createdAt asc' }),
     firestoreList(env, `council_manifestations/${protocol}/events`, { pageSize: 100, orderBy: 'createdAt asc' }),
-    firestoreList(env, `council_manifestations/${protocol}/attachments`, { pageSize: 20, orderBy: 'createdAt asc' }).catch(() => ({ documents: [] }))
+    firestoreList(env, `council_manifestations/${protocol}/attachments`, { pageSize: 20, orderBy: 'createdAt asc' }).catch(() => ({ documents: [] })),
+    isCouncil ? firestoreList(env, `council_manifestations/${protocol}/internal_notes`, { pageSize: 100, orderBy: 'createdAt asc' }).catch(() => ({ documents: [] })) : Promise.resolve({documents:[]})
   ]);
-  let notes = [];
-  if (isCouncil) {
-    notes = (await firestoreList(env, `council_manifestations/${protocol}/internal_notes`, { pageSize: 100, orderBy: 'createdAt asc' }).catch(() => ({ documents: [] }))).documents
-      .map(protectedInternalNote);
-    await audit(env, user, 'manifestation.view', protocol);
-  }
+  const notes = internalNotes.documents.map(protectedInternalNote);
+  if (isCouncil && !prefetch) await audit(env, user, 'manifestation.view', protocol);
   const safeDoc = isCouncil ? protectedManifestation(doc) : (() => { const { authorUsername, ...safe } = doc; return safe; })();
   return json({
     manifestation: safeDoc,
@@ -498,6 +495,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
       councilRole: user.councilRole || '',
       role: user.role,
       citizenAccess: true,
+      detailPrefetch: !asCitizen && councilAccess(user),
       canCreateManifestation: !presidentAccess(user),
       canIdentifyManifestation: true,
       canUseConfidentialManifestation: user.emailVerified === true,
@@ -513,7 +511,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   if (url.pathname === '/api/council/notifications' && (request.method === 'GET' || request.method === 'PATCH')) return notifications(request, env, user, origin);
 
   let match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);
-  if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen);
+  if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen, !asCitizen && url.searchParams.get('prefetch') === '1');
   if (match && request.method === 'PATCH') {
     if (asCitizen) return json({ error: 'Ações institucionais não estão disponíveis na área de acompanhamento das próprias manifestações.' }, 403, origin);
     return changeStatus(request, env, user, match[1], origin, executionContext);

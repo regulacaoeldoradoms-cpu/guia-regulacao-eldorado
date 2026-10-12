@@ -27,6 +27,22 @@
   const state = { manifestations: [], selectedProtocol: '', detail: null, page:0, nextPageToken:'', loadedPages:1, listGeneration:0, detailGeneration:0, loading:false, checkedAt:0 };
   const phone = matchMedia('screen and (max-width:900px)');
   const pageSize=20,drafts=new Map();
+  const createDetailCache=window.createCouncilDetailCache||(({request})=>({open:protocol=>request('/api/council/manifestations/'+encodeURIComponent(protocol),{method:'GET'}),enable(){},prioritize(){},cancelOpening(){},invalidate(){},close(){},resume(){}}));
+  const detailCache = createDetailCache({
+    request:(path, options) => auth.api(path, options),
+    valid:() => auth.getToken() === initialToken,
+    canPrefetch:() => !document.hidden && navigator.onLine !== false && !navigator.connection?.saveData && !document.getElementById('councilDetailModal').classList.contains('open'),
+    onDenied:() => { document.getElementById('detailContent').hidden = true; auth.me({allowCached:false}).catch(() => {}); }
+  });
+  // This capability prevents an older Worker from recording speculative views.
+  auth.api('/api/council/config', {method:'GET'}).then(config => detailCache.enable(config?.detailPrefetch === true)).catch(() => {});
+  const visibleDetails = new Map();
+  const detailObserver = window.IntersectionObserver ? new IntersectionObserver(entries => {
+    for (const entry of entries) visibleDetails.set(entry.target.dataset.protocol, entry.isIntersecting);
+    const rows = [...document.querySelectorAll('#councilRows tr[data-protocol]')];
+    detailCache.prioritize(rows.filter(row => visibleDetails.get(row.dataset.protocol)).map(row => row.dataset.protocol));
+  }, {rootMargin:'0px 0px 300px 0px'}) : {observe(){},disconnect(){}};
+
   const rowSignatures=new WeakMap();
   const tableContainer=document.querySelector('#councilRows').closest('table').parentElement;
   const pager=document.createElement('div');pager.id='councilPager';pager.className='council-pager';pager.hidden=true;
@@ -83,11 +99,13 @@
   function closeModal() {
     rememberDraft();
     state.detailGeneration++;
+    detailCache.cancelOpening();
     const modal = document.getElementById('councilDetailModal');
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     modal.setAttribute('aria-modal', 'false');
     window.PortalPets?.runtime?.render?.();
+    detailCache.resume();
     document.querySelector(`#councilRows [data-protocol="${CSS.escape(state.selectedProtocol)}"] .council-open-detail`)?.focus({ preventScroll: true });
   }
   function rememberDraft(){
@@ -140,6 +158,7 @@
     document.getElementById('councilLoadMore').disabled=state.loading;
     document.getElementById('councilListChecked').textContent=state.loading?'Consultando o servidor…':state.checkedAt?`Última consulta: ${new Date(state.checkedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${state.nextPageToken?' · Há mais registros para carregar.':''}`:'';
     if (!items.length) {
+      detailObserver.disconnect();visibleDetails.clear();detailCache.prioritize([]);
       rows.innerHTML = '<tr><td colspan="5">Nenhuma manifestação corresponde aos filtros.</td></tr>';
       return;
     }
@@ -157,6 +176,7 @@
       const temporary=document.createElement('tbody');temporary.innerHTML=html;const row=temporary.firstElementChild;rowSignatures.set(row,html);return row;
     });
     let at=rows.firstChild;for(const row of next){if(row===at)at=at.nextSibling;else rows.insertBefore(row,at);}while(at){const following=at.nextSibling;at.remove();at=following;}
+    detailObserver.disconnect();visibleDetails.clear();for(const row of next)detailObserver.observe(row);
   }
 
   function preserveListPosition(){
@@ -214,8 +234,11 @@
   document.getElementById('councilNextPage').addEventListener('click',()=>{state.page++;renderRows();tableContainer.scrollIntoView({block:'start'});});
   document.getElementById('councilLoadMore').addEventListener('click',loadMore);
   phone.addEventListener('change',renderRows);
-  addEventListener('portal:session-cleared',()=>{state.listGeneration++;state.detailGeneration++;state.manifestations=[];state.detail=null;state.selectedProtocol='';drafts.clear();pager.hidden=true;document.getElementById('councilRows').innerHTML='<tr><td colspan="5">Sessão encerrada.</td></tr>';document.getElementById('detailContent').hidden=true;for(const id of ['statusDetail','officialReply','internalNoteText'])document.getElementById(id).value='';closeModal();});
-  addEventListener('portal:session-ready',()=>{const fresh=auth.getCachedUser(),effectiveRole=fresh?.role==='admin'?'presidente':fresh?.councilRole;if(auth.getToken()!==initialToken||fresh?.username!==user.username||fresh?.role!==user.role||effectiveRole!==user.councilRole)location.replace(location.href);});
+  addEventListener('visibilitychange',()=>{if(document.hidden){detailCache.cancelOpening();}else detailCache.resume();});
+  addEventListener('online',()=>detailCache.resume());
+  addEventListener('pagehide',()=>{detailCache.close();detailObserver.disconnect();});
+  addEventListener('portal:session-cleared',()=>{detailCache.close();detailObserver.disconnect();state.listGeneration++;state.detailGeneration++;state.manifestations=[];state.detail=null;state.selectedProtocol='';drafts.clear();pager.hidden=true;document.getElementById('councilRows').innerHTML='<tr><td colspan="5">Sessão encerrada.</td></tr>';document.getElementById('detailContent').hidden=true;for(const id of ['statusDetail','officialReply','internalNoteText'])document.getElementById(id).value='';closeModal();});
+  addEventListener('portal:session-ready',()=>{const fresh=auth.getCachedUser(),effectiveRole=fresh?.role==='admin'?'presidente':fresh?.councilRole;if(auth.getToken()!==initialToken||fresh?.username!==user.username||fresh?.role!==user.role||effectiveRole!==user.councilRole){detailCache.close();document.getElementById('detailContent').hidden=true;location.replace(location.href);}});
 
   function renderMessages(messages) {
     const el = document.getElementById('messageThread');
@@ -265,15 +288,17 @@
   }
 
   async function openDetail(protocol) {
-    rememberDraft();const generation=++state.detailGeneration;
+    rememberDraft();if(protocol!==state.selectedProtocol)detailCache.cancelOpening();const generation=++state.detailGeneration;
     state.selectedProtocol = protocol;
     state.detail = null;
+    document.getElementById('detailProtocol').textContent=protocol;
+    document.getElementById('detailMeta').textContent='';
     openModal();
     document.getElementById('detailLoading').hidden = false;
     document.getElementById('detailLoading').textContent = 'Carregando...';
     document.getElementById('detailContent').hidden = true;
     try {
-      const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}`, { method: 'GET' });
+      const payload = await detailCache.open(protocol);
       if(generation!==state.detailGeneration||auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       state.detail = payload;
       const item = payload.manifestation;
@@ -335,6 +360,7 @@
       if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       if(document.getElementById('internalNoteText').value===body)document.getElementById('internalNoteText').value = '';
       showStatus(status, 'Observação interna registrada.', 'success');
+      detailCache.invalidate(protocol);
       await openDetail(protocol);
     } catch (error) {
       if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
@@ -353,6 +379,7 @@
       });
       if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       showStatus(statusEl, 'Andamento atualizado.', 'success');
+      detailCache.invalidate(protocol);
       await Promise.all([openDetail(protocol), ...(!phone.matches?[loadAll()]:[])]);
     } catch (error) {
       if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
@@ -375,6 +402,7 @@
       if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;
       if(document.getElementById('officialReply').value===body)document.getElementById('officialReply').value = '';
       showStatus(statusEl, 'Resposta enviada ao cidadão.', 'success');
+      detailCache.invalidate(protocol);
       await Promise.all([openDetail(protocol), ...(!phone.matches?[loadAll()]:[])]);
     } catch (error) {
       if(auth.getToken()!==initialToken||state.selectedProtocol!==protocol)return;

@@ -14,6 +14,7 @@ async function setup(context,{citizen=false,theme='dark',empty=false}={}){
   const user={...auditUser,role:citizen?'cidadao':'admin',councilRole:citizen?null:'presidente',interfaceTheme:theme};
   const responses={
     '/api/auth/me':{user},'/api/auth/security':{security:{user,email:'audit@example.invalid',emailVerified:true,privacyMode:'sigilosa'}},
+    '/api/council/config':{detailPrefetch:false},
     '/api/council/my':{manifestations:empty?[]:[manifestation]},'/api/council/all':{manifestations:empty?[]:[manifestation]},
     '/api/council/notifications':{notifications:empty?[]:[{id:1,title:'Notificação sintética',protocol,createdAt:'2026-09-24T12:00:00Z',readAt:null}]},
     [detailPath]:detail,
