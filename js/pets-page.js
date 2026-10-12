@@ -1,6 +1,7 @@
 'use strict';
-import {petSession} from './pets-bootstrap.js?v=20261012-gnome-2';
-import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261011-pets-mobile-1';
+import {gnomeCompanionState} from './pet-companions.js?v=20261012-gnome-coexist-1';
+import {petSession} from './pets-bootstrap.js?v=20261012-gnome-coexist-1';
+import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261012-gnome-coexist-1';
 import {drawCat} from './pet-cat-frames.js';
 import {drawGnome,loadGnomeFrames} from './gnome-frames.js?v=20261012-gnome-2';
 const initializePetArea = (context) => {
@@ -18,9 +19,13 @@ const presentation=mountPetsMobilePresentation(context?.root || document);
 context?.addController({activate:()=>presentation?.sync(),dispose:()=>presentation?.dispose()});
 const $=id=>document.getElementById(id);
 const message=(text,error=false)=>{$('petMessage').textContent=text;$('petMessage').dataset.error=String(error);};
+let careTarget='primary';
+const careState=()=>careTarget==='gnome'&&session?.runtime.state.gnomeCompanion?gnomeCompanionState(session.runtime.state):session?.runtime.state;
+const careRuntime=()=>careTarget==='gnome'?session?.runtime.gnomeRuntime:session?.runtime;
+function canAdopt(typeId){const s=session?.runtime.state;if(!s)return false;const live=Boolean(s.pet&&s.life?.deadAt==null);if(typeId==='gnome')return !(s.pet?.typeId==='gnome'&&live)&&!(s.gnomeCompanion?.pet&&s.gnomeCompanion.life?.deadAt==null)&&(!live||s.rules.gnomeCompanionSlots===1);return !live||(s.pet?.typeId==='gnome'&&s.rules.gnomeCompanionSlots===1);}
 let session,selected=null,busy=false,initializing=false,bound=false,pageEpoch=0,pageToken=null;
 function resetPage(){
- pageEpoch++;session=null;selected=null;busy=false;pageToken=null;
+ pageEpoch++;careTarget='primary';document.getElementById('petCareTarget')?.remove();session=null;selected=null;busy=false;pageToken=null;
  for(const id of ['petHome','petShop','petSettings'])$(id).hidden=true;
  for(const id of ['petNeeds','petItems','petGallery','petDays','petLives'])$(id).replaceChildren();
  $('petLifeStatus').textContent='';
@@ -32,12 +37,15 @@ function resetPage(){
 const node=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text||'';if(cls)n.className=cls;return n;};
 async function command(kind,input,success){
  if(busy||!session||!session.api.valid())return;const owner=session,generation=pageEpoch;busy=true;document.querySelectorAll('.pet-page button').forEach(b=>b.disabled=true);
- try{const result=await owner.api.command(kind,input);if(session!==owner||generation!==pageEpoch)return;owner.runtime.update(result.state);message(success);}
+ try{const targeted=['care','placement','purchase'].includes(kind)&&careTarget==='gnome'?{...input,petTarget:'gnome'}:input;const result=await owner.api.command(kind,targeted);if(session!==owner||generation!==pageEpoch)return;if(kind==='adopt')careTarget=input.typeId==='gnome'&&result.state.gnomeCompanion?'gnome':'primary';owner.runtime.update(result.state);message(success);}
  catch(e){if(session!==owner||generation!==pageEpoch)return;message(e.message,true);await owner.runtime.refresh();}
  finally{if(session===owner&&generation===pageEpoch){busy=false;render();}}
 }
 function render(){
- if(!session||!session.api.valid())return;const s=session.runtime.state,c=session.catalog;presentation?.state(s);
+ if(!session||!session.api.valid())return;const full=session.runtime.state;if(careTarget==='gnome'&&!full.gnomeCompanion)careTarget='primary';const s=careState(),c=session.catalog;presentation?.state(s);
+ let selector=$('petCareTarget');
+ if(full.gnomeCompanion&&!selector){selector=node('div','','pet-care-target');selector.id='petCareTarget';selector.setAttribute('role','group');selector.setAttribute('aria-label','Escolher mascote para os cuidados');for(const [target,label]of [['primary','Cuidados do gato'],['gnome','Cuidados do Gnomo']]){const button=node('button',label);button.type='button';button.dataset.petTarget=target;button.addEventListener('click',()=>{if(busy||target===careTarget)return;careRuntime()?.preview(null);careTarget=target;delete $('petPlacement').dataset.editing;render();message(target==='gnome'?'Os próximos cuidados são para o Gnomo.':'Os próximos cuidados são para o gato.');});selector.append(button);}$('petHome').querySelector('h2').after(selector);}
+ if(selector){if(!full.gnomeCompanion)selector.remove();else for(const button of selector.querySelectorAll('button')){button.disabled=busy;button.setAttribute('aria-pressed',String(button.dataset.petTarget===careTarget));}}
  const dead=s.life?.deadAt!=null,living=Boolean(s.pet&&!dead),lives=s.life?.lives??7;
  const gnome=s.pet?.typeId==='gnome';
  const intro=document.querySelector('.pet-mobile-intro');if(intro)intro.textContent=gnome?'Cuide do seu Gnomo e acompanhe os cuidados.':'Cuide do seu gato e acompanhe as sete vidas.';
@@ -46,7 +54,7 @@ function render(){
  $('petLives').replaceChildren();$('petLives').setAttribute('aria-label',lives+' de 7 vidas');
  for(let i=0;i<7;i++){const heart=node('span','','pet-heart');heart.dataset.filled=String(i<lives);heart.setAttribute('aria-hidden','true');$('petLives').append(heart);}
  const rules=s.rules.life||c.rules.life;
- $('petLifeStatus').textContent=dead?'Seu gato perdeu as sete vidas. A história e o inventário ficam guardados. Você pode adotar outro na galeria.':
+ $('petLifeStatus').textContent=dead?(gnome?'Seu Gnomo perdeu as sete vidas. A história e o inventário ficam guardados. Você pode adotar outro na galeria.':'Seu gato perdeu as sete vidas. A história e o inventário ficam guardados. Você pode adotar outro na galeria.'):
   rules?'Comida cheia dura '+rules.foodSeconds/3600+' horas de cuidados ativos; água, '+rules.waterSeconds/3600+'. Sem comida: 1 vida a cada '+rules.hungerLifeSeconds/3600+' hora. Sem água: 1 vida a cada '+rules.thirstLifeSeconds/60+' minutos. Fora do expediente, com necessidades pausadas ou Portal fechado, o tempo para.':'A atualização dos cuidados está chegando. Recarregue a página em instantes.';
  $('petNeeds').replaceChildren();
  for(const [key,label] of [['hunger','Comida'],['thirst','Água'],['dirt','Limpeza']]){
@@ -69,7 +77,7 @@ function render(){
   }
   if(item.kind==='water-bowl'){
    card.append(node('p','Ao comprar, o potinho fica cheio e protege a água por '+rules.bowlProtectionSeconds/3600+' horas de cuidados ativos. Depois, a água leva mais '+rules.waterSeconds/3600+' horas para acabar.'));
-   if(owned){const fill=node('button','Encher potinho · grátis');fill.disabled=busy||dead;fill.addEventListener('click',()=>command('care',{action:'fill-bowl',expectedPetRevision:s.petRevision},'Potinho cheio por mais 48 horas de cuidados ativos.'));card.append(fill);
+   if(owned){if(s.life?.waterBowl!==item.id){const equip=node('button',gnome?'Usar potinho no Gnomo':'Usar potinho no gato');equip.disabled=busy||dead;equip.addEventListener('click',()=>command('care',{action:'equip-bowl',itemId:item.id,expectedPetRevision:s.petRevision},'Potinho pronto para este mascote.'));card.append(equip);}const fill=node('button','Encher potinho · grátis');fill.disabled=busy||dead;fill.addEventListener('click',()=>command('care',{action:'fill-bowl',expectedPetRevision:s.petRevision},'Potinho cheio por mais 48 horas de cuidados ativos.'));card.append(fill);
     card.append(node('p','Proteção restante: '+Math.ceil((s.life?.bowlProtectionSeconds||0)/3600)+' horas de cuidados ativos.'));}
   }
   $('petItems').append(card);
@@ -85,8 +93,8 @@ function render(){
  }
  $('petProposal').textContent='Proposta inicial configurável: 1 moeda por '+s.rules.secondsPerCoin/60+' minutos de uso ativo, até '+s.rules.dailyCap+' por dia. A aba aberta sem interação não conta. Preços da loja também são propostas.';
  document.querySelectorAll('[data-care]').forEach(b=>b.disabled=busy||dead||(b.dataset.care==='special-bath'&&!s.inventory['bath-special']));
- $('petAdopt').disabled=busy||!selected||living;
- $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||living||b.dataset.assetPending==='true');
+ $('petAdopt').disabled=busy||!selected||!canAdopt(selected.typeId);
+ $('petGallery').querySelectorAll('button').forEach(b=>b.disabled=busy||!canAdopt(b.dataset.typeId)||b.dataset.assetPending==='true');
  $('petPreferences').querySelector('button').disabled=busy;
  $('petPlacement').querySelectorAll('button').forEach(b=>b.disabled=busy||dead);
  if($('petAgeSubmit'))$('petAgeSubmit').disabled=busy;
@@ -100,10 +108,10 @@ async function renderGallery(){
   const button=node('button',gnome?'Gnomo · 18+':variant==='ginger'?'Gato dourado':'Gato cinza','pet-choice'),canvas=document.createElement('canvas');canvas.width=64;canvas.height=gnome?64:48;
   if(gnome){
    canvas.dataset.petType='gnome';button.dataset.assetPending='true';button.disabled=true;
-   loadGnomeFrames().then(()=>{if(owner!==session||generation!==pageEpoch||!owner.api.valid()||!button.isConnected)return;drawGnome(canvas.getContext('2d'));delete button.dataset.assetPending;button.disabled=busy||Boolean(owner.runtime.state.pet&&owner.runtime.state.life?.deadAt==null);}).catch(()=>{if(owner===session&&generation===pageEpoch)message('Não foi possível carregar a imagem do Gnomo. Recarregue para tentar novamente.',true);});
+   loadGnomeFrames().then(()=>{if(owner!==session||generation!==pageEpoch||!owner.api.valid()||!button.isConnected)return;drawGnome(canvas.getContext('2d'));delete button.dataset.assetPending;button.disabled=busy||!canAdopt(type.id);}).catch(()=>{if(owner===session&&generation===pageEpoch)message('Não foi possível carregar a imagem do Gnomo. Recarregue para tentar novamente.',true);});
   }else drawCat(canvas.getContext('2d'),'idle',0,variant);
-  button.prepend(canvas);button.setAttribute('aria-pressed',String(selected?.typeId===type.id&&selected.variant===variant));
-  button.addEventListener('click',()=>{selected={typeId:type.id,variant};for(const b of $('petGallery').children)b.setAttribute('aria-pressed',String(b===button));$('petAdopt').disabled=busy;message('Selecionado. Confirme no botão Adotar.');});$('petGallery').append(button);
+  button.dataset.typeId=type.id;button.prepend(canvas);button.setAttribute('aria-pressed',String(selected?.typeId===type.id&&selected.variant===variant));
+  button.addEventListener('click',()=>{selected={typeId:type.id,variant};for(const b of $('petGallery').children)b.setAttribute('aria-pressed',String(b===button));$('petAdopt').disabled=busy||!canAdopt(type.id);message('Selecionado. Confirme no botão Adotar.');});$('petGallery').append(button);
  }
 }
 async function initialize(){
@@ -128,11 +136,11 @@ async function initialize(){
   finally{if(owner===session&&generation===pageEpoch)button.disabled=false;}
  });
  $('petAdopt').addEventListener('click',()=>{if(selected)command('adopt',{...selected,expectedPetRevision:session.runtime.state.petRevision},selected.typeId==='gnome'?'Adoção do Gnomo confirmada.':'Adoção confirmada. Cuidar de 7 vidas não é fácil');});
- for(const button of document.querySelectorAll('[data-care]'))button.addEventListener('click',()=>command('care',{action:button.dataset.care,expectedPetRevision:session.runtime.state.petRevision},'Cuidado realizado.'));
- const position=()=>{const s=session.runtime.state;return {...s.placement,x:Number($('bedX').value),y:Number($('bedY').value)};};
- for(const id of ['bedX','bedY'])$(id).addEventListener('input',()=>{$('petPlacement').dataset.editing='true';session.runtime.preview(position());});
- $('petPlacement').addEventListener('submit',event=>{event.preventDefault();const s=session.runtime.state,p=position();delete $('petPlacement').dataset.editing;session.runtime.preview(null);command('placement',{itemId:p.itemId,x:p.x,y:p.y,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Posição salva.');});
- $('removeBed').addEventListener('click',()=>{const s=session.runtime.state;delete $('petPlacement').dataset.editing;session.runtime.preview(null);command('placement',{itemId:null,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Caminha guardada no inventário.');});
+ for(const button of document.querySelectorAll('[data-care]'))button.addEventListener('click',()=>command('care',{action:button.dataset.care,expectedPetRevision:careState().petRevision},'Cuidado realizado.'));
+ const position=()=>{const s=careState();return {...s.placement,x:Number($('bedX').value),y:Number($('bedY').value)};};
+ for(const id of ['bedX','bedY'])$(id).addEventListener('input',()=>{$('petPlacement').dataset.editing='true';careRuntime()?.preview(position());});
+ $('petPlacement').addEventListener('submit',event=>{event.preventDefault();const s=careState(),p=position();delete $('petPlacement').dataset.editing;careRuntime()?.preview(null);command('placement',{itemId:p.itemId,x:p.x,y:p.y,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Posição salva.');});
+ $('removeBed').addEventListener('click',()=>{const s=careState();delete $('petPlacement').dataset.editing;careRuntime()?.preview(null);command('placement',{itemId:null,expectedPetRevision:s.petRevision,expectedPlacementRevision:s.placement.revision},'Caminha guardada no inventário.');});
  $('petPreferences').addEventListener('input',()=>{$('petPreferences').dataset.editing='true';});
  $('petPreferences').addEventListener('submit',event=>{
   event.preventDefault();const minutes=id=>{const [h,m]=$(id).value.split(':').map(Number);return h*60+m;};

@@ -1,5 +1,6 @@
 'use strict';
 import {petCatalog} from './pet-catalog.js';
+import {petSlot,gnomeCompanionState} from '../js/pet-companions.js';
 import {initializePetLives,advancePetLives,feedPetLives,waterPetLives,fillPetWaterBowl} from './pet-lives.js';
 export class PetError extends Error {
  constructor(code,message,status=400){super(message);this.code=code;this.status=status;}
@@ -36,7 +37,7 @@ export function validateSchedule(v){
   fail('SCHEDULE_INVALID','Selecione dias e um intervalo válido de expediente.');
  return {timezone:v.timezone,days:[...new Set(v.days)].sort(),start:v.start,end:v.end};
 }
-export function applyPetCommand(current,balance,kind,input,now,env={},eligibility={}){
+function applySinglePetCommand(current,balance,kind,input,now,env={},eligibility={}){
  const s=structuredClone(current),catalog=petCatalog(env,eligibility),rules=catalog.rules;
  if(s.pet)initializePetLives(s,now);
  let nextBalance=balance,delta=0,achievement=null,detail={};
@@ -83,6 +84,11 @@ export function applyPetCommand(current,balance,kind,input,now,env={},eligibilit
   requireLiving(s);revision(s.petRevision,input.expectedPetRevision);
   if(input.action==='food')feedPetLives(s,now);
   else if(input.action==='water')waterPetLives(s,now);
+  else if(input.action==='equip-bowl'){
+   const item=catalog.items.find(item=>item.id===input.itemId&&item.kind==='water-bowl');
+   if(!item||!s.inventory[item.id])fail('ITEM_NOT_OWNED','Compre o potinho antes de usá-lo.',403);
+   s.life.waterBowl=item.id;fillPetWaterBowl(s,now);
+  }
   else if(input.action==='fill-bowl'){
    if(!fillPetWaterBowl(s,now))fail('ITEM_NOT_OWNED','Compre e use o potinho antes de enchê-lo.',403);
   }
@@ -130,8 +136,59 @@ export function applyPetCommand(current,balance,kind,input,now,env={},eligibilit
  }else fail('PET_ACTION_INVALID','Ação inválida.');
  return {state:s,balance:nextBalance,achievement,result:{ok:true,delta,...detail}};
 }
+export function applyPetCommand(current,balance,kind,input,now,env={},eligibility={}){
+ const target=Object.prototype.hasOwnProperty.call(input,'petTarget')?input.petTarget:'primary';
+ if(!['primary','gnome'].includes(target))fail('PET_TARGET_INVALID','Escolha o mascote que receberá o cuidado.');
+ if(kind==='adopt'&&input.typeId==='gnome'&&current.pet?.typeId==='cat'){
+  revision(current.petRevision,input.expectedPetRevision);
+  if(!eligibility.adultEligible)fail('ADULT_AGE_REQUIRED','Este mascote está disponível somente para maiores de 18 anos.',403);
+  if(current.gnomeCompanion?.pet&&current.gnomeCompanion.life?.deadAt==null)fail('PET_ALREADY_ADOPTED','Você já adotou o Gnomo.',409);
+  const fresh=initialPetState();fresh.petRevision=current.gnomeCompanion?.petRevision||0;fresh.deathHistory=structuredClone(current.gnomeCompanion?.deathHistory||[]);
+  const adopted=applySinglePetCommand(fresh,balance,'adopt',{...input,expectedPetRevision:fresh.petRevision},now,env,eligibility);
+  const state=structuredClone(current);
+  state.gnomeCompanion={...petSlot(adopted.state),adoptedAt:now};
+  return {...adopted,state};
+ }
+ if(kind==='adopt'&&input.typeId==='cat'&&current.pet?.typeId==='gnome'){
+  revision(current.petRevision,input.expectedPetRevision);
+  if(!eligibility.adultEligible)fail('ADULT_AGE_REQUIRED','Este mascote está disponível somente para maiores de 18 anos.',403);
+  if(current.gnomeCompanion?.pet)fail('PET_ALREADY_ADOPTED','A conta já tem um Gnomo guardado.',409);
+  const fresh=initialPetState();fresh.petRevision=current.petRevision;
+  const adopted=applySinglePetCommand(fresh,balance,'adopt',input,now,env,eligibility),state=structuredClone(current);
+  const companion={...petSlot(current),adoptedAt:current.life?.startedAt||now};
+  Object.assign(state,petSlot(adopted.state));state.gnomeCompanion=companion;
+  return {...adopted,state};
+ }
+ if(target==='gnome'){
+  if(!['care','placement','purchase'].includes(kind))fail('PET_TARGET_INVALID','Esta ação pertence à conta, não a um mascote específico.');
+  if(!eligibility.adultEligible)fail('ADULT_AGE_REQUIRED','Este mascote está disponível somente para maiores de 18 anos.',403);
+  const companion=gnomeCompanionState(current);if(!companion)fail('PET_REQUIRED','Adote o Gnomo primeiro.',403);
+  const result=applySinglePetCommand(companion,balance,kind,input,now,env,eligibility),state=structuredClone(current);
+  state.gnomeCompanion={...current.gnomeCompanion,...petSlot(result.state)};
+  state.inventory=result.state.inventory;
+  return {...result,state};
+ }
+ const result=applySinglePetCommand(current,balance,kind,input,now,env,eligibility);
+ if(kind==='activity'&&result.state.gnomeCompanion?.pet){
+  if(!eligibility.adultEligible){result.state.gnomeCompanion.ageClockEligible=false;return result;}
+  const s=result.state,g=s.gnomeCompanion,rules=petCatalog(env).rules,previous=current.activity;
+  const owns=previous&&previous.tabId===input.tabId&&previous.token===input.leaseToken&&previous.sessionVersion===input.sessionVersion;
+  const eligible=input.visible&&input.focused&&input.recentlyInteracted;
+  const elapsed=owns&&previous.eligible&&eligible&&now>=previous.at&&now-previous.at<=rules.leaseSeconds?Math.min(rules.sampleSeconds,now-previous.at):0;
+  const activeSeconds=g.ageClockEligible===false?0:Math.min(elapsed,Math.max(0,now-(g.adoptedAt??now)));g.ageClockEligible=true;
+  if(!current.sleepUntil&&current.life?.startedAt>previous?.at)s.awakeSeconds=Math.min(rules.sleepAfterSeconds,current.awakeSeconds+Math.min(elapsed,Math.max(0,now-current.life.startedAt)));
+  initializePetLives(g,now);const ticks=[];
+  if(!s.preferences.needsPaused&&s.preferences.schedule)for(let t=now-activeSeconds+1;t<=now;t++)if(withinSchedule(t,s.preferences.schedule))ticks.push(t);
+  advancePetLives(g,ticks);
+  if(g.life.deadAt===null)g.dirt=Math.min(100,g.dirt+ticks.length*70/(rules.dirtHours*3600));
+  if(g.sleepUntil){if(now>=g.sleepUntil){g.awakeSeconds=0;g.sleepUntil=0;}}
+  else g.awakeSeconds=Math.min(rules.sleepAfterSeconds,g.awakeSeconds+activeSeconds);
+ }
+ return result;
+}
 export function publicPetState(state,balance,revision,now,env={}){
  const {activity,...safe}=structuredClone(state);
+ if(safe.gnomeCompanion?.pet){initializePetLives(safe.gnomeCompanion,now);delete safe.gnomeCompanion.ageClockEligible;}
  if(safe.pet)initializePetLives(safe,now); // Read-only projection; persistence happens only in an accepted command.
  return {...safe,balance,revision,serverTime:now,rules:petCatalog(env).rules};
 }

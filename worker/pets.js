@@ -9,9 +9,9 @@ export const isPetsApi=path=>path==='/api/pets'||path.startsWith('/api/pets/');
 const fields={
  adopt:['operationId','typeId','variant','expectedPetRevision'],
  preferences:['operationId','expectedRevision','visible','motionEnabled','needsPaused','schedule'],
- care:['operationId','action','expectedPetRevision','itemId'],
- purchase:['operationId','itemId','catalogVersion'],
- placement:['operationId','itemId','x','y','expectedPetRevision','expectedPlacementRevision'],
+ care:['operationId','action','expectedPetRevision','itemId','petTarget'],
+ purchase:['operationId','itemId','catalogVersion','petTarget'],
+ placement:['operationId','itemId','x','y','expectedPetRevision','expectedPlacementRevision','petTarget'],
  activity:['operationId','tabId','leaseToken','sequence','visible','focused','recentlyInteracted']
 };
 export function createPetRouter({validateSession=validatePortalSession}={}){
@@ -38,7 +38,7 @@ export function createPetRouter({validateSession=validatePortalSession}={}){
     if(part==='gnome-speech'){
      if((await readPrivatePetAge(env.AUTH_DB,user.username))!=='adult')return json({code:'ADULT_AGE_REQUIRED',error:'Este mascote está disponível somente para maiores de 18 anos.'},403);
      const state=await readPetAccount(env.AUTH_DB,user.username,env);
-     if(state.pet?.typeId!=='gnome')return json({code:'GNOME_REQUIRED',error:'Adote o Gnomo primeiro.'},403);
+     if(state.pet?.typeId!=='gnome'&&state.gnomeCompanion?.pet?.typeId!=='gnome')return json({code:'GNOME_REQUIRED',error:'Adote o Gnomo primeiro.'},403);
      return json({version:GNOME_PHRASE_VERSION,phrases:GNOME_PHRASE_CATALOG});
     }
     if(part==='achievements'){
