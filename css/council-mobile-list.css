@@ -1,10 +1,17 @@
 #councilDeleteDialog[hidden] { display:none !important; }
 @media screen and (max-width:900px) {
-  body[data-council-common-navigation]:not(.council-navigation-ready) :is(.social-mobile-nav,#portalChatLauncher) { visibility:hidden !important; }
+  body[data-council-common-navigation]:not(.council-navigation-ready):not(.council-navigation-fallback) :is(.social-mobile-nav,#portalChatLauncher) { visibility:hidden !important; }
   body[data-council-common-navigation].shared-mobile-navigation .social-mobile-nav,
   body[data-council-common-navigation].shared-mobile-navigation .social-mobile-nav > * { visibility:visible !important; transition:none !important; animation:none !important; }
+  body[data-council-common-navigation]:not(.council-navigation-fallback) .social-mobile-nav:not([data-home-icon-navigation="true"]),
+  body[data-council-common-navigation]:not(.council-navigation-fallback) .social-mobile-nav:not([data-home-icon-navigation="true"]) > * { visibility:hidden!important; }
+  @supports selector(:has(*)) {
+    body[data-council-common-navigation]:not(.council-navigation-fallback) .social-mobile-nav:not(:has(> #portalChatLauncher)),
+    body[data-council-common-navigation]:not(.council-navigation-fallback) .social-mobile-nav:not(:has(> #portalChatLauncher)) > * { visibility:hidden!important; }
+  }
 }
 #councilPager[hidden],#councilLoadMore[hidden]{display:none!important}
+@media screen and (min-width:901px) { #councilMobileDetailNav{display:none!important} }
 @media screen and (max-width:900px) {
 body.mobile-council-mode[data-council-common-navigation] .portal-main{width:calc(100% - 24px)!important;margin:12px auto 24px!important}
 body.mobile-council-mode[data-council-common-navigation] .portal-hero{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;margin:0 0 12px!important}
@@ -31,6 +38,7 @@ body.mobile-council-mode[data-council-common-navigation] .council-delete-group[o
 body.mobile-council-mode[data-council-common-navigation]:not(.council-bulk-open) :is(.council-row-select,.council-row-delete){display:none!important}
 body.mobile-council-mode[data-council-common-navigation]:not(.council-bulk-open) .council-table td:is(.council-protocol-cell,.council-update-cell){padding:0!important}
 body.mobile-council-mode[data-council-common-navigation] .council-table tbody{padding:0 12px 12px!important}
+body.mobile-council-mode[data-council-common-navigation] :is(.council-table tbody tr,.council-row-select,.council-row-delete){transform:none!important;transition:none!important;animation:none!important}
 body.mobile-council-mode[data-council-common-navigation] .council-table tbody tr{grid-template-areas:'subject subject' 'status type' 'protocol protocol' 'updated updated';grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;padding:12px!important;gap:8px!important;margin-bottom:10px!important;border-left-width:3px!important}
 body.mobile-council-mode[data-council-common-navigation] .council-table td:nth-child(1){grid-area:protocol!important}
 body.mobile-council-mode[data-council-common-navigation] .council-table td:nth-child(2){grid-area:subject!important}

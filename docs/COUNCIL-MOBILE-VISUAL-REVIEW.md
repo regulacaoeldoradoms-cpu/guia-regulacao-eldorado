@@ -17,3 +17,15 @@ Antes em .local/before-preserved e depois em .local/after-detail-review,320/360/
 A imagem Librarylibfile_f28f73ba886881918ffe6c19feacbb2e não foi visualizada: duas materializações suportadas falharam. A comparação usa a tela atual do código com fixtures, sem alegar correspondência à imagem.
 
 Pendentes: fluxo253com paginação/cursor/atualização/rascunhos, casos vazios/curtos, texto200, presidente/membro/desenvolvedor, navdireta/login/reentrada/Chat, concorrência, controles destrutivos/cancelamento/PDF/anexos, desktop/print estritos, comparação da latência inicial, CI completo e revisão visual. Não considerar concluído apenas por ausência de overflow.
+
+## Validação local concluída
+
+- Fluxo completo com253registros passou em320/360/390, claro/escuro:20linhas noDOM, filtros no conjunto carregado, página/posição/rascunhos após fechar/abrir, atualização de andamento sintética sem refetch da lista, busca do registro253 após três lotes100+100+53, erro/retry mantendo lista anterior identificada, Chat acima da barra e saída por Início.
+- 20 cenários extras: listas vazias/curtas, texto200, Membro somente leitura e Desenvolvedor. A comparação do papel efetivo do adaptador existente foi corrigida para não recarregar continuamente a fixture de Desenvolvedor; não houve concessão de papel.
+- 12 cenários e quatro extras do teste anterior passaram. Seleção agora é aberta pelo disclosure nativo antes de aferir o alvo: a exigência original de48×48e não sobreposição foi mantida, e as animações/transformações de linhas/seleção/exclusão foram removidas só no mobile para evitar encolhimento transitório.
+- Teste de seleção entre páginas e cancelamento sem exclusão passou. Respostas antigas de lista/detalhe chegaram depois das novas e foram descartadas.
+- Teste comSQLite eOAuth/Firestore exclusivamente simulados verificou cursor opaco,100por lote, coleção fixa, privacidade e403após revogação fresca. Os sete contratos anteriores de privacidade/ACL passaram.
+- Duas famílias de preservação passaram:4testes de detalhe preenchido e6de campos/identidade, com comparações completas de desktop/print sem mudar baseline ou tolerância. O contrato mobile admite somente os três botões novos de paginação, exigidos como IDs únicos/tipo button; todos os controles anteriores permanecem exatos.
+- Cinco pares sequenciais com253registros disponíveis e o mesmo primeiro lote100, auth300ms/lista450ms/CSS150ms/JS300ms: mediana até primeira linha inserida1212,6→1181,8ms (diferença30,8ms,2,5%). As condições são sintéticas e não medem dispositivo real nem Firestore produtivo. O ganho anterior não foi perdido; não se alegam ganhos de bytes sem medição. A primeira renderização caiu de100para20linhas noDOM.
+
+CI do head final, inspeção final de todas as capturas e aceite visual continuam pendentes. Não publicado.

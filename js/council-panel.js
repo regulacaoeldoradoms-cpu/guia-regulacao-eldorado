@@ -211,7 +211,7 @@
   document.getElementById('councilLoadMore').addEventListener('click',loadMore);
   phone.addEventListener('change',renderRows);
   addEventListener('portal:session-cleared',()=>{state.listGeneration++;state.detailGeneration++;state.manifestations=[];state.detail=null;state.selectedProtocol='';drafts.clear();pager.hidden=true;document.getElementById('councilRows').innerHTML='<tr><td colspan="5">Sessão encerrada.</td></tr>';document.getElementById('detailContent').hidden=true;for(const id of ['statusDetail','officialReply','internalNoteText'])document.getElementById(id).value='';closeModal();});
-  addEventListener('portal:session-ready',()=>{const fresh=auth.getCachedUser();if(auth.getToken()!==initialToken||fresh?.username!==user.username||fresh?.role!==user.role||fresh?.councilRole!==user.councilRole)location.replace(location.href);});
+  addEventListener('portal:session-ready',()=>{const fresh=auth.getCachedUser(),effectiveRole=fresh?.role==='admin'?'presidente':fresh?.councilRole;if(auth.getToken()!==initialToken||fresh?.username!==user.username||fresh?.role!==user.role||effectiveRole!==user.councilRole)location.replace(location.href);});
 
   function renderMessages(messages) {
     const el = document.getElementById('messageThread');

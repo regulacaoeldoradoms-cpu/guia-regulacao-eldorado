@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/css/council-detail-desktop-v2.css?v=20260924-dark-final-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
-  <link rel="stylesheet" href="/css/council-mobile-list.css?v=20261012-council-mobile-2">
+  <link rel="stylesheet" href="/css/council-mobile-list.css?v=20261012-council-review-2">
   <link rel="stylesheet" href="/css/citizen-mobile-navigation.css?v=20261011-citizen-continuity-3">
   <link rel="stylesheet" href="/css/home-mobile-direct.css?v=20261010-mobile-shell-1">
 </head>
@@ -39,6 +39,7 @@
       const compactViewport = window.matchMedia('(max-width: 860px)').matches;
       if (mobileUA || compactTouch || compactViewport) {
         document.body.classList.add('mobile-council-mode');
+        setTimeout(() => { if (!document.body.classList.contains('council-navigation-ready')) document.body.classList.add('council-navigation-fallback'); },15000);
       }
     })();
   </script>
@@ -265,13 +266,13 @@
   <script src="/js/auth-client.js?v=20261001-v34-8" defer></script>
   <script src="/js/portal-interactions.js?v=20260923-2" defer></script>
   <script src="/js/council-access-policy.js?v=20261012-council-mobile-1" defer></script>
-  <script src="/js/council-panel.js?v=20261012-council-mobile-1" defer></script>
+  <script src="/js/council-panel.js?v=20261012-council-review-2" defer></script>
   <script src="/js/council-delete.js?v=20261012-council-mobile-1" defer></script>
   <script src="/js/council-export.js?v=20260906-1" defer></script>
   <script src="/js/council-export-signature.js?v=20260828-1815" defer></script>
   <script src="/js/council-detail-mobile.js?v=20260827-1855" defer></script>
   <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
-  <script type="module" src="/js/council-mobile-presentation.js?v=20261012-council-review-1"></script>
+  <script type="module" src="/js/council-mobile-presentation.js?v=20261012-council-review-2"></script>
 <script type="module" src="/js/pets-bootstrap.js"></script>
 </body>
 </html>
