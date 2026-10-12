@@ -15,3 +15,5 @@ Preservação: controles, tipos, valores, opções, relacionamentos de formulár
 Limites: fixtures não demonstram velocidade real do Firestore nem em aparelho da Presidência; não usamos conta real para validar permissões. Publicação requer gates do SHA final e confirmação do SHA integrado nos provedores.
 
 A inspeção do cartão também encontrou a seleção sobrepondo o protocolo: uma regra antiga de `padding:0 !important` anulava o espaço reservado. A apresentação nova reserva área própria para o alvo de 48 px e para a exclusão, com teste geométrico de não sobreposição.
+
+A verificação adicional com uma manifestação preenchida exigiu preservar também a árvore de texto da tabela em desktop/impressão. O botão de abertura por teclado agora é criado somente no modo mobile, envolve os textos existentes e devolve esses mesmos nós ao modo nativo. O segundo comparador específico do Conselho aplica o contrato de campos/opções/valores apenas ao redesign mobile solicitado; seus gates completos de desktop/impressão continuam inalterados e passaram nos quatro cenários específicos.

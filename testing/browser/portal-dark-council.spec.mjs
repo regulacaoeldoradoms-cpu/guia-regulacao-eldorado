@@ -204,6 +204,8 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
   const route=citizen?'/cidadao/':'/conselho/painel/';
   const mobileRedesign=citizen&&isMobile&&theme==='light'&&media==='screen';
   const palettes=[];
+  const councilMobileRedesign=!citizen&&isMobile&&theme==='light'&&media==='screen';
+  const councilContracts=[];
   let mobileLayout;
     const result=await compareAgainstBase({page,context,info,route,theme,media,
       // The retained route wrapper uses display:contents and the shared nav
@@ -223,6 +225,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       }else await openDetail(page,citizen);
       await page.evaluate(()=>document.fonts.ready);
       await page.mouse.move(0,0);
+      if(councilMobileRedesign)councilContracts.push(await page.evaluate(()=>[...document.querySelectorAll('.portal-main :is(form,button,input,textarea,select)[id],#councilDetailModal :is(form,button,input,textarea,select)[id]')].map(n=>({id:n.id,count:document.querySelectorAll('#'+CSS.escape(n.id)).length,tag:n.localName,type:n.getAttribute('type'),name:n.getAttribute('name'),required:n.required||false,maxlength:n.getAttribute('maxlength'),form:n.form?.id||null,value:n.value||'',options:n.localName==='select'?[...n.options].map(o=>({value:o.value,text:o.textContent})):null})).sort((a,b)=>a.id.localeCompare(b.id))));
       if(mobileRedesign){
         palettes.push(await page.evaluate(()=>[
           '#privacyChip','#detailPrivacy','#detailStatus','.status-chip',
@@ -261,6 +264,14 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       expect(semanticPalette(palettes[0])).toEqual(semanticPalette(palettes[1]));
       expect(mobileLayout).toEqual({citizen:true,pageFits:true,rows:1,targetsFit:true,panelFits:true});
       expect(result.captureStability.current.snapshotStable).toBe(true);
+    }else if(councilMobileRedesign){
+      // The requested Council phone layout replaces only its mobile geometry.
+      // Preserve every native form, field, option and value; desktop/print below
+      // retain the full unchanged computed and two-pixel/one-channel gates.
+      expect(councilContracts).toHaveLength(2);expect(councilContracts[0]).toEqual(councilContracts[1]);
+      expect(councilContracts[0].every(n=>n.count===1)).toBe(true);
+      expect(result.captureStability.current.snapshotStable).toBe(true);
+      await info.attach('approved-council-mobile-form-contract.json',{body:Buffer.from(JSON.stringify(councilContracts)),contentType:'application/json'});
     }else{
     expect(result.differences,`${theme}/${media} computed styles must remain identical to main`).toEqual([]);
     expect(result.pixelComparison.gateAccepted,`${theme}/${media}: stable raster sources must match within two pixels/one channel; nondeterministic Linux raster is diagnostic only with exact computed/layout snapshots`).toBe(true);

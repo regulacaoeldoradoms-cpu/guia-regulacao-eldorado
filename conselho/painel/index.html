@@ -95,6 +95,20 @@
         const count = document.createElement('span'); count.id = 'councilSummaryCount'; count.textContent = '0';
         summary.append(count,document.createTextNode(' manifestações')); details.append(summary);
         let active = false, mobileOpen = false, printing = false;
+        const syncRows = () => {
+          const enabled = media.matches && !printing;
+          document.querySelectorAll('#councilRows tr[data-protocol]').forEach(row => {
+            const subject = row.cells[1]?.querySelector('strong');
+            if (!subject) return;
+            const button = subject.querySelector('.council-open-detail');
+            if (enabled && !button) {
+              const open = document.createElement('button'); open.type = 'button'; open.className = 'council-open-detail';
+              open.setAttribute('aria-label','Abrir manifestação '+row.dataset.protocol);
+              open.append(...subject.childNodes); subject.append(open);
+            } else if (!enabled && button) button.replaceWith(...button.childNodes);
+          });
+        };
+        new MutationObserver(syncRows).observe(document.querySelector('.portal-main'),{childList:true,subtree:true});
         const sync = () => {
           const enabled = media.matches && !printing;
           if (enabled && !active) {
@@ -106,6 +120,7 @@
             metricsAnchor.after(metrics); details.remove();
           }
           active = enabled;
+          syncRows();
         };
         details.addEventListener('toggle', () => { if (media.matches && !printing) mobileOpen = details.open; });
         media.addEventListener('change', sync);

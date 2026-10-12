@@ -120,7 +120,7 @@
       const secondary = item.service || identitySummary(item) || item.authorLabel || 'Identidade protegida';
       return `<tr data-protocol="${escapeHtml(item.protocol)}">
       <td><strong>${escapeHtml(item.protocol)}</strong><small>${escapeHtml(formatDate(item.createdAt))}</small></td>
-      <td><strong><button type="button" class="council-open-detail" aria-label="Abrir manifestação ${escapeHtml(item.protocol)}">${escapeHtml(item.subject || 'Sem assunto')}</button></strong><small>${escapeHtml(secondary)}</small></td>
+      <td><strong>${escapeHtml(item.subject || 'Sem assunto')}</strong><small>${escapeHtml(secondary)}</small></td>
       <td>${escapeHtml(typeLabels[item.type] || item.type)}</td>
       <td><span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span></td>
       <td>${escapeHtml(formatDate(item.lastActivityAt || item.updatedAt || item.createdAt))}</td>
