@@ -39,3 +39,6 @@ html[data-portal-theme=dark] .pet-stage[data-alert=thirst] .pet-bubble{backgroun
 .pet-care-target button[aria-pressed=true]{background:var(--portal-theme-selected,#e6f3ff);border-color:#246dab;font-weight:700}
 
 .pet-stage[data-pet-pair-present] .pet-bubble::before{content:attr(data-speaker);display:block;font-weight:700;margin-bottom:3px}
+
+/* Bounded readers use their accessible owner label and reserve space for text. */
+.pet-bubble[data-scrollable]::before{display:none!important}
