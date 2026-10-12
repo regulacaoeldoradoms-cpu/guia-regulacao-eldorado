@@ -35,6 +35,10 @@ async function run(id, start, setup, exercise) {
 try {
   await run('prepared-first-switch', '/', null, async (page, audit, requests, check) => {
     await warm(page);
+    // The independent performance owner starts this script on its existing
+    // idle deadline. Settle that owner before measuring route activation;
+    // keep the strict zero-HTML/zero-script assertion below unchanged.
+    await page.waitForFunction(() => Boolean(window.PortalObservability));
     await page.evaluate(() => {
       window.__preparedOwners = { document, nav:document.querySelector('.social-mobile-nav'), chat:document.getElementById('portalChatRoot'), pet:window.PortalPets.runtime };
       window.__loadingShown = false;
