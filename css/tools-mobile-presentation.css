@@ -1,10 +1,7 @@
-.tools-mobile-copy { display:none; }
 /* Scoped to the authorized tools surface; no catalog or permission changes. */
 @media screen and (max-width: 900px) {
 [data-tools-mobile-layout] { width:100%; max-width:680px; margin:auto; padding:16px 12px; }
 [data-tools-mobile-layout] .portal-hero { padding:16px; margin-bottom:12px; border-radius:14px; min-height:0; }
-[data-tools-mobile-layout] .portal-hero-copy > :is(h2,p):not(.tools-mobile-copy) { display:none; }
-[data-tools-mobile-layout] .tools-mobile-copy { display:block; }
 [data-tools-mobile-layout] .portal-hero h2 { font-size:24px; line-height:1.25; overflow-wrap:anywhere; }
 [data-tools-mobile-layout] .portal-hero p { font-size:16px; line-height:1.45; }
 [data-tools-mobile-layout] .portal-section { border-radius:14px; margin:0; }
@@ -35,7 +32,14 @@
 }
 
 @media screen and (max-width:900px) {
-  /* Expose the native bar after the shared icon and Chat owners are ready. */
-  body:has([data-tools-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav { visibility:hidden !important; }
-  body:has([data-tools-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav { visibility:hidden !important; }
+  body:has([data-tools-mobile-layout]) .social-mobile-nav,
+  body:has([data-tools-mobile-layout]) .social-mobile-nav > * { transition:none !important; animation:none !important; }
+  /* Explicit child visibility avoids a stale inherited hidden frame in Blink,
+     and keeps the original launcher's visibility override inside this gate. */
+  body:has([data-tools-mobile-layout]).shared-mobile-navigation:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher) .social-mobile-nav,
+  body:has([data-tools-mobile-layout]).shared-mobile-navigation:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher) .social-mobile-nav > .social-mobile-nav-link { visibility:visible !important; }
+  body:has([data-tools-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav,
+  body:has([data-tools-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav > *,
+  body:has([data-tools-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav,
+  body:has([data-tools-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav > * { visibility:hidden !important; }
 }

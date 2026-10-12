@@ -31,18 +31,25 @@ const initializeCitizenArea = async (context) => {
   const editorMedia = matchMedia('screen and (max-width: 900px)');
   if (user.role !== 'cidadao') document.querySelector('[data-profile-mobile-layout]')?.removeAttribute('data-profile-mobile-layout');
   let editing = false;
+  let editToggle = null;
   let printingEditor = false;
   const cancelEdit = document.getElementById('profileEditCancel');
   const cancelParent = cancelEdit?.parentElement;
   function syncEditor(focus = false) {
     const editor = document.getElementById('profileEditor');
     editor.hidden = !profile?.isSelf || (user.role === 'cidadao' && editorMedia.matches && !printingEditor && !editing);
-    const edit = document.getElementById('profileEditToggle');
+    const edit = editToggle;
     const mobileEditor = user.role === 'cidadao' && editorMedia.matches && !printingEditor;
     if (mobileEditor && cancelEdit && !cancelEdit.isConnected) cancelParent.append(cancelEdit);
     if (!mobileEditor) cancelEdit?.remove();
-    if (edit) edit.textContent = mobileEditor ? 'Editar perfil' : 'Personalizar perfil';
-    edit?.setAttribute('aria-expanded', String(!editor.hidden));
+    cancelParent?.classList.toggle('profile-editor-actions', mobileEditor);
+    if (edit) {
+      const label = edit.querySelector(':scope > span') || edit;
+      const text = mobileEditor ? 'Editar perfil' : 'Personalizar perfil';
+      if (label.textContent !== text) label.textContent = text;
+      if (mobileEditor) { edit.id = 'profileEditToggle'; edit.setAttribute('aria-controls','profileEditor'); edit.setAttribute('aria-expanded',String(!editor.hidden)); }
+      else { edit.removeAttribute('id'); edit.removeAttribute('aria-controls'); edit.removeAttribute('aria-expanded'); }
+    }
     if (focus) (editor.hidden ? edit : document.getElementById('profileEditStatus'))?.focus({preventScroll:true});
   }
   const onEditorMediaChange = () => syncEditor();
@@ -242,6 +249,7 @@ const initializeCitizenArea = async (context) => {
   function renderActions() {
     const area = document.getElementById('profileActions');
     area.innerHTML = '';
+    editToggle = null;
     if (profile.isSelf) {
       const edit = action(user.role === 'cidadao' && editorMedia.matches ? 'Editar perfil' : 'Personalizar perfil', () => {
         editing = true;
@@ -250,8 +258,7 @@ const initializeCitizenArea = async (context) => {
           behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'
         });
       });
-      edit.id = 'profileEditToggle';
-      edit.setAttribute('aria-controls', 'profileEditor');
+      editToggle = edit;
       area.appendChild(edit);
       return;
     }

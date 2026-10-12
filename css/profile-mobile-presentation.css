@@ -66,7 +66,14 @@ body.profile-mobile-layout #profilePhotoDialog .social-dialog-actions > * { flex
 }
 
 @media screen and (max-width:900px) {
-  /* Expose the native bar after the shared icon and Chat owners are ready. */
-  body:has([data-profile-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav { visibility:hidden !important; }
-  body:has([data-profile-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav { visibility:hidden !important; }
+  body:has([data-profile-mobile-layout]) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]) .social-mobile-nav > * { transition:none !important; animation:none !important; }
+  /* Explicit child visibility avoids a stale inherited hidden frame in Blink,
+     and keeps the original launcher's visibility override inside this gate. */
+  body:has([data-profile-mobile-layout]).shared-mobile-navigation:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]).shared-mobile-navigation:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher) .social-mobile-nav > .social-mobile-nav-link { visibility:visible !important; }
+  body:has([data-profile-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]):not(.shared-mobile-navigation) .social-mobile-nav > *,
+  body:has([data-profile-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav,
+  body:has([data-profile-mobile-layout]):not(:has(.social-mobile-nav[data-home-icon-navigation="true"] #portalChatLauncher)) .social-mobile-nav > * { visibility:hidden !important; }
 }
