@@ -1,6 +1,6 @@
 'use strict';
 import {petCatalog} from './pet-catalog.js';
-import {petSlot,gnomeCompanionState} from '../js/pet-companions.js';
+import {petSlot,gnomeCompanionState} from '../js/pet-companions.mjs';
 import {initializePetLives,advancePetLives,feedPetLives,waterPetLives,fillPetWaterBowl} from './pet-lives.js';
 export class PetError extends Error {
  constructor(code,message,status=400){super(message);this.code=code;this.status=status;}

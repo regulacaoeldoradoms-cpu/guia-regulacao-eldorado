@@ -12,7 +12,7 @@ const root=path.resolve(__dirname,'../..'),out=process.env.PETS_LIVES_ARTIFACT_D
   if(url.pathname==='/js/auth-config.js'){res.setHeader('Content-Type','text/javascript');return res.end('window.REGULATION_AUTH_CONFIG={endpoint:location.origin,enforcement:true};');}
   if(url.pathname.startsWith('/api/')){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(url.pathname==='/api/auth/me'?{user:{username:'demo-a',name:'Synthetic',role:'cidadao',active:true,emailVerified:true,sessionVersion:1}}:{backendEnabled:false,available:false,homeEnabled:false}));}
   let relative=url.pathname.slice(1);if(!relative||relative.endsWith('/'))relative+='index.html';const file=path.resolve(root,relative);if(!file.startsWith(root+'/')){res.writeHead(400);return res.end();}
-  res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));
+  res.setHeader('Content-Type',({'.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.html':'text/html','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));
  }catch{res.writeHead(500);res.end('Synthetic fixture error');}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
  const browser=await playwright.chromium.launch({...(process.env.PETS_BROWSER_EXECUTABLE?{executablePath:process.env.PETS_BROWSER_EXECUTABLE}:{}),headless:true,args:['--no-sandbox']}),context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage();

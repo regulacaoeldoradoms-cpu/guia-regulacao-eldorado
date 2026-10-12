@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const types = { '.js':'text/javascript', '.css':'text/css', '.html':'text/html', '.mp4':'video/mp4', '.png':'image/png', '.svg':'image/svg+xml', '.webp':'image/webp', '.woff2':'font/woff2', '.wav':'audio/wav' };
+const types = { '.js':'text/javascript','.mjs':'text/javascript', '.css':'text/css', '.html':'text/html', '.mp4':'video/mp4', '.png':'image/png', '.svg':'image/svg+xml', '.webp':'image/webp', '.woff2':'font/woff2', '.wav':'audio/wav' };
 http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, 'http://127.0.0.1');

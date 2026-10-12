@@ -14,7 +14,7 @@ on:
       - 'worker/tests/private-pet-age.test.mjs'
       - 'js/gnome*.js'
       - 'js/pets*.js'
-      - 'js/pet-companions.js'
+      - 'js/pet-companions.mjs'
       - 'js/pet-speech-coordinator.js'
       - 'js/auth-client.js'
       - 'js/signup.js'
@@ -42,6 +42,7 @@ jobs:
       - name: Server repertoire is absent from the built Pages artifact
         run: |
           test -f _site/mascotes/index.html
+          test -f _site/js/pet-companions.mjs
           test ! -e _site/_server/gnome-phrases.js
           test ! -d _site/_server
           printf 'Pages artifact excludes server repertoire at %s\n' "$GITHUB_SHA"

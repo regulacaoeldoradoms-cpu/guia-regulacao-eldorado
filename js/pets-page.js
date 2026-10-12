@@ -1,5 +1,5 @@
 'use strict';
-import {gnomeCompanionState} from './pet-companions.js?v=20261012-gnome-coexist-1';
+import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist-1';
 import {petSession} from './pets-bootstrap.js?v=20261012-gnome-coexist-1';
 import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261012-gnome-coexist-1';
 import {drawCat} from './pet-cat-frames.js';
