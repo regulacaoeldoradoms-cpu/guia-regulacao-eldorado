@@ -174,6 +174,7 @@ test('Conselho: detalhe, status, nota, carta e exclusão cancelada',async({page,
   await expect(page.locator('#statusUpdateMessage')).toContainText('Andamento sintético recusado');
   responses[detailPath]=detail;
   await capture(page,info,'council-form-error-status');
+  if(page.viewportSize().width<=900)await page.locator('.council-detail-document > summary').click();
   await page.locator('#exportManifestationPdf').click();
   await expect(page.locator('#praiseRecipientDialog')).toHaveClass(/open/);
   await page.locator('#praiseRecipientName').fill('Equipe fictícia de auditoria');
