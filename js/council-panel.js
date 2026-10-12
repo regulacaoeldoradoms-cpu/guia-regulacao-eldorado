@@ -236,11 +236,11 @@
   phone.addEventListener('change',renderRows);
   addEventListener('visibilitychange',()=>{if(document.hidden){detailCache.cancelSpeculation();}else detailCache.resume();});
   addEventListener('online',()=>detailCache.resume());
-  addEventListener('pagehide',()=>{rememberDraft();detailCache.clear();detailObserver.disconnect();state.detailGeneration++;state.detail=null;document.getElementById('detailContent').hidden=true;document.getElementById('councilRows').style.setProperty('opacity','0','important');document.getElementById('councilRows').inert=true;document.getElementById('councilRows').setAttribute('aria-hidden','true');closeModal();});
+  addEventListener('pagehide',()=>{rememberDraft();detailCache.clear();detailObserver.disconnect();state.detailGeneration++;state.detail=null;document.getElementById('detailContent').hidden=true;document.getElementById('councilRows').style.setProperty('transition','none','important');document.getElementById('councilRows').style.setProperty('opacity','0','important');document.getElementById('councilRows').inert=true;document.getElementById('councilRows').setAttribute('aria-hidden','true');closeModal();});
   addEventListener('pageshow',event=>{if(!event.persisted)return;
     auth.me({allowCached:false}).then(fresh=>{
       if(auth.getToken()!==initialToken||fresh?.username!==user.username||fresh?.role!==user.role||fresh?.councilRole!==user.councilRole){location.replace(location.href);return;}
-      document.getElementById('councilRows').style.removeProperty('opacity');document.getElementById('councilRows').inert=false;document.getElementById('councilRows').removeAttribute('aria-hidden');loadAll();
+      document.getElementById('councilRows').style.removeProperty('opacity');document.getElementById('councilRows').style.removeProperty('transition');document.getElementById('councilRows').inert=false;document.getElementById('councilRows').removeAttribute('aria-hidden');loadAll();
     }).catch(()=>location.replace('/login/?next='+encodeURIComponent(location.pathname)));
   });
   addEventListener('portal:session-cleared',()=>{detailCache.close();detailObserver.disconnect();state.listGeneration++;state.detailGeneration++;state.manifestations=[];state.detail=null;state.selectedProtocol='';drafts.clear();pager.hidden=true;document.getElementById('councilRows').innerHTML='<tr><td colspan="5">Sessão encerrada.</td></tr>';document.getElementById('detailContent').hidden=true;for(const id of ['statusDetail','officialReply','internalNoteText'])document.getElementById(id).value='';closeModal();});
