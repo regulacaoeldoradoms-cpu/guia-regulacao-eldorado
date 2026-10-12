@@ -1,12 +1,12 @@
 'use strict';
 
 (async () => {
-  const auth = window.RegulationAuth;
+  const auth = window.PortalCouncilAuth || window.RegulationAuth;
   const rows = document.getElementById('councilRows');
   const toolbar = document.querySelector('.council-toolbar');
   if (!auth || !rows || !toolbar) return;
 
-  const user = await auth.me({ allowCached: false }).catch(() => null);
+  const user = await (auth.initialUser || auth.me({ allowCached: false }).catch(() => null));
   const canDelete = Boolean(user && (user.role === 'admin' || user.councilRole === 'presidente'));
   if (!canDelete) return;
 
