@@ -8,6 +8,7 @@ const initializeCitizenArea = async (context) => {
   const social = window.PortalSocial;
   const user = await auth.requireRole([]);
   if (!user) return;
+  if (user.role !== 'cidadao') document.querySelector('[data-tools-mobile-layout]')?.removeAttribute('data-tools-mobile-layout');
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
     return;

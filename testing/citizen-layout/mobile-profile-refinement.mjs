@@ -450,6 +450,7 @@ async function chatExercise(page, result, audit, origin, profileRoute) {
 }
 
 async function groupExercise(page, result, audit, route) {
+  await page.getByRole('button',{name:'Editar perfil',exact:true}).click();
   await page.locator('#profileEditBio').fill('Bio sintética antes do grupo.');
   await page.evaluate(() => scrollTo(0, 320));
   const before = await snapshot(page), loads = audit.documents.length;

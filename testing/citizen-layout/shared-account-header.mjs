@@ -24,6 +24,7 @@ async function visit(page,route){
     await page.locator('#toolsGrid a[href="/cidadao/"]').click();
   }else if(primary.includes(route))await page.locator(`.social-mobile-nav a[href="${route}"]`).click();
   else{
+    if(route==='/ferramentas/') await visit(page,'/');
     await page.locator('#homeAccountMenu > summary').click();
     await page.locator(`#homeAccountPanel a[href="${route}"]`).click();
   }

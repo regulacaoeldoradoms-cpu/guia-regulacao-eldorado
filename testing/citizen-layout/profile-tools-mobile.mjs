@@ -38,7 +38,8 @@ for(const width of [320,360,390])for(const theme of ['light','dark'])for(const s
  const toolsFrames=await page.evaluate(()=>window.__profileFrames.filter(f=>f.icon));assert(toolsFrames.length);assert(toolsFrames.every(f=>f.icon==='44px'));
  for(let n=0;n<2;n++){await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/',location.href)));await ready(page,'/');await page.evaluate(()=>window.PortalCitizenShell.navigate(new URL('/ferramentas/',location.href)));await ready(page,'/ferramentas/');assert(await page.locator('#toolsGrid .hub-card-icon').first().evaluate(n=>getComputedStyle(n).width==='44px'));}
  await page.goto(server.origin+'/perfil/');await ready(page,'/perfil/');assert(await page.locator('#profileEditor').isHidden());
- results.push({...result,firstFrames:firstFrames.length,toolsFrames:toolsFrames.length,tools,entries:8,unmappedApiCalls:audit.unmappedApiCalls});await context.close();console.log(JSON.stringify({width,theme,scale,passed:true}));
+ await page.goto(server.origin+'/ferramentas/');await ready(page,'/ferramentas/');assert(await page.locator('#toolsGrid .hub-card-icon').first().evaluate(n=>getComputedStyle(n).width==='44px'));
+ results.push({...result,firstFrames:firstFrames.length,toolsFrames:toolsFrames.length,tools,entries:11,unmappedApiCalls:audit.unmappedApiCalls});await context.close();console.log(JSON.stringify({width,theme,scale,passed:true}));
 }
 await fs.writeFile(`${output}/results.json`,JSON.stringify(results,null,2));
 }finally{await browser.close();await new Promise(r=>server.server.close(r));}
