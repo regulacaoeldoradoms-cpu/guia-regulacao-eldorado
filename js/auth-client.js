@@ -157,9 +157,9 @@
     return user;
   }
 
-  async function registerCitizen(username, password) {
+  async function registerCitizen(username, password, birthDate) {
     const payload = await api('/api/auth/register', {
-      method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || '') })
+      method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || ''), ...(birthDate !== undefined ? {birthDate} : {}) })
     });
     if (!payload?.token || !payload?.user) throw new Error('Não foi possível concluir o cadastro.');
     saveSession(payload.token, payload.user, false);

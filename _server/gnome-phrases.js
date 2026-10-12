@@ -42,7 +42,23 @@ const phrases = [
   'Meu cogumelo é pequeno, mas a sombra é disputada.',
   'Aqui não tem tamanho mínimo. Tem que saber fazer graça.',
   'Quem planta mandioca não pode reclamar quando mandam arrancar pela raiz.',
-  'Não é porque eu moro no jardim que você pode vir pegando na minha mangueira.'
+  'Não é porque eu moro no jardim que você pode vir pegando na minha mangueira.',
+  'Isso não é um chapéu. É um andar a mais.',
+  'Fui passear na grama alta. Me deram como desaparecido.',
+  'O gato me trouxe de presente. Eu moro aqui, infeliz!',
+  'O jardim é tranquilo até alguém ligar o cortador de grama.',
+  'Subi num banquinho pra discutir de igual pra igual.',
+  'Uma joaninha estacionou na minha cama. Agora eu durmo no chão.',
+  'Meu vizinho caracol vive reclamando do trânsito.',
+  'Choveu cinco minutos. Minha sala virou um aquário.',
+  'Não sou decoração. Tô esperando o ônibus.',
+  'Chamaram um gnomo de cerâmica pra me substituir. O sujeito nem conversa.',
+  'Fiz amizade com uma formiga. Agora ela quer me contratar pra mudança.',
+  'Minha casa tem vista pro jardim. Todas têm. É o bairro inteiro.',
+  'Um cogumelo, dois quartos e infiltração. O aluguel ainda aumentou.',
+  'Fui varrer a casa e encontrei uma folha. Tive que chamar um guincho.',
+  'Se eu tirar o chapéu, o pombo acha que abriu uma vaga.',
+  'Hoje não vou trabalhar. A lesma que me dá carona atrasou.'
 ];
 export const GNOME_PHRASE_CATALOG = Object.freeze(phrases.map((text, index) =>
   Object.freeze({id:`gnome-${String(index + 1).padStart(3, '0')}`, text})

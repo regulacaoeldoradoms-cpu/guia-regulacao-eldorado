@@ -1,4 +1,6 @@
 'use strict';
+import {validBirthDate, portalCalendarDate} from './private-pet-age.js';
+import {ageDeclarationStatement} from './private-pet-age-store.js';
 
 import {
   firebaseConfigured,
@@ -351,7 +353,7 @@ async function getDbUser(env, username) {
 async function createDbUser(env, input, createdBy) {
   const salt = randomHex(16);
   const hash = await passwordHash(input.password, salt);
-  await env.AUTH_DB.prepare(`INSERT INTO auth_users
+  const insert = env.AUTH_DB.prepare(`INSERT INTO auth_users
     (username, name, job_title, role, council_role, email, email_verified, firebase_uid,
      accept_friend_requests, self_registered, password_hash, password_salt, active,
      must_change_password, session_version, created_by)
@@ -372,7 +374,9 @@ async function createDbUser(env, input, createdBy) {
       input.active === false ? 0 : 1,
       input.mustChangePassword ? 1 : 0,
       createdBy || null
-    ).run();
+    );
+  if (input.privateBirthDate) await env.AUTH_DB.batch([insert, ageDeclarationStatement(env.AUTH_DB,input.username,input.privateBirthDate)]);
+  else await insert.run();
   return getDbUser(env, input.username);
 }
 
@@ -472,6 +476,8 @@ async function registerCitizen(request, env, origin) {
   const body = await request.json().catch(() => ({}));
   const username = normalizeUsername(body.username);
   const password = String(body.password || '');
+  const privateBirthDate = body.birthDate;
+  if (privateBirthDate !== undefined && (!validBirthDate(privateBirthDate) || privateBirthDate > portalCalendarDate())) return json({error:'Informe uma data de nascimento válida.'},400,origin);
   const validation = validatePassword(password);
   if (!usernameValid(username)) return json({ error: 'O usuário deve ter entre 3 e 40 caracteres.' }, 400, origin);
   if (validation) return json({ error: validation }, 400, origin);
@@ -489,7 +495,8 @@ async function registerCitizen(request, env, origin) {
     active: true,
     mustChangePassword: false,
     selfRegistered: true,
-    acceptFriendRequests: false
+    acceptFriendRequests: false,
+    privateBirthDate
   }, 'self');
   const token = await createSessionToken(created, env);
   return json({ token, user: publicUser(created), expiresIn: SESSION_TTL_SECONDS }, 201, origin);

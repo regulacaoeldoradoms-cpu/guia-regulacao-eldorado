@@ -4,6 +4,7 @@ export const PET_VERSION = 'pets-v2-seven-lives-1';
 export const PET_TYPES = Object.freeze([
  { id: 'cat', name: 'Gato', achievement: 'Cuidar de 7 vidas não é fácil', variants: ['ginger','gray'] }
 ]);
+export const GNOME_TYPE = Object.freeze({id:'gnome',name:'Gnomo',achievement:'Companhia do jardim',variants:['garden']});
 export const PET_ITEMS = Object.freeze([
  { id:'bed-cloud', name:'Caminha nuvem', kind:'bed', price:30, unique:true },
  { id:'bed-moss', name:'Caminha jardim', kind:'bed', price:40, unique:true },
@@ -27,7 +28,7 @@ export function petRules(env={}) {
   sleepAfterSeconds:2700, sleepSeconds:45, dayTimezone:'America/Campo_Grande'
  };
 }
-export function petCatalog(env={}) {
+export function petCatalog(env={}, {adultEligible=false}={}) {
  const multiplier=integer(env.PETS_PRICE_PERCENT,100,0,1000);
- return {version:PET_VERSION,types:PET_TYPES,items:PET_ITEMS.map(i=>({...i,price:Math.ceil(i.price*multiplier/100)})),rules:petRules(env)};
+ return {version:PET_VERSION,types:adultEligible?[...PET_TYPES,GNOME_TYPE]:PET_TYPES,items:PET_ITEMS.map(i=>({...i,price:Math.ceil(i.price*multiplier/100)})),rules:petRules(env)};
 }
