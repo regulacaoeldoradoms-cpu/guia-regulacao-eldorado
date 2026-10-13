@@ -154,9 +154,14 @@ test('Conselho: detalhe, status, nota, carta e exclusão cancelada',async({page,
   await page.goto('/conselho/painel/');
   await expect(page.locator('#councilRows [data-protocol]')).toHaveCount(1);
   await capture(page,info,'council-dashboard');
+  if(page.viewportSize().width<=900){
+    await page.locator('.council-inbox-filters > summary').click();
+    await expect(page.locator('#councilType')).toBeVisible();
+  }
   await page.locator('#councilType').selectOption('denuncia');
   await capture(page,info,'council-filter-empty');
   await page.locator('#councilType').selectOption('elogio');
+  if(page.viewportSize().width<=900)await page.locator('.council-inbox-filters > summary').click();
   await openDetailWithLoading(page,context,info,false);
   await capture(page,info,'council-detail');
   await page.locator('#officialReply').fill('Resposta institucional inteiramente sintética.');
