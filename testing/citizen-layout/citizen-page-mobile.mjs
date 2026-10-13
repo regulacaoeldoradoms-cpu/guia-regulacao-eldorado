@@ -51,8 +51,8 @@ try{
       await page.evaluate(()=>window.__citizenOwners={document,header:document.querySelector('.portal-topbar'),nav:document.querySelector('.social-mobile-nav'),form:document.getElementById('newManifestationForm'),controller:window[Symbol.for('portal.citizenMobilePresentation')]});
       // New home has no legacy hero badges, heavy card framing or oversized refresh action.
       assert.equal(await page.locator('#openNewManifestation strong').textContent(),'Nova manifestação');
-      assert.equal(await page.locator('.manifestation-type-tag').textContent(),'Sugestão');
-      assert.equal(await page.locator('.manifestation-item .manifestation-subject').textContent(),item.subject);
+      assert.match(await page.locator('.manifestation-item').first().evaluate(el=>getComputedStyle(el,'::before').content),/Sugestão/);
+      assert.equal(await page.locator('.manifestation-item > span:first-child > strong').textContent(),item.subject);
       const compact=await page.evaluate(()=>{
         const style=selector=>getComputedStyle(document.querySelector(selector));
         return {
@@ -61,15 +61,15 @@ try{
           panelBorder:style('#manifestationsCard').borderTopWidth,
           panelShadow:style('#manifestationsCard').boxShadow,
           heading:style('#manifestationsCard .citizen-card-head h2').display,
-          refreshIcon:style('#refreshManifestations svg').display,
-          refreshText:style('#refreshManifestations .citizen-refresh-label').display,
+          refreshIcon:getComputedStyle(document.querySelector('#refreshManifestations'),'::before').content,
+          refreshFont:style('#refreshManifestations').fontSize,
           refreshWidth:document.querySelector('#refreshManifestations').getBoundingClientRect().width
         };
       });
       assert.equal(compact.badges,'none');assert.equal(compact.heroBackground,'rgba(0, 0, 0, 0)');
       assert.equal(compact.panelBorder,'0px');assert.equal(compact.panelShadow,'none');
-      assert.notEqual(compact.heading,'none');assert.notEqual(compact.refreshIcon,'none');
-      assert.equal(compact.refreshText,'none');assert.ok(compact.refreshWidth<=48);
+      assert.notEqual(compact.heading,'none');assert.match(compact.refreshIcon,/↻/);
+      assert.equal(compact.refreshFont,'0px');assert.ok(compact.refreshWidth<=48);
       const action=await page.locator('#openNewManifestation').boundingBox();assert.ok(action.height>=48);if(process.env.TEXT_SCALE!=='2')assert.ok(action.y+action.height<700,'Main action is reachable in the first screen');
       await page.locator('#homeAccountMenu > summary').click();await page.locator('#portalLogout').waitFor({state:'visible'});await page.keyboard.press('Escape');assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open));
       await page.screenshot({path:path.join(output,`${theme}-${width}-page-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
