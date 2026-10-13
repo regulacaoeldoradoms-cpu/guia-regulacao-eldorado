@@ -31,9 +31,9 @@ function toolsRuntime() {
 test('rotas sociais usam assets locais versionados e permanecem não indexáveis quando dedicadas', () => {
   for (const filename of socialPages) {
     const html = read(filename);
-    assert.match(html, /portal-theme\.js\?v=20260923-1/);
+    assert.match(html, filename === 'admin/social/index.html' ? /portal-theme\.js\?v=20260923-1/ : /portal-theme\.js\?v=20261013-theme-immediate-1/);
     assert.match(html, /portal-interactions\.css\?v=20260924-dark-final-1/);
-    assert.match(html, /portal-interactions\.js\?v=20260923-2/);
+    assert.match(html, filename === 'admin/social/index.html' ? /portal-interactions\.js\?v=20260923-2/ : /portal-interactions\.js\?v=20261013-theme-immediate-1/);
     assert.match(html, /social\.css\?v=20260922-2/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, filename === 'admin/social/index.html' ? /social-api\.js\?v=20260910-4/ : /social-api\.js\?v=20261011-citizen-continuity-3/);
