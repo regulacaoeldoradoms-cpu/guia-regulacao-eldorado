@@ -9,6 +9,7 @@ on:
       - "css/pets-mobile-presentation.css"
       - "css/profile-mobile-presentation.css"
       - "css/citizen-compose-mobile.css"
+      - "css/citizen-compose-refinement.css"
       - "css/tools-mobile-presentation.css"
       - "css/home-tools-carousel.css"
       - "css/home-mobile-direct.css"
