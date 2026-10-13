@@ -151,8 +151,8 @@ jobs:
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
           grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
           grep -q 'user.emailVerificationRequired' js/council-panel.js
-          grep -q 'Atenção à identificação' cidadao/index.html
-          grep -q 'Este canal não é atendimento assistencial' cidadao/index.html
+          grep -q 'Texto, imagens e PDFs podem revelar sua identidade' cidadao/index.html
+          grep -q 'Este canal não agenda consultas ou exames' cidadao/index.html
           grep -q 'não realiza agendamento' conselho/index.html
 
       - name: Conferir proteção dos anexos

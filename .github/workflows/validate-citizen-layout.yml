@@ -178,6 +178,7 @@ jobs:
         if: always()
         with:
           name: synthetic-citizen-layout
+          include-hidden-files: true
           path: |
             .local/shared-account-header/
             .local/citizen-page-mobile/
