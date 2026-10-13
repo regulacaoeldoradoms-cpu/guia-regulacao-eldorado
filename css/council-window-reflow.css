@@ -10,7 +10,9 @@
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] .citizen-modal-content{flex:1 1 auto!important;min-height:0!important;overflow:auto!important;overscroll-behavior:contain!important;padding:12px!important;scroll-padding:12px!important;scroll-behavior:smooth}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] #detailMeta{display:block!important;font-size:13px!important;line-height:1.45!important;margin:0 0 8px!important;overflow-wrap:anywhere}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] :is(.council-organized-region,#detailStory,#detailConversation,#historySection,#statusBox){scroll-margin-top:0!important}
- body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] .council-organized-region{gap:10px!important;margin-bottom:20px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] .council-organized-region{grid-template-columns:minmax(0,1fr)!important;min-width:0!important;max-width:100%!important;gap:10px!important;margin-bottom:20px!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] .council-organized-region>*{min-width:0!important;max-width:100%!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] :is(.council-organized-heading,.portal-field label){overflow-wrap:anywhere!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] #councilActionsRegion{margin-bottom:0!important;padding:12px!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] .council-organized-heading{padding-bottom:6px!important;font-size:19px!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] .council-section-head{margin-bottom:6px!important;gap:4px!important}
@@ -23,5 +25,5 @@
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] #timeline .timeline-item::before{left:8px!important;top:15px!important;width:8px!important;height:8px!important;box-shadow:0 0 0 2px var(--council-ui-surface)!important}
  body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow] #timeline .timeline-item strong{font-size:16px!important;line-height:1.45!important}
  body.mobile-council-mode[data-council-detail-reviewed].council-detail-editing #councilDetailModal[data-council-window-reflow] #councilMobileDetailNav{display:grid!important;visibility:hidden!important}
- body.mobile-council-mode[data-council-detail-reviewed].council-detail-editing #councilDetailModal[data-council-window-reflow][data-council-window-small] #councilMobileDetailNav{display:none!important}
+ body.mobile-council-mode[data-council-detail-reviewed] #councilDetailModal[data-council-window-reflow][data-council-window-small] #councilMobileDetailNav{display:none!important}
 }
