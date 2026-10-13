@@ -44,6 +44,10 @@ jobs:
           JS
       - name: Mobile frames, filters, native actions and read-only roles
         run: node testing/council/mobile-list.mjs
+      - name: Inbox phone sizes, themes, text200 and list density
+        run: node testing/council/inbox-mobile.mjs /tmp/council-inbox-mobile
+      - name: Inbox native filters, paging, roles, selection and desktop return
+        run: node testing/council/inbox-functional.mjs /tmp/council-inbox-functional
       - name: Institutional cursor, bounded pages and fresh authorization
         run: node --test worker/tests/council-pagination.test.mjs worker/tests/council-policy.test.mjs worker/tests/council-vice-access.test.mjs
       - name: Full list, detail, draft, action and return with 253 synthetic records
@@ -83,3 +87,5 @@ jobs:
             /tmp/council-detail-review/
             /tmp/council-detail-validation/
             /tmp/council-window-reflow/
+            /tmp/council-inbox-mobile/
+            /tmp/council-inbox-functional/

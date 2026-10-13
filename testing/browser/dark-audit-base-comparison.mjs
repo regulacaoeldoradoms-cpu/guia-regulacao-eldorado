@@ -82,6 +82,13 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // stored theme. Select the requested theme after the real view is ready.
     await targetPage.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
     await targetPage.emulateMedia({media});
+    // Council's retained parse-time controller restores these same nodes on
+    // the asynchronous media change. Await that native print state on BOTH
+    // sources; stable raster frames alone can precede the media event.
+    if(route==='/conselho/painel/'&&media==='print')await targetPage.waitForFunction(()=>
+      !document.getElementById('councilSummary')&&
+      document.querySelector('.council-metrics')?.parentElement===document.querySelector('.portal-main')&&
+      !document.body.hasAttribute('data-council-inbox'));
     // Capture each source from the same deterministic resting state. This does
     // not relax pixel acceptance: it removes scroll restoration, focus/hover
     // residue and live CSS motion that are unrelated to the source comparison.
