@@ -103,6 +103,9 @@ test('Cidadão: tipos, privacidade, campos, anexo e erro sintéticos',async({pag
     await capture(page,info,`privacy-${privacy}`);
   }
   await expect(page.locator('#composeIdentityWarning')).toContainText(/CPF|Cartão SUS/);
+  await page.locator('#composeChannelWarning').scrollIntoViewIfNeeded();
+  await expect(page.locator('#composeChannelWarning')).toBeVisible();
+  await expect(page.locator('#composeChannelWarning')).toContainText('urgência ou emergência');
   await page.locator('.compose-info summary').click();
   await expect(page.locator('.compose-info')).toContainText('urgência ou emergência');
   await capture(page,info,'privacy-channel-explanation');

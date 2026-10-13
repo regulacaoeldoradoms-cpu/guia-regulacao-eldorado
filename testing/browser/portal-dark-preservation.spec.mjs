@@ -151,7 +151,7 @@ async function sharedNativeControlContract(page, route) {
       };
     });
     const account = [...document.querySelectorAll('.portal-topbar .portal-account-area')].map(node=>({tag:node.localName,href:node.getAttribute('href')}));
-    const citizenForm = route === '/cidadao/' ? {radios:[...document.querySelectorAll('#newManifestationForm input[type=radio]')].map(node=>({name:node.name,value:node.value,checked:node.checked,required:node.required,disabled:node.disabled})),alerts:[...document.querySelectorAll('#newManifestationForm .form-alert')].map(node=>node.textContent.trim()),confirmation:document.querySelector('label.form-confirm')?.textContent.trim()} : null;
+    const citizenForm = route === '/cidadao/' ? {radios:[...document.querySelectorAll('#newManifestationForm input[type=radio]')].map(node=>({name:node.name,value:node.value,checked:node.checked,required:node.required,disabled:node.disabled})),alerts:[...document.querySelectorAll('#newManifestationForm .form-alert,#newManifestationForm .compose-essential,#newManifestationForm .compose-info')].map(node=>node.textContent.trim()),confirmation:document.querySelector('label.form-confirm')?.textContent.trim()} : null;
     return {requiredIds,controls,account,citizenForm};
   }, { route, nativeIdentityKey });
 }
@@ -324,7 +324,25 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
       // only an absent base aria-controls may become the named native root.
       const baseNativeContract={...nativeContracts[1],controls:nativeContracts[1].controls.map(control=>
         control.id==='portalChatLauncher'&&control.controls===null?{...control,controls:'portalChatRoot'}:control)};
-      expect(nativeContracts[0]).toEqual(baseNativeContract);
+      if(route==='/cidadao/'){
+        const current=nativeContracts[0];
+        expect(current.controls.some(control=>control.id==='manifestationPriorContact')).toBe(false);
+        expect(current.controls.find(control=>control.id==='manifestationSubject')).toMatchObject({required:true,minlength:'3',maxlength:'180',disabled:true});
+        expect(current.controls.find(control=>control.id==='manifestationDescription')).toMatchObject({required:true,minlength:'10',maxlength:'6500',disabled:true,describedBy:'composeGuidance composeIdentityWarning descriptionCounter'});
+        expect(current.controls.find(control=>control.id==='manifestationConfirm')).toMatchObject({required:true,disabled:false,tag:'input',type:'checkbox',form:'newManifestationForm',identityPreserved:true});
+        expect(current.citizenForm.confirmation).toBe('Revisei o relato e os anexos e confirmo que enviei apenas as informações necessárias.');
+        expect(current.citizenForm.alerts.join(' ')).toContain('Texto, imagens e PDFs podem revelar sua identidade.');
+        expect(current.citizenForm.alerts.join(' ')).toContain('urgência ou emergência');
+        // Only the explicitly approved removal, initial progressive disabled
+        // state, accessible report description and explanatory copy differ.
+        // Every remaining native attribute, radio, ID and identity is exact.
+        const project=contract=>({...contract,
+          controls:contract.controls.filter(control=>control.id!=='manifestationPriorContact').map(control=>
+            ['manifestationSubject','manifestationDescription'].includes(control.id)
+              ? {...control,disabled:false,...(control.id==='manifestationDescription'?{describedBy:null}:{})}:control),
+          citizenForm:{...contract.citizenForm,alerts:[],confirmation:''}});
+        expect(project(current)).toEqual(project(baseNativeContract));
+      }else expect(nativeContracts[0]).toEqual(baseNativeContract);
       expect(nativeContracts[0].controls.every(control=>control.count===1&&control.identityPreserved),'Native IDs must remain unique and retain their original nodes').toBe(true);
       for(const id of ['portalLogout','portalChatLauncher','socialNotificationTriggerMobile']){
         const control=nativeContracts[0].controls.find(control=>control.id===id);
