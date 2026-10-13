@@ -109,6 +109,8 @@ jobs:
           name: synthetic-gnome
           path: |
             /tmp/gnome-mobile/
+            /tmp/pet-depth/
+            /tmp/pet-speech-geometry/
             /tmp/gnome-frame-matrix/
             /tmp/gnome-motion-browser/
             /tmp/gnome-pixels-pause/
