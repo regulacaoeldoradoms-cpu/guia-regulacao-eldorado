@@ -63,7 +63,9 @@ jobs:
           node testing/council/detail-organization.mjs
           node testing/council/detail-organization-actions.mjs
       - name: Detail window scroll, dock bounds, empty conversation and history
-        run: node testing/council/window-reflow.mjs /tmp/council-window-reflow
+        run: |
+          node testing/council/window-reflow.mjs /tmp/council-window-reflow
+          node testing/council/window-status-pointer.mjs
       - name: Detail lifecycle and optional cache asset failure
         run: node testing/council/detail-lifecycle.mjs
       - name: Painted navigation frames, roles, chat and reentries

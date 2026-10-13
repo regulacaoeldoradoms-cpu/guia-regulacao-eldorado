@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import {openDetails} from './detail-fixtures.mjs';
+for(const width of [320,390])for(const theme of ['light','dark']){
+ const scene=await openDetails(process.cwd(),{width,theme}),{page}=scene;
+ try{
+  await page.goto(scene.origin+'/conselho/painel/');await page.waitForFunction(()=>document.body.classList.contains('council-navigation-ready'));await page.locator('#councilRows .council-open-detail').first().click();await page.locator('#detailContent:not([hidden])').waitFor();
+  await page.locator('#statusSelect').selectOption('concluida');await page.locator('#saveStatus').scrollIntoViewIfNeeded();const before=await page.locator('#saveStatus').boundingBox();assert(before);const navHeight=await page.locator('#councilMobileDetailNav').evaluate(n=>n.getBoundingClientRect().height);const point={x:before.x+before.width/2,y:before.y+before.height/2};await page.evaluate(()=>window.__originalStatusButton=document.getElementById('saveStatus'));
+  await page.mouse.move(point.x,point.y);await page.mouse.down();const after=await page.locator('#saveStatus').boundingBox();assert(after);assert(point.x>=after.x&&point.x<=after.x+after.width&&point.y>=after.y&&point.y<=after.y+after.height,JSON.stringify({before,after,point}));assert.equal(await page.locator('#councilMobileDetailNav').evaluate(n=>n.getBoundingClientRect().height),navHeight);assert(await page.evaluate(()=>document.activeElement===__originalStatusButton&&document.getElementById('saveStatus')===__originalStatusButton));await page.mouse.up();
+  await page.waitForFunction(()=>document.getElementById('detailStatus').textContent==='Concluída');assert.equal(scene.mutations.length,1);assert.equal(scene.mutations[0].method,'PATCH');assert.deepEqual(scene.mutations[0].body,{status:'concluida',detail:''});assert.equal(scene.result.errors.length,0,JSON.stringify(scene.result.errors));console.log(JSON.stringify({width,theme,nativePointerStable:true,oneStatusPatch:true,passed:true}));
+ }finally{await scene.close();}
+}
