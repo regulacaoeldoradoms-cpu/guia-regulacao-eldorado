@@ -5,8 +5,8 @@ export function prepareCitizenMobilePresentation(root){
   const originals=window[key] ||= new Map();
   for(const [selector,text] of [
     ['.portal-hero h2','Canal do Cidadão'],
-    ['.portal-hero-copy > p','Fale com o Conselho de Saúde e acompanhe as respostas.'],
-    ['#openNewManifestation strong','Escrever ao Conselho'],
+    ['.portal-hero-copy > p','Participe e acompanhe suas manifestações.'],
+    ['#openNewManifestation strong','Nova manifestação'],
     ['#openNewManifestation > span:not(.icon) > span','Sugestão, reclamação, elogio ou denúncia.']
   ]){const node=root.querySelector(selector);if(node){if(!originals.has(node))originals.set(node,node.dataset.citizenNativeText ? [document.createTextNode(node.dataset.citizenNativeText)] : [...node.childNodes]);node.textContent=text;}}
 }
@@ -35,8 +35,8 @@ export function mountCitizenMobilePresentation(){
     if(!root.querySelector('.citizen-mobile-tabs'))return false;
     for(const [selector,text] of [
       ['.portal-hero h2','Canal do Cidadão'],
-      ['.portal-hero-copy > p','Fale com o Conselho de Saúde e acompanhe as respostas.'],
-      ['#openNewManifestation strong','Escrever ao Conselho'],
+      ['.portal-hero-copy > p','Participe e acompanhe suas manifestações.'],
+      ['#openNewManifestation strong','Nova manifestação'],
       ['#openNewManifestation > span:not(.icon) > span','Sugestão, reclamação, elogio ou denúncia.'],
       ['.citizen-mobile-tab[data-tab="manifestations"] > span','Meus envios'],
       ['.citizen-mobile-tab[data-tab="notifications"] > span','Avisos'],
