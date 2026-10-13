@@ -42,7 +42,7 @@
         styles.href = '/css/citizen-readable-layout.css?v=20261011-citizen-panel-1';
         document.head.appendChild(styles);
         const layout = document.createElement('script');
-        layout.src = '/js/citizen-layout.js?v=20261012-gnome-2';
+        layout.src = '/js/citizen-layout.js?v=20261013-compose-refinement-1';
         document.head.appendChild(layout);
       }
     }

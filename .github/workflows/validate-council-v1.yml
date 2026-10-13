@@ -67,9 +67,9 @@ jobs:
           grep -q 'Conselho Municipal de Saúde' conselho/index.html
           grep -q 'Painel institucional' conselho/painel/index.html
           grep -q 'Nova manifestação' cidadao/index.html
-          grep -q 'Classifique a manifestação' cidadao/index.html
-          grep -q 'O que você espera do Conselho' cidadao/index.html
-          grep -q 'Quero me identificar' cidadao/index.html
+          grep -q 'Tipo de mensagem' cidadao/index.html
+          grep -q 'O que espera do Conselho' cidadao/index.html
+          grep -q 'Me identificar' cidadao/index.html
           grep -q 'Minhas manifestações' cidadao/index.html
           grep -q 'Notificações' cidadao/index.html
           grep -q 'Sua porta de entrada' login/index.html
@@ -151,8 +151,8 @@ jobs:
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
           grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
           grep -q 'user.emailVerificationRequired' js/council-panel.js
-          grep -q 'Atenção à identificação' cidadao/index.html
-          grep -q 'Este canal não é atendimento assistencial' cidadao/index.html
+          grep -q 'Texto, imagens e PDFs podem revelar sua identidade' cidadao/index.html
+          grep -q 'Este canal não agenda consultas ou exames' cidadao/index.html
           grep -q 'não realiza agendamento' conselho/index.html
 
       - name: Conferir proteção dos anexos

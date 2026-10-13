@@ -512,6 +512,7 @@ try {
             fullPage: true,
           });
           if (process.env.KEYBOARD_FIXTURE) {
+            await page.locator('input[name=manifestationType][value=sugestao]').check();
             await page.setViewportSize({
               width,
               height: width === 844 ? 250 : 500,

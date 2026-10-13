@@ -16,12 +16,6 @@ const initializeCitizenArea = async (context) => {
     concluida: 'Concluída', arquivada: 'Arquivada'
   };
   const typeLabels = { sugestao: 'Sugestão', reclamacao: 'Reclamação', elogio: 'Elogio', denuncia: 'Denúncia' };
-  const priorContactLabels = {
-    nao: 'Não',
-    sim_sem_resolucao: 'Sim, mas não foi resolvido',
-    sim_parcial: 'Sim, houve solução parcial',
-    nao_se_aplica: 'Não se aplica'
-  };
   const privacyLabels = { anonima: 'Anônima', sigilosa: 'Sigilosa', identificada: 'Identificada' };
   const roleLabels = {
     medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
@@ -72,21 +66,28 @@ const initializeCitizenArea = async (context) => {
   function openModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
+    if(id==='newManifestationModal' && !modal.classList.contains('open'))composeOpener=document.activeElement;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
+    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','true');syncCompose();modal.querySelector('.citizen-modal-close')?.focus({preventScroll:true});}
+    if(id==='manifestationDetailModal')focusDetailDialog();
   }
 
-  function closeModal(id) {
+  function closeModal(id, {restoreFocus = true} = {}) {
     const modal = document.getElementById(id);
-    if (!modal) return;
+    if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','false');if(restoreFocus&&composeOpener?.isConnected)composeOpener.focus({preventScroll:true});}
   }
 
   function showStatus(el, message, type = 'error') {
     if (!el) return;
     el.textContent = message;
     el.className = `account-status visible ${type}`;
+    if (el.id === 'newManifestationStatus' && document.getElementById('newManifestationModal')?.classList.contains('open')) {
+      requestAnimationFrame(() => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    }
   }
 
   function selectedPrivacyMode() {
@@ -284,13 +285,11 @@ const initializeCitizenArea = async (context) => {
     const main = document.getElementById('manifestationDescription').value.trim();
     const locationValue = document.getElementById('manifestationLocation').value.trim();
     const dateValue = document.getElementById('manifestationDate').value;
-    const priorValue = document.getElementById('manifestationPriorContact').value;
     const desired = document.getElementById('manifestationDesiredOutcome').value.trim();
     const sections = [main];
     const context = [];
-    if (dateValue) context.push(`Data do fato: ${dateValue.split('-').reverse().join('/')}`);
+    if (dateValue) context.push(`${composeKinds[document.querySelector('input[name=manifestationType]:checked')?.value]?.[3] || 'Data do fato'}: ${dateValue.split('-').reverse().join('/')}`);
     if (locationValue) context.push(`Local específico: ${locationValue}`);
-    if (priorValue) context.push(`Contato prévio com o serviço: ${priorContactLabels[priorValue] || priorValue}`);
     if (context.length) sections.push(`Informações complementares:\n${context.join('\n')}`);
     if (desired) sections.push(`O que espera do Conselho:\n${desired}`);
     return sections.filter(Boolean).join('\n\n');
@@ -319,6 +318,96 @@ const initializeCitizenArea = async (context) => {
     }
     return failed;
   }
+
+  const composeForm = document.getElementById('newManifestationForm');
+  const composeModal = document.getElementById('newManifestationModal');
+  const composeDetails = document.getElementById('composeDetails');
+  const detailModal = document.getElementById('manifestationDetailModal');
+  let detailFocusFrame = 0;
+  function focusDetailDialog(attempts = 12) {
+    if (!detailModal?.isConnected || !detailModal.classList.contains('open')) return;
+    const close = detailModal.querySelector('.citizen-modal-close');
+    if (close && getComputedStyle(close).visibility==='visible') close.focus({preventScroll:true});
+    if (!detailModal.contains(document.activeElement) && attempts>0) detailFocusFrame=globalThis.requestAnimationFrame(()=>focusDetailDialog(attempts-1));
+  }
+  context?.addController?.({dispose:()=>globalThis.cancelAnimationFrame(detailFocusFrame)});
+  const composeKinds = {
+    sugestao: ['Conte sua sugestão','Qual melhoria você propõe e como ela pode ajudar?','Escreva a melhoria que você gostaria de propor.','Data de referência'],
+    reclamacao: ['Conte o que aconteceu','Descreva o problema, o atendimento ou o serviço e como isso afetou você.','Explique o problema e o que aconteceu.','Data do fato'],
+    elogio: ['Conte o que foi positivo','Qual atendimento, equipe ou serviço você gostaria de reconhecer?','Conte o que foi bem e por que você quer agradecer.','Data do atendimento'],
+    denuncia: ['Relate a possível irregularidade','Descreva os fatos que conhece e o que precisa ser apurado. Evite dados pessoais desnecessários.','Conte os fatos e o que você sabe sobre a situação.','Data do fato']
+  };
+  const detailIds = ['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'];
+  let currentComposeKind = '', sendingManifestation = false, composeOpener = null;
+  function resizeComposeReport() {
+    const input = document.getElementById('manifestationDescription');
+    if (!input || document.getElementById('composeReport')?.hidden) return;
+    input.style.height = 'auto';
+    input.style.height = Math.max(150,input.scrollHeight + 2) + 'px';
+  }
+  function fitComposeActions() {
+    if (!composeModal?.classList.contains('open')) return;
+    const panel = composeModal.querySelector('.citizen-modal-panel');
+    const head = composeModal.querySelector('.citizen-modal-head');
+    const footer = composeModal.querySelector('.manifestation-form-footer');
+    const remaining = panel.clientHeight - head.offsetHeight - footer.offsetHeight;
+    const inline = remaining < 120;
+    composeModal.toggleAttribute('data-compose-inline-actions', inline);
+    composeForm.style.scrollPaddingBottom = `${inline ? 12 : footer.offsetHeight + 12}px`;
+  }
+  if (globalThis.ResizeObserver) {
+    const observer = new globalThis.ResizeObserver(fitComposeActions);
+    for (const node of [composeModal.querySelector('.citizen-modal-panel'),composeModal.querySelector('.citizen-modal-head'),composeModal.querySelector('.manifestation-form-footer')]) observer.observe(node);
+    context?.addController?.({ dispose: () => observer.disconnect() });
+  }
+  function syncCompose(change = false) {
+    if (!composeModal?.hasAttribute('data-compose-refinement')) return;
+    const kind = document.querySelector('input[name=manifestationType]:checked')?.value || '';
+    const config = composeKinds[kind];
+    const report = document.getElementById('composeReport');
+    if (report) report.hidden = !config;
+    if (!sendingManifestation) {
+      for (const id of ['manifestationSubject', 'manifestationDescription']) document.getElementById(id).disabled = !config;
+    }
+    if (config) {
+      document.getElementById('composeReportTitle').textContent = config[0];
+      document.getElementById('composeGuidance').textContent = config[1];
+      document.getElementById('manifestationDescription').placeholder = config[2];
+      document.getElementById('composeDateLabel').firstChild.textContent = config[3] + ' ';
+    }
+    const count = detailIds.filter(id => document.getElementById(id)?.value.trim()).length;
+    document.getElementById('composeDetailsCount').textContent = count ? `${count} detalhe(s) incluído(s)` : '4 campos opcionais';
+    const hasDraft = document.getElementById('manifestationDescription')?.value.trim() || document.getElementById('manifestationSubject')?.value.trim() || count;
+    if (change && currentComposeKind && kind !== currentComposeKind && hasDraft) document.getElementById('composeDraftNotice').textContent = 'Categoria alterada. Seu rascunho foi mantido; revise o relato e os detalhes.';
+    currentComposeKind = kind;
+    fitComposeActions();
+    requestAnimationFrame(() => {resizeComposeReport();fitComposeActions();});
+  }
+  composeForm?.addEventListener('change', event => syncCompose(event.target.name === 'manifestationType'));
+  composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
+  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
+  composeForm?.addEventListener('invalid', event => {if(composeDetails?.contains(event.target))composeDetails.open=true;},true);
+  function containDialogKeyboard(event, modal = event.currentTarget) {
+    if (!modal?.classList.contains('open')) return;
+    if (event.key === 'Escape' && !(modal===composeModal && sendingManifestation)) {event.preventDefault();closeModal(modal.id);return;}
+    if (event.key !== 'Tab') return;
+    const nodes=[...modal.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(node=>!node.disabled && node.tabIndex>=0 && node.getClientRects().length && getComputedStyle(node).visibility==='visible');
+    const first=nodes[0],last=nodes.at(-1);
+    if(!modal.contains(document.activeElement)){event.preventDefault();(event.shiftKey?last:first)?.focus({preventScroll:true});return;}
+    if(!first)return;
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+  composeModal?.addEventListener('keydown',containDialogKeyboard);
+  detailModal?.addEventListener('keydown',containDialogKeyboard);
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Tab')return;
+    const modal=detailModal?.classList.contains('open')?detailModal:composeModal;
+    if(modal?.classList.contains('open')&&!modal.contains(document.activeElement))containDialogKeyboard(event,modal);
+  },true);
+  const composeViewport = window.visualViewport;
+  composeViewport?.addEventListener('resize',resizeComposeReport);
+  context?.addController?.({dispose:()=>composeViewport?.removeEventListener('resize',resizeComposeReport)});
+  syncCompose();
 
   const descriptionInput = document.getElementById('manifestationDescription');
   const descriptionCounter = document.getElementById('descriptionCounter');
@@ -354,9 +443,12 @@ const initializeCitizenArea = async (context) => {
   document.getElementById('newManifestationForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const submittedForm = event.currentTarget;
+    if (sendingManifestation) return;
+    syncCompose();
     const button = document.getElementById('submitManifestation');
     const status = document.getElementById('newManifestationStatus');
     if (isPresident) return showStatus(status, 'A Presidência do Conselho não pode abrir nova manifestação.', 'error');
+    if (!submittedForm.reportValidity()) return;
     const files = Array.from(manifestationFiles?.files || []);
     const fileError = validateFiles(files);
     if (fileError) return showStatus(status, fileError, 'error');
@@ -364,6 +456,10 @@ const initializeCitizenArea = async (context) => {
     if (description.length > 8000) return showStatus(status, 'O conteúdo total ficou muito extenso. Reduza um pouco o relato ou o campo sobre o que espera do Conselho.', 'error');
     const selectedType = document.querySelector('input[name="manifestationType"]:checked')?.value || '';
     const privacyMode = selectedPrivacyMode();
+    sendingManifestation = true;
+    composeForm.setAttribute('aria-busy','true');
+    composeForm.querySelectorAll('input,textarea,select,button[data-close-modal],summary').forEach(node=>{node.dataset.composeWasDisabled=String(Boolean(node.disabled));if('disabled' in node)node.disabled=true;});
+    composeModal.querySelector('.citizen-modal-close').disabled=true;
     button.disabled = true;
     button.textContent = 'Enviando...';
     status.className = 'account-status';
@@ -390,15 +486,20 @@ const initializeCitizenArea = async (context) => {
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
       showStatus(status, `Manifestação enviada. Protocolo: ${protocol}.${attachmentMessage}`, failedUploads ? 'error' : 'success');
       await Promise.all([loadManifestations(), loadNotifications()]);
-      window.setTimeout(() => { closeModal('newManifestationModal'); openDetail(protocol); }, failedUploads ? 1800 : 700);
+      window.setTimeout(() => { closeModal('newManifestationModal',{restoreFocus:false}); openDetail(protocol); }, failedUploads ? 1800 : 700);
     } catch (error) {
       let message = error.message || 'Não foi possível enviar.';
       if (error.status === 429 && error.retryAfterSeconds) message += ` Tente novamente em aproximadamente ${Math.ceil(error.retryAfterSeconds / 60)} minuto(s).`;
       if (error.code === 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' && createButton) createButton.hidden = true;
       showStatus(status, message, 'error');
     } finally {
+      sendingManifestation=false;
+      composeForm.removeAttribute('aria-busy');
+      composeForm.querySelectorAll('[data-compose-was-disabled]').forEach(node=>{if('disabled' in node)node.disabled=node.dataset.composeWasDisabled==='true';delete node.dataset.composeWasDisabled;});
+      composeModal.querySelector('.citizen-modal-close').disabled=false;
       button.disabled = false;
       button.textContent = 'Enviar manifestação';
+      syncCompose();
     }
   });
 

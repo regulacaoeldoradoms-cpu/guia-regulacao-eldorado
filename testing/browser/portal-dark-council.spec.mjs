@@ -92,21 +92,23 @@ test('Cidadão: tipos, privacidade, campos, anexo e erro sintéticos',async({pag
   }
   await page.locator('#manifestationSubject').fill('Assunto fictício para a auditoria');
   await page.locator('#manifestationDescription').fill('Descrição totalmente sintética para testar a aparência do formulário.');
+  await page.locator('#composeDetails summary').click();
   await page.locator('#manifestationService').fill('Unidade fictícia');
-  await page.locator('#manifestationPriorContact').selectOption('nao_se_aplica');
+  await expect(page.locator('#manifestationPriorContact')).toHaveCount(0);
   await page.locator('#manifestationFiles').setInputFiles(syntheticPdf);
   await expect(page.locator('#manifestationFileList')).toContainText(syntheticPdf.name);
   for(const privacy of ['identificada','sigilosa']){
     await page.locator(`.privacy-option:has(input[value="${privacy}"])`).click();
-    await page.locator('[data-help="privacy"]').click();
+    await expect(page.locator('#newPrivacyNotice')).toContainText(/e-mail.*protegido/);
     await capture(page,info,`privacy-${privacy}`);
-    await page.locator('[data-help="privacy"]').click();
   }
-  for(const help of ['warning','channel']){
-    await page.locator(`[data-help="${help}"]`).click();
-    await capture(page,info,`help-${help}`);
-    await page.locator(`[data-help="${help}"]`).click();
-  }
+  await expect(page.locator('#composeIdentityWarning')).toContainText(/CPF|Cartão SUS/);
+  await page.locator('#composeChannelWarning').scrollIntoViewIfNeeded();
+  await expect(page.locator('#composeChannelWarning')).toBeVisible();
+  await expect(page.locator('#composeChannelWarning')).toContainText('urgência ou emergência');
+  await page.locator('.compose-info summary').click();
+  await expect(page.locator('.compose-info')).toContainText('urgência ou emergência');
+  await capture(page,info,'privacy-channel-explanation');
   await page.locator('#manifestationConfirm').check();
   const submission=await holdApi(context,'/api/council/manifestations');
   try{
@@ -237,7 +239,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       if(mobileRedesign){
         palettes.push(await page.evaluate(()=>[
           '#privacyChip','#detailPrivacy','#detailStatus','.status-chip',
-          '.manifestation-type-card','.privacy-option','#openNewManifestation','#replyButton'
+          '#openNewManifestation','#replyButton'
         ].flatMap(selector=>[...document.querySelectorAll(selector)].map(el=>{
           const style=getComputedStyle(el);
           return {selector,text:el.textContent.trim(),color:style.color,background:style.backgroundColor,border:style.borderColor};
@@ -256,7 +258,8 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       }
     }});
     if(mobileRedesign){
-      // Requested mobile geometry replaces the old pixel baseline; semantic colors remain exact.
+      // Dashboard/detail semantic colors remain exact. The approved compose form
+      // has its own category/privacy palette and is exercised in the form audit above.
       expect(palettes).toHaveLength(2);
       expect(palettes[0].length).toBeGreaterThan(6);
       // The requested phone copy changes only this action. Assert each
