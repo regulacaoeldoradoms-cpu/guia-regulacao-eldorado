@@ -285,7 +285,7 @@ const initializeCitizenArea = async (context) => {
     const desired = document.getElementById('manifestationDesiredOutcome').value.trim();
     const sections = [main];
     const context = [];
-    if (dateValue) context.push(`${document.querySelector('input[name=manifestationType]:checked')?.value === 'sugestao' ? 'Data de referência' : 'Data do fato'}: ${dateValue.split('-').reverse().join('/')}`);
+    if (dateValue) context.push(`${composeKinds[document.querySelector('input[name=manifestationType]:checked')?.value]?.[3] || 'Data do fato'}: ${dateValue.split('-').reverse().join('/')}`);
     if (locationValue) context.push(`Local específico: ${locationValue}`);
     if (context.length) sections.push(`Informações complementares:\n${context.join('\n')}`);
     if (desired) sections.push(`O que espera do Conselho:\n${desired}`);
