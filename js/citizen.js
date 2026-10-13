@@ -166,13 +166,8 @@ const initializeCitizenArea = async (context) => {
       return;
     }
     list.innerHTML = state.manifestations.map((item) => `<button class="manifestation-item" type="button" data-protocol="${escapeHtml(item.protocol)}" data-manifestation-type="${escapeHtml(item.type)}">
-      <span class="manifestation-item-top">
-        <span class="manifestation-type-tag">${escapeHtml(typeLabels[item.type] || item.type)}</span>
-        <span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span>
-      </span>
-      <strong class="manifestation-subject">${escapeHtml(item.subject || item.protocol)}</strong>
-      <small class="manifestation-meta">${escapeHtml(item.protocol)} · ${escapeHtml(formatDate(item.createdAt))}</small>
-      <span class="manifestation-open-label" aria-hidden="true">Acompanhar ›</span>
+      <span><strong>${escapeHtml(item.subject || item.protocol)}</strong><small>${escapeHtml(item.protocol)} · ${escapeHtml(typeLabels[item.type] || item.type)} · ${escapeHtml(formatDate(item.createdAt))}</small></span>
+      <span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span>
     </button>`).join('');
   }
 
