@@ -33,27 +33,6 @@ body.portal-page{background:#eaf2f6}
 .notification:hover{border-color:#bfb3d2;background:#fff}
 .notification.unread{background:#f1f8fc;border-left-color:#2677a6}
 
-/* O mesmo histórico mantém uma hierarquia coerente no desktop; o telefone
-   recebe a apresentação compacta de citizen-mobile-presentation.css. */
-@media screen and (min-width:901px){
-#manifestationList .manifestation-item{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0}
-#manifestationList .manifestation-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-#manifestationList .manifestation-type-tag{display:inline-flex;align-items:center;gap:7px;color:#17688c;font-size:.84rem;font-weight:800}
-#manifestationList .manifestation-type-tag::before{content:"";display:block;width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:currentColor}
-#manifestationList .manifestation-item[data-manifestation-type="reclamacao"] .manifestation-type-tag{color:#996711}
-#manifestationList .manifestation-item[data-manifestation-type="elogio"] .manifestation-type-tag{color:#287c50}
-#manifestationList .manifestation-item[data-manifestation-type="denuncia"] .manifestation-type-tag{color:#a33b54}
-#manifestationList .manifestation-subject{font-size:.99rem;line-height:1.4;overflow-wrap:anywhere}
-#manifestationList .manifestation-meta{font-size:.78rem;line-height:1.5;color:var(--portal-theme-muted,#647d8e)}
-#manifestationList .manifestation-open-label{align-self:flex-end;font-size:.78rem;font-weight:800;color:var(--portal-theme-accent,#17688c)}
-}
-@media screen and (min-width:901px){
-html[data-portal-theme="dark"] #manifestationList .manifestation-type-tag{color:#93d8f2}
-html[data-portal-theme="dark"] #manifestationList .manifestation-item[data-manifestation-type="reclamacao"] .manifestation-type-tag{color:#f0ce87}
-html[data-portal-theme="dark"] #manifestationList .manifestation-item[data-manifestation-type="elogio"] .manifestation-type-tag{color:#a1e1bb}
-html[data-portal-theme="dark"] #manifestationList .manifestation-item[data-manifestation-type="denuncia"] .manifestation-type-tag{color:#f4b3c5}
-}
-
 /* Nova manifestação no desktop: hierarquia cromática e leitura intuitiva. */
 body:not(.mobile-citizen-mode) #newManifestationModal{background:rgba(7,27,43,.68);backdrop-filter:blur(4px)}
 body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-panel--form{max-width:1050px;border:1px solid rgba(188,211,224,.9);box-shadow:0 30px 80px rgba(5,32,49,.32)}
