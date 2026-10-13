@@ -82,6 +82,9 @@ const initializeCitizenArea = async (context) => {
     if (!el) return;
     el.textContent = message;
     el.className = `account-status visible ${type}`;
+    if (el.id === 'newManifestationStatus' && document.getElementById('newManifestationModal')?.classList.contains('open')) {
+      requestAnimationFrame(() => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    }
   }
 
   function selectedPrivacyMode() {
@@ -330,6 +333,21 @@ const initializeCitizenArea = async (context) => {
     input.style.height = 'auto';
     input.style.height = Math.max(150,input.scrollHeight + 2) + 'px';
   }
+  function fitComposeActions() {
+    if (!composeModal?.classList.contains('open')) return;
+    const panel = composeModal.querySelector('.citizen-modal-panel');
+    const head = composeModal.querySelector('.citizen-modal-head');
+    const footer = composeModal.querySelector('.manifestation-form-footer');
+    const remaining = panel.clientHeight - head.offsetHeight - footer.offsetHeight;
+    const inline = remaining < 120;
+    composeModal.toggleAttribute('data-compose-inline-actions', inline);
+    composeForm.style.scrollPaddingBottom = `${inline ? 12 : footer.offsetHeight + 12}px`;
+  }
+  if (globalThis.ResizeObserver) {
+    const observer = new globalThis.ResizeObserver(fitComposeActions);
+    for (const node of [composeModal.querySelector('.citizen-modal-panel'),composeModal.querySelector('.citizen-modal-head'),composeModal.querySelector('.manifestation-form-footer')]) observer.observe(node);
+    context?.addController?.({ dispose: () => observer.disconnect() });
+  }
   function syncCompose(change = false) {
     if (!composeModal?.hasAttribute('data-compose-refinement')) return;
     const kind = document.querySelector('input[name=manifestationType]:checked')?.value || '';
@@ -350,7 +368,8 @@ const initializeCitizenArea = async (context) => {
     const hasDraft = document.getElementById('manifestationDescription')?.value.trim() || document.getElementById('manifestationSubject')?.value.trim() || count;
     if (change && currentComposeKind && kind !== currentComposeKind && hasDraft) document.getElementById('composeDraftNotice').textContent = 'Categoria alterada. Seu rascunho foi mantido; revise o relato e os detalhes.';
     currentComposeKind = kind;
-    requestAnimationFrame(resizeComposeReport);
+    fitComposeActions();
+    requestAnimationFrame(() => {resizeComposeReport();fitComposeActions();});
   }
   composeForm?.addEventListener('change', event => syncCompose(event.target.name === 'manifestationType'));
   composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
