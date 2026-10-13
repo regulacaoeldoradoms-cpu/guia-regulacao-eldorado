@@ -120,7 +120,7 @@
   }
   async function mountCitizenPanel() {
     if (currentPath() !== '/cidadao/') return;
-    const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261012-citizen-compose-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
+    const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261013-compose-refinement-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
     panel.mountCitizenMobilePresentation();
   }
   async function mountPresentation() {
@@ -202,7 +202,7 @@
   async function prepareRoute(path) {
     await window.PortalCitizenMobileReady;
     if (path === '/cidadao/') {
-      const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261012-citizen-compose-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
+      const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261013-compose-refinement-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
       return panel;
     }
     if (path === '/perfil/') await Promise.all([

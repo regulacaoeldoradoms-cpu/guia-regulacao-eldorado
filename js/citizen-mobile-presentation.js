@@ -44,7 +44,7 @@ export function mountCitizenMobilePresentation(){
       ['#newManifestationModal .form-section:nth-of-type(2) .form-section-head p','Informe o que souber. Estes campos são opcionais.'],
       ['#newManifestationModal .form-section:nth-of-type(3) h3','O que aconteceu?'],
       ['#newManifestationModal .form-section:nth-of-type(3) .form-section-head p','Escreva os detalhes que ajudam o Conselho a entender o assunto.']
-    ]){const node=root.querySelector(selector);if(node)copies.set(node,{text,original:window[Symbol.for('portal.citizenMobileEarlyCopies')]?.get(node) || [...node.childNodes]});}
+    ]){const node=root.querySelector(selector);if(node && !(selector.startsWith('#newManifestationModal') && compose?.hasAttribute('data-compose-refinement')))copies.set(node,{text,original:window[Symbol.for('portal.citizenMobileEarlyCopies')]?.get(node) || [...node.childNodes]});}
     notice=root.querySelector('#accountEvolutionNotice');
     if(notice){
       marker=document.createComment('Original account explanation position');notice.before(marker);

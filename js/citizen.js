@@ -16,12 +16,6 @@ const initializeCitizenArea = async (context) => {
     concluida: 'Concluída', arquivada: 'Arquivada'
   };
   const typeLabels = { sugestao: 'Sugestão', reclamacao: 'Reclamação', elogio: 'Elogio', denuncia: 'Denúncia' };
-  const priorContactLabels = {
-    nao: 'Não',
-    sim_sem_resolucao: 'Sim, mas não foi resolvido',
-    sim_parcial: 'Sim, houve solução parcial',
-    nao_se_aplica: 'Não se aplica'
-  };
   const privacyLabels = { anonima: 'Anônima', sigilosa: 'Sigilosa', identificada: 'Identificada' };
   const roleLabels = {
     medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
@@ -74,11 +68,12 @@ const initializeCitizenArea = async (context) => {
     if (!modal) return;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
+    if(id==='newManifestationModal')syncCompose();
   }
 
   function closeModal(id) {
     const modal = document.getElementById(id);
-    if (!modal) return;
+    if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
   }
@@ -284,13 +279,11 @@ const initializeCitizenArea = async (context) => {
     const main = document.getElementById('manifestationDescription').value.trim();
     const locationValue = document.getElementById('manifestationLocation').value.trim();
     const dateValue = document.getElementById('manifestationDate').value;
-    const priorValue = document.getElementById('manifestationPriorContact').value;
     const desired = document.getElementById('manifestationDesiredOutcome').value.trim();
     const sections = [main];
     const context = [];
-    if (dateValue) context.push(`Data do fato: ${dateValue.split('-').reverse().join('/')}`);
+    if (dateValue) context.push(`${document.querySelector('input[name=manifestationType]:checked')?.value === 'sugestao' ? 'Data de referência' : 'Data do fato'}: ${dateValue.split('-').reverse().join('/')}`);
     if (locationValue) context.push(`Local específico: ${locationValue}`);
-    if (priorValue) context.push(`Contato prévio com o serviço: ${priorContactLabels[priorValue] || priorValue}`);
     if (context.length) sections.push(`Informações complementares:\n${context.join('\n')}`);
     if (desired) sections.push(`O que espera do Conselho:\n${desired}`);
     return sections.filter(Boolean).join('\n\n');
@@ -319,6 +312,60 @@ const initializeCitizenArea = async (context) => {
     }
     return failed;
   }
+
+  const composeForm = document.getElementById('newManifestationForm');
+  const composeModal = document.getElementById('newManifestationModal');
+  const composeDetails = document.getElementById('composeDetails');
+  const composeKinds = {
+    sugestao: ['Conte sua sugestão','Qual melhoria você propõe e como ela pode ajudar?','Escreva a melhoria que você gostaria de propor.','Data de referência'],
+    reclamacao: ['Conte o que aconteceu','Descreva o problema, o atendimento ou o serviço e como isso afetou você.','Explique o problema e o que aconteceu.','Data do fato'],
+    elogio: ['Conte o que foi positivo','Qual atendimento, equipe ou serviço você gostaria de reconhecer?','Conte o que foi bem e por que você quer agradecer.','Data do atendimento'],
+    denuncia: ['Relate a possível irregularidade','Descreva os fatos que conhece e o que precisa ser apurado. Evite dados pessoais desnecessários.','Conte os fatos e o que você sabe sobre a situação.','Data do fato']
+  };
+  const detailIds = ['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'];
+  let currentComposeKind = '', sendingManifestation = false;
+  function resizeComposeReport() {
+    const input = document.getElementById('manifestationDescription');
+    if (!input || document.getElementById('composeReport')?.hidden) return;
+    input.style.height = 'auto';
+    input.style.height = Math.max(150,input.scrollHeight + 2) + 'px';
+  }
+  function syncCompose(change = false) {
+    if (!composeModal?.hasAttribute('data-compose-refinement')) return;
+    const kind = document.querySelector('input[name=manifestationType]:checked')?.value || '';
+    const config = composeKinds[kind];
+    const report = document.getElementById('composeReport');
+    if (report) report.hidden = !config;
+    if (!sendingManifestation) {
+      for (const id of ['manifestationSubject', 'manifestationDescription']) document.getElementById(id).disabled = !config;
+    }
+    if (config) {
+      document.getElementById('composeReportTitle').textContent = config[0];
+      document.getElementById('composeGuidance').textContent = config[1];
+      document.getElementById('manifestationDescription').placeholder = config[2];
+      document.getElementById('composeDateLabel').firstChild.textContent = config[3] + ' ';
+    }
+    const count = detailIds.filter(id => document.getElementById(id)?.value.trim()).length;
+    document.getElementById('composeDetailsCount').textContent = count ? `${count} detalhe(s) incluído(s)` : '4 campos opcionais';
+    const hasDraft = document.getElementById('manifestationDescription')?.value.trim() || document.getElementById('manifestationSubject')?.value.trim() || count;
+    if (change && currentComposeKind && kind !== currentComposeKind && hasDraft) document.getElementById('composeDraftNotice').textContent = 'Categoria alterada. Seu rascunho foi mantido; revise o relato e os detalhes.';
+    currentComposeKind = kind;
+    requestAnimationFrame(resizeComposeReport);
+  }
+  composeForm?.addEventListener('change', event => syncCompose(event.target.name === 'manifestationType'));
+  composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
+  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
+  composeForm?.addEventListener('invalid', event => {if(composeDetails?.contains(event.target))composeDetails.open=true;},true);
+  composeModal?.addEventListener('keydown', event => {
+    if (!composeModal.classList.contains('open')) return;
+    if (event.key === 'Escape' && !sendingManifestation) {event.preventDefault();closeModal('newManifestationModal');return;}
+    if (event.key !== 'Tab') return;
+    const nodes=[...composeModal.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(node=>!node.disabled && node.tabIndex>=0 && node.getClientRects().length);
+    const first=nodes[0],last=nodes.at(-1);if(!first)return;
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  });
+  window.visualViewport?.addEventListener('resize',resizeComposeReport);
+  syncCompose();
 
   const descriptionInput = document.getElementById('manifestationDescription');
   const descriptionCounter = document.getElementById('descriptionCounter');
@@ -354,9 +401,12 @@ const initializeCitizenArea = async (context) => {
   document.getElementById('newManifestationForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const submittedForm = event.currentTarget;
+    if (sendingManifestation) return;
+    syncCompose();
     const button = document.getElementById('submitManifestation');
     const status = document.getElementById('newManifestationStatus');
     if (isPresident) return showStatus(status, 'A Presidência do Conselho não pode abrir nova manifestação.', 'error');
+    if (!submittedForm.reportValidity()) return;
     const files = Array.from(manifestationFiles?.files || []);
     const fileError = validateFiles(files);
     if (fileError) return showStatus(status, fileError, 'error');
@@ -364,6 +414,10 @@ const initializeCitizenArea = async (context) => {
     if (description.length > 8000) return showStatus(status, 'O conteúdo total ficou muito extenso. Reduza um pouco o relato ou o campo sobre o que espera do Conselho.', 'error');
     const selectedType = document.querySelector('input[name="manifestationType"]:checked')?.value || '';
     const privacyMode = selectedPrivacyMode();
+    sendingManifestation = true;
+    composeForm.setAttribute('aria-busy','true');
+    composeForm.querySelectorAll('input,textarea,select,button[data-close-modal],summary').forEach(node=>{node.dataset.composeWasDisabled=String(Boolean(node.disabled));if('disabled' in node)node.disabled=true;});
+    composeModal.querySelector('.citizen-modal-close').disabled=true;
     button.disabled = true;
     button.textContent = 'Enviando...';
     status.className = 'account-status';
@@ -397,8 +451,13 @@ const initializeCitizenArea = async (context) => {
       if (error.code === 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' && createButton) createButton.hidden = true;
       showStatus(status, message, 'error');
     } finally {
+      sendingManifestation=false;
+      composeForm.removeAttribute('aria-busy');
+      composeForm.querySelectorAll('[data-compose-was-disabled]').forEach(node=>{if('disabled' in node)node.disabled=node.dataset.composeWasDisabled==='true';delete node.dataset.composeWasDisabled;});
+      composeModal.querySelector('.citizen-modal-close').disabled=false;
       button.disabled = false;
       button.textContent = 'Enviar manifestação';
+      syncCompose();
     }
   });
 
