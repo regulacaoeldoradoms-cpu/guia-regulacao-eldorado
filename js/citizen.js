@@ -70,14 +70,15 @@ const initializeCitizenArea = async (context) => {
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     if(id==='newManifestationModal'){modal.setAttribute('aria-modal','true');syncCompose();modal.querySelector('.citizen-modal-close')?.focus({preventScroll:true});}
+    if(id==='manifestationDetailModal')focusDetailDialog();
   }
 
-  function closeModal(id) {
+  function closeModal(id, {restoreFocus = true} = {}) {
     const modal = document.getElementById(id);
     if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
-    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','false');if(composeOpener?.isConnected)composeOpener.focus({preventScroll:true});}
+    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','false');if(restoreFocus&&composeOpener?.isConnected)composeOpener.focus({preventScroll:true});}
   }
 
   function showStatus(el, message, type = 'error') {
@@ -321,6 +322,15 @@ const initializeCitizenArea = async (context) => {
   const composeForm = document.getElementById('newManifestationForm');
   const composeModal = document.getElementById('newManifestationModal');
   const composeDetails = document.getElementById('composeDetails');
+  const detailModal = document.getElementById('manifestationDetailModal');
+  let detailFocusFrame = 0;
+  function focusDetailDialog(attempts = 12) {
+    if (!detailModal?.isConnected || !detailModal.classList.contains('open')) return;
+    const close = detailModal.querySelector('.citizen-modal-close');
+    if (close && getComputedStyle(close).visibility==='visible') close.focus({preventScroll:true});
+    if (!detailModal.contains(document.activeElement) && attempts>0) detailFocusFrame=globalThis.requestAnimationFrame(()=>focusDetailDialog(attempts-1));
+  }
+  context?.addController?.({dispose:()=>globalThis.cancelAnimationFrame(detailFocusFrame)});
   const composeKinds = {
     sugestao: ['Conte sua sugestão','Qual melhoria você propõe e como ela pode ajudar?','Escreva a melhoria que você gostaria de propor.','Data de referência'],
     reclamacao: ['Conte o que aconteceu','Descreva o problema, o atendimento ou o serviço e como isso afetou você.','Explique o problema e o que aconteceu.','Data do fato'],
@@ -377,14 +387,23 @@ const initializeCitizenArea = async (context) => {
   composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
   composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
   composeForm?.addEventListener('invalid', event => {if(composeDetails?.contains(event.target))composeDetails.open=true;},true);
-  composeModal?.addEventListener('keydown', event => {
-    if (!composeModal.classList.contains('open')) return;
-    if (event.key === 'Escape' && !sendingManifestation) {event.preventDefault();closeModal('newManifestationModal');return;}
+  function containDialogKeyboard(event, modal = event.currentTarget) {
+    if (!modal?.classList.contains('open')) return;
+    if (event.key === 'Escape' && !(modal===composeModal && sendingManifestation)) {event.preventDefault();closeModal(modal.id);return;}
     if (event.key !== 'Tab') return;
-    const nodes=[...composeModal.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(node=>!node.disabled && node.tabIndex>=0 && node.getClientRects().length);
-    const first=nodes[0],last=nodes.at(-1);if(!first)return;
+    const nodes=[...modal.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(node=>!node.disabled && node.tabIndex>=0 && node.getClientRects().length && getComputedStyle(node).visibility==='visible');
+    const first=nodes[0],last=nodes.at(-1);
+    if(!modal.contains(document.activeElement)){event.preventDefault();(event.shiftKey?last:first)?.focus({preventScroll:true});return;}
+    if(!first)return;
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
-  });
+  }
+  composeModal?.addEventListener('keydown',containDialogKeyboard);
+  detailModal?.addEventListener('keydown',containDialogKeyboard);
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='Tab')return;
+    const modal=detailModal?.classList.contains('open')?detailModal:composeModal;
+    if(modal?.classList.contains('open')&&!modal.contains(document.activeElement))containDialogKeyboard(event,modal);
+  },true);
   const composeViewport = window.visualViewport;
   composeViewport?.addEventListener('resize',resizeComposeReport);
   context?.addController?.({dispose:()=>composeViewport?.removeEventListener('resize',resizeComposeReport)});
@@ -467,7 +486,7 @@ const initializeCitizenArea = async (context) => {
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
       showStatus(status, `Manifestação enviada. Protocolo: ${protocol}.${attachmentMessage}`, failedUploads ? 'error' : 'success');
       await Promise.all([loadManifestations(), loadNotifications()]);
-      window.setTimeout(() => { closeModal('newManifestationModal'); openDetail(protocol); }, failedUploads ? 1800 : 700);
+      window.setTimeout(() => { closeModal('newManifestationModal',{restoreFocus:false}); openDetail(protocol); }, failedUploads ? 1800 : 700);
     } catch (error) {
       let message = error.message || 'Não foi possível enviar.';
       if (error.status === 429 && error.retryAfterSeconds) message += ` Tente novamente em aproximadamente ${Math.ceil(error.retryAfterSeconds / 60)} minuto(s).`;
