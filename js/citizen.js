@@ -66,9 +66,10 @@ const initializeCitizenArea = async (context) => {
   function openModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
+    if(id==='newManifestationModal' && !modal.classList.contains('open'))composeOpener=document.activeElement;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
-    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','true');syncCompose();}
+    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','true');syncCompose();modal.querySelector('.citizen-modal-close')?.focus({preventScroll:true});}
   }
 
   function closeModal(id) {
@@ -76,7 +77,7 @@ const initializeCitizenArea = async (context) => {
     if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
-    if(id==='newManifestationModal')modal.setAttribute('aria-modal','false');
+    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','false');if(composeOpener?.isConnected)composeOpener.focus({preventScroll:true});}
   }
 
   function showStatus(el, message, type = 'error') {
@@ -327,7 +328,7 @@ const initializeCitizenArea = async (context) => {
     denuncia: ['Relate a possível irregularidade','Descreva os fatos que conhece e o que precisa ser apurado. Evite dados pessoais desnecessários.','Conte os fatos e o que você sabe sobre a situação.','Data do fato']
   };
   const detailIds = ['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'];
-  let currentComposeKind = '', sendingManifestation = false;
+  let currentComposeKind = '', sendingManifestation = false, composeOpener = null;
   function resizeComposeReport() {
     const input = document.getElementById('manifestationDescription');
     if (!input || document.getElementById('composeReport')?.hidden) return;
@@ -384,7 +385,9 @@ const initializeCitizenArea = async (context) => {
     const first=nodes[0],last=nodes.at(-1);if(!first)return;
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
   });
-  window.visualViewport?.addEventListener('resize',resizeComposeReport);
+  const composeViewport = window.visualViewport;
+  composeViewport?.addEventListener('resize',resizeComposeReport);
+  context?.addController?.({dispose:()=>composeViewport?.removeEventListener('resize',resizeComposeReport)});
   syncCompose();
 
   const descriptionInput = document.getElementById('manifestationDescription');

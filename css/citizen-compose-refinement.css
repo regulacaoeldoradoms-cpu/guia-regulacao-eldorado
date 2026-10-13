@@ -70,3 +70,7 @@ html[data-portal-theme=dark] #newManifestationModal#newManifestationModal[data-c
 #newManifestationModal#newManifestationModal[data-compose-refinement] #newManifestationStatus{margin:12px 0!important;font-size:14px!important;line-height:1.45!important;overflow-wrap:anywhere;}
 
 #newManifestationModal#newManifestationModal[data-compose-refinement][data-compose-inline-actions] .manifestation-form-footer{position:static!important;}
+
+/* Focus must enter immediately, without the shared backdrop visibility delay. */
+#newManifestationModal#newManifestationModal[data-compose-refinement]{transition:none!important;}
+#newManifestationModal#newManifestationModal[data-compose-refinement].open{visibility:visible!important;pointer-events:auto!important;}

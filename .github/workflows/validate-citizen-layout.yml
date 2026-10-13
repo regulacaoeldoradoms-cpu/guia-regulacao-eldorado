@@ -107,6 +107,7 @@ jobs:
           node testing/citizen-layout/citizen-compose-accessibility.mjs
           node testing/citizen-layout/citizen-compose-footer.mjs
           node testing/citizen-layout/citizen-compose-paint.mjs
+          node testing/citizen-layout/citizen-compose-lifecycle.mjs
       - name: Citizen first paint with absent, obsolete and malformed account/style caches
         run: node testing/citizen-layout/citizen-auth-first-paint.mjs
       - name: Citizen legacy HTML, real service worker and bounded recovery

@@ -33,7 +33,7 @@ try {
     });
     await cdp.send('Page.startScreencast',{format:'jpeg',quality:90,maxWidth:390,maxHeight:844,everyNthFrame:1});
     for(const step of ['opening','reopening']) {
-      phase=step;await page.evaluate(s=>{window.__composePhase=s;},step);await page.locator('#openNewManifestation').click();await page.locator('#newManifestationModal.open').waitFor();await page.waitForTimeout(350);await page.screenshot({path:`${output}/${mode}-${theme}-${step}-settled.png`});
+      phase=step;await page.evaluate(s=>{window.__composePhase=s;},step);await page.locator('#openNewManifestation').click();await page.locator('#newManifestationModal.open').waitFor();assert(await page.evaluate(()=>document.getElementById('newManifestationModal').contains(document.activeElement)));await page.waitForTimeout(350);await page.screenshot({path:`${output}/${mode}-${theme}-${step}-settled.png`});
       await page.locator('#newManifestationModal .citizen-modal-close').click();await page.locator('#newManifestationModal').waitFor({state:'hidden'});assert.equal(await page.locator('#newManifestationModal').getAttribute('aria-modal'),'false');phase='idle';await page.evaluate(()=>window.__composePhase='idle');
     }
     await cdp.send('Page.stopScreencast');await Promise.all(pending);

@@ -11,11 +11,15 @@ export function prepareCitizenMobilePresentation(root){
   ]){const node=root.querySelector(selector);if(node){if(!originals.has(node))originals.set(node,node.dataset.citizenNativeText ? [document.createTextNode(node.dataset.citizenNativeText)] : [...node.childNodes]);node.textContent=text;}}
 }
 export function mountCitizenMobilePresentation(){
-  if(window[INSTANCE]){window[INSTANCE].sync();return window[INSTANCE];}
-  const root=window.PortalCitizenShell?.active()?.root || document;
+  const area=window.PortalCitizenShell?.active();
+  const root=area?.root || document;
+  if(window[INSTANCE]){
+    if(window[INSTANCE].root===root){window[INSTANCE].sync();return window[INSTANCE];}
+    window[INSTANCE].dispose?.();
+  }
   if(!root.querySelector('#manifestationsCard'))return null;
   const media=matchMedia('screen and (max-width: 900px)'),print=matchMedia('print');
-  const copies=new Map();let bound=false,mobile=false,queued=false,printing=false;
+  const copies=new Map();let bound=false,mobile=false,queued=false,printing=false,disposed=false;
   let notice,marker,help;
   const compose=root.querySelector('#newManifestationModal');
   function composeViewport(active){
@@ -54,6 +58,7 @@ export function mountCitizenMobilePresentation(){
     bound=true;return true;
   }
   function sync(){
+    if(disposed)return;
     queued=false;
     const eligible=path()==='/cidadao/' && media.matches && !printing && !print.matches;
     const active=eligible && bind();
@@ -74,12 +79,23 @@ export function mountCitizenMobilePresentation(){
     composeViewport(Boolean(active));
     mobile=Boolean(active);
   }
-  function schedule(){if(!queued){queued=true;queueMicrotask(sync);}}
-  new MutationObserver(schedule).observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+  function schedule(){if(!disposed&&!queued){queued=true;queueMicrotask(sync);}}
+  const observer=new MutationObserver(schedule);observer.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
   media.addEventListener('change',sync);print.addEventListener('change',sync);
   const viewportChanged=()=>{sync();const focused=document.activeElement;if(mobile&&compose?.classList.contains('open')&&compose.contains(focused)&&focused?.matches('input,select,textarea'))requestAnimationFrame(()=>focused.scrollIntoView({block:'nearest',inline:'nearest'}));};
   window.visualViewport?.addEventListener('resize',viewportChanged);window.visualViewport?.addEventListener('scroll',viewportChanged);
-  window.addEventListener('beforeprint',()=>{printing=true;sync();});window.addEventListener('afterprint',()=>{printing=false;sync();});
+  const beforePrint=()=>{printing=true;sync();},afterPrint=()=>{printing=false;sync();};
+  window.addEventListener('beforeprint',beforePrint);window.addEventListener('afterprint',afterPrint);
   window.addEventListener('portal:citizen-route',sync);
-  const controller=Object.freeze({sync});window[INSTANCE]=controller;sync();return controller;
+  const controller=Object.freeze({root,sync,dispose(){
+    if(disposed)return;disposed=true;observer.disconnect();
+    media.removeEventListener('change',sync);print.removeEventListener('change',sync);
+    window.visualViewport?.removeEventListener('resize',viewportChanged);window.visualViewport?.removeEventListener('scroll',viewportChanged);
+    window.removeEventListener('beforeprint',beforePrint);window.removeEventListener('afterprint',afterPrint);window.removeEventListener('portal:citizen-route',sync);
+    const originals=window[Symbol.for('portal.citizenMobileEarlyCopies')];
+    for(const node of copies.keys())originals?.delete(node);
+    copies.clear();help?.remove();
+    if(window[INSTANCE]===controller)delete window[INSTANCE];
+  }});
+  area?.addController?.(controller);window[INSTANCE]=controller;sync();return controller;
 }
