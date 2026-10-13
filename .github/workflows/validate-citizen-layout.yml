@@ -14,6 +14,8 @@ on:
       - "css/home-mobile-direct.css"
       - "index.html"
       - "js/citizen-layout.js"
+      - "portal-sw.js"
+      - "testing/citizen-cache/cache-policy.test.mjs"
       - "js/citizen-mobile-navigation.js"
       - "js/citizen-mobile-header.js"
       - "js/citizen-mobile-presentation.js"
@@ -88,6 +90,13 @@ jobs:
         run: node testing/citizen-layout/profile-tools-mobile.mjs
       - name: Citizen compose proportions, reduced viewport and native form functions
         run: node testing/citizen-layout/citizen-compose-mobile.mjs
+      - name: Citizen first paint with absent, obsolete and malformed account/style caches
+        run: node testing/citizen-layout/citizen-auth-first-paint.mjs
+      - name: Citizen legacy HTML, real service worker and bounded recovery
+        run: |
+          node --test testing/citizen-cache/cache-policy.test.mjs
+          node testing/citizen-layout/citizen-html-first-paint.mjs
+          node testing/citizen-layout/citizen-paint-recovery.mjs
       - name: Citizen first frames, cold/warm assets and dark action contrast
         run: node testing/citizen-layout/citizen-first-paint.mjs
       - name: Pets mobile first frames, native actions and repeated navigation
@@ -156,6 +165,8 @@ jobs:
             .local/shared-account-header/
             .local/citizen-page-mobile/
             .local/citizen-first-paint/
+            .local/citizen-auth-first-paint/
+            .local/citizen-html-first-paint/
             .local/citizen-compose-evidence/
             .local/pets-mobile/
             /tmp/pets-mobile-text200/

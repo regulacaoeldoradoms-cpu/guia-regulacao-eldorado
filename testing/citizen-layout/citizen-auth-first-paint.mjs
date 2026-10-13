@@ -1,0 +1,30 @@
+// Synthetic account cache only; presentation does not authorize or submit data.
+import fs from 'node:fs/promises';import path from 'node:path';import assert from 'node:assert/strict';
+process.env.PORTAL_FIXTURES_ONLY='1';const {serve,newPage,chromium}=await import('./mobile-profile-refinement.mjs');
+const root=process.env.STARTUP_ROOT||path.resolve(import.meta.dirname,'../..'),out=process.env.STARTUP_OUTPUT||path.join(root,'.local/citizen-auth-first-paint'),old=process.env.EXPECT_OLD==='1';await fs.mkdir(out,{recursive:true});
+const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});const rows=[];
+try{for(const width of (process.env.WIDTHS||'320,390').split(',').map(Number))for(const theme of ['light','dark'])for(const cache of (process.env.CACHE_MODES||'missing,old-role,malformed,css-legacy').split(',')){
+ const result={errors:[]};const {page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);const assets=new Map();let warm=false,closing=false,reused=0;
+ try{
+  await context.addInitScript(cache=>{
+   if(cache==='missing')for(const store of [localStorage,sessionStorage])store.removeItem('regulacao.portal.user');
+   if(cache==='malformed')for(const store of [localStorage,sessionStorage])store.setItem('regulacao.portal.user','{obsolete-cache');
+   if(cache==='old-role')for(const store of [localStorage,sessionStorage]){const raw=store.getItem('regulacao.portal.user');if(raw){const user=JSON.parse(raw);user.role='';store.setItem('regulacao.portal.user',JSON.stringify(user));}}
+   window.__authPaints=[];
+   const tick=()=>{const button=document.getElementById('openNewManifestation'),heading=document.querySelector('.portal-hero h2'),label=button?.querySelector('strong'),header=document.querySelector('.portal-topbar');if(label&&heading&&header&&button.getClientRects().length){window.__authPaints.push({at:performance.now(),heading:heading.textContent,headingFont:getComputedStyle(heading).fontSize,actionFont:getComputedStyle(label).fontSize,headerHeight:header.getBoundingClientRect().height,notificationsVisible:Boolean(document.getElementById('notificationsCard')?.getClientRects().length),pageWidth:document.documentElement.scrollWidth,viewport:innerWidth});}requestAnimationFrame(tick);};requestAnimationFrame(tick);
+  },cache);
+  await context.route('**/api/council/notifications',r=>r.fulfill({json:{notifications:[]}}));
+  await context.route('**/api/auth/me',async r=>{await new Promise(resolve=>setTimeout(resolve,800));return r.fallback();});
+  await context.route(/\/(?:js|css)\//,async r=>{try{const key=r.request().url();if(warm&&assets.has(key)){reused++;return r.fulfill(assets.get(key));}await new Promise(resolve=>setTimeout(resolve,key.includes('/js/')?350:150));const response=await r.fetch(),data={status:response.status(),headers:response.headers(),body:await response.body()};assets.set(key,data);return r.fulfill(data);}catch(error){if(!closing)throw error;}});
+  if(cache==='css-legacy'){const css=await fs.readFile(path.join(root,'css/citizen-mobile-presentation.css'),'utf8'),legacy=css.split('/* Correct geometry is available while the independent controllers load. */')[0]+'}\n';await context.route('**/css/citizen-mobile-presentation.css?v=20261011-citizen-privacy-help-1',r=>r.fulfill({body:legacy,contentType:'text/css'}));}
+  const cdp=await context.newCDPSession(page);await cdp.send('Page.enable');let capture='',images=[];cdp.on('Page.screencastFrame',async frame=>{if(capture&&images.length<8){const file=path.join(out,`${cache}-${width}-${theme}-${capture}-${images.length}.jpg`);images.push(file);await fs.writeFile(file,Buffer.from(frame.data,'base64'));}await cdp.send('Page.screencastFrameAck',{sessionId:frame.sessionId}).catch(()=>{});});
+  for(const stage of ['cold','warm']){
+   capture=stage;images=[];await cdp.send('Page.startScreencast',{format:'jpeg',quality:85,maxWidth:width,maxHeight:844,everyNthFrame:1});
+   if(stage==='cold')await page.goto(server.origin+'/cidadao/');else await page.reload();
+   await page.waitForFunction(()=>document.body.classList.contains('shared-mobile-header')&&document.body.classList.contains('citizen-mobile-presentation'));await page.waitForTimeout(150);await cdp.send('Page.stopScreencast');capture='';const frames=await page.evaluate(()=>__authPaints),bad=frames.filter(f=>f.heading!=='Canal do Cidadão'||f.headingFont!=='24px'||f.actionFont!=='20px'||f.headerHeight>58||f.notificationsVisible||f.pageWidth>f.viewport+1);assert(frames.length>0);if(!old)assert.equal(bad.length,0,JSON.stringify({cache,width,theme,stage,bad:bad.slice(0,2)}));
+   const row={cache,width,theme,stage,frames:frames.length,badFrames:bad.length,first:frames[0],last:frames.at(-1),reusedAssets:reused,images:[...images]};rows.push(row);console.log(JSON.stringify({...row,images:undefined}));await page.screenshot({path:path.join(out,`${cache}-${width}-${theme}-${stage}-final.png`)});warm=true;
+  }
+  if(!old){await page.locator('#openNewManifestation').click();await page.locator('#newManifestationModal.open').waitFor();assert(await page.locator('#manifestationConfirm').evaluate(n=>n.required&&!n.checked));assert.equal(await page.locator('#newManifestationModal .citizen-modal-head h2').textContent(),'Escrever ao Conselho');await page.locator('#manifestationSubject').fill('Rascunho sintético de primeiro paint');await page.locator('#newManifestationModal [data-close-modal]').first().click();await page.locator('#newManifestationModal').waitFor({state:'hidden'});}
+  assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);assert(!audit.apiCalls.some(x=>/^(POST|PUT|DELETE) \/api\/council\//.test(x)),JSON.stringify(audit.apiCalls.filter(x=>/^(POST|PUT|DELETE) /.test(x))));closing=true;
+ }finally{closing=true;await context.close();await fs.writeFile(path.join(out,'results.json'),JSON.stringify(rows,null,2));}
+}}finally{await browser.close();await new Promise(r=>server.server.close(r));}

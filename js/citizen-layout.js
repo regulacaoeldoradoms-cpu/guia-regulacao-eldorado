@@ -95,7 +95,7 @@
   // for the same single mount without owning a second navigation controller.
   window.PortalCitizenMobileReady = new Promise(resolve => { finishPresentation = resolve; });
   function loadStyle(path) {
-    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-presentation.css' ? '20261011-citizen-privacy-help-1' : path === '/css/citizen-mobile-header.css' ? '20261012-profile-tools-1' : path === '/css/profile-mobile-presentation.css' ? '20261012-profile-tools-4' : path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
+    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-presentation.css' ? '20261013-citizen-paint-1' : path === '/css/citizen-mobile-header.css' ? '20261012-profile-tools-1' : path === '/css/profile-mobile-presentation.css' ? '20261012-profile-tools-4' : path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
     const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
     if (existing?.sheet) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -159,9 +159,11 @@
     }
   }
   const apply = (user) => {
+    const earlyCitizen = currentPath() === '/cidadao/' && mobileScreen.matches
+      && document.body.classList.contains('citizen-first-paint');
     document.body?.classList.toggle(
       "citizen-readable-layout",
-      Boolean(user) && sharedRoutes.has(currentPath()),
+      (Boolean(user) || earlyCitizen) && sharedRoutes.has(currentPath()),
     );
     if (user && sharedRoutes.has(currentPath())) mountPresentation();
     petNavigation();

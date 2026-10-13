@@ -137,3 +137,45 @@ test('versioned asset caching retains its previous behavior', async () => {
   const event = f.dispatch('/js/fixture.js?v=1', { method: 'GET' });
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
+
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-1">';
+test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
+  for(const [path,body,expected] of [['/cidadao/','OLD',8000],['/perfil/','OLD',2500]]){
+    let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed(path,body);await f.seed('/perfil/','PROFILE-UNCHANGED');await f.seed('/mascotes/','PETS-UNCHANGED');
+    const event=f.dispatch(path);await until(()=>f.timers.size===1&&!!resolve);assert.equal([...f.timers.values()][0].delay,expected);
+    resolve(new Response(citizenMarker));assert.equal(await(await event.response).text(),citizenMarker);await Promise.all(event.waits);
+    assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/mascotes/')).text(),'PETS-UNCHANGED');assert.deepEqual([...f.stores.keys()],[namespace]);
+  }
+});
+test('obsolete Citizen HTML keeps offline and deadline recovery without deleting content', async()=>{
+  for(const unavailable of ['offline','http','slow']){
+    let resolve;const f=fixture(()=>unavailable==='offline'?Promise.reject(Error('offline')):unavailable==='http'?Promise.resolve(new Response('ERROR',{status:503})):new Promise(r=>{resolve=r;}));
+    await f.seed('/cidadao/','OLD-CONTENT');const event=f.dispatch('/cidadao/');
+    if(unavailable==='slow'){await until(()=>f.timers.size===1&&!!resolve);assert.equal([...f.timers.values()][0].delay,8000);[...f.timers.values()][0].callback();}
+    assert.equal(await(await event.response).text(),'OLD-CONTENT');assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/cidadao/')).text(),'OLD-CONTENT');
+    if(resolve){resolve(new Response(citizenMarker));await Promise.all(event.waits);}
+  }
+});
+
+
+test('current public Citizen HTML is immediate while slow refresh continues', async()=>{
+  let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed('/cidadao/',citizenMarker+'CURRENT-SHELL');
+  const event=f.dispatch('/cidadao/');assert.equal(await(await event.response).text(),citizenMarker+'CURRENT-SHELL');assert.equal(f.timers.size,0,'no foreground deadline for current shell');assert.equal(f.calls[0].cache,'no-cache');
+  resolve(new Response(citizenMarker+'UPDATED-SHELL'));await Promise.all(event.waits);assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/cidadao/')).text(),citizenMarker+'UPDATED-SHELL');
+});
+test('updated Citizen public shell remains modern offline', async()=>{
+  let offline=false;const f=fixture(async()=>{if(offline)throw Error('offline');return new Response(citizenMarker+'MODERN-SHELL');});await f.seed('/cidadao/','LEGACY');
+  const first=f.dispatch('/cidadao/');assert.equal(await(await first.response).text(),citizenMarker+'MODERN-SHELL');await Promise.all(first.waits);offline=true;
+  const next=f.dispatch('/cidadao/');assert.equal(await(await next.response).text(),citizenMarker+'MODERN-SHELL');await Promise.all(next.waits);assert.equal(f.timers.size,0);
+});
+test('account-specific responses cannot populate the public Citizen HTML cache', async()=>{
+  for(const headers of [{'Cache-Control':'private'}, {'Cache-Control':'no-store'}, {'Set-Cookie':'fixture-only=1'}]){
+    const f=fixture(async()=>new Response('ACCOUNT-SPECIFIC-FIXTURE',{headers}));const event=f.dispatch('/cidadao/');await event.response;await Promise.all(event.waits);
+    assert.equal(await(await f.caches.open(namespace)).match(origin+'/cidadao/'),undefined);
+  }
+});
+
+test('a current Citizen cache does not swallow the canonical redirect', async()=>{
+  const f=fixture(async()=>new Response(null,{status:301,headers:{Location:'/cidadao/'}}));await f.seed('/cidadao/',citizenMarker+'PUBLIC');
+  const response=await f.dispatch('/cidadao').response;assert.equal(response.status,301);assert.equal(response.headers.get('Location'),'/cidadao/');
+});
