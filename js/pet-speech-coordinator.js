@@ -24,6 +24,7 @@ export class PetSpeechCoordinator {
   const duration=kind==='alert'?Math.max(7000,gnomeReadingDuration(text)):Math.max(0,speaker.until-time);
   this.current={id,text,kind,until:time+duration};return text;
  }
+ keepReading(id,time=this.now()){if(this.current?.id===id)this.current.until=Math.max(this.current.until,time+1000);}
  canAdvance(id,time=this.now()){
   if(this.closed||this.pausedAt!==null)return false;this.expire(time);
   if(this.current||time<this.gapUntil)return false;
