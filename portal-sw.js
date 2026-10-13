@@ -666,9 +666,11 @@ async function fetchPage(request, key, event = null) {
 
 async function revalidateSharedPage(event, key, cache, cached) {
   let timeoutMs = SHARED_HTML_TIMEOUT_MS;
+  let currentCitizenHtml = false;
   if (cached && new URL(key.url).pathname === '/cidadao/') {
     const html = await cached.clone().text().catch(() => '');
-    if (!html.includes(CITIZEN_HTML_MARKER)) timeoutMs = CITIZEN_LEGACY_HTML_TIMEOUT_MS;
+    currentCitizenHtml = html.includes(CITIZEN_HTML_MARKER);
+    if (!currentCitizenHtml) timeoutMs = CITIZEN_LEGACY_HTML_TIMEOUT_MS;
   }
   const id = `shared-page:${SHARED_HTML_RELEASE}:${new URL(key.url).pathname}`;
   const update = deduped(id, async () => {
@@ -682,6 +684,10 @@ async function revalidateSharedPage(event, key, cache, cached) {
   });
   // A slow response may still refresh the cache after the cached page is shown.
   event.waitUntil(update.catch(() => null));
+  // This cache contains static public markup, never rendered account/API data.
+  // A current Citizen shell is already correct: expose it immediately while
+  // revalidation remains fresh in the background. Other routes keep their policy.
+  if (currentCitizenHtml && new URL(event.request.url).pathname === '/cidadao/') return cached;
   let timer;
   try {
     const response = await Promise.race([
