@@ -68,7 +68,7 @@ const initializeCitizenArea = async (context) => {
     if (!modal) return;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
-    if(id==='newManifestationModal')syncCompose();
+    if(id==='newManifestationModal'){modal.setAttribute('aria-modal','true');syncCompose();}
   }
 
   function closeModal(id) {
@@ -76,6 +76,7 @@ const initializeCitizenArea = async (context) => {
     if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    if(id==='newManifestationModal')modal.setAttribute('aria-modal','false');
   }
 
   function showStatus(el, message, type = 'error') {
