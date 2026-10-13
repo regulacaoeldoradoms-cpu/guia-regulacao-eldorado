@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="portal-citizen-first-paint" content="20261013-1">
     <script src="/js/portal-performance.js?v=20261010-mobile-shell-1" async></script>
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <link rel="preload" href="/js/auth-client.js?v=20261010-mobile-shell-1" as="script">
@@ -26,8 +27,8 @@
   <script src="/js/portal-theme.js?v=20261013-theme-immediate-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
-  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261011-citizen-privacy-help-1" media="screen and (max-width: 900px)">
-  <script src="/js/citizen-layout.js?v=20261012-gnome-2" defer></script>
+  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261013-citizen-paint-1" media="screen and (max-width: 900px)">
+  <script src="/js/citizen-layout.js?v=20261013-citizen-paint-1" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
   <link rel="stylesheet" href="/css/citizen-compose-mobile.css?v=20261012-citizen-compose-2">
 </head>
@@ -37,15 +38,19 @@
       const ua = navigator.userAgent || '';
       const mobileUA = /Android|iPhone|iPad|iPod|Mobile|webOS|IEMobile|Opera Mini/i.test(ua);
       const compactTouch = navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) <= 700;
-      const compactViewport = window.matchMedia('(max-width: 860px)').matches;
+      const compactViewport = window.matchMedia('(max-width: 900px)').matches;
       if (mobileUA || compactTouch || compactViewport) {
         document.body.classList.add('mobile-citizen-mode');
         if (window.matchMedia('screen and (max-width: 900px)').matches) {
-          try {
-            const user = JSON.parse(sessionStorage.getItem('regulacao.portal.user') || localStorage.getItem('regulacao.portal.user') || 'null');
-            const token = sessionStorage.getItem('regulacao.portal.session') || localStorage.getItem('regulacao.portal.session');
-            if (token && user?.role === 'cidadao') document.body.classList.add('citizen-readable-layout', 'citizen-mobile-app', 'citizen-mobile-presentation', 'citizen-first-paint');
-          } catch (_) {}
+          // Viewport presentation is independent of cached identity. Native auth
+          // still controls account data, permissions and redirects.
+          document.body.classList.add('citizen-readable-layout', 'citizen-mobile-app', 'citizen-mobile-presentation', 'citizen-first-paint');
+          document.body.dataset.citizenTab = 'manifestations';
+          // Native tabs own this state when ready. If their script fails, keep
+          // both native lists reachable instead of hiding content indefinitely.
+          setTimeout(() => {
+            if (!document.querySelector('.citizen-mobile-tabs')) delete document.body.dataset.citizenTab;
+          }, 5000);
           document.querySelector('link[rel="icon"]').href = '/assets/portal-regulacao-header_180x180.png?v=20260911-1';
         }
       }

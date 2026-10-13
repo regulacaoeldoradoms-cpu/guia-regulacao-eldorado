@@ -9,6 +9,9 @@ import { initialPetState, publicPetState } from '../../worker/pet-domain.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const pre = '709444b29e4f88c66c952f505e7572d9237560bd';
+const currentHomeHtml = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+const currentHomeScript = currentHomeHtml.match(/<script[^>]+src="(\/js\/home\.js\?v=[^"]+)"/)?.[1];
+assert.ok(currentHomeScript, 'Current repository Home declares its versioned entry script');
 const pageCache = 'portal-pages-20261009-pets-combined-8';
 const assetCache = 'portal-static-20261009-pets-combined-8';
 const shared = new Set(['/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/', '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/']);
@@ -28,7 +31,7 @@ const server = http.createServer(async (req, res) => {
     if (!shared.has(url.pathname) && url.pathname !== '/portal-sw.js' && !/^\/(js|css|assets|vendor)\//.test(url.pathname)) throw Error('out of scope');
     const file = (url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname).slice(1);
     const body = upgraded ? await fs.readFile(path.join(root, file)) : oldFile(file);
-    const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.webp') ? 'image/webp' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream';
+    const type = file.endsWith('.html') ? 'text/html' : (file.endsWith('.js') || file.endsWith('.mjs')) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.webp') ? 'image/webp' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream';
     const pause = upgraded && shared.has(url.pathname) ? delay : 0;
     if (pause) await new Promise(r => setTimeout(r, pause));
     res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' }); res.end(body);
@@ -95,7 +98,7 @@ try {
     const version = () => page.evaluate(() => document.querySelector('script[src*="/js/home.js"]').getAttribute('src'));
     const current = async () => {
       await page.waitForFunction(() => document.body.classList.contains('citizen-readable-layout') && !!document.querySelector('.social-mobile-nav a[href="/mascotes/"] svg'));
-      assert.equal(await version(), '/js/home.js?v=20261009-citizen-layout-2');
+      assert.equal(await version(), currentHomeScript);
     };
     await seed();
     await page.goto(origin + '/?upgrade=fixture#section'); await current();
@@ -104,7 +107,7 @@ try {
     const start = Date.now(); const response = await page.goto(origin + '/?slow=fixture', { waitUntil: 'commit' });
     assert.ok(Date.now() - start < 3200, 'deadline returns cached document before slow upstream');
     assert.ok((await response.text()).includes('home.js?v=20261009-citizen-layout-1'));
-    await page.waitForFunction(async pageCache => (await (await caches.open(pageCache)).match('/')).text().then(html => html.includes('home.js?v=20261009-citizen-layout-2')), pageCache);
+    await page.waitForFunction(async ({pageCache,currentHomeScript}) => (await (await caches.open(pageCache)).match('/')).text().then(html => html.includes(currentHomeScript)), {pageCache,currentHomeScript});
     delay = 0; await page.reload(); await current();
     reports.push({ role, scenario: 'slow response uses deadline fallback, updates cache, normal reload converges', passed: true });
     await seed(); networkOffline = true; await context.setOffline(true);
@@ -138,7 +141,7 @@ try {
   await page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !r.installing && !r.waiting && r.active?.state === 'activated'; });
   await page.reload();
   await page.waitForFunction(() => document.body.classList.contains('citizen-readable-layout') && !!document.querySelector('.social-mobile-nav a[href="/mascotes/"] svg'));
-  assert.equal(await page.evaluate(() => document.querySelector('script[src*="/js/home.js"]').getAttribute('src')), '/js/home.js?v=20261009-citizen-layout-2');
+  assert.equal(await page.evaluate(() => document.querySelector('script[src*="/js/home.js"]').getAttribute('src')), currentHomeScript);
   reports.push({ role: 'admin', scenario: 'normal reload discovers update; next normal reload shows new layout without clearing data', passed: true });
   await context.close();
   await fs.writeFile(process.argv[2] || '/tmp/citizen-cache-update.json', JSON.stringify({ syntheticOnly: true, emulation: 'Chromium mobile viewport/touch; not actual Android hardware', pre, reports }, null, 2));
