@@ -44,6 +44,8 @@ jobs:
           JS
       - name: Mobile frames, filters, native actions and read-only roles
         run: node testing/council/mobile-list.mjs
+      - name: Inbox cold/warm paint, legacy conflicts, reentry and bounded asset failure
+        run: node testing/council/inbox-loading.mjs /tmp/council-inbox-loading
       - name: Inbox phone sizes, themes, text200 and list density
         run: node testing/council/inbox-mobile.mjs /tmp/council-inbox-mobile
       - name: Inbox native filters, paging, roles, selection and desktop return
@@ -89,3 +91,4 @@ jobs:
             /tmp/council-window-reflow/
             /tmp/council-inbox-mobile/
             /tmp/council-inbox-functional/
+            /tmp/council-inbox-loading/

@@ -32,7 +32,7 @@
   <link rel="stylesheet" href="/css/council-detail-review.css?v=20261012-detail-review-1">
   <link rel="stylesheet" href="/css/council-detail-organization.css?v=20261012-detail-organization-1">
   <link rel="stylesheet" href="/css/council-window-reflow.css?v=20261013-council-window-2">
-  <link rel="stylesheet" href="/css/council-inbox-mobile.css?v=20261013-council-inbox-1">
+  <link rel="stylesheet" href="/css/council-inbox-mobile.css?v=20261013-council-inbox-2">
 </head>
 <body class="portal-page" data-council-common-navigation data-council-detail-reviewed="true">
   <script>
@@ -43,6 +43,14 @@
       const compactViewport = window.matchMedia('(max-width: 860px)').matches;
       if (mobileUA || compactTouch || compactViewport) {
         document.body.classList.add('mobile-council-mode');
+        document.body.dataset.councilInboxPending = 'true';
+        setTimeout(() => {
+          if (!document.body.hasAttribute('data-council-inbox-pending')) return;
+          document.body.removeAttribute('data-council-inbox-pending');
+          document.body.dataset.councilInboxFallback = 'true';
+          const notice = document.getElementById('councilInboxLoading');
+          if (notice) notice.textContent = 'A apresentação da lista demorou. Os controles originais continuam disponíveis; use Atualizar para tentar novamente.';
+        }, 5000);
         setTimeout(() => { if (!document.body.classList.contains('council-navigation-ready')) document.body.classList.add('council-navigation-fallback'); },15000);
       }
     })();
@@ -139,6 +147,7 @@
 
       <section class="citizen-card">
         <div class="citizen-card-head"><h2>Manifestações</h2><button class="portal-button secondary" id="refreshCouncil" type="button">Atualizar</button></div>
+        <aside id="councilInboxLoading" class="council-inbox-loading" role="status"><span>Preparando lista…</span><div aria-hidden="true" class="council-inbox-loading-card"></div><div aria-hidden="true" class="council-inbox-loading-card"></div></aside>
         <div class="council-toolbar">
           <input id="councilSearch" type="search" placeholder="Buscar protocolo, assunto, serviço ou texto">
           <select id="councilType"><option value="">Todos os tipos</option><option value="sugestao">Sugestões</option><option value="reclamacao">Reclamações</option><option value="elogio">Elogios</option><option value="denuncia">Denúncias</option></select>
@@ -279,9 +288,9 @@
   <script src="/js/council-detail-mobile.js?v=20260827-1855" defer></script>
   <script src="/js/council-detail-organization.js?v=20261012-detail-organization-1" defer></script>
   <script src="/js/council-window-reflow.js?v=20261013-council-window-2" defer></script>
-  <script src="/js/council-inbox-mobile.js?v=20261013-council-inbox-1" defer></script>
+  <script src="/js/council-inbox-mobile.js?v=20261013-council-inbox-2" defer></script>
   <script src="/js/portal-global-chat.js?v=20261008-chat-groups-1" defer></script>
-  <script type="module" src="/js/council-mobile-presentation.js?v=20261013-council-inbox-1"></script>
+  <script type="module" src="/js/council-mobile-presentation.js?v=20261013-council-inbox-2"></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261012-pet-depth-speech-1"></script>
 </body>
 </html>

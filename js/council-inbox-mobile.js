@@ -29,7 +29,7 @@
   const account=own(element('details','council-inbox-account')),accountTitle=element('summary',null,'Conta'),accountPanel=element('div','council-inbox-account-panel');account.append(accountTitle,accountPanel);for(const child of [...user.children])move(child,accountPanel);user.append(account);
   const brandNote=document.querySelector('.portal-brand p');rememberText(brandNote,'Eldorado/MS');
   ui={controls,count,filters,filterSummary,clear,bulk,bulkTitle,more,account,accountPanel,search,originalPlaceholder,pageCount};
-  sync();
+  sync();body.removeAttribute('data-council-inbox-pending');body.removeAttribute('data-council-inbox-fallback');
  }
  function sync(){
   if(!active||!phone.matches||print.matches||printing)return;
