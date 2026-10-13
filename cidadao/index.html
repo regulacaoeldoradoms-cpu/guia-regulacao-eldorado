@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="portal-citizen-first-paint" content="20261013-3">
+  <meta name="portal-citizen-first-paint" content="20261013-4">
     <script src="/js/portal-performance.js?v=20261010-mobile-shell-1" async></script>
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <link rel="preload" href="/js/auth-client.js?v=20261010-mobile-shell-1" as="script">
@@ -27,8 +27,8 @@
   <script src="/js/portal-theme.js?v=20261013-theme-immediate-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
-  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261013-citizen-paint-1" media="screen and (max-width: 900px)">
-  <script src="/js/citizen-layout.js?v=20261013-compose-refinement-1" defer></script>
+  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261013-citizen-dashboard-1" media="screen and (max-width: 900px)">
+  <script src="/js/citizen-layout.js?v=20261013-citizen-dashboard-1" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
   <link rel="stylesheet" href="/css/citizen-compose-mobile.css?v=20261012-citizen-compose-2">
   <link rel="stylesheet" href="/css/citizen-compose-refinement.css?v=20261013-compose-refinement-1">
@@ -94,7 +94,7 @@
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Sua participação importa</span>
           <h2 data-citizen-native-text="Acompanhe sua manifestação do início ao fim por aqui." data-citizen-mobile-text="Canal do Cidadão"><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></h2>
-          <p data-citizen-native-text="Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal." data-citizen-mobile-text="Fale com o Conselho de Saúde e acompanhe as respostas."><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></p>
+          <p data-citizen-native-text="Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal." data-citizen-mobile-text="Participe e acompanhe suas manifestações."><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></p>
         </div>
         <div class="citizen-hero-status">
           <span class="level-mini-badge bronze" id="accountLevelBadge" hidden>Conta Bronze</span>
@@ -110,7 +110,7 @@
       <section class="citizen-actions" aria-label="Ação principal do Canal do Cidadão">
         <button class="citizen-action" id="openNewManifestation" type="button">
           <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
-          <span><strong data-citizen-native-text="Nova manifestação" data-citizen-mobile-text="Escrever ao Conselho"><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></strong><span data-citizen-native-text="Registre uma sugestão, reclamação, elogio ou denúncia." data-citizen-mobile-text="Sugestão, reclamação, elogio ou denúncia."><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></span></span>
+          <span><strong data-citizen-native-text="Nova manifestação" data-citizen-mobile-text="Nova manifestação"><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></strong><span data-citizen-native-text="Registre uma sugestão, reclamação, elogio ou denúncia." data-citizen-mobile-text="Sugestão, reclamação, elogio ou denúncia."><script>window.PortalCitizenInitialCopy(document.currentScript.parentElement);</script></span></span>
         </button>
         <button class="citizen-action" id="focusManifestations" type="button" hidden aria-hidden="true" tabindex="-1"></button>
         <button class="citizen-action" id="focusNotifications" type="button" hidden aria-hidden="true" tabindex="-1"><b class="count-badge" id="notificationCount" hidden>0</b></button>
@@ -118,7 +118,7 @@
 
       <section class="citizen-grid">
         <article class="citizen-card" id="manifestationsCard">
-          <div class="citizen-card-head"><h2>Minhas manifestações</h2><button class="portal-button secondary" id="refreshManifestations" type="button">Atualizar</button></div>
+          <div class="citizen-card-head"><h2>Minhas manifestações</h2><button class="portal-button secondary" id="refreshManifestations" type="button" aria-label="Atualizar manifestações" title="Atualizar manifestações"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"/><path d="M20 4v7h-7"/></svg><span class="citizen-refresh-label">Atualizar</span></button></div>
           <div class="citizen-card-body"><div id="manifestationList" class="manifestation-list"><div class="portal-note info">Carregando manifestações...</div></div></div>
         </article>
 
@@ -212,10 +212,10 @@
   <script src="/js/social-api.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/citizen-mobile-shell.js?v=20261013-compose-refinement-1"></script>
-  <script src="/js/citizen.js?v=20261013-compose-refinement-1"></script>
+  <script src="/js/citizen.js?v=20261013-citizen-dashboard-1"></script>
   <script src="/js/citizen-declaration.js?v=20261010-mobile-shell-1"></script>
   <script src="/js/citizen-account-level.js?v=20261011-citizen-panel-1"></script>
-  <script src="/js/citizen-mobile-app.js?v=20261011-citizen-startup-1"></script>
+  <script src="/js/citizen-mobile-app.js?v=20261013-citizen-dashboard-1"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261012-pet-depth-speech-1"></script>
 </body>
