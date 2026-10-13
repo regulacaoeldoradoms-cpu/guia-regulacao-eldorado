@@ -138,7 +138,7 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-1">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-2">';
 test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
   for(const [path,body,expected] of [['/cidadao/','OLD',8000],['/perfil/','OLD',2500]]){
     let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed(path,body);await f.seed('/perfil/','PROFILE-UNCHANGED');await f.seed('/mascotes/','PETS-UNCHANGED');
@@ -146,6 +146,14 @@ test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
     resolve(new Response(citizenMarker));assert.equal(await(await event.response).text(),citizenMarker);await Promise.all(event.waits);
     assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/mascotes/')).text(),'PETS-UNCHANGED');assert.deepEqual([...f.stores.keys()],[namespace]);
   }
+});
+test('pre-theme modern Citizen HTML refreshes new script references without replacing global caches', async()=>{
+  const previous='<meta name="portal-citizen-first-paint" content="20261013-1"><script src="/js/portal-theme.js?v=20260923-1"></script>';
+  const current=citizenMarker+'<script src="/js/portal-theme.js?v=20261013-theme-immediate-1"></script>';
+  let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed('/cidadao/',previous);await f.seed('/perfil/','PROFILE-UNCHANGED');
+  const event=f.dispatch('/cidadao/');await until(()=>f.timers.size===1&&!!resolve);assert.equal([...f.timers.values()][0].delay,8000);
+  resolve(new Response(current));assert.equal(await(await event.response).text(),current);await Promise.all(event.waits);
+  assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/perfil/')).text(),'PROFILE-UNCHANGED');assert.deepEqual([...f.stores.keys()],[namespace]);
 });
 test('obsolete Citizen HTML keeps offline and deadline recovery without deleting content', async()=>{
   for(const unavailable of ['offline','http','slow']){
