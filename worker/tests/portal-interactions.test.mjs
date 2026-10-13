@@ -86,12 +86,16 @@ function interactionRuntime() {
   return context.window.PortalInteractions;
 }
 
+const IMMEDIATE_THEME_ROUTES = new Set(["index.html", "cidadao/index.html", "amigos/index.html", "mascotes/index.html", "perfil/index.html", "ferramentas/index.html", "notificacoes/index.html", "seguranca/index.html", "configuracoes/index.html", "conquistas/index.html", "login/index.html", "cadastro/index.html"]);
+
 test('todas as rotas ativas carregam uma única camada central versionada', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
-    assert.equal((html.match(/portal-theme\.js\?v=20260923-1/g) || []).length, 1, `${filename}: bootstrap de tema`);
+    const version = IMMEDIATE_THEME_ROUTES.has(filename) ? '20261013-theme-immediate-1' : '20260923-1';
+    assert.equal((html.match(new RegExp('portal-theme\\.js\\?v=' + version, 'g')) || []).length, 1, `${filename}: bootstrap de tema`);
     assert.equal((html.match(/portal-interactions\.css\?v=20260924-dark-final-1/g) || []).length, 1, `${filename}: CSS central`);
-    assert.equal((html.match(/portal-interactions\.js\?v=20260923-2/g) || []).length, 1, `${filename}: JS central`);
+    const interactionVersion = IMMEDIATE_THEME_ROUTES.has(filename) ? '20261013-theme-immediate-1' : '20260923-2';
+    assert.equal((html.match(new RegExp('portal-interactions\\.js\\?v=' + interactionVersion, 'g')) || []).length, 1, `${filename}: JS central`);
   }
 });
 
@@ -194,7 +198,7 @@ test('modo claro e escuro são globais, sincronizáveis e controlados em Configu
   assert.match(settings, /id="interfaceThemeDark"/);
   assert.match(settings, /Modo claro/);
   assert.match(settings, /Modo escuro/);
-  assert.match(settings, /portal-interactions\.js\?v=20260923-2/);
+  assert.match(settings, /portal-interactions\.js\?v=20261013-theme-immediate-1/);
 
   await api.setPreferences({ theme: 'dark' });
   assert.equal(api.getPreferences().theme, 'dark');
