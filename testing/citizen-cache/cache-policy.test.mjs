@@ -137,3 +137,22 @@ test('versioned asset caching retains its previous behavior', async () => {
   const event = f.dispatch('/js/fixture.js?v=1', { method: 'GET' });
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
+
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-1">';
+test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
+  for(const [path,body,expected] of [['/cidadao/','OLD',8000],['/cidadao/',citizenMarker,2500],['/perfil/','OLD',2500]]){
+    let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed(path,body);await f.seed('/perfil/','PROFILE-UNCHANGED');await f.seed('/mascotes/','PETS-UNCHANGED');
+    const event=f.dispatch(path);await until(()=>f.timers.size===1&&!!resolve);assert.equal([...f.timers.values()][0].delay,expected);
+    resolve(new Response(citizenMarker));assert.equal(await(await event.response).text(),citizenMarker);await Promise.all(event.waits);
+    assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/mascotes/')).text(),'PETS-UNCHANGED');assert.deepEqual([...f.stores.keys()],[namespace]);
+  }
+});
+test('obsolete Citizen HTML keeps offline and deadline recovery without deleting content', async()=>{
+  for(const unavailable of ['offline','http','slow']){
+    let resolve;const f=fixture(()=>unavailable==='offline'?Promise.reject(Error('offline')):unavailable==='http'?Promise.resolve(new Response('ERROR',{status:503})):new Promise(r=>{resolve=r;}));
+    await f.seed('/cidadao/','OLD-CONTENT');const event=f.dispatch('/cidadao/');
+    if(unavailable==='slow'){await until(()=>f.timers.size===1&&!!resolve);assert.equal([...f.timers.values()][0].delay,8000);[...f.timers.values()][0].callback();}
+    assert.equal(await(await event.response).text(),'OLD-CONTENT');assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/cidadao/')).text(),'OLD-CONTENT');
+    if(resolve){resolve(new Response(citizenMarker));await Promise.all(event.waits);}
+  }
+});

@@ -7,6 +7,10 @@ const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 // Version this policy without replacing caches belonging to other modules.
 const SHARED_HTML_RELEASE = '20261010-citizen-html-1';
 const SHARED_HTML_TIMEOUT_MS = 2500;
+// Only an obsolete Citizen HTML gets a longer, bounded refresh opportunity.
+// Keep global caches, other routes and offline content unchanged.
+const CITIZEN_HTML_MARKER = '<meta name="portal-citizen-first-paint" content="20261013-1">';
+const CITIZEN_LEGACY_HTML_TIMEOUT_MS = 8000;
 const SHARED_HTML_PATHS = new Set([
   '/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/',
   '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/'
@@ -661,6 +665,11 @@ async function fetchPage(request, key, event = null) {
 }
 
 async function revalidateSharedPage(event, key, cache, cached) {
+  let timeoutMs = SHARED_HTML_TIMEOUT_MS;
+  if (cached && new URL(key.url).pathname === '/cidadao/') {
+    const html = await cached.clone().text().catch(() => '');
+    if (!html.includes(CITIZEN_HTML_MARKER)) timeoutMs = CITIZEN_LEGACY_HTML_TIMEOUT_MS;
+  }
   const id = `shared-page:${SHARED_HTML_RELEASE}:${new URL(key.url).pathname}`;
   const update = deduped(id, async () => {
     // Do not reuse navigation preload: its request may use the previous HTTP cache.
@@ -677,7 +686,7 @@ async function revalidateSharedPage(event, key, cache, cached) {
   try {
     const response = await Promise.race([
       update,
-      new Promise((resolve) => { timer = setTimeout(() => resolve(null), SHARED_HTML_TIMEOUT_MS); })
+      new Promise((resolve) => { timer = setTimeout(() => resolve(null), timeoutMs); })
     ]);
     if (response) return response;
   } catch (_) {
