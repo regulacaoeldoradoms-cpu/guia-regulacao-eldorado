@@ -95,7 +95,7 @@
   // for the same single mount without owning a second navigation controller.
   window.PortalCitizenMobileReady = new Promise(resolve => { finishPresentation = resolve; });
   function loadStyle(path) {
-    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-presentation.css' ? '20261013-citizen-paint-1' : path === '/css/citizen-mobile-header.css' ? '20261012-profile-tools-1' : path === '/css/profile-mobile-presentation.css' ? '20261012-profile-tools-4' : path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
+    const href = new URL(`${path}?v=${path === '/css/citizen-mobile-presentation.css' ? '20261013-citizen-dashboard-1' : path === '/css/citizen-mobile-header.css' ? '20261012-profile-tools-1' : path === '/css/profile-mobile-presentation.css' ? '20261012-profile-tools-4' : path === '/css/citizen-mobile-navigation.css' ? '20261011-citizen-continuity-3' : version}`, location.href).href;
     const existing = [...document.querySelectorAll('link[rel="stylesheet"]')].find(link => link.href === href);
     if (existing?.sheet) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -120,7 +120,7 @@
   }
   async function mountCitizenPanel() {
     if (currentPath() !== '/cidadao/') return;
-    const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261013-compose-refinement-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
+    const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261013-citizen-dashboard-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
     panel.mountCitizenMobilePresentation();
   }
   async function mountPresentation() {
@@ -202,7 +202,7 @@
   async function prepareRoute(path) {
     await window.PortalCitizenMobileReady;
     if (path === '/cidadao/') {
-      const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261013-compose-refinement-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
+      const [panel] = await Promise.all([import('/js/citizen-mobile-presentation.js?v=20261013-citizen-dashboard-1'), loadStyle('/css/citizen-mobile-presentation.css')]);
       return panel;
     }
     if (path === '/perfil/') await Promise.all([
