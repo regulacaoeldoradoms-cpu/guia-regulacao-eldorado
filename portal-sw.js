@@ -9,7 +9,7 @@ const SHARED_HTML_RELEASE = '20261010-citizen-html-1';
 const SHARED_HTML_TIMEOUT_MS = 2500;
 // Only an obsolete Citizen HTML gets a longer, bounded refresh opportunity.
 // Keep global caches, other routes and offline content unchanged.
-const CITIZEN_HTML_MARKER = '<meta name="portal-citizen-first-paint" content="20261013-1">';
+const CITIZEN_HTML_MARKER = '<meta name="portal-citizen-first-paint" content="20261013-2">';
 const CITIZEN_LEGACY_HTML_TIMEOUT_MS = 8000;
 const SHARED_HTML_PATHS = new Set([
   '/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/',

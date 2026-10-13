@@ -32,10 +32,25 @@
     try {localStorage.setItem(CHOICE_PREFIX + key,JSON.stringify({theme,revision,pending:true}));}catch(_){}
     apply(theme);return {key,revision,theme};
   }
-  function confirm(selection) {
+  function publishSyncState() {
+    window.dispatchEvent(new CustomEvent('portal:theme-changed',{detail:{theme:preferred()}}));
+  }
+  function selection() {
+    const key = currentAccount().key, saved = choice(key);
+    return saved ? {key,revision:saved.revision,theme:saved.theme} : null;
+  }
+  function markPending(selected, failed = false) {
+    const saved = selected && choice(selected.key);
+    if (!saved || saved.revision !== selected.revision) return false;
+    try {localStorage.setItem(CHOICE_PREFIX + selected.key,JSON.stringify({...saved,pending:true,failed}));}catch(_){}
+    publishSyncState();
+    return true;
+  }
+  function confirm(selection, options = {}) {
     const saved = choice(selection.key);
     if(saved?.revision !== selection.revision)return false;
-    try {localStorage.setItem(CHOICE_PREFIX + selection.key,JSON.stringify({...saved,pending:false}));}catch(_){}
+    try {localStorage.setItem(CHOICE_PREFIX + selection.key,JSON.stringify({...saved,pending:false,failed:false,synced:!options.localOnly}));}catch(_){}
+    publishSyncState();
     return true;
   }
   function pending() {return Boolean(choice()?.pending);}
@@ -99,13 +114,46 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady, { once: true });
   else onReady();
 
+  let interactionsLoading = null;
+  function loadInteractions() {
+    if (window.PortalInteractions) return Promise.resolve(window.PortalInteractions);
+    if (interactionsLoading) return interactionsLoading;
+    interactionsLoading = new Promise((resolve,reject) => {
+      const script = document.createElement('script');
+      script.src = '/js/portal-interactions.js?v=20261013-theme-immediate-1';
+      script.onload = () => window.PortalInteractions ? resolve(window.PortalInteractions) : reject(new Error('Theme controls unavailable'));
+      script.onerror = () => {script.remove();reject(new Error('Theme controls unavailable'));};
+      document.head.append(script);
+    }).catch(error => {interactionsLoading=null;throw error;});
+    return interactionsLoading;
+  }
+  // Direct Mascotes keeps its native first paint. Load the shared interaction
+  // layer only when a user chooses a theme on a retained Settings route.
+  document.addEventListener('change',async event => {
+    const source=event.target;
+    if(window.PortalInteractions || !source?.matches?.('input[name="interfaceTheme"]') || !source.checked || !source.closest('[data-portal-theme-settings]'))return;
+    const selected=select(source.value);
+    const status=source.closest('[data-portal-theme-settings]').querySelector('#interfaceThemeStatus');
+    if(status){status.textContent='Aparência aplicada. Sincronizando com sua conta…';status.className='account-status visible info';}
+    try {
+      const interactions=await loadInteractions();
+      if(selection()?.key!==selected.key || selection()?.revision!==selected.revision)return;
+      const result=await interactions.setPreferences({theme:selected.theme},{persist:true});
+      if(!result?.cancelled)confirm(selected,{localOnly:result?.localOnly});
+    }catch(_){
+      if(selection()?.key!==selected.key || selection()?.revision!==selected.revision)return;
+      markPending(selected,true);
+      if(status?.isConnected){status.textContent='A aparência foi aplicada neste dispositivo, mas não pôde ser sincronizada com a conta.';status.className='account-status visible error';}
+    }
+  });
+
   window.addEventListener('portal:session-ready', event => {
     const user = event.detail?.user;
     const key = String(user?.username || 'public').toLowerCase();
     const local = choice(key);
     // A fresh authenticated account response may update a confirmed preference.
     // An unsynchronized local choice remains authoritative until its write succeeds.
-    if (local && !local.pending && user?.interfaceTheme && local.theme !== normalize(user.interfaceTheme)) {
+    if (local && !local.pending && !window.PortalInteractions?.isSyncingPreferences?.() && user?.interfaceTheme && local.theme !== normalize(user.interfaceTheme)) {
       try { localStorage.setItem(CHOICE_PREFIX + key, JSON.stringify({...local, theme:normalize(user.interfaceTheme)})); } catch (_) {}
     }
     hydrateCachedAccount();
@@ -121,6 +169,6 @@
     get: () => normalize(document.documentElement.dataset.portalTheme || stored()),
     apply,
     hydrateCachedAccount,
-    preferred, select, confirm, pending, hasChoice: () => Boolean(choice())
+    preferred, select, confirm, pending, selection, markPending, markFailed: selected => markPending(selected,true), syncState: () => choice(), hasChoice: () => Boolean(choice())
   });
 })();

@@ -79,6 +79,7 @@ jobs:
           node testing/citizen-layout/theme-tabs.mjs
           node testing/citizen-layout/theme-routes.mjs
           node testing/citizen-layout/theme-modal.mjs
+          node testing/citizen-layout/theme-cross-tab-race.mjs
       - name: Citizen routes, portrait and landscape
         run: |
           node testing/citizen-layout/audit.mjs /tmp/citizen-layout.json

@@ -381,6 +381,7 @@
   let preferenceTimer = 0;
   let preferenceRevision = 0, themeCommitRevision = 0;
   let preferenceWrites = Promise.resolve();
+  let preferenceWritesPending = 0;
   let observer = null;
   let gestureSeen = false;
   let started = false;
@@ -937,12 +938,40 @@
     const auth = window.RegulationAuth;
     if (!auth?.getToken?.() || !auth?.updateSecurity) return { localOnly: true };
     const payload=remotePreferencePayload(), owner=currentUserKey, token=auth.getToken();
-    const task=preferenceWrites.catch(()=>{}).then(async()=>{
-      if(owner!==currentUserKey||token!==auth.getToken())return {cancelled:true};
-      const security=await auth.updateSecurity(payload);
-      if(owner!==currentUserKey||token!==auth.getToken())return {cancelled:true};
-      return {localOnly:false,security};
-    });
+    const locks = window.navigator?.locks;
+    const ownsSession = () => owner === currentUserKey && token === auth.getToken();
+    const synchronize = async () => {
+      if (!ownsSession()) return {cancelled:true};
+      preferenceWritesPending++;
+      let repairSelection = null;
+      try {
+        let submitted = {...payload};
+        let security;
+        do {
+          if (!ownsSession()) return {cancelled:true};
+          // Another tab may have selected a newer theme while this write waited.
+          if (window.PortalTheme?.hasChoice?.()) submitted.interfaceTheme = window.PortalTheme.preferred();
+          security = await auth.updateSecurity(submitted);
+          if (repairSelection) window.PortalTheme.confirm(repairSelection);
+          if (!ownsSession()) return {cancelled:true};
+          // Web Locks orders writes across tabs. Older browsers converge to the
+          // latest choice after a late response, without reverting the screen.
+          if (locks?.request || !window.PortalTheme?.hasChoice?.() || submitted.interfaceTheme === window.PortalTheme.preferred()) break;
+          submitted = remotePreferencePayload();
+          repairSelection = window.PortalTheme.selection();
+          if (repairSelection) window.PortalTheme.markPending(repairSelection);
+        } while (true);
+        return {localOnly:false,security};
+      } catch (error) {
+        if (repairSelection) window.PortalTheme.markFailed(repairSelection);
+        throw error;
+      } finally {
+        preferenceWritesPending--;
+      }
+    };
+    const task = preferenceWrites.catch(() => {}).then(() => locks?.request
+      ? locks.request('regulacao.portal.preferences:' + owner, synchronize)
+      : synchronize());
     preferenceWrites=task;return task;
   }
 
@@ -986,7 +1015,15 @@
     const themeStatus = document.getElementById('interfaceThemeStatus');
     if (themeLight) themeLight.checked = preferences.theme === 'light';
     if (themeDark) themeDark.checked = preferences.theme === 'dark';
-    if (themeStatus && !themeStatus.textContent) {
+    const sync = window.PortalTheme?.syncState?.();
+    if (themeStatus && sync) {
+      themeStatus.textContent = sync.failed
+        ? 'A aparência foi aplicada neste dispositivo, mas não pôde ser sincronizada com a conta.'
+        : sync.pending ? 'Aparência aplicada. Sincronizando com sua conta…'
+        : sync.synced ? (preferences.theme === 'dark' ? 'Modo escuro ativado e sincronizado com sua conta.' : 'Modo claro ativado e sincronizado com sua conta.')
+        : (preferences.theme === 'dark' ? 'Modo escuro ativo.' : 'Modo claro ativo.');
+      themeStatus.className = 'account-status visible ' + (sync.failed ? 'error' : sync.pending ? 'info' : 'success');
+    } else if (themeStatus && !themeStatus.textContent) {
       themeStatus.textContent = preferences.theme === 'dark' ? 'Modo escuro ativo.' : 'Modo claro ativo.';
       themeStatus.className = 'account-status visible info';
     }
@@ -1033,11 +1070,18 @@
       try {
         const result=await applyPreferences({theme},{persist:true});
         if(owner!==currentUserKey||revision!==themeCommitRevision||result?.cancelled)return;
-        if(choice)window.PortalTheme.confirm(choice);
+        if (choice && !window.PortalTheme.confirm(choice,{localOnly:result?.localOnly})) {
+          if (status?.isConnected) {
+            renderPreferenceControls();
+          }
+          return;
+        }
         if(status?.isConnected){status.textContent=result?.localOnly?'Aparência aplicada neste dispositivo.':theme==='dark'?'Modo escuro ativado e sincronizado com sua conta.':'Modo claro ativado e sincronizado com sua conta.';status.className='account-status visible success';}
         emit('selection',{source,force:true});
       }catch(_){
         if(owner!==currentUserKey||revision!==themeCommitRevision)return;
+        if(choice && window.PortalTheme.selection()?.revision !== choice.revision) {renderPreferenceControls();return;}
+        if(choice)window.PortalTheme.markFailed(choice);
         if(status?.isConnected){status.textContent='A aparência foi aplicada neste dispositivo, mas não pôde ser sincronizada com a conta.';status.className='account-status visible error';}
       }
     },{signal});
@@ -1248,6 +1292,7 @@
     transition,
     register,
     getPreferences,
+    isSyncingPreferences: () => preferenceWritesPending > 0,
     setPreferences: applyPreferences,
     prefersReducedMotion,
     start,
