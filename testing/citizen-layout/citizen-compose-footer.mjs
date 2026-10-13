@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium}=await import('./mobile-profile-refinement.mjs');const{applyTextScale}=await import('./text-scale.mjs');
-const output=process.argv[2]||'.local/compose-footer';await fs.mkdir(output,{recursive:true});const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:'/usr/bin/chromium'}),results=[];
+const output=process.argv[2]||'.local/compose-footer';await fs.mkdir(output,{recursive:true});const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}),results=[];
 try{for(const width of [320,390])for(const theme of ['light','dark'])for(const scale of [1,2]) {
  const result={errors:[]},{page,context}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
  await context.route('**/api/council/manifestations',r=>r.fulfill({status:422,json:{error:'Erro sintético: revise o relato e os anexos antes de enviar novamente. Seu rascunho foi preservado.'}}));

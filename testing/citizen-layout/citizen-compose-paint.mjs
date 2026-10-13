@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium}=await import('./mobile-profile-refinement.mjs');
 const output=process.argv[2]||'.local/compose-paint';await fs.mkdir(output,{recursive:true});
-const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:'/usr/bin/chromium'}),results=[];
+const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}),results=[];
 try {
   for(const theme of ['light','dark'])for(const mode of ['cold','warm','slow-css']) {
     const errors={errors:[]}, {page,context}=await newPage(browser,{width:390,theme,seedOnce:true},server.origin,errors);let delayed=0;
