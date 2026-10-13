@@ -16,6 +16,8 @@ on:
       - 'js/gnome*.mjs'
       - 'js/pets*.js'
       - 'js/pet-companions.mjs'
+      - 'js/pet-depth.mjs'
+      - 'js/pet-speech-position.mjs'
       - 'js/pet-speech-coordinator.js'
       - 'js/auth-client.js'
       - 'js/signup.js'
@@ -75,6 +77,12 @@ jobs:
           node testing/pets/gnome-motion-browser.mjs /tmp/gnome-motion-browser
           node testing/pets/gnome-pixels-pause.mjs /tmp/gnome-pixels-pause
           node testing/pets/gnome-live-cadence.mjs /tmp/gnome-live-cadence
+      - name: Pet ground depth, visible speech geometry and complete readable text
+        run: |
+          node --test testing/pets/pet-depth-speech.test.mjs
+          node testing/pets/pet-depth-browser.mjs /tmp/pet-depth
+          node testing/pets/pet-speech-geometry-browser.mjs /tmp/pet-speech-geometry
+          node testing/pets/pet-speech-reader-browser.mjs
       - name: Native UI, seven animations, adult gate and text reflow
         run: node testing/pets/gnome-mobile.mjs /tmp/gnome-mobile
       - name: Preserve native cats while optional private age is pending or unavailable
@@ -101,6 +109,8 @@ jobs:
           name: synthetic-gnome
           path: |
             /tmp/gnome-mobile/
+            /tmp/pet-depth/
+            /tmp/pet-speech-geometry/
             /tmp/gnome-frame-matrix/
             /tmp/gnome-motion-browser/
             /tmp/gnome-pixels-pause/
