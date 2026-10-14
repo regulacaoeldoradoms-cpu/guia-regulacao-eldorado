@@ -58,7 +58,7 @@
    dimensões, bordas, controles ou o atributo hidden. */
 @layer portal-default-avatar {
   :is(.portal-profile-avatar, .social-avatar[role="img"], .home-composer-avatar, .portal-chat-avatar, #portalChatHeaderAvatar, #profileAvatarPreview):not([style*="background-image: url(" i], [style*="background-image:url(" i], [style*="background: url(" i], [style*="background:url(" i]):not(:has(img)) {
-    background-image: url('/assets/avatar.png') !important;
+    background-image: url('../assets/avatar.png') !important;
     background-position: center !important;
     background-size: cover !important;
     background-repeat: no-repeat !important;
