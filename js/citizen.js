@@ -1,12 +1,42 @@
 (() => {
 'use strict';
 
+// An already-rendered mobile shell can keep its previous dependency list.
+// Resolve this controller's optional preview dependency independently of it.
+let composeHelperPromise;
+function ensureComposeHelper() {
+  if (globalThis.PortalCitizenComposeAttachments?.create) return Promise.resolve(globalThis.PortalCitizenComposeAttachments);
+  if (!composeHelperPromise) composeHelperPromise=new Promise((resolve,reject)=>{
+    const script=globalThis.document.createElement('script');
+    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-compose-5';
+    const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve(globalThis.PortalCitizenComposeAttachments);};
+    const timer=setTimeout(()=>finish(new Error('Prévia local indisponível')),8000);
+    script.onload=()=>finish(globalThis.PortalCitizenComposeAttachments?.create?null:new Error('Prévia local indisponível'));
+    script.onerror=()=>finish(new Error('Prévia local indisponível'));
+    globalThis.document.head.append(script);
+  }).catch(error=>{composeHelperPromise=null;throw error;});
+  return composeHelperPromise;
+}
+
 const initializeCitizenArea = async (context) => {
   const window = context?.window || globalThis;
   const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;
+  const hasPreviewMarkup=Boolean(document.getElementById('composeChooseFiles')&&document.getElementById('composeFilePreview'));
+  const composeHelper=hasPreviewMarkup?await ensureComposeHelper().catch(()=>null):null;
+  if(context?.disposed)return;
+  const initialCompose=document.getElementById('newManifestationModal');
+  initialCompose.dataset.composeRuntime='current';
+  document.getElementById('manifestationFiles').hidden=Boolean(composeHelper);
+  const initialPicker=document.getElementById('composeChooseFiles');if(initialPicker)initialPicker.hidden=!composeHelper;
+  if(hasPreviewMarkup&&!composeHelper){const help=document.getElementById('composeFileHelp');if(help)help.textContent+=' As prévias não estão disponíveis agora.';}
+  if(!document.getElementById('composeSubmitHint')){
+    const hint=document.createElement('p');hint.id='composeSubmitHint';hint.className='compose-submit-hint';hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');
+    document.getElementById('newManifestationStatus').before(hint);
+    document.getElementById('submitManifestation').setAttribute('aria-describedby','composeSubmitHint');
+  }
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
@@ -375,7 +405,7 @@ const initializeCitizenArea = async (context) => {
     if (!sendingManifestation) {
       for (const id of ['manifestationSubject', 'manifestationDescription']) document.getElementById(id).disabled = !config;
       document.getElementById('manifestationConfirm').disabled = !config;
-      document.getElementById('composeChooseFiles').disabled = !config;
+      const picker=document.getElementById('composeChooseFiles');if(picker)picker.disabled=!config;
     }
     if (config) {
       document.getElementById('composeReportTitle').textContent = config[0];
@@ -410,7 +440,7 @@ const initializeCitizenArea = async (context) => {
   }
   composeForm?.addEventListener('change', event => syncCompose(event.target.name === 'manifestationType'));
   composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
-  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;document.getElementById('composeAttachments').open=false;composeAttachmentManager?.clear();document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
+  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;const attachments=document.getElementById('composeAttachments');if(attachments)attachments.open=false;composeAttachmentManager?.clear();document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
   composeForm?.addEventListener('invalid', event => {if(composeDetails?.contains(event.target))composeDetails.open=true;},true);
   function containDialogKeyboard(event, modal = event.currentTarget) {
     if (event.defaultPrevented || !modal?.classList.contains('open')) return;
@@ -444,13 +474,26 @@ const initializeCitizenArea = async (context) => {
   const manifestationFiles = document.getElementById('manifestationFiles');
   const manifestationFileList = document.getElementById('manifestationFileList');
   let composeFileError='';
-  composeAttachmentManager=window.PortalCitizenComposeAttachments.create({
+  const attachmentOptions={
     input:manifestationFiles,list:manifestationFileList,picker:document.getElementById('composeChooseFiles'),
     disclosure:document.getElementById('composeAttachments'),count:document.getElementById('composeAttachmentCount'),
     preview:previewModal,compose:composeModal,validate:validateFiles,isBusy:()=>sendingManifestation,
     onChange:({validated=false}={})=>{if(validated&&composeFileError){const status=document.getElementById('newManifestationStatus');if(status.textContent===composeFileError){status.textContent='';status.className='account-status';}composeFileError='';}syncCompose();},
     onError:message=>{composeFileError=message;showStatus(document.getElementById('newManifestationStatus'),message,'error');}
-  });
+  };
+  // Old cached HTML or an unavailable preview script retains the native picker
+  // and the same validated upload source. A reload is never required to send.
+  function nativeAttachments({input,list,count,onChange,onError,validate,isBusy}) {
+    let files=Array.from(input.files||[]);
+    function render(){list.replaceChildren();for(const file of files){const row=document.createElement('div');row.className='selected-file';row.textContent=`${file.name} · ${Math.ceil(file.size/1024)} KB`;list.append(row);}list.hidden=!files.length;if(count)count.textContent=files.length?`${files.length} arquivo(s)`:'opcional';}
+    function restore(){try{const transfer=new DataTransfer();files.forEach(file=>transfer.items.add(file));input.files=transfer.files;}catch(_){input.value='';}}
+    function changed(){if(isBusy()){restore();return;}const selected=Array.from(input.files||[]),error=validate(selected);if(error){restore();onError(error+(files.length?' Os anexos anteriores foram mantidos.':''));onChange();return;}files=selected;render();onChange({validated:true});}
+    function clear(){files=[];input.value='';render();}
+    function hidden(event){if(!event.persisted)clear();}
+    input.addEventListener('change',changed);globalThis.addEventListener('pagehide',hidden);render();
+    return {getFiles:()=>[...files],sync:()=>{},clear,closePreview:()=>{},dispose(){clear();input.removeEventListener('change',changed);globalThis.removeEventListener('pagehide',hidden);}};
+  }
+  composeAttachmentManager=composeHelper?composeHelper.create(attachmentOptions):nativeAttachments(attachmentOptions);
   context?.addController?.({dispose:()=>composeAttachmentManager.dispose()});
 
   document.querySelectorAll('input[name="manifestationPrivacy"]').forEach((input) => input.addEventListener('change', renderPrivacyNotice));
@@ -465,7 +508,7 @@ const initializeCitizenArea = async (context) => {
     event.preventDefault();
     const submittedForm = event.currentTarget;
     if (sendingManifestation) return;
-    if (previewModal.classList.contains('open')) return;
+    if (previewModal?.classList.contains('open')) return;
     syncCompose();
     const button = document.getElementById('submitManifestation');
     const status = document.getElementById('newManifestationStatus');

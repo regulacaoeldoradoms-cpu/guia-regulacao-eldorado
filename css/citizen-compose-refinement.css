@@ -122,3 +122,9 @@ html[data-portal-theme=dark] #newManifestationModal#newManifestationModal[data-c
 #newManifestationModal#newManifestationModal[data-compose-refinement] .privacy-choice-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,9.5em),1fr))!important;}
 #newManifestationModal#newManifestationModal[data-compose-refinement] .privacy-option{flex-direction:row!important;}
 #newManifestationModal#newManifestationModal[data-compose-refinement] .privacy-option>span:not(.privacy-option-icon){width:auto!important;flex:1 1 0!important;min-width:0;}
+
+/* Declarative compatibility for a previously loaded controller: scripts in
+   fetched route HTML are deliberately stripped by that shell. */
+#newManifestationModal#newManifestationModal[data-compose-refinement]:not([data-compose-runtime]):not(:has(input[name=manifestationType]:checked)) [data-compose-followup]{display:none!important;}
+#newManifestationModal#newManifestationModal[data-compose-refinement] .compose-file-input:not([hidden]){display:block!important;max-width:100%;width:100%;font:inherit;}
+#newManifestationModal#newManifestationModal[data-compose-refinement] #composeChooseFiles[hidden]{display:none!important;}
