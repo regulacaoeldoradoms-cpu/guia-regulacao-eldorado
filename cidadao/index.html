@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="portal-citizen-first-paint" content="20261013-4">
+  <meta name="portal-citizen-first-paint" content="20261014-5">
     <script src="/js/portal-performance.js?v=20261010-mobile-shell-1" async></script>
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <link rel="preload" href="/js/auth-client.js?v=20261010-mobile-shell-1" as="script">
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/citizen.css?v=20260819-2">
-  <link rel="stylesheet" href="/css/citizen-dashboard.css?v=20261014-citizen-dashboard-4">
+  <link rel="stylesheet" href="/css/citizen-dashboard.css?v=20261014-citizen-compose-5">
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
   <link rel="stylesheet" href="/css/citizen-mobile.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/citizen-mobile-refinement.css?v=20260924-dark-final-1">
@@ -27,11 +27,11 @@
   <script src="/js/portal-theme.js?v=20261013-theme-immediate-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/citizen-readable-layout.css?v=20261011-citizen-panel-1">
-  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261014-citizen-dashboard-4" media="screen and (max-width: 900px)">
-  <script src="/js/citizen-layout.js?v=20261014-citizen-dashboard-4" defer></script>
+  <link rel="stylesheet" href="/css/citizen-mobile-presentation.css?v=20261014-citizen-compose-5" media="screen and (max-width: 900px)">
+  <script src="/js/citizen-layout.js?v=20261014-citizen-compose-5" defer></script>
 <link rel="stylesheet" href="/css/citizen-mobile-shell.css?v=20261011-home-speed-1">
   <link rel="stylesheet" href="/css/citizen-compose-mobile.css?v=20261012-citizen-compose-2">
-  <link rel="stylesheet" href="/css/citizen-compose-refinement.css?v=20261013-compose-refinement-1">
+  <link rel="stylesheet" href="/css/citizen-compose-refinement.css?v=20261014-citizen-compose-5">
 </head>
 <body class="portal-page">
   <script>
@@ -132,7 +132,7 @@
 
   <div class="citizen-modal" id="newManifestationModal" data-compose-refinement role="dialog" aria-modal="false" aria-labelledby="composeTitle" aria-describedby="composeIntro" aria-hidden="true">
     <div class="citizen-modal-panel citizen-modal-panel--form">
-      <div class="citizen-modal-head"><div><h2 id="composeTitle">Escrever ao Conselho</h2><small id="composeIntro">Escolha o tipo e conte o que você precisa.</small></div><button class="citizen-modal-close" type="button" data-close-modal="newManifestationModal" aria-label="Fechar janela">×</button></div>
+      <div class="citizen-modal-head"><div><h2 id="composeTitle">Escrever ao Conselho</h2><small id="composeIntro">Escolha o tipo de mensagem.</small></div><button class="citizen-modal-close" type="button" data-close-modal="newManifestationModal" aria-label="Fechar janela">×</button></div>
       <form class="citizen-modal-content manifestation-form" id="newManifestationForm" data-compose-form>
         <section class="form-section compose-category" aria-labelledby="composeCategoryTitle"><div class="form-section-head"><h3 id="composeCategoryTitle">Tipo de mensagem</h3></div>
           <div class="manifestation-type-grid">
@@ -149,25 +149,27 @@
           <div class="portal-field"><label for="manifestationSubject">Assunto <span class="compose-required">obrigatório</span></label><input id="manifestationSubject" required minlength="3" maxlength="180" placeholder="Resuma em uma frase" autocomplete="off"></div>
           <div class="portal-field"><label for="manifestationDescription" id="composeDescriptionLabel">Seu relato <span class="compose-required">obrigatório</span></label><textarea id="manifestationDescription" required minlength="10" maxlength="6500" rows="5" aria-describedby="composeGuidance composeIdentityWarning descriptionCounter" placeholder="Escreva aqui o que deseja propor."></textarea><div class="field-footer"><small id="composeIdentityWarning">Evite CPF, Cartão SUS, telefone e endereço desnecessários.</small><span id="descriptionCounter">0/6500</span></div></div>
         </section>
-        <details class="compose-details" id="composeDetails"><summary>Adicionar detalhes <span id="composeDetailsCount">4 campos opcionais</span></summary><div class="compose-details-body"><p id="composeDetailsHelp">Preencha o que souber. Recolher mantém os valores e os inclui no envio.</p><div class="citizen-form-grid">
+        <details class="compose-details" id="composeDetails" data-compose-followup hidden><summary>Adicionar detalhes <span id="composeDetailsCount">4 campos opcionais</span></summary><div class="compose-details-body"><p id="composeDetailsHelp">Preencha o que souber. Recolher mantém os valores e os inclui no envio.</p><div class="citizen-form-grid">
           <div class="portal-field"><label for="manifestationDate" id="composeDateLabel">Data de referência <span class="field-optional">opcional</span></label><input id="manifestationDate" type="date"></div>
           <div class="portal-field"><label for="manifestationService">Serviço ou unidade <span class="field-optional">opcional</span></label><input id="manifestationService" maxlength="160" placeholder="Ex.: unidade de saúde ou farmácia"></div>
           <div class="portal-field"><label for="manifestationLocation">Local específico <span class="field-optional">opcional</span></label><input id="manifestationLocation" maxlength="160" placeholder="Ex.: recepção ou setor"></div>
           <div class="portal-field"><label for="manifestationDesiredOutcome">O que espera do Conselho? <span class="field-optional">opcional</span></label><textarea id="manifestationDesiredOutcome" maxlength="1200" rows="3" placeholder="Ex.: esclarecimento ou encaminhamento."></textarea></div>
         </div></div></details>
-        <section class="form-section compose-attachments" aria-labelledby="composeAttachmentsTitle"><h3 id="composeAttachmentsTitle">Anexos <span class="field-optional">opcional</span></h3><div class="file-drop"><input id="manifestationFiles" type="file" accept="image/jpeg,image/png,application/pdf" multiple><div><span>JPG, PNG ou PDF · até 5 MB por arquivo · no máximo 5.</span></div></div><div id="manifestationFileList" class="selected-file-list" hidden></div></section>
-        <section class="form-section compose-privacy" aria-labelledby="composePrivacyTitle"><h3 id="composePrivacyTitle">Sua privacidade</h3><div class="privacy-choice" id="verifiedPrivacyOptions" hidden><div class="privacy-choice-head"><span>Escolha como sua identidade será tratada.</span></div><div class="privacy-choice-grid">
-          <label class="privacy-option"><input type="radio" name="manifestationPrivacy" value="anonima" checked><span class="privacy-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span><strong>Proteger identidade</strong><small>Nome e perfil não são exibidos ao Conselho.</small></span></label>
+        <details class="compose-attachments" id="composeAttachments" data-compose-followup hidden><summary><span id="composeAttachmentsTitle">Anexar arquivos</span> <span id="composeAttachmentCount" class="field-optional">opcional</span></summary><div class="compose-attachments-body"><input id="manifestationFiles" class="compose-file-input" hidden type="file" accept="image/jpeg,image/png,application/pdf" multiple tabindex="-1" aria-label="Selecionar anexos"><button id="composeChooseFiles" aria-describedby="composeFileHelp" class="portal-button secondary" type="button">Escolher arquivos</button><p class="compose-file-help" id="composeFileHelp">JPG, PNG ou PDF · até 5 arquivos de 5 MB. Os arquivos só serão enviados com a manifestação.</p><div id="manifestationFileList" class="selected-file-list" hidden></div></div></details>
+        <section class="form-section compose-privacy" aria-labelledby="composePrivacyTitle" data-compose-followup hidden><h3 id="composePrivacyTitle">Sua privacidade</h3><div class="privacy-choice" id="verifiedPrivacyOptions" hidden><div class="privacy-choice-head"><span>Escolha como sua identidade será tratada.</span></div><div class="privacy-choice-grid">
+          <label class="privacy-option"><input type="radio" name="manifestationPrivacy" value="anonima" checked><span class="privacy-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span><strong>Enviar anonimamente</strong><small>Nome e perfil não são exibidos ao Conselho.</small></span></label>
           <label class="privacy-option"><input type="radio" name="manifestationPrivacy" value="identificada"><span class="privacy-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span><span><strong>Me identificar</strong><small>Nome, @ e função são exibidos. E-mail protegido.</small></span></label>
         </div></div><div class="privacy-summary" id="newPrivacyNotice"></div>
         <p class="compose-essential">Texto, imagens e PDFs podem revelar sua identidade. Revise o que está enviando.</p>
         <p class="compose-essential" id="composeChannelWarning">Este canal não agenda consultas ou exames, não altera solicitações da Regulação e não substitui atendimento de urgência ou emergência.</p>
-        <details class="compose-info"><summary>Entenda a privacidade e este canal</summary><p>O e-mail de segurança permanece protegido. Mesmo em envio anônimo ou sigiloso, os dados que você escreve e os arquivos podem identificar você.</p><p>Este canal não agenda consultas ou exames, não altera solicitações da Regulação e não substitui atendimento de urgência ou emergência.</p><p>Após enviar, você recebe um protocolo, pode emitir uma declaração e acompanhar respostas e histórico nesta conta. Uma nova manifestação pode ser aberta a cada 2 horas.</p></details>
+        <details class="compose-info"><summary>Entenda a privacidade e este canal</summary><p id="composePrivacyDetails">O e-mail de segurança permanece protegido. Mesmo em envio anônimo ou sigiloso, os dados que você escreve e os arquivos podem identificar você.</p><p>Este canal não agenda consultas ou exames, não altera solicitações da Regulação e não substitui atendimento de urgência ou emergência.</p><p>Após enviar, você recebe um protocolo, pode emitir uma declaração e acompanhar respostas e histórico nesta conta. Uma nova manifestação pode ser aberta a cada 2 horas.</p></details>
         <label class="form-confirm"><input id="manifestationConfirm" type="checkbox" required><span>Revisei o relato e os anexos e confirmo que enviei apenas as informações necessárias.</span></label></section>
-        <div id="newManifestationStatus" class="account-status" role="status" aria-live="polite"></div><div class="manifestation-form-footer"><div class="account-actions"><button class="portal-button secondary" type="button" data-close-modal="newManifestationModal">Cancelar</button><button class="portal-button primary" id="submitManifestation" type="submit">Enviar manifestação</button></div></div>
+        <p id="composeSubmitHint" class="compose-submit-hint" role="status" aria-live="polite">Escolha o tipo de mensagem para continuar.</p><div id="newManifestationStatus" class="account-status" role="status" aria-live="polite"></div><div class="manifestation-form-footer"><div class="account-actions"><button class="portal-button secondary" type="button" data-close-modal="newManifestationModal">Cancelar</button><button class="portal-button primary" id="submitManifestation" type="submit" aria-describedby="composeSubmitHint" disabled>Enviar manifestação</button></div></div>
       </form>
     </div>
   </div>
+
+  <div class="citizen-modal compose-local-preview" id="composeFilePreview" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="composePreviewTitle" aria-describedby="composePreviewHelp"><div class="citizen-modal-panel"><div class="citizen-modal-head"><h2 id="composePreviewTitle">Imagem anexada</h2><button class="citizen-modal-close" type="button" data-close-local-preview aria-label="Fechar imagem">×</button></div><div class="compose-preview-body"><img alt=""></div><p id="composePreviewHelp">Prévia do arquivo selecionado. Ele só será enviado com a manifestação.</p></div></div>
 
   <div class="citizen-modal" id="manifestationDetailModal" aria-hidden="true">
     <div class="citizen-modal-panel">
@@ -211,11 +213,12 @@
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/social-api.js?v=20261011-citizen-continuity-3"></script>
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
-  <script src="/js/citizen-mobile-shell.js?v=20261014-citizen-dashboard-4"></script>
-  <script src="/js/citizen.js?v=20261014-citizen-dashboard-4"></script>
+  <script src="/js/citizen-mobile-shell.js?v=20261014-citizen-compose-5"></script>
+  <script src="/js/citizen-compose-attachments.js?v=20261014-citizen-compose-5"></script>
+  <script src="/js/citizen.js?v=20261014-citizen-compose-5"></script>
   <script src="/js/citizen-declaration.js?v=20261010-mobile-shell-1"></script>
   <script src="/js/citizen-account-level.js?v=20261011-citizen-panel-1"></script>
-  <script src="/js/citizen-mobile-app.js?v=20261014-citizen-dashboard-4"></script>
+  <script src="/js/citizen-mobile-app.js?v=20261014-citizen-compose-5"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261012-pet-depth-speech-1"></script>
 </body>

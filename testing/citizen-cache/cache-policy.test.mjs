@@ -23,6 +23,11 @@ test('shared entries use one released citizen loader and matching dependency URL
   }
   for(const path of ['js/home.js','js/account-section-shell.js'])assert.ok(read(path).includes(`/js/citizen-layout.js?v=${version}`));
   const layout=read('js/citizen-layout.js'),shell=read('js/citizen-mobile-shell.js');
+  assert.ok(citizen.includes(`/js/citizen-compose-attachments.js?v=${version}`));
+  assert.ok(citizen.includes(`/css/citizen-compose-refinement.css?v=${version}`));
+  assert.ok(layout.includes(`'${version}'`));
+  assert.ok(shell.includes(`dependencies.push('/js/citizen-compose-attachments.js?v=${version}')`));
+  assert.ok(shell.includes("path.includes('citizen-compose-attachments') ? window.PortalCitizenComposeAttachments"));
   assert.ok(layout.includes(`/js/citizen-mobile-presentation.js?v=${version}`));
   assert.ok(layout.includes(`path === '/css/citizen-mobile-presentation.css' ? '${version}'`));
   assert.ok(shell.includes(`/js/account-section-shell.js?v=${version}`));
@@ -159,7 +164,11 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-4">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261014-5">';
+test('published Citizen HTML and service worker agree on the current release marker',()=>{
+  assert.ok(source.includes(`CITIZEN_HTML_MARKER = '${citizenMarker}'`));
+  assert.ok(fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8').includes(citizenMarker));
+});
 test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
   for(const [path,body,expected] of [['/cidadao/','OLD',8000],['/perfil/','OLD',2500]]){
     let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed(path,body);await f.seed('/perfil/','PROFILE-UNCHANGED');await f.seed('/mascotes/','PETS-UNCHANGED');

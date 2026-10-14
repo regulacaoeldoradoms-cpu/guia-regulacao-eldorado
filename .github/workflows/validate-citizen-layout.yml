@@ -26,6 +26,7 @@ on:
       - "js/pets-page.js"
       - "js/citizen-mobile-app.js"
       - "js/citizen.js"
+      - "js/citizen-compose-attachments.js"
       - "js/citizen-account-level.js"
       - "js/citizen-mobile-chat-bootstrap.js"
       - "js/profile-mobile-presentation.js"
@@ -105,6 +106,8 @@ jobs:
         run: |
           node testing/citizen-layout/citizen-compose-refinement.mjs
           node testing/citizen-layout/citizen-compose-errors.mjs
+          node testing/citizen-layout/citizen-compose-final.mjs
+          node testing/citizen-layout/citizen-compose-files-errors.mjs
           node testing/citizen-layout/citizen-compose-accessibility.mjs
           node testing/citizen-layout/citizen-compose-footer.mjs
           node testing/citizen-layout/citizen-compose-paint.mjs
@@ -189,6 +192,8 @@ jobs:
             .local/citizen-html-first-paint/
             .local/citizen-compose-evidence/
             .local/compose-refinement/
+            .local/compose-final/
+            .local/compose-files-errors/
             .local/compose-accessibility/
             .local/compose-footer/
             .local/compose-paint/
