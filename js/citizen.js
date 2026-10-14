@@ -141,7 +141,7 @@ const initializeCitizenArea = async (context) => {
     if (protectedInput) {
       if (state.security?.emailVerified) {
         protectedInput.value = 'sigilosa';
-        if (protectedTitle) protectedTitle.textContent = 'Enviar anonimamente';
+        if (protectedTitle) protectedTitle.textContent = 'Enviar com sigilo';
         if (protectedDescription) protectedDescription.textContent = 'O Conselho recebe o relato, mas seu nome, @ e perfil não são exibidos na manifestação.';
       } else {
         protectedInput.value = 'anonima';

@@ -45,7 +45,7 @@ try{
    await page.screenshot({path:path.join(output,`${width}-${theme}-${scale}-preview.png`)});
    for(let i=0;i<4;i++){await page.keyboard.press('Tab');assert(await page.locator('#composeFilePreview').evaluate(n=>n.contains(document.activeElement)),JSON.stringify(await page.evaluate(()=>({active:document.activeElement?.outerHTML,preview:document.getElementById('composeFilePreview').className,composeInert:document.getElementById('newManifestationModal').inert}))));}
    await page.locator('#newManifestationForm').evaluate(n=>n.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));assert.equal(result.posts,0);
-   await page.screenshot({path:path.join(output,`${width}-${theme}-${scale}-preview.png`)});await page.keyboard.press('Escape');
+   await page.keyboard.press('Escape');
    assert(await page.locator('#composeFilePreview').isHidden());assert(!(await page.locator('#newManifestationModal').evaluate(n=>n.inert)));
    assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),'Ampliar imagem imagem-de-teste.png');
    await page.locator('#composeAttachments summary').click();await page.locator('#composeAttachments summary').click();assert.equal(await activeURLs(),2);
