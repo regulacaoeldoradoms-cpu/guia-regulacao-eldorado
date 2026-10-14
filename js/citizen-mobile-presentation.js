@@ -76,8 +76,18 @@ export function mountCitizenMobilePresentation(){
       for(const [node,{original}] of copies)node.replaceChildren(...original);
       if(help){marker.parentNode.insertBefore(notice,marker.nextSibling);help.remove();}
     }
+    syncNotificationStates(Boolean(active));
     composeViewport(Boolean(active));
     mobile=Boolean(active);
+  }
+  function syncNotificationStates(active){
+    if(!active){root.querySelectorAll('.citizen-notification-state').forEach(node=>node.remove());return;}
+    for(const button of root.querySelectorAll('#notificationList .notification')){
+      let label=button.querySelector('.citizen-notification-state');
+      if(!label){label=document.createElement('span');label.className='citizen-notification-state';button.prepend(label);}
+      const text=button.classList.contains('unread')?'Não lido':'Lido';
+      if(label.textContent!==text)label.textContent=text;
+    }
   }
   function schedule(){if(!disposed&&!queued){queued=true;queueMicrotask(sync);}}
   const observer=new MutationObserver(schedule);observer.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
@@ -95,6 +105,7 @@ export function mountCitizenMobilePresentation(){
     const originals=window[Symbol.for('portal.citizenMobileEarlyCopies')];
     for(const node of copies.keys())originals?.delete(node);
     copies.clear();help?.remove();
+    syncNotificationStates(false);
     if(window[INSTANCE]===controller)delete window[INSTANCE];
   }});
   area?.addController?.(controller);window[INSTANCE]=controller;sync();return controller;

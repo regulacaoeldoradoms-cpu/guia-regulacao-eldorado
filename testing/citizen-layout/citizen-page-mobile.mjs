@@ -59,12 +59,13 @@ async function accountHelp(page,result,entry){
 try{
   for(const theme of ['light','dark'])for(const width of (process.env.WIDTHS || '320,360,390').split(',').map(Number)){
     const result={theme,width,errors:[],writes:[]};const {page,context,audit}=await newPage(browser,{theme,width},server.origin,result);
+    let notifications=[{id:1,title:'Resposta fictícia do Conselho',protocol:item.protocol,createdAt:item.createdAt,readAt:null},{id:2,title:'Aviso fictício já lido',protocol:item.protocol,createdAt:item.createdAt,readAt:item.createdAt}];
     try{
       await context.route('**/api/council/**',route=>{
         const pathname=new URL(route.request().url()).pathname,method=route.request().method();let payload;
-        if(method!=='GET'){result.writes.push({pathname,method});payload={ok:true};}
+        if(method!=='GET'){result.writes.push({pathname,method});if(pathname==='/api/council/notifications'&&method==='PATCH')notifications=notifications.map(n=>({...n,readAt:item.createdAt}));payload={ok:true};}
         else if(pathname==='/api/council/my')payload={manifestations:[item]};
-        else if(pathname==='/api/council/notifications')payload={notifications:[{id:1,title:'Resposta fictícia do Conselho',protocol:item.protocol,createdAt:item.createdAt,readAt:null}]};
+        else if(pathname==='/api/council/notifications')payload={notifications};
         else if(pathname==='/api/council/manifestations/'+item.protocol)payload={manifestation:item,messages:[],events:[],attachments:[]};
         else return route.fallback();
         return route.fulfill({contentType:'application/json',body:JSON.stringify(payload)});
@@ -79,6 +80,19 @@ try{
       assert.match(await page.locator('.manifestation-item').first().evaluate(el=>getComputedStyle(el,'::before').content),/Sugestão/);
       assert.equal(await page.locator('.manifestation-item > span:first-child > strong').textContent(),item.subject);
       await dashboardReflow(page);
+      await page.locator('.citizen-mobile-tab[data-tab=notifications]').click();
+      const noticeStyles=await page.locator('#notificationList .notification').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return {background:s.backgroundColor,border:s.borderLeftColor,borderWidth:s.borderLeftWidth};}));
+      assert.notDeepEqual(noticeStyles[0],noticeStyles[1],'Unread notice remains individually distinguishable from a read notice');
+      assert.deepEqual(await page.locator('.citizen-notification-state').allTextContents(),['Não lido','Lido']);
+      assert.equal(await page.getByRole('button',{name:/Não lido.*Resposta fictícia do Conselho/}).count(),1,'Read state is part of each accessible name');
+      await page.emulateMedia({media:'print'});await settle(page);
+      assert.equal(await page.locator('.citizen-notification-state').count(),0,'Mobile read-state labels are removed for native print');
+      await page.emulateMedia({media:'screen'});await settle(page);await applyTextScale(page);
+      assert.deepEqual(await page.locator('.citizen-notification-state').allTextContents(),['Não lido','Lido']);
+      await page.setViewportSize({width:1280,height:844});await settle(page);
+      assert.equal(await page.locator('.citizen-notification-state').count(),0,'Mobile read-state labels are removed for native desktop');
+      await page.setViewportSize({width,height:844});await settle(page);await applyTextScale(page);
+      await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
       const compact=await page.evaluate(()=>{
         const style=selector=>getComputedStyle(document.querySelector(selector));
         return {
@@ -112,7 +126,13 @@ try{
       await page.locator('#newPrivacyNotice').waitFor({state:'visible'});assert.match(await page.locator('#newPrivacyNotice').textContent(),/e-mail.*protegido/);
       assert.ok(await page.locator('#newManifestationForm').evaluate(e=>e.scrollTop>0),'Privacy controls are reachable by scrolling the form');await page.screenshot({path:path.join(output,`${theme}-${width}-form-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
       await page.locator('#newManifestationModal [data-close-modal]').first().click();await page.locator('.citizen-mobile-tab[data-tab=notifications]').click();assert.equal(await page.locator('.citizen-mobile-tab[data-tab=notifications]').getAttribute('aria-selected'),'true');
-      await page.locator('#markNotificationsRead').click();await page.waitForFunction(()=>true);await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
+      await page.locator('#markNotificationsRead').click();await page.waitForFunction(()=>document.querySelectorAll('#notificationList .notification.unread').length===0);await settle(page);
+      assert.deepEqual(await page.locator('.citizen-notification-state').allTextContents(),['Lido','Lido'],'Read acknowledgement updates individual labels');
+      const noticeCounter=page.locator('.citizen-mobile-tab [data-count=notifications]');
+      assert.equal(await noticeCounter.textContent(),'2','Existing counter continues to show total notices');
+      assert.equal(await noticeCounter.getAttribute('aria-label'),'2 notificações','Counter no longer announces unread notices after acknowledgement');
+      assert.ok(!await noticeCounter.evaluate(n=>n.classList.contains('unread')));
+      await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
       await page.locator('.manifestation-item').click();await page.locator('#detailContent:not([hidden])').waitFor();assert.equal(await page.locator('#detailSubject').textContent(),item.subject);assert.equal(await page.locator('#detailStatus').textContent(),'Recebida');
       await page.locator('#manifestationDetailModal [data-close-modal]').first().click();
       const docs=audit.documents.length;
