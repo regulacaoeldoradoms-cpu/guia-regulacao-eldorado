@@ -65,6 +65,8 @@ const CORE_RESOURCES = Object.freeze([
   '/',
   '/ferramentas/',
   '/css/portal.css?v=20260816-5',
+  '/css/profile-account-link.css?v=20261014-avatar-1',
+  '/assets/avatar.png',
   '/css/home-loading.css?v=20260909-1',
   '/css/social.css?v=20260922-2',
   '/css/portal-pwa.css?v=20260910-2',
@@ -731,8 +733,37 @@ async function handlePage(event) {
   }
 }
 
+// Migrate only the legacy profile stylesheet, including requests from cached
+// HTML. Other assets, future versions and private caches keep their keys.
+async function fetchDefaultAvatarStyle(request, cache) {
+  const url = new URL(request.url);
+  url.searchParams.set('v', '20261014-avatar-1');
+  const current = new Request(url.toString(), request);
+  const cached = await cache.match(current);
+  if (cached) return cached;
+  try {
+    const response = await deduped(`asset:${current.url}`, async () => {
+      const fetched = await fetch(current);
+      await putResponse(STATIC_CACHE, current, fetched);
+      return fetched;
+    });
+    if (response.ok) return response;
+    return await cache.match(request) || response;
+  } catch (error) {
+    const fallback = await cache.match(request);
+    if (fallback) return fallback;
+    throw error;
+  }
+}
+
 async function fetchAsset(request, event) {
   const cache = await caches.open(STATIC_CACHE);
+  const assetUrl = new URL(request.url);
+  if (assetUrl.origin === self.location.origin
+      && assetUrl.pathname === '/css/profile-account-link.css'
+      && (!assetUrl.searchParams.has('v') || assetUrl.searchParams.get('v') === '20260814-1')) {
+    return fetchDefaultAvatarStyle(request, cache);
+  }
   const cached = await cache.match(request);
   const versioned = new URL(request.url).searchParams.has('v');
   const id = `asset:${request.url}`;
