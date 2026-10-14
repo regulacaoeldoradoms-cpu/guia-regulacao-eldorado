@@ -181,6 +181,7 @@ async function intercept(context, origin, audit) {
     else if (url.pathname === '/api/pets/me') data = { state:petState };
     else if (url.pathname === '/api/pets/catalog') data = petCatalog();
     else if (url.pathname === '/api/pets/age' && method === 'GET') data = { ageStatus:'unknown' };
+    else if (url.pathname === '/api/portal-tutorials/citizen' && method === 'GET') data = { completion:null };
     else if (url.pathname === '/api/pets/achievements') data = { achievements:[] };
     else if (url.pathname === '/api/observability' && method === 'POST') data = { ok:true };
     else { audit.unmappedApiCalls.push(`${method} ${url.pathname}`); status = 501; data = { error:'Unmapped synthetic API' }; }

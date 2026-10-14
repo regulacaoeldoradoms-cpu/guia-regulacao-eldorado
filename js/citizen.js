@@ -8,7 +8,7 @@ function ensureComposeHelper() {
   if (globalThis.PortalCitizenComposeAttachments?.create) return Promise.resolve(globalThis.PortalCitizenComposeAttachments);
   if (!composeHelperPromise) composeHelperPromise=new Promise((resolve,reject)=>{
     const script=globalThis.document.createElement('script');
-    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-compose-5';
+    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-tutorial-1';
     const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve(globalThis.PortalCitizenComposeAttachments);};
     const timer=setTimeout(()=>finish(new Error('Prévia local indisponível')),8000);
     script.onload=()=>finish(globalThis.PortalCitizenComposeAttachments?.create?null:new Error('Prévia local indisponível'));
@@ -21,12 +21,27 @@ function ensureComposeHelper() {
 const initializeCitizenArea = async (context) => {
   const window = context?.window || globalThis;
   const document = context?.document || globalThis.document;
-  const auth = window.RegulationAuth;
+  // The demonstration receives an immutable, network-free adapter. Live
+  // handlers also fail closed while it is open, including detached/programmatic
+  // events. Never switch the demonstration adapter back to the real API.
+  const demonstration = context?.citizenDemo;
+  const baseAuth = demonstration?.auth || window.RegulationAuth;
+  let tutorial = null, liveRequests = 0, ownerIdentity = '';
+  const identity = value => String(value?.id || '')+'|'+String(value?.username || '');
+  const sessionToken = window.RegulationAuth.getToken();
+  const liveAllowed = () => !tutorial?.active && !context?.disposed && window.RegulationAuth.getToken() === sessionToken && (!ownerIdentity || identity(window.RegulationAuth.getCachedUser()) === ownerIdentity);
+  const auth = demonstration ? baseAuth : { ...baseAuth, async api(...args) {
+    if (!liveAllowed()) throw new DOMException('Ação indisponível durante o tutorial ou após encerrar a sessão.', 'AbortError');
+    liveRequests++;
+    try { return await baseAuth.api(...args); } finally { liveRequests--; }
+  } };
   const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;
+  ownerIdentity=identity(user);
   const hasPreviewMarkup=Boolean(document.getElementById('composeChooseFiles')&&document.getElementById('composeFilePreview'));
   const composeHelper=hasPreviewMarkup?await ensureComposeHelper().catch(()=>null):null;
   if(context?.disposed)return;
+  if(demonstration && !composeHelper)throw new Error('Prévia local indisponível para o tutorial.');
   const initialCompose=document.getElementById('newManifestationModal');
   initialCompose.dataset.composeRuntime='current';
   document.getElementById('manifestationFiles').hidden=Boolean(composeHelper);
@@ -94,6 +109,7 @@ const initializeCitizenArea = async (context) => {
   }
 
   function openModal(id) {
+    if (!demonstration && !liveAllowed()) return;
     const modal = document.getElementById(id);
     if (!modal) return;
     if(id==='newManifestationModal' && !modal.classList.contains('open'))composeOpener=document.activeElement;
@@ -104,6 +120,7 @@ const initializeCitizenArea = async (context) => {
   }
 
   function closeModal(id, {restoreFocus = true} = {}) {
+    if (!demonstration && !liveAllowed()) return;
     if(id==='composeFilePreview')return composeAttachmentManager?.closePreview({restoreFocus});
     const modal = document.getElementById(id);
     if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
@@ -135,6 +152,7 @@ const initializeCitizenArea = async (context) => {
   }
 
   function renderPrivacyNotice() {
+    if (!demonstration && !liveAllowed()) return;
     const notice = document.getElementById('newPrivacyNotice');
     if (!notice) return;
     const mode = selectedPrivacyMode();
@@ -204,6 +222,7 @@ const initializeCitizenArea = async (context) => {
   }
 
   async function loadManifestations() {
+    if (!demonstration && !liveAllowed()) return;
     const list = document.getElementById('manifestationList');
     list.innerHTML = '<div class="portal-note info">Carregando manifestações...</div>';
     try {
@@ -237,6 +256,7 @@ const initializeCitizenArea = async (context) => {
   }
 
   async function loadNotifications() {
+    if (!demonstration && !liveAllowed()) return;
     try {
       const payload = await auth.api('/api/council/notifications', { method: 'GET' });
       state.notifications = Array.isArray(payload?.notifications) ? payload.notifications : [];
@@ -285,6 +305,7 @@ const initializeCitizenArea = async (context) => {
   }
 
   async function openDetail(protocol) {
+    if (!demonstration && !liveAllowed()) return;
     state.selectedProtocol = protocol;
     openModal('manifestationDetailModal');
     document.getElementById('detailLoading').hidden = false;
@@ -396,6 +417,7 @@ const initializeCitizenArea = async (context) => {
     context?.addController?.({ dispose: () => observer.disconnect() });
   }
   function syncCompose(change = false) {
+    if (!demonstration && !liveAllowed()) return;
     if (!composeModal?.hasAttribute('data-compose-refinement')) return;
     const kind = document.querySelector('input[name=manifestationType]:checked')?.value || '';
     const config = composeKinds[kind];
@@ -440,9 +462,10 @@ const initializeCitizenArea = async (context) => {
   }
   composeForm?.addEventListener('change', event => syncCompose(event.target.name === 'manifestationType'));
   composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
-  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;const attachments=document.getElementById('composeAttachments');if(attachments)attachments.open=false;composeAttachmentManager?.clear();document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
+  composeForm?.addEventListener('reset', event => {if (!demonstration && !liveAllowed()){event.preventDefault();return;}queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;const attachments=document.getElementById('composeAttachments');if(attachments)attachments.open=false;composeAttachmentManager?.clear();document.getElementById('composeDraftNotice').textContent='';syncCompose();});});
   composeForm?.addEventListener('invalid', event => {if(composeDetails?.contains(event.target))composeDetails.open=true;},true);
   function containDialogKeyboard(event, modal = event.currentTarget) {
+    if (demonstration || tutorial?.active) return;
     if (event.defaultPrevented || !modal?.classList.contains('open')) return;
     if (event.key === 'Escape' && !(modal===composeModal && sendingManifestation)) {event.preventDefault();closeModal(modal.id);return;}
     if (event.key !== 'Tab') return;
@@ -477,7 +500,7 @@ const initializeCitizenArea = async (context) => {
   const attachmentOptions={
     input:manifestationFiles,list:manifestationFileList,picker:document.getElementById('composeChooseFiles'),
     disclosure:document.getElementById('composeAttachments'),count:document.getElementById('composeAttachmentCount'),
-    preview:previewModal,compose:composeModal,validate:validateFiles,isBusy:()=>sendingManifestation,
+    preview:previewModal,compose:composeModal,validate:validateFiles,isBusy:()=>sendingManifestation || (!demonstration && !liveAllowed()),
     onChange:({validated=false}={})=>{if(validated&&composeFileError){const status=document.getElementById('newManifestationStatus');if(status.textContent===composeFileError){status.textContent='';status.className='account-status';}composeFileError='';}syncCompose();},
     onError:message=>{composeFileError=message;showStatus(document.getElementById('newManifestationStatus'),message,'error');}
   };
@@ -506,6 +529,7 @@ const initializeCitizenArea = async (context) => {
 
   document.getElementById('newManifestationForm').addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!demonstration && !liveAllowed()) return;
     const submittedForm = event.currentTarget;
     if (sendingManifestation) return;
     if (previewModal?.classList.contains('open')) return;
@@ -576,6 +600,7 @@ const initializeCitizenArea = async (context) => {
   });
 
   document.getElementById('notificationList').addEventListener('click', async (event) => {
+    if (!demonstration && !liveAllowed()) return;
     const item = event.target.closest('[data-notification]');
     if (!item) return;
     await auth.api('/api/council/notifications', { method: 'PATCH', body: JSON.stringify({ id: Number(item.dataset.notification) }) }).catch(() => {});
@@ -584,6 +609,7 @@ const initializeCitizenArea = async (context) => {
   });
 
   document.getElementById('markNotificationsRead').addEventListener('click', async () => {
+    if (!demonstration && !liveAllowed()) return;
     await auth.api('/api/council/notifications', { method: 'PATCH', body: '{}' }).catch(() => {});
     loadNotifications();
   });
@@ -592,6 +618,7 @@ const initializeCitizenArea = async (context) => {
 
   document.getElementById('replyForm').addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!demonstration && !liveAllowed()) return;
     if (!state.selectedProtocol) return;
     const button = document.getElementById('replyButton');
     const status = document.getElementById('replyStatus');
@@ -612,6 +639,7 @@ const initializeCitizenArea = async (context) => {
 
   document.getElementById('attachmentForm').addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!demonstration && !liveAllowed()) return;
     if (!state.selectedProtocol) return;
     const file = document.getElementById('attachmentFile').files?.[0];
     if (!file) return;
@@ -635,6 +663,8 @@ const initializeCitizenArea = async (context) => {
   document.getElementById('attachmentList').addEventListener('click', async (event) => {
     const button = event.target.closest('[data-attachment]');
     if (!button || !state.selectedProtocol) return;
+    // Reading an institutional attachment can itself create an audit entry.
+    if (demonstration || !liveAllowed()) return;
     button.disabled = true;
     try {
       const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments/${encodeURIComponent(button.dataset.attachment)}`);
@@ -667,6 +697,22 @@ const initializeCitizenArea = async (context) => {
     await loadSecurity();
     await Promise.all([loadManifestations(), loadNotifications()]);
   }
+  if (!demonstration && !context?.disposed) void (async () => {
+    try {
+      if (!globalThis.PortalCitizenTutorial) await new Promise((resolve, reject) => {
+        const script=globalThis.document.createElement('script');
+        script.src='/js/citizen-tutorial.js?v=20261014-citizen-tutorial-6';
+        const timer=setTimeout(()=>{script.remove();reject(new Error('Tutorial indisponível'));},8000);
+        script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Tutorial indisponível'));};
+        globalThis.document.head.append(script);
+      });
+      if (context?.disposed) return;
+      tutorial=globalThis.PortalCitizenTutorial.mount({document,window,context,user:{...user,emailVerified:state.security?.emailVerified===true},
+        isBusy:()=>sendingManifestation || liveRequests>0,
+        initialize:initializeCitizenArea});
+      context?.addController?.(tutorial);
+    } catch (_) { /* Optional tutorial cannot prevent the native channel. */ }
+  })();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen', initializeCitizenArea);
 else initializeCitizenArea();

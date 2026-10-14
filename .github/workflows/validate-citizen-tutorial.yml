@@ -1,0 +1,57 @@
+name: Citizen tutorial isolation
+on:
+  pull_request:
+    paths:
+      - 'js/citizen*.js'
+      - 'js/achievements.js'
+      - 'css/citizen-tutorial.css'
+      - 'cidadao/index.html'
+      - 'conquistas/index.html'
+      - 'worker/portal-tutorials.js'
+      - 'worker/index.js'
+      - 'worker/migrations/portal-tutorials-v1.sql'
+      - 'worker/tests/portal-tutorials.test.mjs'
+      - 'testing/citizen-layout/citizen-tutorial*.mjs'
+      - '.github/workflows/validate-citizen-tutorial.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-tutorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax and authenticated completion without production bindings
+        run: |
+          node --check js/citizen-tutorial.js
+          node --check js/citizen.js
+          node --check js/achievements.js
+          node --check worker/portal-tutorials.js
+          node --test worker/tests/portal-tutorials.test.mjs worker/tests/portal-performance.test.mjs worker/tests/home-transition-security.test.mjs worker/tests/account-first-access-ui.test.mjs worker/tests/portal-interactions.test.mjs testing/citizen-cache/cache-policy.test.mjs
+      - name: Install synthetic browser harness
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Chromium path
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
+          fs.appendFileSync(process.env.GITHUB_ENV,'CHROMIUM_PATH='+chromium.executablePath()+'\n');
+          JS
+      - name: Compact help, native geometry and accessible dismissal
+        run: node testing/citizen-layout/citizen-tutorial-entry.mjs
+      - name: Native components, zero demo requests and responsive visual evidence
+        run: node testing/citizen-layout/citizen-tutorial.mjs
+      - name: Interruption, accounts, browser history, focus and unavailable targets
+        run: node testing/citizen-layout/citizen-tutorial-lifecycle.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: citizen-tutorial-synthetic-evidence
+          include-hidden-files: true
+          path: .local/citizen-tutorial/

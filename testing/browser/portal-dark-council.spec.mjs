@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { auditUser, installAuditFixture } from './dark-audit-fixture.mjs';
 import { inspectSurfaces } from './dark-audit-surfaces.mjs';
+import { projectTutorialAdditions } from './citizen-tutorial-preservation.mjs';
 import { compareAgainstBase } from './dark-audit-base-comparison.mjs';
 import { writeFileSync } from 'node:fs';
 
@@ -216,7 +217,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
   const palettes=[];
   const councilMobileRedesign=!citizen&&isMobile&&theme==='light'&&media==='screen';
   const councilContracts=[];
-  let mobileLayout;
+  let mobileLayout;let tutorialSource=0;
     const result=await compareAgainstBase({page,context,info,route,theme,media,
       // The retained route wrapper uses display:contents and the shared nav
       // moves into portal-shell. Normalize those identities only; every
@@ -226,6 +227,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
         .replace(/ > div\.citizen-route-area:nth-of-type\(\d+\)/g,'')
         .replace(/ > div\.portal-shell:nth-of-type\(\d+\)(?= > nav\.social-mobile-nav)/g,''):selector,
       prepare:async page=>{
+      if(citizen)await projectTutorialAdditions(page,info,route,tutorialSource++===0);
       if(citizen&&media==='print'){
         // Open the real handler without Playwright auto-scrolling a redesigned
         // screen before switching to print; both sources begin at scroll zero.

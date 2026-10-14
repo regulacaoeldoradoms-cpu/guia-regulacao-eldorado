@@ -81,6 +81,19 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Auth hydration during preparation may reapply the synthetic account's
     // stored theme. Select the requested theme after the real view is ready.
     await targetPage.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
+    const nativeCouncilPrint=route==='/conselho/painel/'&&media==='print';
+    if(nativeCouncilPrint){
+      // Media emulation changes CSS but does not dispatch beforeprint. The real
+      // browser print pipeline does, and these native controllers restore their
+      // retained nodes synchronously in that hook. Exercise the same lifecycle
+      // on BOTH sources; keep the native-state and raster gates unchanged.
+      const lifecycle=await targetPage.evaluate(()=>{
+        const state=()=>({summary:Boolean(document.getElementById('councilSummary')),metricsInMain:document.querySelector('.council-metrics')?.parentElement===document.querySelector('.portal-main'),inbox:document.body.hasAttribute('data-council-inbox'),screen:matchMedia('screen and (max-width:900px)').matches,print:matchMedia('print').matches});
+        const before=state();window.dispatchEvent(new Event('beforeprint'));return {before,after:state()};
+      });
+      await info.attach(`council-native-print-lifecycle-${assets===working?'current':'base'}.json`,{body:Buffer.from(JSON.stringify(lifecycle)),contentType:'application/json'});
+      if(lifecycle.after.summary||!lifecycle.after.metricsInMain||lifecycle.after.inbox)throw new Error('Native Council beforeprint did not restore its retained nodes.');
+    }
     await targetPage.emulateMedia({media});
     // Council's retained parse-time controller restores these same nodes on
     // the asynchronous media change. Await that native print state on BOTH
@@ -159,6 +172,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
       await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       await targetPage.waitForTimeout(200);
     }
+    if(nativeCouncilPrint)await targetPage.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
     targetPage.off('pageerror',captureError);
     if(report.theme!==theme||report.media!==media)throw new Error(`Capture mode changed: expected ${theme}/${media}, got ${report.theme}/${report.media}`);
     const captureStability={theme:report.theme,media:report.media,captures,snapshotStable,rasterStable,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
