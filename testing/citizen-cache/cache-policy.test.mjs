@@ -23,7 +23,7 @@ test('shared entries use one released citizen loader and matching dependency URL
   }
   for(const path of ['js/home.js','js/account-section-shell.js'])assert.ok(read(path).includes(`/js/citizen-layout.js?v=${version}`));
   const layout=read('js/citizen-layout.js'),shell=read('js/citizen-mobile-shell.js');
-  assert.ok(citizen.includes(`/js/citizen-compose-attachments.js?v=${version}`));
+  assert.ok(!citizen.includes('<script src="/js/citizen-compose-attachments.js'),'Optional previews must not block HTML parsing');
   assert.ok(citizen.includes(`/css/citizen-compose-refinement.css?v=${version}`));
   assert.ok(layout.includes(`'${version}'`));
   assert.ok(read('js/citizen.js').includes(`/js/citizen-compose-attachments.js?v=${version}`));
