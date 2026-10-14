@@ -43,6 +43,8 @@ jobs:
           import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
           fs.appendFileSync(process.env.GITHUB_ENV,'CHROMIUM_PATH='+chromium.executablePath()+'\n');
           JS
+      - name: Compact help, native geometry and accessible dismissal
+        run: node testing/citizen-layout/citizen-tutorial-entry.mjs
       - name: Native components, zero demo requests and responsive visual evidence
         run: node testing/citizen-layout/citizen-tutorial.mjs
       - name: Interruption, accounts, browser history, focus and unavailable targets

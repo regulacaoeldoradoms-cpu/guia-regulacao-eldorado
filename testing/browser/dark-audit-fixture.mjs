@@ -132,6 +132,7 @@ export async function installAuditFixture(context, { theme='dark', authenticated
       active:null
     };
     else if (url.pathname === '/api/studies/achievements') data = { achievements:[] };
+    else if (url.pathname==='/api/portal-tutorials/citizen' && request.method()==='GET') data = {completion:null};
     else if (url.pathname==='/api/achievements') data = { achievements:[], unlocked:[], summary:{} };
     else {
       unexpected.push({ method:request.method(), path:url.pathname, host:url.hostname });

@@ -9,7 +9,7 @@ const output=path.resolve(process.env.TUTORIAL_OUTPUT||'.local/citizen-tutorial'
 const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}),results=[];
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
 const steps=['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice'];
-async function open(page){await page.locator('[data-tutorial-start]').click();await page.locator('dialog.citizen-tutorial').waitFor();await page.locator('dialog #openNewManifestation').waitFor();return page.locator('dialog.citizen-tutorial');}
+async function open(page){if(!await page.locator('[data-citizen-tutorial-entry]').evaluate(n=>n.open))await page.locator('[data-tutorial-options]').click();await page.locator('[data-tutorial-start]').click();await page.locator('dialog.citizen-tutorial').waitFor();await page.locator('dialog #openNewManifestation').waitFor();return page.locator('dialog.citizen-tutorial');}
 async function advance(d){if(await d.locator('[data-tutorial-next]').isDisabled())console.log('Pending stage:',await d.locator('[data-tutorial-progress]').textContent(),await d.locator('[data-tutorial-feedback]').textContent());await d.locator('[data-tutorial-next]').click();}
 async function screenshot(page,label){await applyTextScale(page);await page.screenshot({path:path.join(output,label+'.png')});}
 async function finish(d,page,label){
@@ -46,7 +46,7 @@ try{
     if(route.request().method()==='POST'){result.completionRequests++;assert.deepEqual(route.request().postDataJSON(),{version:1,steps});assert.equal(await page.locator('dialog.citizen-tutorial').count(),0);return route.fulfill({json:{completion:{version:1,completedAt:'2026-01-01T12:00:00Z'}}});}
     return route.fulfill({json:{completion:null}});
    });
-   await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded',timeout:30000});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor();
+   await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded',timeout:30000});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});
    await page.locator('#openNewManifestation').click();await page.locator('input[value=sugestao]').check();await page.locator('#manifestationSubject').fill('Rascunho sintético preservado');await page.locator('#manifestationDescription').fill('Relato sintético que nunca deve entrar na demonstração nem no registro de progresso.');await page.locator('#manifestationConfirm').check();
    await page.locator('#manifestationFiles').setInputFiles({name:'rascunho-sintetico.png',mimeType:'image/png',buffer:png});await page.locator('.compose-file-thumb.has-preview').waitFor();
    const nativeForm=await page.locator('#newManifestationForm').elementHandle(),nativeFiles=await page.locator('#manifestationFiles').elementHandle(),nativeNotice=await page.locator('#markNotificationsRead').elementHandle();

@@ -74,3 +74,6 @@ for (const [path,method] of [['/api/chat/groups','POST'],['/api/chat/groups/unkn
   assert.equal(network.unexpected.length,1);
   assert.equal(forwarded,false);
 });
+
+test('tutorial read is explicit synthetic metadata and never forwards',async()=>{const {network,response,forwarded}=await fixtureRequest('/api/portal-tutorials/citizen','GET');assert.deepEqual(JSON.parse(response.body),{completion:null});assert.deepEqual(network.unexpected,[]);assert.equal(forwarded,false);});
+for(const [path,method]of [['/api/portal-tutorials/citizen','POST'],['/api/portal-tutorials/citizen/complete','POST']])test(`tutorial mutation ${path} remains fail closed`,async()=>{const {network,response,forwarded}=await fixtureRequest(path,method);assert.equal(response.status,503);assert.equal(network.unexpected.length,1);assert.equal(forwarded,false);});

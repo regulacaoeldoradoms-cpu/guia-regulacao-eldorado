@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { installAuditFixture } from './dark-audit-fixture.mjs';
+import { projectTutorialAdditions } from './citizen-tutorial-preservation.mjs';
 import { compareAgainstBase } from './dark-audit-base-comparison.mjs';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
 import { writeFile } from 'node:fs/promises';
@@ -213,7 +214,9 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const baseSignupPrivateBirth=route==='/cadastro/' ? execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:cadastro/index.html`],{encoding:'utf8'}).includes('id="signupBirthDate"') : false;
     if(mobileRedesign)await context.addInitScript(trackNativeControls,nativeIdentityKey);
     let layout;
+    let tutorialSource=0;
     const prepare=async target=>{
+      if(['/cidadao/','/conquistas/'].includes(route))await projectTutorialAdditions(target,info,route,tutorialSource++===0);
       if(route==='/cadastro/'){
         const current=signupSource++===0,field=target.locator('#signupBirthDate');
         signupContracts.push(await target.evaluate(()=>{const form=document.getElementById('signupForm');return{action:form.getAttribute('action'),method:form.getAttribute('method'),autocomplete:form.getAttribute('autocomplete'),noValidate:form.noValidate,controls:[...form.elements].filter(n=>n.id!=='signupBirthDate').map(n=>({id:n.id,count:document.querySelectorAll('#'+CSS.escape(n.id)).length,tag:n.localName,type:n.getAttribute('type'),name:n.getAttribute('name'),required:Boolean(n.required),minlength:n.getAttribute('minlength'),maxlength:n.getAttribute('maxlength'),autocomplete:n.getAttribute('autocomplete'),role:n.getAttribute('role'),live:n.getAttribute('aria-live'),label:n.labels?.[0]?.textContent.trim()}))};}));

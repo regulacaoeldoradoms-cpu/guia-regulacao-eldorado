@@ -115,10 +115,10 @@ function cloneWorkspace(document){
  return root;
 }
 function mount({document,window,context,user,isBusy,initialize}){
- const host=document.querySelector('.citizen-actions');if(!host||host.querySelector('[data-citizen-tutorial-entry]'))return;
- const token=window.RegulationAuth.getToken(),owner=identity(user),entry=globalThis.document.createElement('div');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
- entry.innerHTML='<button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><p role="status" data-tutorial-status></p>';
- host.after(entry);
+ const host=document.querySelector('.portal-hero');if(!host||host.querySelector('[data-citizen-tutorial-entry]'))return;
+ const token=window.RegulationAuth.getToken(),owner=identity(user),entry=globalThis.document.createElement('details');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
+ entry.innerHTML='<summary data-tutorial-options aria-label="Tutorial do Canal" title="Tutorial do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><button type="button" class="portal-button secondary" data-tutorial-close-options>Fechar ajuda</button><p role="status" data-tutorial-status></p></div>';
+ host.append(entry);
  let completed=readProgress(window.localStorage,user),session=null,disposed=false,starting=false,awarding=false,logoutInProgress=false;
  const status=entry.querySelector('[data-tutorial-status]'),start=entry.querySelector('[data-tutorial-start]'),restart=entry.querySelector('[data-tutorial-restart]');
  const current=()=>!disposed&&!context?.disposed&&window.RegulationAuth.getToken()===token&&identity(window.RegulationAuth.getCachedUser())===owner;
@@ -126,7 +126,7 @@ function mount({document,window,context,user,isBusy,initialize}){
  function persist(){try{window.localStorage.setItem(keyFor(user),JSON.stringify({version:VERSION,steps:completed}));}catch(_){status.textContent='Progresso disponível nesta aba; armazenamento local indisponível.';}entryLabel();}
  function stop({save=true,focus=true}={}){
   const s=session;if(!s)return;session=null;starting=false;s.valid=false;s.abort.abort();s.controllers.forEach(c=>c.dispose?.());s.dialog?.close();s.dialog?.remove();s.savedNodes?.forEach(([node,marker])=>marker.replaceWith(node));s.unlock?.();
-  if(save&&current())persist();if(focus&&current()&&start.isConnected)start.focus({preventScroll:true});
+  if(save&&current())persist();if(focus&&current()&&start.isConnected){entry.open=true;start.focus({preventScroll:true});}
  }
  async function award(){
   if(awarding||!current()||session||completed.length!==STEPS.length)return;
@@ -159,7 +159,7 @@ function mount({document,window,context,user,isBusy,initialize}){
    // listeners; nothing is serialized or rebuilt on return.
    s.savedNodes=[];
    for(const selector of ['main','#newManifestationModal','#composeFilePreview','#manifestationDetailModal']){const node=document.querySelector(selector);if(node){const marker=globalThis.document.createComment('Tutorial preserves native component');node.before(marker);s.savedNodes.push([node,marker]);node.remove();}}
-   (context?.root||globalThis.document.body).append(dialog);dialog.showModal();
+   entry.open=false;(context?.root||globalThis.document.body).append(dialog);dialog.showModal();
    const valid=()=>s.valid&&session===s&&current();
    const feedback=dialog.querySelector('[data-tutorial-feedback]'),next=dialog.querySelector('[data-tutorial-next]');
    function evidence(action){if(!valid()||s.preparing||action!==STEPS[s.index])return;s.evidence=true;next.disabled=false;feedback.textContent='Etapa praticada. Use Avançar para continuar.';}
@@ -255,7 +255,12 @@ function mount({document,window,context,user,isBusy,initialize}){
   finally{if(session===s||!session)starting=false;}
  }
  start.addEventListener('click',()=>{if(starting){stop();status.textContent='Preparação cancelada. Você pode retomar.';}else begin();});restart.addEventListener('click',()=>{if(!current()||session||awarding)return;completed=[];persist();status.textContent='';begin();});
+ entry.querySelector('[data-tutorial-close-options]').addEventListener('click',closeOptions);
+ function closeOptions(){if(starting){stop({focus:false});status.textContent='Preparação cancelada. Você pode retomar.';}entry.open=false;entry.querySelector('summary').focus({preventScroll:true});}
  const abort=new AbortController();
+ globalThis.document.addEventListener('keydown',event=>{if(event.key==='Escape'&&entry.open&&!sessionActive()){event.preventDefault();closeOptions();}},{signal:abort.signal});
+ function sessionActive(){return Boolean(session&&!starting);}
+ globalThis.document.addEventListener('click',event=>{if(entry.open&&!session&&!entry.contains(event.target))entry.open=false;},{capture:true,signal:abort.signal});
  const invalidated=()=>{if(!current()){stop({save:false,focus:false});if(!context&&!logoutInProgress)location.replace(window.RegulationAuth.getToken()?'/cidadao/':'/login/');}};
  globalThis.addEventListener('portal:session-cleared',invalidated,{signal:abort.signal});
  globalThis.addEventListener('portal:session-ready',invalidated,{signal:abort.signal});

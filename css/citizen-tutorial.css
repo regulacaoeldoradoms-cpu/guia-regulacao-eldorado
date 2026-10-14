@@ -1,6 +1,15 @@
-.citizen-tutorial-entry{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 18px;color:var(--portal-theme-text,#173b5d)}
-.citizen-tutorial-entry p{flex-basis:100%;margin:0;line-height:1.5}
+.citizen-tutorial-entry{position:absolute;top:10px;right:12px;width:44px;min-height:44px;z-index:2;margin:0;color:var(--portal-theme-text,#173b5d)}
+.citizen-tutorial-entry[open]{z-index:15001}
+.citizen-tutorial-entry>summary{display:flex;justify-content:flex-end;align-items:flex-start;width:44px;height:44px;min-height:44px;padding:0;list-style:none;cursor:pointer}
+.citizen-tutorial-entry>summary::-webkit-details-marker{display:none}
+.citizen-tutorial-entry>summary>span{display:grid;place-items:center;width:28px;height:28px;border:1px solid currentColor;border-radius:50%;line-height:1;background:var(--portal-theme-surface,#fff)}
+.citizen-tutorial-entry svg{display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.citizen-tutorial-entry>summary:focus-visible{outline:3px solid currentColor;outline-offset:2px}
+.citizen-tutorial-entry .tutorial-entry-panel{position:fixed;right:12px;top:96px;display:flex;flex-wrap:wrap;gap:8px;width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow:auto;box-sizing:border-box;padding:12px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);border:1px solid var(--portal-theme-border,#426982);border-radius:12px;box-shadow:0 8px 24px #0003;z-index:15000}
+.citizen-tutorial-entry .tutorial-entry-panel button{min-height:44px;white-space:normal}
+.citizen-tutorial-entry p{flex-basis:100%;margin:0;line-height:1.5;overflow-wrap:anywhere}
 .citizen-tutorial-entry p:empty{display:none}
+@media(max-width:900px){.citizen-tutorial-entry{top:0;right:0}}
 dialog.citizen-tutorial{box-sizing:border-box;padding:0;width:min(1080px,calc(100% - 16px));height:min(900px,calc(var(--tutorial-height,100dvh) - 16px));max-width:calc(100% - 16px);max-height:calc(var(--tutorial-height,100dvh) - 16px);border:2px solid var(--portal-theme-border,#426982);border-radius:12px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);overflow:hidden}
 dialog.citizen-tutorial[open]{display:flex;flex-direction:column}
 dialog.citizen-tutorial::backdrop{background:rgb(7 25 43 / .75)}
