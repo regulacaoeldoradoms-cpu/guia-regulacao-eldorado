@@ -11,6 +11,31 @@ const rows=[];await fs.mkdir(output,{recursive:true});
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',args:['--no-sandbox']});
 async function active(page,route){await page.waitForFunction(route=>PortalCitizenShell.active().url.pathname===route && !PortalCitizenShell.diagnostics().navigating,route);await ready(page,route);await settle(page);}
 async function noOverflow(page,selector){const result=await page.locator(selector).evaluate(e=>({scroll:e.scrollWidth,width:e.clientWidth}));assert.ok(result.scroll<=result.width+1,`${selector} overflows: ${JSON.stringify(result)}`);}
+async function dashboardReflow(page){
+  // Page overflow alone misses collisions between siblings inside a card/tab.
+  const tabs=await page.locator('.citizen-mobile-tab').evaluateAll(elements=>elements.map(el=>{
+    const box=el.getBoundingClientRect(),range=document.createRange();
+    const content=[...el.children].map(node=>node.getBoundingClientRect());
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+    for(let node=walker.nextNode();node;node=walker.nextNode()){
+      if(!node.textContent.trim())continue;
+      range.selectNodeContents(node);content.push(...range.getClientRects());
+    }
+    return {label:el.textContent,contained:content.every(r=>r.left>=box.left-1&&r.right<=box.right+1&&r.top>=box.top-1&&r.bottom<=box.bottom+1)};
+  }));
+  assert.ok(tabs.length===2&&tabs.every(tab=>tab.contained),`Tab contents stay inside their own target: ${JSON.stringify(tabs)}`);
+  const chip=page.locator('.manifestation-item > .status-chip').first(),original=await chip.textContent();
+  try{
+    for(const status of ['Aguardando sua resposta','Aguardando retorno','Aguardando']){
+      await chip.evaluate((el,text)=>{el.textContent=text;},status);await settle(page);
+      const layout=await chip.evaluate(el=>{
+        const card=el.parentElement,subject=card.querySelector('strong').getBoundingClientRect(),status=el.getBoundingClientRect(),box=card.getBoundingClientRect();
+        return {noCollision:status.top>=subject.bottom-1,contained:status.left>=box.left-1&&status.right<=box.right+1&&status.bottom<=box.bottom+1,readable:el.scrollWidth<=el.clientWidth+1&&el.scrollHeight<=el.clientHeight+1};
+      });
+      assert.deepEqual(layout,{noCollision:true,contained:true,readable:true},`Long status remains in card flow: ${status}`);
+    }
+  }finally{await chip.evaluate((el,text)=>{el.textContent=text;},original);}
+}
 async function accountHelp(page,result,entry){
   const help=page.locator('.citizen-account-help'),summary=help.locator(':scope > summary'),notice=help.locator('#accountEvolutionNotice');
   await help.waitFor({state:'visible'});assert.equal(await summary.textContent(),'Sobre sua conta e privacidade');
@@ -34,12 +59,13 @@ async function accountHelp(page,result,entry){
 try{
   for(const theme of ['light','dark'])for(const width of (process.env.WIDTHS || '320,360,390').split(',').map(Number)){
     const result={theme,width,errors:[],writes:[]};const {page,context,audit}=await newPage(browser,{theme,width},server.origin,result);
+    let notifications=[{id:1,title:'Resposta fictícia do Conselho',protocol:item.protocol,createdAt:item.createdAt,readAt:null},{id:2,title:'Aviso fictício já lido',protocol:item.protocol,createdAt:item.createdAt,readAt:item.createdAt}];
     try{
       await context.route('**/api/council/**',route=>{
         const pathname=new URL(route.request().url()).pathname,method=route.request().method();let payload;
-        if(method!=='GET'){result.writes.push({pathname,method});payload={ok:true};}
+        if(method!=='GET'){result.writes.push({pathname,method});if(pathname==='/api/council/notifications'&&method==='PATCH')notifications=notifications.map(n=>({...n,readAt:item.createdAt}));payload={ok:true};}
         else if(pathname==='/api/council/my')payload={manifestations:[item]};
-        else if(pathname==='/api/council/notifications')payload={notifications:[{id:1,title:'Resposta fictícia do Conselho',protocol:item.protocol,createdAt:item.createdAt,readAt:null}]};
+        else if(pathname==='/api/council/notifications')payload={notifications};
         else if(pathname==='/api/council/manifestations/'+item.protocol)payload={manifestation:item,messages:[],events:[],attachments:[]};
         else return route.fallback();
         return route.fulfill({contentType:'application/json',body:JSON.stringify(payload)});
@@ -49,6 +75,43 @@ try{
       await noOverflow(page,'html');assert.equal(await page.locator('.portal-topbar h1').textContent(),'Portal da regulação');assert.equal(await page.locator('#homeAccountMenu').count(),1);assert.equal(await page.locator('#profileAccountMenu').count(),0);
       assert.ok(await page.locator('.portal-topbar .portal-symbol').getAttribute('src').then(src=>src.includes('portal-regulacao-header_180x180')));
       await page.evaluate(()=>window.__citizenOwners={document,header:document.querySelector('.portal-topbar'),nav:document.querySelector('.social-mobile-nav'),form:document.getElementById('newManifestationForm'),controller:window[Symbol.for('portal.citizenMobilePresentation')]});
+      // New home has no legacy hero badges, heavy card framing or oversized refresh action.
+      assert.equal(await page.locator('#openNewManifestation strong').textContent(),'Nova manifestação');
+      assert.match(await page.locator('.manifestation-item').first().evaluate(el=>getComputedStyle(el,'::before').content),/Sugestão/);
+      assert.equal(await page.locator('.manifestation-item > span:first-child > strong').textContent(),item.subject);
+      await dashboardReflow(page);
+      await page.locator('.citizen-mobile-tab[data-tab=notifications]').click();
+      const noticeStyles=await page.locator('#notificationList .notification').evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return {background:s.backgroundColor,border:s.borderLeftColor,borderWidth:s.borderLeftWidth};}));
+      assert.notDeepEqual(noticeStyles[0],noticeStyles[1],'Unread notice remains individually distinguishable from a read notice');
+      assert.deepEqual(await page.locator('.citizen-notification-state').allTextContents(),['Não lido','Lido']);
+      assert.equal(await page.getByRole('button',{name:/Não lido.*Resposta fictícia do Conselho/}).count(),1,'Read state is part of each accessible name');
+      await page.emulateMedia({media:'print'});await settle(page);
+      assert.equal(await page.locator('.citizen-notification-state').count(),0,'Mobile read-state labels are removed for native print');
+      await page.emulateMedia({media:'screen'});await settle(page);await applyTextScale(page);
+      assert.deepEqual(await page.locator('.citizen-notification-state').allTextContents(),['Não lido','Lido']);
+      await page.setViewportSize({width:1280,height:844});await settle(page);
+      assert.equal(await page.locator('.citizen-notification-state').count(),0,'Mobile read-state labels are removed for native desktop');
+      await page.setViewportSize({width,height:844});await settle(page);await applyTextScale(page);
+      await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
+      const compact=await page.evaluate(()=>{
+        const style=selector=>getComputedStyle(document.querySelector(selector));
+        return {
+          badges:style('.citizen-hero-status').display,
+          heroBackground:style('.portal-hero').backgroundColor,
+          heroDecoration:getComputedStyle(document.querySelector('.portal-hero'),'::after').content,
+          panelBorder:style('#manifestationsCard').borderTopWidth,
+          panelShadow:style('#manifestationsCard').boxShadow,
+          heading:style('#manifestationsCard .citizen-card-head h2').display,
+          refreshIcon:getComputedStyle(document.querySelector('#refreshManifestations'),'::before').content,
+          refreshFont:style('#refreshManifestations').fontSize,
+          refreshWidth:document.querySelector('#refreshManifestations').getBoundingClientRect().width
+        };
+      });
+      assert.equal(compact.badges,'none');assert.equal(compact.heroBackground,'rgba(0, 0, 0, 0)');
+      assert.equal(compact.heroDecoration,'none');
+      assert.equal(compact.panelBorder,'0px');assert.equal(compact.panelShadow,'none');
+      assert.notEqual(compact.heading,'none');assert.match(compact.refreshIcon,/↻/);
+      assert.equal(compact.refreshFont,'0px');assert.ok(compact.refreshWidth<=48);
       const action=await page.locator('#openNewManifestation').boundingBox();assert.ok(action.height>=48);if(process.env.TEXT_SCALE!=='2')assert.ok(action.y+action.height<700,'Main action is reachable in the first screen');
       await page.locator('#homeAccountMenu > summary').click();await page.locator('#portalLogout').waitFor({state:'visible'});await page.keyboard.press('Escape');assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open));
       await page.screenshot({path:path.join(output,`${theme}-${width}-page-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
@@ -63,7 +126,13 @@ try{
       await page.locator('#newPrivacyNotice').waitFor({state:'visible'});assert.match(await page.locator('#newPrivacyNotice').textContent(),/e-mail.*protegido/);
       assert.ok(await page.locator('#newManifestationForm').evaluate(e=>e.scrollTop>0),'Privacy controls are reachable by scrolling the form');await page.screenshot({path:path.join(output,`${theme}-${width}-form-${process.env.TEXT_SCALE || 1}.png`),fullPage:true});
       await page.locator('#newManifestationModal [data-close-modal]').first().click();await page.locator('.citizen-mobile-tab[data-tab=notifications]').click();assert.equal(await page.locator('.citizen-mobile-tab[data-tab=notifications]').getAttribute('aria-selected'),'true');
-      await page.locator('#markNotificationsRead').click();await page.waitForFunction(()=>true);await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
+      await page.locator('#markNotificationsRead').click();await page.waitForFunction(()=>document.querySelectorAll('#notificationList .notification.unread').length===0);await settle(page);
+      assert.deepEqual(await page.locator('.citizen-notification-state').allTextContents(),['Lido','Lido'],'Read acknowledgement updates individual labels');
+      const noticeCounter=page.locator('.citizen-mobile-tab [data-count=notifications]');
+      assert.equal(await noticeCounter.textContent(),'2','Existing counter continues to show total notices');
+      assert.equal(await noticeCounter.getAttribute('aria-label'),'2 notificações','Counter no longer announces unread notices after acknowledgement');
+      assert.ok(!await noticeCounter.evaluate(n=>n.classList.contains('unread')));
+      await page.locator('.citizen-mobile-tab[data-tab=manifestations]').click();
       await page.locator('.manifestation-item').click();await page.locator('#detailContent:not([hidden])').waitFor();assert.equal(await page.locator('#detailSubject').textContent(),item.subject);assert.equal(await page.locator('#detailStatus').textContent(),'Recebida');
       await page.locator('#manifestationDetailModal [data-close-modal]').first().click();
       const docs=audit.documents.length;

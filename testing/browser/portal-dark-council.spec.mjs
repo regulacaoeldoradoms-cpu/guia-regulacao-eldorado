@@ -265,7 +265,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       // The requested phone copy changes only this action. Assert each
       // literal explicitly; all other texts and semantic colors stay exact.
       expect(palettes[0].find(item=>item.selector==='#openNewManifestation')?.text)
-        .toBe('Escrever ao ConselhoSugestão, reclamação, elogio ou denúncia.');
+        .toBe('Nova manifestaçãoSugestão, reclamação, elogio ou denúncia.');
       expect(palettes[1].find(item=>item.selector==='#openNewManifestation')?.text)
         .toBe('Escrever ao ConselhoSugestão, reclamação, elogio ou denúncia.');
       const semanticPalette=items=>items.map(item=>{

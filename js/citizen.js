@@ -165,7 +165,7 @@ const initializeCitizenArea = async (context) => {
       list.innerHTML = '<div class="empty-state"><strong>Nenhuma manifestação ainda.</strong><br>Quando você enviar a primeira, ela aparecerá aqui.</div>';
       return;
     }
-    list.innerHTML = state.manifestations.map((item) => `<button class="manifestation-item" type="button" data-protocol="${escapeHtml(item.protocol)}">
+    list.innerHTML = state.manifestations.map((item) => `<button class="manifestation-item" type="button" data-protocol="${escapeHtml(item.protocol)}" data-manifestation-type="${escapeHtml(item.type)}">
       <span><strong>${escapeHtml(item.subject || item.protocol)}</strong><small>${escapeHtml(item.protocol)} · ${escapeHtml(typeLabels[item.type] || item.type)} · ${escapeHtml(formatDate(item.createdAt))}</small></span>
       <span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span>
     </button>`).join('');

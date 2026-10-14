@@ -8,6 +8,27 @@ const namespace = 'portal-pages-20261009-pets-combined-8';
 const shared = ['/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/', '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/'];
 const source = fs.readFileSync(new URL('../../portal-sw.js', import.meta.url), 'utf8');
 
+test('shared entries use one released citizen loader and matching dependency URLs',()=>{
+  const read=path=>fs.readFileSync(new URL('../../'+path,import.meta.url),'utf8');
+  const citizen=read('cidadao/index.html');
+  const version=citizen.match(/\/js\/citizen-layout\.js\?v=([^"']+)/)?.[1];
+  assert.ok(version);
+  for(const route of shared){
+    const html=read(route==='/'?'index.html':route.slice(1)+'index.html');
+    for(const name of ['citizen-layout','citizen-mobile-shell','account-section-shell','home']){
+      for(const url of html.matchAll(new RegExp('/js/'+name+'\\.js\\?v=([^"\']+)','g'))){
+        assert.equal(url[1],version,`${route}: ${name} must not reuse an obsolete cached owner`);
+      }
+    }
+  }
+  for(const path of ['js/home.js','js/account-section-shell.js'])assert.ok(read(path).includes(`/js/citizen-layout.js?v=${version}`));
+  const layout=read('js/citizen-layout.js'),shell=read('js/citizen-mobile-shell.js');
+  assert.ok(layout.includes(`/js/citizen-mobile-presentation.js?v=${version}`));
+  assert.ok(layout.includes(`path === '/css/citizen-mobile-presentation.css' ? '${version}'`));
+  assert.ok(shell.includes(`/js/account-section-shell.js?v=${version}`));
+  for(const entry of ['citizen-mobile-app','home','citizen'])assert.ok(shell.includes(`entry === '${entry}' ? '${version}'`));
+});
+
 function fixture(network) {
   const stores = new Map(), handlers = new Map(), calls = [], timers = new Map();
   let nextTimer = 0;
@@ -138,7 +159,7 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-3">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261013-4">';
 test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
   for(const [path,body,expected] of [['/cidadao/','OLD',8000],['/perfil/','OLD',2500]]){
     let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));await f.seed(path,body);await f.seed('/perfil/','PROFILE-UNCHANGED');await f.seed('/mascotes/','PETS-UNCHANGED');
