@@ -75,6 +75,7 @@ try{
    const network=await page.evaluate(()=>__tutorialNetwork.filter(n=>n.demo&&n.path.startsWith('/api/')));assert.deepEqual(network,[]);
    const persistence=await page.evaluate(()=>Object.entries(localStorage).filter(([k])=>k.startsWith('portal.citizen.tutorial.')).map(([,v])=>JSON.parse(v)));assert.deepEqual(persistence,[{version:1,steps}]);
    await page.locator('[data-tutorial-restart]').click();await page.locator('dialog [data-tutorial-skip]').click();assert.equal(result.completionRequests,1);
+   await page.locator('[data-tutorial-close-options]').click();assert.equal(await page.locator('[data-citizen-tutorial-entry]').evaluate(n=>n.open),false);
    await page.locator('#openNewManifestation').click();assert.equal(await page.locator('#manifestationDescription').inputValue(),before.text);await page.locator('#newManifestationModal .citizen-modal-close').click();
    const wire=await page.evaluate(()=>__tutorialNetwork);assert(!wire.some(n=>n.path.includes('synthetic-forbidden')));assert(!wire.some(n=>n.method==='POST'&&n.path.startsWith('/api/council/')));
    assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);result.passed=true;result.zeroDemoApiRequests=true;results.push(result);console.log(JSON.stringify(result));
