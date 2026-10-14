@@ -84,6 +84,7 @@ try{
         return {
           badges:style('.citizen-hero-status').display,
           heroBackground:style('.portal-hero').backgroundColor,
+          heroDecoration:getComputedStyle(document.querySelector('.portal-hero'),'::after').content,
           panelBorder:style('#manifestationsCard').borderTopWidth,
           panelShadow:style('#manifestationsCard').boxShadow,
           heading:style('#manifestationsCard .citizen-card-head h2').display,
@@ -93,6 +94,7 @@ try{
         };
       });
       assert.equal(compact.badges,'none');assert.equal(compact.heroBackground,'rgba(0, 0, 0, 0)');
+      assert.equal(compact.heroDecoration,'none');
       assert.equal(compact.panelBorder,'0px');assert.equal(compact.panelShadow,'none');
       assert.notEqual(compact.heading,'none');assert.match(compact.refreshIcon,/↻/);
       assert.equal(compact.refreshFont,'0px');assert.ok(compact.refreshWidth<=48);

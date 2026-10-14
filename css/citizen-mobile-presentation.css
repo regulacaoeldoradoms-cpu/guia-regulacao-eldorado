@@ -3,6 +3,7 @@
 @media screen and (max-width:900px){
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-main{padding:12px 12px 24px!important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero{display:block!important;width:auto!important;min-height:0!important;margin:0 0 8px!important;padding:0!important;gap:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}
+body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero::after{content:none!important;display:none!important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-eyebrow{display:none!important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero-copy{margin:0!important;padding:0!important;}
 body.citizen-readable-layout.mobile-citizen-mode.citizen-mobile-app.citizen-mobile-presentation .portal-hero h2{font-size:24px!important;line-height:1.25!important;letter-spacing:0!important;margin:0 0 3px!important;color:var(--portal-theme-text,#173b5d)!important;}
