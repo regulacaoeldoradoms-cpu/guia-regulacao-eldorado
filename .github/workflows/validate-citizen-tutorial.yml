@@ -30,7 +30,7 @@ jobs:
           node --check js/citizen.js
           node --check js/achievements.js
           node --check worker/portal-tutorials.js
-          node --test worker/tests/portal-tutorials.test.mjs
+          node --test worker/tests/portal-tutorials.test.mjs worker/tests/portal-performance.test.mjs worker/tests/home-transition-security.test.mjs worker/tests/account-first-access-ui.test.mjs worker/tests/portal-interactions.test.mjs testing/citizen-cache/cache-policy.test.mjs
       - name: Install synthetic browser harness
         working-directory: testing/browser
         run: |

@@ -200,6 +200,7 @@ try {
           data = { identity: {} };
         else if (u.pathname === "/api/pets/me") data = { state: petState };
         else if (u.pathname === "/api/pets/catalog") data = petCatalog();
+        else if (u.pathname === "/api/portal-tutorials/citizen" && r.request().method() === "GET") data = { completion:null };
         else if (u.pathname === "/api/pets/achievements")
           data = { achievements: [] };
         return r.fulfill({
