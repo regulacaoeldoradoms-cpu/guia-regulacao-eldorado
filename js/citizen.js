@@ -701,7 +701,7 @@ const initializeCitizenArea = async (context) => {
     try {
       if (!globalThis.PortalCitizenTutorial) await new Promise((resolve, reject) => {
         const script=globalThis.document.createElement('script');
-        script.src='/js/citizen-tutorial.js?v=20261014-citizen-tutorial-1';
+        script.src='/js/citizen-tutorial.js?v=20261014-citizen-tutorial-3';
         const timer=setTimeout(()=>{script.remove();reject(new Error('Tutorial indisponível'));},8000);
         script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Tutorial indisponível'));};
         globalThis.document.head.append(script);

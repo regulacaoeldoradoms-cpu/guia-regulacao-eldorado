@@ -103,7 +103,10 @@ function cloneWorkspace(document){
  root.querySelector('input[name="manifestationPrivacy"]:not([value="identificada"])').checked=true;
  root.querySelectorAll('details').forEach(n=>n.open=false);
  for(const id of ['manifestationList','notificationList','manifestationFileList','newManifestationStatus','composeDraftNotice','replyStatus','attachmentList','messageThread','timeline','detailProtocol','detailMeta','detailSubject','detailDescription','detailStatus','detailPrivacy'])root.querySelector('#'+id)?.replaceChildren();
- root.querySelectorAll('.citizen-modal').forEach(n=>{n.classList.remove('open');n.setAttribute('aria-hidden','true');n.setAttribute('aria-modal','false');n.inert=false;});
+ root.querySelectorAll('.citizen-modal').forEach(n=>{n.classList.remove('open');n.setAttribute('aria-hidden','true');n.setAttribute('aria-modal','false');n.setAttribute('role','dialog');if(n.querySelector('h2')?.id)n.setAttribute('aria-labelledby',n.querySelector('h2').id);n.inert=false;
+  // The outer tutorial owns modal focus. Embedded native dialogs must keep
+  // the guide available to assistive technology, including image previews.
+  const set=n.setAttribute.bind(n);n.setAttribute=(name,value)=>set(name,name==='aria-modal'?'false':value);});
  root.querySelectorAll('a').forEach(n=>{n.removeAttribute('href');n.removeAttribute('download');});
  // The real controller's context header lookups stay within this synthetic root.
  root.querySelector('#composeFilePreview img')?.removeAttribute('src');
@@ -203,6 +206,7 @@ function mount({document,window,context,user,isBusy,initialize}){
     if(!valid()){event.preventDefault();event.stopImmediatePropagation();return;}
     if(event.target.closest('#composeChooseFiles,#manifestationFiles,#attachmentFile')){event.preventDefault();event.stopImmediatePropagation();syntheticFile();evidence('files');}
    },{capture:true,signal:s.abort.signal});
+   root.addEventListener('keydown',event=>{if(event.key==='Escape'&&s.previewed&&root.querySelector('#composeFilePreview.open'))evidence('preview');},{capture:true,signal:s.abort.signal});
    root.addEventListener('change',event=>{
     if(event.target.name==='manifestationType')evidence(event.target.value);
     if(event.target.name==='manifestationPrivacy')evidence(event.target.value==='identificada'?'identified':'protected');

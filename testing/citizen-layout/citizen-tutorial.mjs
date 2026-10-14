@@ -13,12 +13,12 @@ async function open(page){await page.locator('[data-tutorial-start]').click();aw
 async function advance(d){if(await d.locator('[data-tutorial-next]').isDisabled())console.log('Pending stage:',await d.locator('[data-tutorial-progress]').textContent(),await d.locator('[data-tutorial-feedback]').textContent());await d.locator('[data-tutorial-next]').click();}
 async function screenshot(page,label){await applyTextScale(page);await page.screenshot({path:path.join(output,label+'.png')});}
 async function finish(d,page,label){
- await d.locator('#openNewManifestation').click();await advance(d);
+ await d.locator('#openNewManifestation').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await advance(d);
  for(const type of ['sugestao','reclamacao','elogio','denuncia']){await d.locator(`input[value=${type}]`).check();await advance(d);}
  await d.locator('[data-tutorial-example]').click();await screenshot(page,label+'-report');await advance(d);
  await d.locator('[data-tutorial-example]').click();await advance(d);
  await d.locator('#composeAttachments summary').click();await d.locator('#composeChooseFiles').click();await advance(d);
- await d.locator('.compose-file-thumb.has-preview').waitFor();await d.locator('.compose-file-thumb').click();await screenshot(page,label+'-preview');await d.locator('[data-close-local-preview]').click();await advance(d);
+ await d.locator('.compose-file-thumb.has-preview').waitFor();await d.locator('.compose-file-thumb').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await screenshot(page,label+'-preview');await page.keyboard.press('Escape');await advance(d);
  await d.locator('.compose-file-remove').click();await advance(d);
  await d.locator('input[value=identificada]').check();await advance(d);
  await d.locator('input[name=manifestationPrivacy]:not([value=identificada])').check();await advance(d);
@@ -63,7 +63,7 @@ try{
     let xhr=false;try{const x=new XMLHttpRequest();x.open('POST','/api/synthetic-forbidden');x.send('synthetic');}catch(e){xhr=e.name==='AbortError';}
     return {caught,xhr,ws,beacon:navigator.sendBeacon('/api/synthetic-forbidden','synthetic'),webSocket:WebSocket.prototype.send.call({},'synthetic')};
    });assert.deepEqual(barriers,{caught:['AbortError','AbortError','AbortError','AbortError'],xhr:true,ws:true,beacon:false,webSocket:undefined});
-   await d.locator('#openNewManifestation').click();await advance(d);await d.locator('input[value=sugestao]').check();await advance(d);
+   await d.locator('#openNewManifestation').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await advance(d);await d.locator('input[value=sugestao]').check();await advance(d);
    await d.locator('[data-tutorial-back]').click();await d.locator('input[value=sugestao]').check();await advance(d);
    await d.locator('[data-tutorial-pause]').click();assert.equal(result.completionRequests,0);
    assert.deepEqual(await nativeForm.evaluate(n=>({subject:n.querySelector('#manifestationSubject').value,text:n.querySelector('#manifestationDescription').value,confirm:n.querySelector('#manifestationConfirm').checked})),before);
