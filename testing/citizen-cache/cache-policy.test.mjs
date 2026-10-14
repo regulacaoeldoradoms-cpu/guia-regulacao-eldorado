@@ -26,8 +26,8 @@ test('shared entries use one released citizen loader and matching dependency URL
   assert.ok(citizen.includes(`/js/citizen-compose-attachments.js?v=${version}`));
   assert.ok(citizen.includes(`/css/citizen-compose-refinement.css?v=${version}`));
   assert.ok(layout.includes(`'${version}'`));
-  assert.ok(shell.includes(`dependencies.push('/js/citizen-compose-attachments.js?v=${version}')`));
-  assert.ok(shell.includes("path.includes('citizen-compose-attachments') ? window.PortalCitizenComposeAttachments"));
+  assert.ok(read('js/citizen.js').includes(`/js/citizen-compose-attachments.js?v=${version}`));
+  assert.ok(!shell.includes('citizen-compose-attachments.js'),'Optional previews must not become a mandatory route dependency');
   assert.ok(layout.includes(`/js/citizen-mobile-presentation.js?v=${version}`));
   assert.ok(layout.includes(`path === '/css/citizen-mobile-presentation.css' ? '${version}'`));
   assert.ok(shell.includes(`/js/account-section-shell.js?v=${version}`));

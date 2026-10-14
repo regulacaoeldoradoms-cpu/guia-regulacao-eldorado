@@ -300,11 +300,12 @@
     try {
     const loadDependencies = async () => {
       const dependencies = ['/js/account-section-shell.js?v=20261014-citizen-compose-5'];
-      if (url.pathname === '/cidadao/') dependencies.push('/js/citizen-compose-attachments.js?v=20261014-citizen-compose-5');
+      // Preview assets are optional and owned by the citizen controller. A
+      // failed image helper must not discard an otherwise usable Citizen area.
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
       if (['/cidadao/', '/conquistas/'].includes(url.pathname)) dependencies.push('/js/account-levels.js?v=20261010-mobile-shell-1');
       for (const path of dependencies) {
-        const api = path.includes('citizen-compose-attachments') ? window.PortalCitizenComposeAttachments : path.includes('account-section-shell') ? window.PortalAccountSection : path.includes('social-feed') ? window.PortalSocialFeed : window.AccountLevels;
+        const api = path.includes('account-section-shell') ? window.PortalAccountSection : path.includes('social-feed') ? window.PortalSocialFeed : window.AccountLevels;
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {

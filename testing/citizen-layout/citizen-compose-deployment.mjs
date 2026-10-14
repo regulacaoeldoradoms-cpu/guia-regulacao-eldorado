@@ -7,15 +7,15 @@ const old=path=>cp.execFileSync(git,['-c','safe.directory='+process.cwd().replac
 const oldScripts=new Map(['home','citizen-layout','citizen-mobile-shell','account-section-shell','citizen-mobile-app','citizen-mobile-presentation'].map(name=>['/js/'+name+'.js',old('js/'+name+'.js')]));
 const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}),reports=[];
 const output='.local/compose-deployment';await fs.mkdir(output,{recursive:true});
-try {for(const mode of (process.env.DEPLOY_CASE||'cached-controller,current-controller,legacy-markup,helper-unavailable').split(',')) {
+try {for(const mode of (process.env.DEPLOY_CASE||'cached-controller,current-controller,legacy-markup,helper-unavailable,current-shell-unavailable').split(',')) {
  const result={errors:[]},{page,context,audit}=await newPage(browser,{width:390,theme:'light',seedOnce:true},server.origin,result),writes=[],resources=[];
  const protocol='CMS-2026-000071',item={protocol,type:'reclamacao',subject:'Transição sintética',description:'Relato sintético de transição de versões.',status:'recebida',privacyMode:'sigilosa',createdAt:'2026-10-14T00:00:00Z'};
  await context.route(server.origin+'/**',async route=>{const u=new URL(route.request().url());resources.push(u.pathname+u.search);
-  if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:old('index.html')});
+  if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:mode==='current-shell-unavailable'?await fs.readFile('index.html','utf8'):old('index.html')});
   if(u.pathname==='/cidadao/')return route.fulfill({contentType:'text/html',body:mode==='legacy-markup'?old('cidadao/index.html'):await fs.readFile('cidadao/index.html','utf8')});
-  if(oldScripts.has(u.pathname))return route.fulfill({contentType:'text/javascript',body:oldScripts.get(u.pathname)});
+  if(oldScripts.has(u.pathname)&&mode!=='current-shell-unavailable')return route.fulfill({contentType:'text/javascript',body:oldScripts.get(u.pathname)});
   if(u.pathname==='/js/citizen.js')return route.fulfill({contentType:'text/javascript',body:mode==='cached-controller'?old('js/citizen.js'):await fs.readFile('js/citizen.js','utf8')});
-  if(u.pathname==='/js/citizen-compose-attachments.js'&&mode==='helper-unavailable')return route.fulfill({status:503,body:'Synthetic unavailable helper'});
+  if(u.pathname==='/js/citizen-compose-attachments.js'&&['helper-unavailable','current-shell-unavailable'].includes(mode))return route.fulfill({status:503,body:'Synthetic unavailable helper'});
   return route.fallback();
  });
  await context.route('**/api/council/**',r=>{const p=new URL(r.request().url()).pathname;if(r.request().method()==='POST'){writes.push(p);return r.fulfill({json:p.endsWith('/attachments')?{ok:true}:{manifestation:item}});}return r.fulfill({json:p.endsWith(protocol)?{manifestation:item,messages:[],events:[],attachments:[]}:{manifestations:writes.length?[item]:[],notifications:[]}});});
