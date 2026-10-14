@@ -94,7 +94,7 @@ test('todas as rotas ativas carregam uma única camada central versionada', () =
     const version = IMMEDIATE_THEME_ROUTES.has(filename) ? '20261013-theme-immediate-1' : '20260923-1';
     assert.equal((html.match(new RegExp('portal-theme\\.js\\?v=' + version, 'g')) || []).length, 1, `${filename}: bootstrap de tema`);
     assert.equal((html.match(/portal-interactions\.css\?v=20260924-dark-final-1/g) || []).length, 1, `${filename}: CSS central`);
-    const interactionVersion = IMMEDIATE_THEME_ROUTES.has(filename) ? '20261013-theme-immediate-1' : '20260923-2';
+    const interactionVersion = IMMEDIATE_THEME_ROUTES.has(filename) ? '20261014-citizen-auto-1' : '20260923-2';
     assert.equal((html.match(new RegExp('portal-interactions\\.js\\?v=' + interactionVersion, 'g')) || []).length, 1, `${filename}: JS central`);
   }
 });
@@ -198,7 +198,7 @@ test('modo claro e escuro são globais, sincronizáveis e controlados em Configu
   assert.match(settings, /id="interfaceThemeDark"/);
   assert.match(settings, /Modo claro/);
   assert.match(settings, /Modo escuro/);
-  assert.match(settings, /portal-interactions\.js\?v=20261013-theme-immediate-1/);
+  assert.match(settings, /portal-interactions\.js\?v=20261014-citizen-auto-1/);
 
   await api.setPreferences({ theme: 'dark' });
   assert.equal(api.getPreferences().theme, 'dark');

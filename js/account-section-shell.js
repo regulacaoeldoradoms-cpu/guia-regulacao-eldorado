@@ -42,7 +42,7 @@
         styles.href = '/css/citizen-readable-layout.css?v=20261011-citizen-panel-1';
         document.head.appendChild(styles);
         const layout = document.createElement('script');
-        layout.src = '/js/citizen-layout.js?v=20261014-citizen-help-1';
+        layout.src = '/js/citizen-layout.js?v=20261014-citizen-auto-1';
         document.head.appendChild(layout);
       }
     }

@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'js/citizen*.js'
+      - 'js/portal-interactions.js'
       - 'js/achievements.js'
       - 'css/citizen-tutorial.css'
       - 'cidadao/index.html'
@@ -29,6 +30,7 @@ jobs:
         run: |
           node --check js/citizen-tutorial.js
           node --check js/citizen.js
+          node --check js/portal-interactions.js
           node --check js/achievements.js
           node --check worker/portal-tutorials.js
           node --test worker/tests/portal-tutorials.test.mjs worker/tests/portal-performance.test.mjs worker/tests/home-transition-security.test.mjs worker/tests/account-first-access-ui.test.mjs worker/tests/portal-interactions.test.mjs testing/citizen-cache/cache-policy.test.mjs
@@ -52,6 +54,8 @@ jobs:
         run: node testing/citizen-layout/citizen-help-existing-account.mjs
       - name: Native components, zero demo requests and responsive visual evidence
         run: node testing/citizen-layout/citizen-tutorial.mjs
+      - name: Automatic task completion, repeated actions and confirmed fields
+        run: node testing/citizen-layout/citizen-tutorial-auto.mjs
       - name: Interruption, accounts, browser history, focus and unavailable targets
         run: node testing/citizen-layout/citizen-tutorial-lifecycle.mjs
       - uses: actions/upload-artifact@v4

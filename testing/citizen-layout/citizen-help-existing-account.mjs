@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium,user}=await import('./mobile-profile-refinement.mjs');
+const {stage}=await import('./citizen-tutorial-actions.mjs');
 const output=path.resolve(process.env.TUTORIAL_OUTPUT||'.local/citizen-help-evidence');
 await fs.mkdir(output,{recursive:true});
 const existing={...user,createdAt:'2025-01-01T00:00:00Z',mustChangePassword:false};
@@ -54,8 +55,8 @@ try{
    await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});
    const handles=await draft(page);let d=await start(page);
    assert(!(await d.textContent()).includes('Texto sintético privado'));
-   await d.locator('#openNewManifestation').click();await d.locator('[data-tutorial-next]').click();
-   await d.locator('input[value=sugestao]').check();await d.locator('[data-tutorial-next]').click();
+   await d.locator('#openNewManifestation').click();await stage(d,2);
+   await d.locator('input[value=sugestao]').check();await stage(d,3);
    await d.locator('[data-tutorial-pause]').click();await preserved(handles);
    d=await start(page);assert.match(await d.locator('[data-tutorial-progress]').textContent(),/Etapa 3 de/);await d.locator('[data-tutorial-skip]').click();
    await page.locator('[data-tutorial-restart]').click();d=page.locator('dialog.citizen-tutorial');assert.match(await d.locator('[data-tutorial-progress]').textContent(),/Etapa 1 de/);
@@ -111,10 +112,10 @@ try{
   await d.locator('[data-tutorial-skip]').click();result.latestPrivacyAfterPendingRead=true;
  });
  await run('cached-old-module',{width:390,theme:'light'},async({page,context,audit,result})=>{
-  await context.addInitScript(()=>window.PortalCitizenTutorial={version:1,mount(){throw new Error('Obsolete launcher must be replaced');}});
+  await context.addInitScript(()=>window.PortalCitizenTutorial={version:1,launcherVersion:2,mount(){throw new Error('Obsolete launcher must be replaced');}});
   await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});
-  assert.equal(await page.evaluate(()=>PortalCitizenTutorial.launcherVersion),2);
-  assert(audit.resources.includes('/js/citizen-tutorial.js?v=20261014-citizen-help-1'));
+  assert.equal(await page.evaluate(()=>PortalCitizenTutorial.launcherVersion),3);
+  assert(audit.resources.includes('/js/citizen-tutorial.js?v=20261014-citizen-auto-1'));
   const d=await start(page);await d.locator('[data-tutorial-skip]').click();result.obsoleteModuleReplaced=true;
  });
 }finally{await browser.close();await new Promise(resolve=>server.server.close(resolve));}

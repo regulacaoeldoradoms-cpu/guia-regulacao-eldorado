@@ -5,33 +5,30 @@ import path from 'node:path';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium,user}=await import('./mobile-profile-refinement.mjs');
 const {applyTextScale}=await import('./text-scale.mjs');
+const {stage}=await import('./citizen-tutorial-actions.mjs');
 const output=path.resolve(process.env.TUTORIAL_OUTPUT||'.local/citizen-tutorial');await fs.mkdir(output,{recursive:true});
 const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}),results=[];
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=','base64');
 const steps=['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice'];
 async function open(page){if(!await page.locator('[data-citizen-tutorial-entry]').evaluate(n=>n.open))await page.locator('[data-tutorial-options]').click();await page.locator('[data-tutorial-start]').click();await page.locator('dialog.citizen-tutorial').waitFor();await page.locator('dialog #openNewManifestation').waitFor();return page.locator('dialog.citizen-tutorial');}
-async function advance(d){if(await d.locator('[data-tutorial-next]').isDisabled())console.log('Pending stage:',await d.locator('[data-tutorial-progress]').textContent(),await d.locator('[data-tutorial-feedback]').textContent());await d.locator('[data-tutorial-next]').click();}
 async function screenshot(page,label){await applyTextScale(page);await page.screenshot({path:path.join(output,label+'.png')});}
 async function finish(d,page,label){
- await d.locator('#openNewManifestation').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await advance(d);
- for(const type of ['sugestao','reclamacao','elogio','denuncia']){await d.locator(`input[value=${type}]`).check();await advance(d);}
- await d.locator('[data-tutorial-example]').click();await screenshot(page,label+'-report');await advance(d);
- await d.locator('[data-tutorial-example]').click();await advance(d);
- await d.locator('#composeAttachments summary').click();await d.locator('#composeChooseFiles').click();await advance(d);
- await d.locator('.compose-file-thumb.has-preview').waitFor();await d.locator('.compose-file-thumb').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await screenshot(page,label+'-preview');await page.keyboard.press('Escape');await advance(d);
- await d.locator('.compose-file-remove').click();await advance(d);
- await d.locator('input[value=identificada]').check();await advance(d);
- await d.locator('input[name=manifestationPrivacy]:not([value=identificada])').check();await advance(d);
- await screenshot(page,label+'-privacy');
+ await stage(d,1);await screenshot(page,label+'-start');await d.locator('#openNewManifestation').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await stage(d,2);
+ for(const [index,type] of ['sugestao','reclamacao','elogio','denuncia'].entries()){await d.locator(`input[value=${type}]`).check();await stage(d,index+3);}
+ await screenshot(page,label+'-report');await d.locator('[data-tutorial-example]').click();await stage(d,7);
+ await d.locator('[data-tutorial-example]').click();await stage(d,8);
+ await d.locator('#composeAttachments summary').click();await d.locator('#composeChooseFiles').click();await stage(d,9);
+ await d.locator('.compose-file-thumb.has-preview').waitFor();await d.locator('.compose-file-thumb').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await screenshot(page,label+'-preview');await page.keyboard.press('Escape');await stage(d,10);
+ await d.locator('.compose-file-remove').click();await stage(d,11);
+ await d.locator('input[value=identificada]').check();await stage(d,12);await screenshot(page,label+'-privacy');
+ await d.locator('input[name=manifestationPrivacy]:not([value=identificada])').check();await stage(d,13);
  await d.locator('#manifestationConfirm').check();await d.locator('#submitManifestation').focus();await page.keyboard.press('Enter');
  // Additional submit paths are safe, including native submit(), Enter, and a
  // burst of programmatic duplicate events through the same native controller.
  await d.locator('#newManifestationForm').evaluate(n=>{n.submit();n.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
- await d.locator('#detailContent').waitFor({state:'visible'});await advance(d);
- await d.locator('#manifestationDetailModal [data-close-modal]').click();await d.locator('#manifestationList [data-protocol]').click();await advance(d);
- await d.locator('[data-tutorial-example]').click();await d.locator('#replyButton').click();await advance(d);
- await d.locator('#manifestationDetailModal [data-close-modal]').click();await d.locator('#notificationList [data-notification]').click();
- await screenshot(page,label+'-complete');await advance(d);await page.locator('dialog.citizen-tutorial').waitFor({state:'detached'});
+ await stage(d,14);await screenshot(page,label+'-tracking');await d.locator('#manifestationList [data-protocol]').click();await stage(d,15);
+ await d.locator('[data-tutorial-example]').click();await d.locator('#replyButton').click();await stage(d,16);
+ await screenshot(page,label+'-notice');await d.locator('#notificationList [data-notification]').click();await page.locator('dialog.citizen-tutorial').waitFor({state:'detached'});
 }
 try{
  for(const width of (process.env.WIDTHS||'320,360,390,412,1280').split(',').map(Number))for(const theme of ['light','dark'])for(const scale of (process.env.SCALES||'1,2').split(',').map(Number)){
@@ -63,8 +60,8 @@ try{
     let xhr=false;try{const x=new XMLHttpRequest();x.open('POST','/api/synthetic-forbidden');x.send('synthetic');}catch(e){xhr=e.name==='AbortError';}
     return {caught,xhr,ws,beacon:navigator.sendBeacon('/api/synthetic-forbidden','synthetic'),webSocket:WebSocket.prototype.send.call({},'synthetic')};
    });assert.deepEqual(barriers,{caught:['AbortError','AbortError','AbortError','AbortError'],xhr:true,ws:true,beacon:false,webSocket:undefined});
-   await d.locator('#openNewManifestation').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await advance(d);await d.locator('input[value=sugestao]').check();await advance(d);
-   await d.locator('[data-tutorial-back]').click();await d.locator('input[value=sugestao]').check();await advance(d);
+   await d.locator('#openNewManifestation').click();assert.equal(await d.locator('.citizen-modal[aria-modal=true]').count(),0);await stage(d,2);await d.locator('input[value=sugestao]').check();await stage(d,3);
+   await d.locator('[data-tutorial-back]').click();await stage(d,2);await d.locator('input[value=sugestao]').click();await stage(d,3);
    await d.locator('[data-tutorial-pause]').click();assert.equal(result.completionRequests,0);
    assert.deepEqual(await nativeForm.evaluate(n=>({subject:n.querySelector('#manifestationSubject').value,text:n.querySelector('#manifestationDescription').value,confirm:n.querySelector('#manifestationConfirm').checked})),before);
    assert.equal(await nativeFiles.evaluate(n=>n.files[0].name),'rascunho-sintetico.png');

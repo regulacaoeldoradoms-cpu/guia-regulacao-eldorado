@@ -8,7 +8,7 @@ function ensureComposeHelper() {
   if (globalThis.PortalCitizenComposeAttachments?.create) return Promise.resolve(globalThis.PortalCitizenComposeAttachments);
   if (!composeHelperPromise) composeHelperPromise=new Promise((resolve,reject)=>{
     const script=globalThis.document.createElement('script');
-    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-help-1';
+    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-auto-1';
     const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve(globalThis.PortalCitizenComposeAttachments);};
     const timer=setTimeout(()=>finish(new Error('Prévia local indisponível')),8000);
     script.onload=()=>finish(globalThis.PortalCitizenComposeAttachments?.create?null:new Error('Prévia local indisponível'));
@@ -724,12 +724,12 @@ const initializeCitizenArea = async (context) => {
     if (loadButton) loadButton.disabled = true;
     if (loadStatus) loadStatus.textContent = 'Carregando ajuda…';
     try {
-      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 2) await new Promise((resolve, reject) => {
+      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 3) await new Promise((resolve, reject) => {
         const script=globalThis.document.createElement('script');
-        script.src='/js/citizen-tutorial.js?v=20261014-citizen-help-1';
+        script.src='/js/citizen-tutorial.js?v=20261014-citizen-auto-1';
         const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve();};
         const timer=setTimeout(()=>finish(new Error('Tutorial indisponível')),8000);
-        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===2?null:new Error('Tutorial indisponível'));
+        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===3?null:new Error('Tutorial indisponível'));
         script.onerror=()=>finish(new Error('Tutorial indisponível'));
         globalThis.document.head.append(script);
       });

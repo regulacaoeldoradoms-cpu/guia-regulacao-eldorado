@@ -1,0 +1,32 @@
+# Tutorial com avanço por tarefa — candidata local
+
+Base remota reconferida: `740a12d70a8c49130729e53031cd5dd3927d4232` (merge PR656). Branch isolada `feat/citizen-tutorial-auto-20261014`, criada a partir de `6742832da6ae0c19296d4508264754eccf390a4f`. O commit/branch anterior de Ajuda e os demais checkouts permanecem preservados. Sem push, novo PR, merge, publicação, alteração de flag ou aplicação de migração.
+
+## Plano e comportamento
+
+1. Preservar a Ajuda visível, carga independente/retry, foco e contas existentes do patch anterior.
+2. Trocar Avançar pela prática no componente real, com uma transição por ação; encurtar instruções mantendo fonte e avisos essenciais.
+3. Exercitar sequência completa, ações repetidas, campos já preenchidos, teclado, volta/interrupção, renderização e zero APIs em demonstração.
+4. Preparar patch/evidência local para decisão explícita antes de qualquer publicação.
+
+- As mesmas 16 tarefas e o mesmo controlador nativo continuam em uso, com adaptador sintético e todas as barreiras de efeitos. Nenhuma UI paralela, mudança de formulário/home ou de permissões.
+- O botão genérico **Avançar foi removido**. Seleção correta, anexo local, fechamento de prévia, remoção, envio/resposta simulados e abertura de protocolo/aviso concluem a tarefa correspondente. A última abertura de aviso encerra o percurso; a conquista só é solicitada depois da restauração do portal e das 16 tarefas ordenadas.
+- Assunto/relato e detalhes são validados ao terminar a edição (`change`/saída do campo), nunca a cada caractere. Usar exemplo preenche os campos fictícios e valida somente essa tarefa. Campo já válido pode ser revisado e confirmado ao sair; opção já marcada pode ser acionada novamente por clique, Espaço ou Enter. Preparação, volta e retomada não concedem etapas automaticamente por valores já presentes.
+- Eventos carregam a revisão da tarefa em que começaram. Uma transição espera a próxima renderização, depois dos handlers nativos; não é um tempo de leitura. Eventos propagados/duplicados e callbacks antigos não contam tarefas seguintes. Duplo clique no exemplo só conta a primeira tarefa. Voltar/Pausar/Pular durante uma transição pendente cancelam-na; não há conquista ao pular a última tarefa.
+- Temporizadores do controlador sintético pertencem à sessão/tarefa e são cancelados na transição ou saída. A abertura nativa atrasada de protocolo não interfere na tarefa seguinte. A camada global de interações não disputa foco em componentes dentro de `dialog.citizen-tutorial`; seu comportamento externo continua igual.
+- Cada tarefa tem título/instrução curtos. A fonte e o CSS permanecem os do patch anterior. O aviso **DEMONSTRAÇÃO · sem envio** continua fixo. A etapa de privacidade usa o nome real da opção da conta e explica que o protocolo segue ligado à conta, sem promessa de anonimato perante o sistema. Avisos sobre identidade em anexos, formatos/limites e urgência permanecem.
+- O título recebe foco e descreve progresso/orientação para a árvore acessível. Voltar, Pausar, Pular, Escape, retomar e refazer continuam disponíveis; nenhuma espera força a leitura. Rascunhos/File objects originais ficam preservados nos mesmos nós.
+- Progresso/rota de conquista continuam na versão `1`, com as mesmas 16 etapas e chave por usuário. Progresso anterior é compatível. Não há nova migração, alteração de flag ou enfraquecimento de autorização.
+- Referências dos carregadores e módulo de interações nas entradas compartilhadas seguem `20261014-citizen-auto-1`; marcador HTML/SW `20261014-8`; launcher `3`. Outras mudanças HTML são exclusivamente referências de cache, inclusive login/cadastro para manter o contrato central. Não há limpeza global de cache ou reload automático de uma aba com rascunho.
+
+## Evidência afetada
+
+- Sintaxe/diff sem erros. **78 testes focados** passaram após o ajuste de foco, incluindo conclusão autenticada, transição/primeiro acesso, interações, performance/cache. **51 testes** cache/performance/social também passaram; os totais se sobrepõem.
+- **8 cenários de sequência automática** (390/1280): ações erradas/bursts, clique/change propagado, digitação sem avanço prematuro, conclusão de campo, volta com dados válidos, Espaço em opção marcada, duplo clique no exemplo, pausa pendente, retomada de progresso anterior, submit inválido e pular a última ação. Zero APIs em demonstração e zero solicitações de conquista nesses percursos incompletos.
+- **10 cenários de Ajuda/contas existentes** passaram com o novo launcher: cidadão/profissional, entrada direta/shell, rascunho e File preservados, consulta/segurança pendentes, retry de módulo e substituição do launcher anterior. A mesma retomada/identidade por usuário continua válida.
+- **20 percursos integrais finais** passaram: 320/360/390/412/1280, claro/escuro, texto 100/200%, após a correção que evita disputa de foco em modais sintéticos. Zero APIs durante demonstração em todos; uma conclusão apenas no mock local, depois das 16 tarefas e da saída. Rascunho/anexo original preservados. Submit nativo, Enter e eventos duplicados continuam protegidos.
+- **4 cenários finais de ciclo de vida** aprovados, incluindo contraste/árvore acessível/foco, cancelamento da preparação, viewport reduzida, alvos ausentes, conta/logout, Back/Forward, impressão/PDF e igualdade da impressão desktop. Executados após o ajuste de foco.
+
+Reaproveitada a evidência de **12 comparações nativas, 12 PNGs exatos** de `6742832d` e a geometria de entrada anteriormente aprovada: alterações novas de UI estão restritas à demonstração; CSS nativo/da entrada é idêntico e o guard global só atua dentro do diálogo sintético. A impressão após tutorial é novamente exercitada. Nenhuma tolerância, teste de autorização ou proteção é removida. Worker/migração/rota de conquista não mudaram; não repetir suas suítes integrais intactas.
+
+Capturas são renderizações reais de Chromium com nomes, contas e textos inventados, nunca pacientes ou cidadãos reais. Revisão visual inclui mobile claro/escuro, privacidade e texto 200%; a área da orientação continua rolável em zoom, sem reduzir a fonte. Limites: leitor de tela humano, Safari/iOS e teclado virtual de aparelho não foram homologados; árvore acessível e viewport reduzida são simulações. Conquista cosmética não comprova aprendizado contra cliente adulterado. CI remoto não foi acionado ou declarado verde para esta candidata; o workflow inclui os novos cenários para uma publicação futura autorizada.
