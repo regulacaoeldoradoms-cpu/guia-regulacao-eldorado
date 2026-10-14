@@ -21,6 +21,15 @@ const initializeCitizenArea = async (context) => {
     summary.textContent = `Conta ${level}`;
   }
 
+  const tutorialCard=document.getElementById('citizenTutorialAchievement');
+  if(tutorialCard){
+    try{
+      const result=await window.RegulationAuth.api('/api/portal-tutorials/citizen',{method:'GET'});
+      if(context?.disposed)return;
+      if(result.completion?.version===1){tutorialCard.classList.remove('planned');tutorialCard.querySelector('.achievement-state').textContent='Conquistada';tutorialCard.querySelector('[data-citizen-tutorial-achievement]').textContent='Tutorial integral do Canal do Cidadão concluído.';}
+    }catch(_){tutorialCard.querySelector('.achievement-state').textContent='Registro indisponível';}
+  }
+
   const trophyIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0V3Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></svg>';
   const bookIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg>';
   const studySection = document.getElementById('studyAchievementsSection');

@@ -1,6 +1,19 @@
 'use strict';
 
 (() => {
+  // Observe API requests before other portal controllers start. The tutorial
+  // waits for already-started effects before showing its demonstration.
+  // Only Promises are retained, never URLs, credentials, bodies or responses.
+  const apiFlights=new Set(),nativeFetch=window.fetch;
+  window.fetch=function(input,options){
+    const url=new URL(typeof input==='string'||input instanceof URL?input:input.url,location.href);
+    const pending=nativeFetch.call(this,input,options);
+    if(!url.pathname.startsWith('/api/'))return pending;
+    apiFlights.add(pending);
+    return pending.then(response=>{apiFlights.delete(pending);return response;},error=>{apiFlights.delete(pending);throw error;});
+  };
+  async function whenNetworkIdle(){while(apiFlights.size)await Promise.allSettled([...apiFlights]);}
+
   const CONFIG = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(CONFIG.endpoint || '').replace(/\/$/, '');
   const tokenKey = CONFIG.tokenStorageKey || 'regulacao.portal.session';
@@ -406,6 +419,7 @@
     hasCouncilAccess,
     getToken,
     getCachedUser,
+    whenNetworkIdle,
     clearSession,
     revalidateSession,
     sessionValidationAge,
