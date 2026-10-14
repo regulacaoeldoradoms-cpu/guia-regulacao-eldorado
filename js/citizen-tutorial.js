@@ -268,6 +268,9 @@ function mount({document,window,context,user,isBusy,initialize}){
  globalThis.document.addEventListener('click',event=>{if(event.target.closest?.('#portalLogout')){logoutInProgress=true;stop({focus:false});}},{capture:true,signal:abort.signal});
  globalThis.addEventListener('popstate',()=>stop(),{signal:abort.signal});
  globalThis.addEventListener('pagehide',()=>stop({focus:false}),{signal:abort.signal});
+ let printPaused=false;
+ globalThis.addEventListener('beforeprint',()=>{if(session||starting){printPaused=true;stop({focus:false});if(current())status.textContent='Tutorial pausado para imprimir. Você pode retomar.';}},{capture:true,signal:abort.signal});
+ globalThis.addEventListener('afterprint',()=>{if(printPaused&&current()&&entry.isConnected)entry.querySelector('summary').focus({preventScroll:true});printPaused=false;},{signal:abort.signal});
  entryLabel();
  return {get active(){return Boolean(session)||starting;},beforeNavigate(){stop({focus:false});},deactivate(){stop({focus:false});},dispose(){disposed=true;stop({save:false,focus:false});abort.abort();entry.remove();}};
 }
