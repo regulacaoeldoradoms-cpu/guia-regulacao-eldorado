@@ -74,6 +74,8 @@ jobs:
           import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
           fs.appendFileSync(process.env.GITHUB_ENV, 'CHROMIUM_PATH=' + chromium.executablePath() + '\n');
           JS
+      - name: Published shells and bounded optional preview failures
+        run: node testing/citizen-layout/citizen-compose-deployment.mjs
       - name: Immediate theme on native and retained citizen routes
         run: |
           node testing/citizen-layout/theme-entry.mjs
@@ -108,7 +110,6 @@ jobs:
           node testing/citizen-layout/citizen-compose-errors.mjs
           node testing/citizen-layout/citizen-compose-final.mjs
           node testing/citizen-layout/citizen-compose-files-errors.mjs
-          node testing/citizen-layout/citizen-compose-deployment.mjs
           node testing/citizen-layout/citizen-compose-csp.mjs
           node testing/citizen-layout/citizen-compose-accessibility.mjs
           node testing/citizen-layout/citizen-compose-footer.mjs
