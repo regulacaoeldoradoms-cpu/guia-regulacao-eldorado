@@ -93,11 +93,15 @@ try {
   });
   await run('deep-link-own-profile', '/perfil/?u=fixture.friend', null, async (page, audit, requests, check) => {
     await warm(page);
+    // As in prepared-first-switch, settle the independently scheduled telemetry
+    // owner before measuring activation. Keep zero route/script loads strict.
+    await page.waitForFunction(() => Boolean(window.PortalObservability));
     check('background preparation keeps requested deep-link URL', await page.evaluate(() => window.PortalCitizenShell.active().url.search === '?u=fixture.friend' && location.pathname === '/'));
     const before = requests.length;
     await page.evaluate(() => window.PortalCitizenShell.navigate(new URL('/perfil/', location.href)));
     check('own profile preparation ignores deep-link search', await page.locator('#profileName').textContent() === 'Maria Aparecida de Oliveira dos Santos');
-    check('prepared own profile uses no new route/script fetch', !requests.slice(before).some(request => request.type === 'script' || request.url === '/perfil/'));
+    const unexpectedLoads = requests.slice(before).filter(request => request.type === 'script' || request.url === '/perfil/');
+    check('prepared own profile uses no new route/script fetch: '+JSON.stringify(unexpectedLoads), unexpectedLoads.length === 0);
     check('legacy deep-link uses one initial Home handoff', audit.documents.length === 2);
   });
   await run('background-profile-data-error', '/', async page => {
