@@ -11,6 +11,31 @@ const rows=[];await fs.mkdir(output,{recursive:true});
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',args:['--no-sandbox']});
 async function active(page,route){await page.waitForFunction(route=>PortalCitizenShell.active().url.pathname===route && !PortalCitizenShell.diagnostics().navigating,route);await ready(page,route);await settle(page);}
 async function noOverflow(page,selector){const result=await page.locator(selector).evaluate(e=>({scroll:e.scrollWidth,width:e.clientWidth}));assert.ok(result.scroll<=result.width+1,`${selector} overflows: ${JSON.stringify(result)}`);}
+async function dashboardReflow(page){
+  // Page overflow alone misses collisions between siblings inside a card/tab.
+  const tabs=await page.locator('.citizen-mobile-tab').evaluateAll(elements=>elements.map(el=>{
+    const box=el.getBoundingClientRect(),range=document.createRange();
+    const content=[...el.children].map(node=>node.getBoundingClientRect());
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+    for(let node=walker.nextNode();node;node=walker.nextNode()){
+      if(!node.textContent.trim())continue;
+      range.selectNodeContents(node);content.push(...range.getClientRects());
+    }
+    return {label:el.textContent,contained:content.every(r=>r.left>=box.left-1&&r.right<=box.right+1&&r.top>=box.top-1&&r.bottom<=box.bottom+1)};
+  }));
+  assert.ok(tabs.length===2&&tabs.every(tab=>tab.contained),`Tab contents stay inside their own target: ${JSON.stringify(tabs)}`);
+  const chip=page.locator('.manifestation-item > .status-chip').first(),original=await chip.textContent();
+  try{
+    for(const status of ['Aguardando sua resposta','Aguardando retorno','Aguardando']){
+      await chip.evaluate((el,text)=>{el.textContent=text;},status);await settle(page);
+      const layout=await chip.evaluate(el=>{
+        const card=el.parentElement,subject=card.querySelector('strong').getBoundingClientRect(),status=el.getBoundingClientRect(),box=card.getBoundingClientRect();
+        return {noCollision:status.top>=subject.bottom-1,contained:status.left>=box.left-1&&status.right<=box.right+1&&status.bottom<=box.bottom+1,readable:el.scrollWidth<=el.clientWidth+1&&el.scrollHeight<=el.clientHeight+1};
+      });
+      assert.deepEqual(layout,{noCollision:true,contained:true,readable:true},`Long status remains in card flow: ${status}`);
+    }
+  }finally{await chip.evaluate((el,text)=>{el.textContent=text;},original);}
+}
 async function accountHelp(page,result,entry){
   const help=page.locator('.citizen-account-help'),summary=help.locator(':scope > summary'),notice=help.locator('#accountEvolutionNotice');
   await help.waitFor({state:'visible'});assert.equal(await summary.textContent(),'Sobre sua conta e privacidade');
@@ -53,6 +78,7 @@ try{
       assert.equal(await page.locator('#openNewManifestation strong').textContent(),'Nova manifestação');
       assert.match(await page.locator('.manifestation-item').first().evaluate(el=>getComputedStyle(el,'::before').content),/Sugestão/);
       assert.equal(await page.locator('.manifestation-item > span:first-child > strong').textContent(),item.subject);
+      await dashboardReflow(page);
       const compact=await page.evaluate(()=>{
         const style=selector=>getComputedStyle(document.querySelector(selector));
         return {
