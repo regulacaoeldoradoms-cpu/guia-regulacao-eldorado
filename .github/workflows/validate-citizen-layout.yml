@@ -109,6 +109,7 @@ jobs:
           node testing/citizen-layout/citizen-compose-final.mjs
           node testing/citizen-layout/citizen-compose-files-errors.mjs
           node testing/citizen-layout/citizen-compose-deployment.mjs
+          node testing/citizen-layout/citizen-compose-csp.mjs
           node testing/citizen-layout/citizen-compose-accessibility.mjs
           node testing/citizen-layout/citizen-compose-footer.mjs
           node testing/citizen-layout/citizen-compose-paint.mjs
@@ -124,6 +125,7 @@ jobs:
         run: node testing/citizen-layout/citizen-first-paint.mjs
       - name: Pets mobile first frames, native actions and repeated navigation
         run: |
+          node testing/citizen-layout/fixture-asset-transport.mjs
           node testing/citizen-layout/pets-mobile-presentation.mjs
           TEXT_SCALE=2 PETS_MOBILE_OUTPUT=/tmp/pets-mobile-text200 node testing/citizen-layout/pets-mobile-presentation.mjs
       - name: Single mobile address, native bar clicks and retained controllers
@@ -196,6 +198,7 @@ jobs:
             .local/compose-final/
             .local/compose-files-errors/
             .local/compose-deployment/
+            .local/compose-csp/
             .local/compose-accessibility/
             .local/compose-footer/
             .local/compose-paint/

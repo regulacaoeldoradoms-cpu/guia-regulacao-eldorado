@@ -12,6 +12,18 @@
     const imageKind = file => /^image\/(jpeg|png)$/.test(file.type)
       || !file.type && /\.(jpe?g|png)$/i.test(file.name);
     const live = record => !disposed && records.get(record.file) === record;
+    // A retained Mascotes document permits data: images but excludes blob:.
+    // Respect every original policy instead of loosening it for local previews.
+    const imagePolicies=[...globalThis.document.querySelectorAll('meta[http-equiv="Content-Security-Policy" i]')].map(meta=>{
+      const directives=meta.content.split(';').map(value=>value.trim().split(/\s+/));
+      return (directives.find(parts=>parts[0]==='img-src')||directives.find(parts=>parts[0]==='default-src'))?.slice(1);
+    }).filter(Boolean);
+    const useDataImages=imagePolicies.length>0&&!imagePolicies.every(sources=>sources.includes('blob:'))&&imagePolicies.every(sources=>sources.includes('data:'));
+    function releaseSource(record) {
+      record.reader?.abort();record.reader=null;
+      if(record.url.startsWith('blob:'))URL.revokeObjectURL(record.url);
+      record.url='';record.image?.removeAttribute('src');
+    }
     function fitPreview() {if(preview.classList.contains('open')){const height=globalThis.visualViewport?.height || innerHeight;preview.style.setProperty('--local-preview-height',`${height}px`);preview.style.setProperty('--local-preview-top',`${globalThis.visualViewport?.offsetTop || 0}px`);const head=preview.querySelector('.citizen-modal-head'),help=preview.querySelector('p');preview.style.setProperty('--local-image-limit',`${Math.max(48,height-head.offsetHeight-help.offsetHeight-48)}px`);}}
     function restoreInput() {
       try { const transfer = new DataTransfer();files.forEach(file=>transfer.items.add(file));input.files = transfer.files; }
@@ -42,8 +54,7 @@
     function release(record) {
       if (previewRecord === record) closePreview();
       records.delete(record.file);
-      if (record.url) URL.revokeObjectURL(record.url);
-      record.image?.removeAttribute('src');record.row.remove();
+      releaseSource(record);record.row.remove();
     }
     function unavailable(record) {
       if (!live(record)) return;
@@ -51,8 +62,7 @@
       record.row.classList.add('preview-unavailable');
       record.button.classList.remove('has-preview');
       record.hint.textContent = 'Prévia indisponível. O arquivo foi mantido.';
-      record.image?.removeAttribute('src');
-      if (record.url) {URL.revokeObjectURL(record.url);record.url = '';}
+      releaseSource(record);
       if (previewRecord === record) closePreview();
     }
     async function prepareImage(record) {
@@ -65,7 +75,16 @@
         if (!jpeg && !png) return unavailable(record);
         if (!live(record)) return;
         const blob = new Blob([record.file],{type:png?'image/png':'image/jpeg'});
-        record.url = URL.createObjectURL(blob);
+        if(useDataImages){
+          const source=await new Promise((resolve,reject)=>{
+            const reader=record.reader=new FileReader();
+            const finish=(error,value)=>{reader.onload=reader.onerror=reader.onabort=null;record.reader=null;if(error)reject(error);else resolve(value);};
+            reader.onload=()=>finish(null,reader.result);reader.onerror=()=>finish(new Error('Leitura local indisponível'));reader.onabort=()=>finish(new Error('Leitura local cancelada'));
+            reader.readAsDataURL(blob);
+          });
+          if(!live(record))return;
+          record.url=source;
+        }else record.url = URL.createObjectURL(blob);
         record.image.src = record.url;
       } catch (_) { unavailable(record); }
     }
@@ -79,7 +98,7 @@
       const remove = document.createElement('button');remove.type = 'button';remove.className = 'compose-file-remove';
       remove.setAttribute('aria-label',`Remover anexo ${name.textContent}`);remove.textContent = '×';
       metadata.append(name,details,hint);row.append(thumb,metadata,remove);list.append(row);
-      const record = {file,displayName:name.textContent,row,button:thumb,remove,hint,url:'',ready:false,image:null};records.set(file,record);
+      const record = {file,displayName:name.textContent,row,button:thumb,remove,hint,url:'',ready:false,image:null,reader:null};records.set(file,record);
       if (imageKind(file)) {
         thumb.type = 'button';thumb.disabled = true;thumb.setAttribute('aria-label',`Ampliar imagem ${name.textContent}`);
         const img = document.createElement('img');img.alt = '';img.decoding = 'async';record.image = img;thumb.append(img);
