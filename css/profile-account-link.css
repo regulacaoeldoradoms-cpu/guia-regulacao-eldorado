@@ -49,3 +49,32 @@
 .telemedicine-page .portal-modal-close:focus-visible {
   background-color: #e3eef8 !important;
 }
+
+/* Avatar padrão compartilhado. É apenas apresentação: os renderizadores
+   continuam donos das fotos, iniciais, permissões e remoção. Nenhuma foto
+   padrão é gravada na conta. Fotos reais (background ou img) ficam fora
+   destas regras; as iniciais acessíveis permanecem no DOM.
+   A camada importante vence os fundos !important dos temas sem modificar
+   dimensões, bordas, controles ou o atributo hidden. */
+@layer portal-default-avatar {
+  :is(.portal-profile-avatar, .social-avatar[role="img"], .home-composer-avatar, .portal-chat-avatar, #portalChatHeaderAvatar, #profileAvatarPreview):not([style*="background-image: url(" i], [style*="background-image:url(" i], [style*="background: url(" i], [style*="background:url(" i]):not(:has(img)) {
+    background-image: url('/assets/avatar.png') !important;
+    background-position: center !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    color: transparent !important;
+    text-shadow: none !important;
+  }
+
+  :is(.portal-profile-avatar, .social-avatar[role="img"], .home-composer-avatar, .portal-chat-avatar, #portalChatHeaderAvatar, #profileAvatarPreview):not([style*="background-image: url(" i], [style*="background-image:url(" i], [style*="background: url(" i], [style*="background:url(" i]):not(:has(img)) > :is(.portal-chat-avatar-initials, #profileAvatarInitials, svg) {
+    visibility: hidden !important;
+  }
+
+  /* A Home móvel desenha as iniciais em pseudo-elementos mascarados.
+     Ocultar só a cor do texto não basta para retirar essa arte antiga. */
+  :is(.portal-profile-avatar, .social-avatar[role="img"], .home-composer-avatar, .portal-chat-avatar, #portalChatHeaderAvatar, #profileAvatarPreview):not([style*="background-image: url(" i], [style*="background-image:url(" i], [style*="background: url(" i], [style*="background:url(" i]):not(:has(img))[data-home-avatar-initials]::before,
+  :is(.portal-profile-avatar, .social-avatar[role="img"], .home-composer-avatar, .portal-chat-avatar, #portalChatHeaderAvatar, #profileAvatarPreview):not([style*="background-image: url(" i], [style*="background-image:url(" i], [style*="background: url(" i], [style*="background:url(" i]):not(:has(img))[data-home-avatar-initials]::after {
+    content: none !important;
+    display: none !important;
+  }
+}
