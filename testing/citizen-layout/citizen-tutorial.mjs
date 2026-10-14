@@ -11,7 +11,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
 const steps=['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice'];
 async function open(page){await page.locator('[data-tutorial-start]').click();await page.locator('dialog.citizen-tutorial').waitFor();await page.locator('dialog #openNewManifestation').waitFor();return page.locator('dialog.citizen-tutorial');}
 async function advance(d){if(await d.locator('[data-tutorial-next]').isDisabled())console.log('Pending stage:',await d.locator('[data-tutorial-progress]').textContent(),await d.locator('[data-tutorial-feedback]').textContent());await d.locator('[data-tutorial-next]').click();}
-async function screenshot(page,label){await page.screenshot({path:path.join(output,label+'.png')});}
+async function screenshot(page,label){await applyTextScale(page);await page.screenshot({path:path.join(output,label+'.png')});}
 async function finish(d,page,label){
  await d.locator('#openNewManifestation').click();await advance(d);
  for(const type of ['sugestao','reclamacao','elogio','denuncia']){await d.locator(`input[value=${type}]`).check();await advance(d);}
@@ -69,7 +69,7 @@ try{
    assert.deepEqual(await nativeForm.evaluate(n=>({subject:n.querySelector('#manifestationSubject').value,text:n.querySelector('#manifestationDescription').value,confirm:n.querySelector('#manifestationConfirm').checked})),before);
    assert.equal(await nativeFiles.evaluate(n=>n.files[0].name),'rascunho-sintetico.png');
    d=await open(page);assert.match(await d.locator('[data-tutorial-progress]').textContent(),/Etapa 3 de/);await d.locator('[data-tutorial-skip]').click();assert.equal(result.completionRequests,0);
-   await page.locator('[data-tutorial-restart]').click();d=page.locator('dialog.citizen-tutorial');await finish(d,page,label);
+   await page.locator('[data-tutorial-restart]').click();d=page.locator('dialog.citizen-tutorial');await d.locator('#openNewManifestation').waitFor();await applyTextScale(page);await finish(d,page,label);
    await page.locator('[data-tutorial-status]').filter({hasText:'Tutorial concluído.'}).waitFor();assert.equal(result.completionRequests,1);
    assert(await nativeForm.evaluate(n=>n.isConnected));assert.deepEqual(await nativeForm.evaluate(n=>({subject:n.querySelector('#manifestationSubject').value,text:n.querySelector('#manifestationDescription').value,confirm:n.querySelector('#manifestationConfirm').checked})),before);assert.equal(await nativeFiles.evaluate(n=>n.files[0].name),'rascunho-sintetico.png');
    const network=await page.evaluate(()=>__tutorialNetwork.filter(n=>n.demo&&n.path.startsWith('/api/')));assert.deepEqual(network,[]);

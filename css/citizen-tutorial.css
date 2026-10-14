@@ -20,6 +20,7 @@ dialog.citizen-tutorial::backdrop{background:rgb(7 25 43 / .75)}
 .citizen-tutorial :is(#newManifestationModal#newManifestationModal,#manifestationDetailModal#manifestationDetailModal,#composeFilePreview#composeFilePreview) .citizen-modal-panel{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;transform:none!important;margin:12px 0!important;overflow:visible!important}
 .citizen-tutorial :is(#newManifestationModal#newManifestationModal,#manifestationDetailModal#manifestationDetailModal,#composeFilePreview#composeFilePreview) .citizen-modal-content{max-height:none!important;overflow:visible!important}
 .citizen-tutorial :is(#newManifestationModal#newManifestationModal,#manifestationDetailModal#manifestationDetailModal,#composeFilePreview#composeFilePreview) .manifestation-form-footer{position:static!important}
+.citizen-tutorial #manifestationDetailModal#manifestationDetailModal .citizen-modal-head{position:static!important;top:auto!important}
 .citizen-tutorial :is([data-tutorial-target],:focus-visible){outline:3px solid var(--portal-theme-text,#173b5d)!important;outline-offset:3px}
 .citizen-tutorial [data-tutorial-target]{box-shadow:0 0 0 6px var(--portal-theme-surface-2,#edf3f7);scroll-margin:10px}
 .citizen-tutorial #composeFilePreview img{max-width:100%;max-height:160px!important}
