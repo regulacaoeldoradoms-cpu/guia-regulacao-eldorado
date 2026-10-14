@@ -8,7 +8,7 @@ function ensureComposeHelper() {
   if (globalThis.PortalCitizenComposeAttachments?.create) return Promise.resolve(globalThis.PortalCitizenComposeAttachments);
   if (!composeHelperPromise) composeHelperPromise=new Promise((resolve,reject)=>{
     const script=globalThis.document.createElement('script');
-    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-tutorial-1';
+    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-help-1';
     const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve(globalThis.PortalCitizenComposeAttachments);};
     const timer=setTimeout(()=>finish(new Error('Prévia local indisponível')),8000);
     script.onload=()=>finish(globalThis.PortalCitizenComposeAttachments?.create?null:new Error('Prévia local indisponível'));
@@ -689,30 +689,77 @@ const initializeCitizenArea = async (context) => {
     location.replace('/login/');
   });
 
-  if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {
-    // Lists need authenticated access, already checked above, not the privacy
-    // lookup. Keep every read fresh while removing one sequential network wait.
-    await Promise.all([loadSecurity(), loadManifestations(), loadNotifications()]);
-  } else {
-    await loadSecurity();
-    await Promise.all([loadManifestations(), loadNotifications()]);
+  // Help belongs to every authenticated account. Its entry cannot depend on
+  // the size/availability of the real manifestation and notification lists.
+  let securityReady = false, tutorialLoading = false;
+  const helpHost = demonstration ? null : document.querySelector('.portal-hero');
+  let helpEntry = helpHost?.querySelector('[data-citizen-tutorial-entry]');
+  const helpAbort = new AbortController();
+  if (helpHost && !helpEntry) {
+    helpEntry = globalThis.document.createElement('details');
+    helpEntry.className = 'citizen-tutorial-entry';
+    helpEntry.dataset.citizenTutorialEntry = '';
+    helpEntry.dataset.tutorialBootstrap = 'true';
+    helpEntry.innerHTML = '<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-load>Carregar tutorial</button><button type="button" class="portal-button secondary" data-tutorial-bootstrap-close>Fechar ajuda</button><p role="status" data-tutorial-load-status>Carregando ajuda…</p></div>';
+    helpHost.append(helpEntry);
+    helpEntry.addEventListener('click', event => {
+      if (event.target.closest('[data-tutorial-load]')) loadTutorial();
+      if (event.target.closest('[data-tutorial-bootstrap-close]')) {
+        helpEntry.open = false; helpEntry.querySelector('summary').focus({preventScroll:true});
+      }
+    }, {signal:helpAbort.signal});
+    helpEntry.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !helpEntry.open) return;
+      event.preventDefault(); helpEntry.open = false;
+      helpEntry.querySelector('summary').focus({preventScroll:true});
+    }, {signal:helpAbort.signal});
+    context?.addController?.({dispose:()=>helpAbort.abort()});
   }
-  if (!demonstration && !context?.disposed) void (async () => {
+  async function loadTutorial() {
+    if (demonstration || tutorial || tutorialLoading || context?.disposed || !liveAllowed()) return;
+    tutorialLoading = true;
+    const loadButton = helpEntry?.querySelector('[data-tutorial-load]');
+    const loadStatus = helpEntry?.querySelector('[data-tutorial-load-status]');
+    const requestedFocus = helpEntry?.contains(globalThis.document.activeElement);
+    if (loadButton) loadButton.disabled = true;
+    if (loadStatus) loadStatus.textContent = 'Carregando ajuda…';
     try {
-      if (!globalThis.PortalCitizenTutorial) await new Promise((resolve, reject) => {
+      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 2) await new Promise((resolve, reject) => {
         const script=globalThis.document.createElement('script');
-        script.src='/js/citizen-tutorial.js?v=20261014-citizen-tutorial-6';
-        const timer=setTimeout(()=>{script.remove();reject(new Error('Tutorial indisponível'));},8000);
-        script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Tutorial indisponível'));};
+        script.src='/js/citizen-tutorial.js?v=20261014-citizen-help-1';
+        const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve();};
+        const timer=setTimeout(()=>finish(new Error('Tutorial indisponível')),8000);
+        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===2?null:new Error('Tutorial indisponível'));
+        script.onerror=()=>finish(new Error('Tutorial indisponível'));
         globalThis.document.head.append(script);
       });
-      if (context?.disposed) return;
-      tutorial=globalThis.PortalCitizenTutorial.mount({document,window,context,user:{...user,emailVerified:state.security?.emailVerified===true},
-        isBusy:()=>sendingManifestation || liveRequests>0,
+      if (context?.disposed || !liveAllowed()) return;
+      const focused = helpEntry?.contains(globalThis.document.activeElement) ||
+        (requestedFocus && globalThis.document.activeElement === globalThis.document.body);
+      const open = helpEntry?.open;
+      tutorial=globalThis.PortalCitizenTutorial.mount({document,window,context,user:{...user,get emailVerified(){return state.security?.emailVerified===true;}},
+        isBusy:()=>!securityReady || sendingManifestation || liveRequests>0,
         initialize:initializeCitizenArea});
+      if (!tutorial) throw new Error('Entrada de ajuda indisponível');
+      helpAbort.abort();
       context?.addController?.(tutorial);
-    } catch (_) { /* Optional tutorial cannot prevent the native channel. */ }
-  })();
+      if (focused) helpEntry.querySelector(open?'[data-tutorial-start]':'summary').focus({preventScroll:true});
+    } catch (_) {
+      // Keep a visible retry entry, without rebuilding native forms or drafts.
+      if (!context?.disposed && loadStatus?.isConnected) loadStatus.textContent = 'A ajuda não carregou. Use Carregar tutorial para tentar novamente. O Canal e seu rascunho continuam disponíveis.';
+    } finally {
+      tutorialLoading = false;
+      if (loadButton?.isConnected) loadButton.disabled = false;
+    }
+  }
+  if (helpHost) void loadTutorial();
+  const securityPending = loadSecurity().finally(()=>{securityReady=true;});
+  if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {
+    await Promise.all([securityPending, loadManifestations(), loadNotifications()]);
+  } else {
+    await securityPending;
+    await Promise.all([loadManifestations(), loadNotifications()]);
+  }
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen', initializeCitizenArea);
 else initializeCitizenArea();

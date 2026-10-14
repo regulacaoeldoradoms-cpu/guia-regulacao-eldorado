@@ -12,6 +12,7 @@ on:
       - 'worker/migrations/portal-tutorials-v1.sql'
       - 'worker/tests/portal-tutorials.test.mjs'
       - 'testing/citizen-layout/citizen-tutorial*.mjs'
+      - 'testing/citizen-layout/citizen-help-existing-account.mjs'
       - '.github/workflows/validate-citizen-tutorial.yml'
 permissions:
   contents: read
@@ -45,6 +46,10 @@ jobs:
           JS
       - name: Compact help, native geometry and accessible dismissal
         run: node testing/citizen-layout/citizen-tutorial-entry.mjs
+      - name: Existing accounts, pending reads and recoverable module loading
+        env:
+          TUTORIAL_OUTPUT: .local/citizen-tutorial
+        run: node testing/citizen-layout/citizen-help-existing-account.mjs
       - name: Native components, zero demo requests and responsive visual evidence
         run: node testing/citizen-layout/citizen-tutorial.mjs
       - name: Interruption, accounts, browser history, focus and unavailable targets

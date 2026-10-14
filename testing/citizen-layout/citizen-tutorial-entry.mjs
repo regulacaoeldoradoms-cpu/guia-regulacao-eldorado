@@ -11,11 +11,11 @@ try{
  for(const width of (process.env.ENTRY_WIDTHS||'320,1280').split(',').map(Number))for(const theme of ['light','dark'])for(const scale of [1,2]){
   const result={width,theme,scale,errors:[]},{page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
   try{
-   await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-options]').waitFor();
+   await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});assert.equal(await page.locator('[data-tutorial-options]').textContent().then(x=>x.trim()),'Ajuda');
    process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
    const geometry=await page.evaluate(()=>{
-    const entry=document.querySelector('[data-citizen-tutorial-entry]'),summary=entry.querySelector('summary'),icon=summary.querySelector('span'),r=icon.getBoundingClientRect();
-    const intersect=a=>a.left<r.right&&a.right>r.left&&a.top<r.bottom&&a.bottom>r.top;
+    const entry=document.querySelector('[data-citizen-tutorial-entry]'),summary=entry.querySelector('summary'),rects=[...summary.children].map(n=>n.getBoundingClientRect());
+    const intersect=a=>rects.some(r=>a.left<r.right&&a.right>r.left&&a.top<r.bottom&&a.bottom>r.top);
     const hits=[];for(const node of document.querySelectorAll('.portal-hero-copy *'))for(const child of node.childNodes){if(child.nodeType!==Node.TEXT_NODE||!child.textContent.trim()||!node.getClientRects().length)continue;const range=document.createRange();range.selectNodeContents(child);for(const a of range.getClientRects())if(intersect(a))hits.push(child.textContent);}
     const native=()=>[...document.querySelectorAll('.portal-hero,.citizen-actions,.citizen-grid')].map(n=>{const a=n.getBoundingClientRect();return {x:a.x,y:a.y,width:a.width,height:a.height};});
     const before=native(),marker=document.createComment('entry-layout-test');entry.before(marker);entry.remove();const after=native();marker.replaceWith(entry);

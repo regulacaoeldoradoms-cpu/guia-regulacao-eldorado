@@ -1,7 +1,7 @@
 // No user text, files, tokens or API responses enter tutorial persistence.
 (() => {
 'use strict';
-if (globalThis.PortalCitizenTutorial) return;
+if (globalThis.PortalCitizenTutorial?.launcherVersion === 2) return;
 const VERSION=1;
 const STEPS=Object.freeze(['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice']);
 const EXAMPLE={subject:'Exemplo fictício: mural com informações a apurar',description:'Exemplo inteiramente fictício: um mural da Unidade Modelo teria exposto dados pessoais inventados de usuários do serviço. Relato essa possível irregularidade para apuração, sem reproduzir esses dados. Não descreve pessoa ou atendimento real.'};
@@ -115,10 +115,11 @@ function cloneWorkspace(document){
  return root;
 }
 function mount({document,window,context,user,isBusy,initialize}){
- const host=document.querySelector('.portal-hero');if(!host||host.querySelector('[data-citizen-tutorial-entry]'))return;
- const token=window.RegulationAuth.getToken(),owner=identity(user),entry=globalThis.document.createElement('details');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
- entry.innerHTML='<summary data-tutorial-options aria-label="Tutorial do Canal" title="Tutorial do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><button type="button" class="portal-button secondary" data-tutorial-close-options>Fechar ajuda</button><p role="status" data-tutorial-status></p></div>';
- host.append(entry);
+ const host=document.querySelector('.portal-hero');if(!host)return;
+ const existing=host.querySelector('[data-citizen-tutorial-entry]');if(existing&&!existing.hasAttribute('data-tutorial-bootstrap'))return;
+ const token=window.RegulationAuth.getToken(),owner=identity(user),entry=existing||globalThis.document.createElement('details');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
+ entry.innerHTML='<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><button type="button" class="portal-button secondary" data-tutorial-close-options>Fechar ajuda</button><p role="status" data-tutorial-status></p></div>';
+ entry.removeAttribute('data-tutorial-bootstrap');host.append(entry);
  let completed=readProgress(window.localStorage,user),session=null,disposed=false,starting=false,awarding=false,logoutInProgress=false;
  const status=entry.querySelector('[data-tutorial-status]'),start=entry.querySelector('[data-tutorial-start]'),restart=entry.querySelector('[data-tutorial-restart]');
  const current=()=>!disposed&&!context?.disposed&&window.RegulationAuth.getToken()===token&&identity(window.RegulationAuth.getCachedUser())===owner;
@@ -274,5 +275,5 @@ function mount({document,window,context,user,isBusy,initialize}){
  entryLabel();
  return {get active(){return Boolean(session)||starting;},beforeNavigate(){stop({focus:false});},deactivate(){stop({focus:false});},dispose(){disposed=true;stop({save:false,focus:false});abort.abort();entry.remove();}};
 }
-globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION});
+globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION,launcherVersion:2});
 })();

@@ -299,7 +299,7 @@
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261014-citizen-tutorial-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261014-citizen-help-1'];
       // Preview assets are optional and owned by the citizen controller. A
       // failed image helper must not discard an otherwise usable Citizen area.
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
@@ -309,7 +309,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261014-citizen-tutorial-1' : entry === 'home' ? '20261014-citizen-tutorial-1' : entry === 'citizen' ? '20261014-citizen-tutorial-1' : entry === 'achievements' ? '20261014-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : ['pets-page','pets-achievements'].includes(entry) ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261014-citizen-help-1' : entry === 'home' ? '20261014-citizen-help-1' : entry === 'citizen' ? '20261014-citizen-help-1' : entry === 'achievements' ? '20261014-citizen-help-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : ['pets-page','pets-achievements'].includes(entry) ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
