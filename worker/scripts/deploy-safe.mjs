@@ -27,6 +27,7 @@ export const SAFE_DEPLOY = Object.freeze({
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
   adminUsersApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/admin/users',
   chatRealtimeHealthApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/chat/realtime/health',
+  portalTutorialApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/portal-tutorials/citizen',
   portalOrigin: 'https://regulacaoeldoradoms.com.br',
   candidateMessage: 'Portal: candidato validado pelo gate de deploy seguro',
   candidateTag: 'portal-safe-deploy',
@@ -368,6 +369,16 @@ export function validateCandidateBindings(activeVersion, candidateVersion, optio
     );
   }
 
+  // This remote feature flag is intentionally absent from local configuration.
+  // Preserve its public value exactly; opaque secrets remain metadata-only and
+  // are already protected by the dynamic secret-preservation check above.
+  const tutorialFlag = active.get('PORTAL_TUTORIAL_COMPLETION_ENABLED');
+  if (tutorialFlag?.type === 'plain_text') {
+    const actual = candidate.get(tutorialFlag.name);
+    must(actual?.type === 'plain_text' && String(actual.text || '') === String(tutorialFlag.text || ''),
+      'PORTAL_TUTORIAL_FLAG_NAO_PRESERVADA');
+  }
+
   return {
     critical: CRITICAL_BINDINGS.length,
     preservedSecrets: currentSecretBindingNames(activeVersion).length,
@@ -558,6 +569,23 @@ async function waitForChatRealtime(fetcher = fetch) {
   return last || { status: 0, healthy: false };
 }
 
+export function classifyPortalTutorialProbe(status, payload = {}) {
+  const state = Number(status) === 401 && payload.code === 'SESSION_REQUIRED' ? 'enabled'
+    : Number(status) === 503 && payload.code === 'TUTORIAL_DISABLED' ? 'disabled' : 'unknown';
+  return { status: Number(status), state, known: state !== 'unknown' };
+}
+
+export async function probePortalTutorial(fetcher = fetch) {
+  try {
+    const response = await fetcher(SAFE_DEPLOY.portalTutorialApi, {
+      method: 'GET', redirect: 'manual', cache: 'no-store',
+      headers: { Accept: 'application/json', Origin: SAFE_DEPLOY.portalOrigin },
+      signal: AbortSignal.timeout(15000)
+    });
+    return classifyPortalTutorialProbe(response.status, await response.json().catch(() => ({})));
+  } catch { throw new SafeDeployError('PORTAL_TUTORIAL_NAO_RESPONDE'); }
+}
+
 async function probeAgenda(fetcher = fetch) {
   let response;
   try {
@@ -725,6 +753,15 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     safeLine('versaoProducao', originalVersion);
     safeLine('segredosAtuais', activeValidation.preservedSecrets);
 
+    // An anonymous state probe confirms an opaque flag without reading secrets
+    // or authenticating against real accounts. It never reaches tutorial data.
+    const hasTutorialFlag = bindingMap(activeView).has('PORTAL_TUTORIAL_COMPLETION_ENABLED');
+    const tutorialBefore = hasTutorialFlag ? await probePortalTutorial(fetcher) : null;
+    if (tutorialBefore) {
+      must(tutorialBefore.known, 'PORTAL_TUTORIAL_ESTADO_ANTERIOR_NAO_CONFIRMADO');
+      safeLine('portalTutorialAntes', tutorialBefore.state);
+    }
+
     console.log('2/9 Preparando configuração efêmera e executando dry-run...');
     fs.writeFileSync(
       deployConfig,
@@ -803,6 +840,15 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
     validateCandidateBindings(activeView, versionView(finalVersion, readConfig, tempRoot));
+
+    if (tutorialBefore) {
+      const tutorialAfter = await probePortalTutorial(fetcher);
+      must(tutorialAfter.known && tutorialAfter.state === tutorialBefore.state,
+        'PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY');
+      safeLine('portalTutorialDepois', tutorialAfter.state);
+      safeLine('portalTutorialHttpAnonimo', tutorialAfter.status);
+      console.log('portalTutorialFlagPreservada=OK');
+    }
 
     completed = true;
     console.log('');

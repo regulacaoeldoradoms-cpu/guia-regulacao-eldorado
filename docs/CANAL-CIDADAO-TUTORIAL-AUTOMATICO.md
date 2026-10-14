@@ -1,5 +1,7 @@
 # Tutorial com avanço por tarefa — candidata local
 
+Publicação do pacote combinando Ajuda/avanço automático autorizada pelo usuário em 14/10/2026, 23:44 UTC, condicionada a checks/revisão antes da integração. O registro local abaixo conserva a evidência aprovada de `b7ec690b`; a etapa de publicação não reaplica SQL nem altera a configuração produtiva. A revisão do gate acrescenta preservação exata da flag pública remota e smoke anônimo do estado antes/depois, mantendo secrets opacos, todos os bindings/proteções e rollback. Seus **32 testes locais** passaram. Recibos da PR/CI/deploy serão registrados na PR, sem presumir implantação a partir deste documento.
+
 Base remota reconferida: `740a12d70a8c49130729e53031cd5dd3927d4232` (merge PR656). Branch isolada `feat/citizen-tutorial-auto-20261014`, criada a partir de `6742832da6ae0c19296d4508264754eccf390a4f`. O commit/branch anterior de Ajuda e os demais checkouts permanecem preservados. Sem push, novo PR, merge, publicação, alteração de flag ou aplicação de migração.
 
 ## Plano e comportamento

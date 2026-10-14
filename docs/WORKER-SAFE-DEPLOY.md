@@ -35,6 +35,10 @@ O fluxo aprovado é:
 
 ## Bindings críticos fixos
 
+### Preservação do tutorial já ativado — 14/10/2026
+
+`PORTAL_TUTORIAL_COMPLETION_ENABLED` continua gerenciado remotamente, com `keep_vars=true`, sem declará-lo/reconfigurá-lo no TOML e sem reaplicar SQL. Quando existe na produção, um binding público deve manter exatamente tipo/valor na candidata; um secret permanece opaco e é protegido pela lista dinâmica de nomes/tipos. Um GET anônimo na rota do tutorial confirma seu estado antes do upload e depois da promoção: `401/SESSION_REQUIRED` comprova habilitado e autenticação fechada; `503/TUTORIAL_DISABLED` identifica desabilitado. Nenhuma sessão, manifestação, anexo ou conclusão real é usada. Estado desconhecido bloqueia o gate; mudança após promoção aciona o rollback existente. Os recibos `portalTutorialAntes`, `portalTutorialDepois`, `portalTutorialHttpAnonimo` e `portalTutorialFlagPreservada=OK` registram comportamento público, sem revelar valores secretos. Um binding ausente continua opcional, preservando builds anteriores à ativação.
+
 O gate exige atualmente:
 
 - `AUTH_DB` como D1;

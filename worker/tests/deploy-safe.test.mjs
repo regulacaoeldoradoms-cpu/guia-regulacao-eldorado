@@ -24,6 +24,8 @@ import {
   classifyAgendaProbe,
   classifyAdminUsersProbe,
   classifyChatRealtimeProbe,
+  classifyPortalTutorialProbe,
+  probePortalTutorial,
   wranglerArgs,
   wranglerCliPath
 } from '../scripts/deploy-safe.mjs';
@@ -174,6 +176,39 @@ test('candidata íntegra preserva críticos, secrets e Firebase público', () =>
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
   assert.equal(result.preservedSecrets, 9);
   assert.equal(result.authDbId, DB);
+});
+
+test('flag pública remota do tutorial deve ser preservada exatamente sem configurar ou reativar', () => {
+  const name='PORTAL_TUTORIAL_COMPLETION_ENABLED';
+  for(const text of ['true','false']){
+    const active=version([...activeBindings(),{name,type:'plain_text',text}]);
+    assert.doesNotThrow(()=>validateCandidateBindings(active,version([...activeBindings(),{name,type:'plain_text',text}])));
+    for(const bindings of [activeBindings(),[...activeBindings(),{name,type:'plain_text',text:text==='true'?'false':'true'}],[...activeBindings(),{name,type:'secret_text'}]]){
+      assert.throws(()=>validateCandidateBindings(active,version(bindings)),/PORTAL_TUTORIAL_FLAG_NAO_PRESERVADA/);
+    }
+  }
+});
+
+test('flag opaca do tutorial preserva nome/tipo sem ler nenhum valor de secret', () => {
+  const name='PORTAL_TUTORIAL_COMPLETION_ENABLED';
+  const flag=()=>({name,type:'secret_text',get text(){throw new Error('Secret value must never be read');}});
+  const active=version([...activeBindings(),flag()]);
+  assert.doesNotThrow(()=>validateCandidateBindings(active,version([...activeBindings(),flag()])));
+  assert.throws(()=>validateCandidateBindings(active,version(activeBindings())),/SEGREDO_ATUAL_NAO_PRESERVADO_PORTAL_TUTORIAL_COMPLETION_ENABLED/);
+});
+
+test('smoke anônimo distingue flag habilitada e desabilitada sem autenticar ou gravar', async () => {
+  for(const [status,code,state] of [[401,'SESSION_REQUIRED','enabled'],[503,'TUTORIAL_DISABLED','disabled'],[503,'TUTORIAL_UNAVAILABLE','unknown'],[403,'ORIGIN_DENIED','unknown'],[200,'SESSION_REQUIRED','unknown']]){
+    const probe=await probePortalTutorial(async(url,options)=>{
+      assert.equal(url,SAFE_DEPLOY.portalTutorialApi);assert.equal(options.method,'GET');
+      assert.equal(options.headers.Origin,SAFE_DEPLOY.portalOrigin);
+      assert.equal(options.headers.Authorization,undefined);assert.equal(options.body,undefined);
+      return new Response(JSON.stringify({code}),{status});
+    });
+    assert.deepEqual(probe,{status,state,known:state!=='unknown'});
+  }
+  assert.deepEqual(classifyPortalTutorialProbe(401,{}),{status:401,state:'unknown',known:false});
+  await assert.rejects(probePortalTutorial(async()=>{throw new Error('Synthetic unavailable');}),/PORTAL_TUTORIAL_NAO_RESPONDE/);
 });
 
 test('migração inicial do chat realtime permite somente o binding allowlisted ausente na versão antiga', () => {
