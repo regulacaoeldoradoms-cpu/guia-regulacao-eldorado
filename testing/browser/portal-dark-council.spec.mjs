@@ -262,12 +262,12 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       // has its own category/privacy palette and is exercised in the form audit above.
       expect(palettes).toHaveLength(2);
       expect(palettes[0].length).toBeGreaterThan(6);
-      // The requested phone copy changes only this action. Assert each
-      // literal explicitly; all other texts and semantic colors stay exact.
+      // PR653 published this phone action in main. Both sources must retain
+      // that exact approved copy and every dashboard/detail semantic color.
       expect(palettes[0].find(item=>item.selector==='#openNewManifestation')?.text)
         .toBe('Nova manifestaçãoSugestão, reclamação, elogio ou denúncia.');
       expect(palettes[1].find(item=>item.selector==='#openNewManifestation')?.text)
-        .toBe('Escrever ao ConselhoSugestão, reclamação, elogio ou denúncia.');
+        .toBe('Nova manifestaçãoSugestão, reclamação, elogio ou denúncia.');
       const semanticPalette=items=>items.map(item=>{
         if(item.selector!=='#openNewManifestation')return item;
         const {text,...colors}=item;return colors;

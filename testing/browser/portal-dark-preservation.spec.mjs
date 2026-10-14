@@ -329,17 +329,24 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
         expect(current.controls.some(control=>control.id==='manifestationPriorContact')).toBe(false);
         expect(current.controls.find(control=>control.id==='manifestationSubject')).toMatchObject({required:true,minlength:'3',maxlength:'180',disabled:true});
         expect(current.controls.find(control=>control.id==='manifestationDescription')).toMatchObject({required:true,minlength:'10',maxlength:'6500',disabled:true,describedBy:'composeGuidance composeIdentityWarning descriptionCounter'});
-        expect(current.controls.find(control=>control.id==='manifestationConfirm')).toMatchObject({required:true,disabled:false,tag:'input',type:'checkbox',form:'newManifestationForm',identityPreserved:true});
+        expect(current.controls.find(control=>control.id==='manifestationConfirm')).toMatchObject({required:true,disabled:true,tag:'input',type:'checkbox',form:'newManifestationForm',identityPreserved:true});
+        expect(current.controls.find(control=>control.id==='composeChooseFiles')).toMatchObject({tag:'button',type:'button',form:'newManifestationForm',disabled:true,describedBy:'composeFileHelp',identityPreserved:true});
+        expect(current.controls.find(control=>control.id==='manifestationFiles')).toMatchObject({tag:'input',type:'file',hidden:true,multiple:true,accept:'image/jpeg,image/png,application/pdf',identityPreserved:true});
+        expect(current.controls.find(control=>control.id==='submitManifestation')).toMatchObject({tag:'button',type:'submit',disabled:true,describedBy:'composeSubmitHint',identityPreserved:true});
         expect(current.citizenForm.confirmation).toBe('Revisei o relato e os anexos e confirmo que enviei apenas as informações necessárias.');
         expect(current.citizenForm.alerts.join(' ')).toContain('Texto, imagens e PDFs podem revelar sua identidade.');
         expect(current.citizenForm.alerts.join(' ')).toContain('urgência ou emergência');
         // Only the explicitly approved removal, initial progressive disabled
-        // state, accessible report description and explanatory copy differ.
+        // state, local picker, accessible descriptions and explanatory copy differ.
         // Every remaining native attribute, radio, ID and identity is exact.
         const project=contract=>({...contract,
-          controls:contract.controls.filter(control=>control.id!=='manifestationPriorContact').map(control=>
-            ['manifestationSubject','manifestationDescription'].includes(control.id)
-              ? {...control,disabled:false,...(control.id==='manifestationDescription'?{describedBy:null}:{})}:control),
+          controls:contract.controls.filter(control=>!['manifestationPriorContact','composeChooseFiles'].includes(control.id)).map(control=> {
+            if(['manifestationSubject','manifestationDescription'].includes(control.id))return {...control,disabled:false,...(control.id==='manifestationDescription'?{describedBy:null}:{})};
+            if(control.id==='manifestationConfirm')return {...control,disabled:false};
+            if(control.id==='manifestationFiles')return {...control,hidden:false};
+            if(control.id==='submitManifestation')return {...control,disabled:false,describedBy:null};
+            return control;
+          }),
           citizenForm:{...contract.citizenForm,alerts:[],confirmation:''}});
         expect(project(current)).toEqual(project(baseNativeContract));
       }else expect(nativeContracts[0]).toEqual(baseNativeContract);

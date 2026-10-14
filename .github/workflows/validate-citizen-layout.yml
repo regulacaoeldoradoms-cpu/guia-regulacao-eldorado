@@ -26,6 +26,7 @@ on:
       - "js/pets-page.js"
       - "js/citizen-mobile-app.js"
       - "js/citizen.js"
+      - "js/citizen-compose-attachments.js"
       - "js/citizen-account-level.js"
       - "js/citizen-mobile-chat-bootstrap.js"
       - "js/profile-mobile-presentation.js"
@@ -73,6 +74,8 @@ jobs:
           import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
           fs.appendFileSync(process.env.GITHUB_ENV, 'CHROMIUM_PATH=' + chromium.executablePath() + '\n');
           JS
+      - name: Published shells and bounded optional preview failures
+        run: node testing/citizen-layout/citizen-compose-deployment.mjs
       - name: Immediate theme on native and retained citizen routes
         run: |
           node testing/citizen-layout/theme-entry.mjs
@@ -105,6 +108,9 @@ jobs:
         run: |
           node testing/citizen-layout/citizen-compose-refinement.mjs
           node testing/citizen-layout/citizen-compose-errors.mjs
+          node testing/citizen-layout/citizen-compose-final.mjs
+          node testing/citizen-layout/citizen-compose-files-errors.mjs
+          node testing/citizen-layout/citizen-compose-csp.mjs
           node testing/citizen-layout/citizen-compose-accessibility.mjs
           node testing/citizen-layout/citizen-compose-footer.mjs
           node testing/citizen-layout/citizen-compose-paint.mjs
@@ -120,6 +126,7 @@ jobs:
         run: node testing/citizen-layout/citizen-first-paint.mjs
       - name: Pets mobile first frames, native actions and repeated navigation
         run: |
+          node testing/citizen-layout/fixture-asset-transport.mjs
           node testing/citizen-layout/pets-mobile-presentation.mjs
           TEXT_SCALE=2 PETS_MOBILE_OUTPUT=/tmp/pets-mobile-text200 node testing/citizen-layout/pets-mobile-presentation.mjs
       - name: Single mobile address, native bar clicks and retained controllers
@@ -189,6 +196,10 @@ jobs:
             .local/citizen-html-first-paint/
             .local/citizen-compose-evidence/
             .local/compose-refinement/
+            .local/compose-final/
+            .local/compose-files-errors/
+            .local/compose-deployment/
+            .local/compose-csp/
             .local/compose-accessibility/
             .local/compose-footer/
             .local/compose-paint/

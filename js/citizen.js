@@ -1,12 +1,42 @@
 (() => {
 'use strict';
 
+// An already-rendered mobile shell can keep its previous dependency list.
+// Resolve this controller's optional preview dependency independently of it.
+let composeHelperPromise;
+function ensureComposeHelper() {
+  if (globalThis.PortalCitizenComposeAttachments?.create) return Promise.resolve(globalThis.PortalCitizenComposeAttachments);
+  if (!composeHelperPromise) composeHelperPromise=new Promise((resolve,reject)=>{
+    const script=globalThis.document.createElement('script');
+    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-compose-5';
+    const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve(globalThis.PortalCitizenComposeAttachments);};
+    const timer=setTimeout(()=>finish(new Error('Prévia local indisponível')),8000);
+    script.onload=()=>finish(globalThis.PortalCitizenComposeAttachments?.create?null:new Error('Prévia local indisponível'));
+    script.onerror=()=>finish(new Error('Prévia local indisponível'));
+    globalThis.document.head.append(script);
+  }).catch(error=>{composeHelperPromise=null;throw error;});
+  return composeHelperPromise;
+}
+
 const initializeCitizenArea = async (context) => {
   const window = context?.window || globalThis;
   const document = context?.document || globalThis.document;
   const auth = window.RegulationAuth;
   const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;
+  const hasPreviewMarkup=Boolean(document.getElementById('composeChooseFiles')&&document.getElementById('composeFilePreview'));
+  const composeHelper=hasPreviewMarkup?await ensureComposeHelper().catch(()=>null):null;
+  if(context?.disposed)return;
+  const initialCompose=document.getElementById('newManifestationModal');
+  initialCompose.dataset.composeRuntime='current';
+  document.getElementById('manifestationFiles').hidden=Boolean(composeHelper);
+  const initialPicker=document.getElementById('composeChooseFiles');if(initialPicker)initialPicker.hidden=!composeHelper;
+  if(hasPreviewMarkup&&!composeHelper){const help=document.getElementById('composeFileHelp');if(help)help.textContent+=' As prévias não estão disponíveis agora.';}
+  if(!document.getElementById('composeSubmitHint')){
+    const hint=document.createElement('p');hint.id='composeSubmitHint';hint.className='compose-submit-hint';hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');
+    document.getElementById('newManifestationStatus').before(hint);
+    document.getElementById('submitManifestation').setAttribute('aria-describedby','composeSubmitHint');
+  }
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
@@ -74,8 +104,10 @@ const initializeCitizenArea = async (context) => {
   }
 
   function closeModal(id, {restoreFocus = true} = {}) {
+    if(id==='composeFilePreview')return composeAttachmentManager?.closePreview({restoreFocus});
     const modal = document.getElementById(id);
     if (!modal || (id==='newManifestationModal' && sendingManifestation)) return;
+    if(id==='newManifestationModal')composeAttachmentManager?.closePreview({restoreFocus:false});
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     if(id==='newManifestationModal'){modal.setAttribute('aria-modal','false');if(restoreFocus&&composeOpener?.isConnected)composeOpener.focus({preventScroll:true});}
@@ -107,14 +139,14 @@ const initializeCitizenArea = async (context) => {
     if (!notice) return;
     const mode = selectedPrivacyMode();
     if (mode === 'identificada') {
-      notice.innerHTML = '<strong>Manifestação identificada.</strong> O Conselho verá seu nome de perfil, @ e cargo ou função quando houver. Seu e-mail, quando cadastrado, continua protegido e não é exibido na manifestação.';
+      notice.innerHTML = '<strong>Você será identificado ao Conselho.</strong> Seu nome, @ e cargo aparecem, se houver. Seu e-mail permanece protegido.';
       return;
     }
     if (mode === 'sigilosa') {
-      notice.innerHTML = '<strong>Manifestação sigilosa.</strong> Sua identidade de perfil não será exibida ao Conselho nesta manifestação. Seu e-mail de segurança permanece protegido.';
+      notice.innerHTML = '<strong>Envio sigiloso.</strong> Seu nome e perfil não aparecem ao Conselho. O protocolo fica nesta conta; seu e-mail permanece protegido.';
       return;
     }
-    notice.innerHTML = '<strong>Manifestação anônima.</strong> Seu nome, @ e perfil não serão exibidos ao Conselho nesta manifestação. O texto e os anexos ainda podem revelar sua identidade, então envie apenas o necessário.';
+    notice.innerHTML = '<strong>Envio anônimo.</strong> Seu nome, @ e perfil não aparecem ao Conselho. Você acompanha o protocolo nesta conta; seu e-mail permanece protegido.';
   }
 
   async function loadSecurity() {
@@ -139,7 +171,7 @@ const initializeCitizenArea = async (context) => {
     if (protectedInput) {
       if (state.security?.emailVerified) {
         protectedInput.value = 'sigilosa';
-        if (protectedTitle) protectedTitle.textContent = 'Manter sigilosa';
+        if (protectedTitle) protectedTitle.textContent = 'Enviar com sigilo';
         if (protectedDescription) protectedDescription.textContent = 'O Conselho recebe o relato, mas seu nome, @ e perfil não são exibidos na manifestação.';
       } else {
         protectedInput.value = 'anonima';
@@ -300,6 +332,7 @@ const initializeCitizenArea = async (context) => {
     if (list.length > 5) return 'Selecione no máximo 5 anexos.';
     for (const file of list) {
       if (file.type && !['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) return `O arquivo ${file.name} não está em formato JPG, PNG ou PDF.`;
+      if (!file.type && !/\.(jpe?g|png|pdf)$/i.test(file.name)) return `O arquivo ${file.name} não está em formato JPG, PNG ou PDF.`;
       if (file.size > 5 * 1024 * 1024) return `O arquivo ${file.name} ultrapassa 5 MB.`;
     }
     return '';
@@ -323,6 +356,8 @@ const initializeCitizenArea = async (context) => {
   const composeModal = document.getElementById('newManifestationModal');
   const composeDetails = document.getElementById('composeDetails');
   const detailModal = document.getElementById('manifestationDetailModal');
+  const previewModal = document.getElementById('composeFilePreview');
+  let composeAttachmentManager = null;
   let detailFocusFrame = 0;
   function focusDetailDialog(attempts = 12) {
     if (!detailModal?.isConnected || !detailModal.classList.contains('open')) return;
@@ -366,8 +401,11 @@ const initializeCitizenArea = async (context) => {
     const config = composeKinds[kind];
     const report = document.getElementById('composeReport');
     if (report) report.hidden = !config;
+    composeForm.querySelectorAll('[data-compose-followup]').forEach(node=>{node.hidden=!config;});
     if (!sendingManifestation) {
       for (const id of ['manifestationSubject', 'manifestationDescription']) document.getElementById(id).disabled = !config;
+      document.getElementById('manifestationConfirm').disabled = !config;
+      const picker=document.getElementById('composeChooseFiles');if(picker)picker.disabled=!config;
     }
     if (config) {
       document.getElementById('composeReportTitle').textContent = config[0];
@@ -380,15 +418,32 @@ const initializeCitizenArea = async (context) => {
     const hasDraft = document.getElementById('manifestationDescription')?.value.trim() || document.getElementById('manifestationSubject')?.value.trim() || count;
     if (change && currentComposeKind && kind !== currentComposeKind && hasDraft) document.getElementById('composeDraftNotice').textContent = 'Categoria alterada. Seu rascunho foi mantido; revise o relato e os detalhes.';
     currentComposeKind = kind;
+    updateComposeReadiness(config);
+    composeAttachmentManager?.sync();
     fitComposeActions();
     requestAnimationFrame(() => {resizeComposeReport();fitComposeActions();});
   }
+  function updateComposeReadiness(config) {
+    const subject=document.getElementById('manifestationSubject'),description=document.getElementById('manifestationDescription');
+    const date=document.getElementById('manifestationDate'),confirm=document.getElementById('manifestationConfirm');
+    const files=composeAttachmentManager?.getFiles() || Array.from(document.getElementById('manifestationFiles')?.files || []);
+    let message='';
+    if(!config)message='Escolha o tipo de mensagem para continuar.';
+    else if(subject.value.trim().length<3||!subject.validity.valid)message='Preencha o assunto com pelo menos 3 caracteres.';
+    else if(description.value.trim().length<10||!description.validity.valid)message='Escreva seu relato com pelo menos 10 caracteres.';
+    else if(!date.validity.valid)message='Corrija a data em Adicionar detalhes.';
+    else if(buildDescription().length>8000)message='Reduza o relato ou a expectativa: o total passou de 8.000 caracteres.';
+    else if(validateFiles(files))message=validateFiles(files);
+    else if(!confirm.checked)message='Revise as informações e marque a confirmação para enviar.';
+    document.getElementById('submitManifestation').disabled=sendingManifestation||isPresident||Boolean(message);
+    const hint=document.getElementById('composeSubmitHint');if(hint.textContent!==message)hint.textContent=message;
+  }
   composeForm?.addEventListener('change', event => syncCompose(event.target.name === 'manifestationType'));
   composeForm?.addEventListener('input', event => {if(event.target.name !== 'manifestationType')syncCompose();});
-  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
+  composeForm?.addEventListener('reset', () => queueMicrotask(() => {currentComposeKind='';if(composeDetails)composeDetails.open=false;const attachments=document.getElementById('composeAttachments');if(attachments)attachments.open=false;composeAttachmentManager?.clear();document.getElementById('composeDraftNotice').textContent='';syncCompose();}));
   composeForm?.addEventListener('invalid', event => {if(composeDetails?.contains(event.target))composeDetails.open=true;},true);
   function containDialogKeyboard(event, modal = event.currentTarget) {
-    if (!modal?.classList.contains('open')) return;
+    if (event.defaultPrevented || !modal?.classList.contains('open')) return;
     if (event.key === 'Escape' && !(modal===composeModal && sendingManifestation)) {event.preventDefault();closeModal(modal.id);return;}
     if (event.key !== 'Tab') return;
     const nodes=[...modal.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(node=>!node.disabled && node.tabIndex>=0 && node.getClientRects().length && getComputedStyle(node).visibility==='visible');
@@ -401,7 +456,7 @@ const initializeCitizenArea = async (context) => {
   detailModal?.addEventListener('keydown',containDialogKeyboard);
   document.addEventListener('keydown',event=>{
     if(event.key!=='Tab')return;
-    const modal=detailModal?.classList.contains('open')?detailModal:composeModal;
+    const modal=previewModal?.classList.contains('open')?previewModal:detailModal?.classList.contains('open')?detailModal:composeModal;
     if(modal?.classList.contains('open')&&!modal.contains(document.activeElement))containDialogKeyboard(event,modal);
   },true);
   const composeViewport = window.visualViewport;
@@ -418,19 +473,28 @@ const initializeCitizenArea = async (context) => {
 
   const manifestationFiles = document.getElementById('manifestationFiles');
   const manifestationFileList = document.getElementById('manifestationFileList');
-  manifestationFiles?.addEventListener('change', () => {
-    const files = Array.from(manifestationFiles.files || []);
-    const error = validateFiles(files);
-    if (error) {
-      manifestationFiles.value = '';
-      manifestationFileList.hidden = true;
-      manifestationFileList.innerHTML = '';
-      showStatus(document.getElementById('newManifestationStatus'), error, 'error');
-      return;
-    }
-    manifestationFileList.hidden = files.length === 0;
-    manifestationFileList.innerHTML = files.map((file) => `<div class="selected-file"><span>${escapeHtml(file.name)}</span><span>${(file.size / 1024 / 1024).toFixed(2)} MB</span></div>`).join('');
-  });
+  let composeFileError='';
+  const attachmentOptions={
+    input:manifestationFiles,list:manifestationFileList,picker:document.getElementById('composeChooseFiles'),
+    disclosure:document.getElementById('composeAttachments'),count:document.getElementById('composeAttachmentCount'),
+    preview:previewModal,compose:composeModal,validate:validateFiles,isBusy:()=>sendingManifestation,
+    onChange:({validated=false}={})=>{if(validated&&composeFileError){const status=document.getElementById('newManifestationStatus');if(status.textContent===composeFileError){status.textContent='';status.className='account-status';}composeFileError='';}syncCompose();},
+    onError:message=>{composeFileError=message;showStatus(document.getElementById('newManifestationStatus'),message,'error');}
+  };
+  // Old cached HTML or an unavailable preview script retains the native picker
+  // and the same validated upload source. A reload is never required to send.
+  function nativeAttachments({input,list,count,onChange,onError,validate,isBusy}) {
+    let files=Array.from(input.files||[]);
+    function render(){list.replaceChildren();for(const file of files){const row=document.createElement('div');row.className='selected-file';row.textContent=`${file.name} · ${Math.ceil(file.size/1024)} KB`;list.append(row);}list.hidden=!files.length;if(count)count.textContent=files.length?`${files.length} arquivo(s)`:'opcional';}
+    function restore(){try{const transfer=new DataTransfer();files.forEach(file=>transfer.items.add(file));input.files=transfer.files;}catch(_){input.value='';}}
+    function changed(){if(isBusy()){restore();return;}const selected=Array.from(input.files||[]),error=validate(selected);if(error){restore();onError(error+(files.length?' Os anexos anteriores foram mantidos.':''));onChange();return;}files=selected;render();onChange({validated:true});}
+    function clear(){files=[];input.value='';render();}
+    function hidden(event){if(!event.persisted)clear();}
+    input.addEventListener('change',changed);globalThis.addEventListener('pagehide',hidden);render();
+    return {getFiles:()=>[...files],sync:()=>{},clear,closePreview:()=>{},dispose(){clear();input.removeEventListener('change',changed);globalThis.removeEventListener('pagehide',hidden);}};
+  }
+  composeAttachmentManager=composeHelper?composeHelper.create(attachmentOptions):nativeAttachments(attachmentOptions);
+  context?.addController?.({dispose:()=>composeAttachmentManager.dispose()});
 
   document.querySelectorAll('input[name="manifestationPrivacy"]').forEach((input) => input.addEventListener('change', renderPrivacyNotice));
 
@@ -444,12 +508,14 @@ const initializeCitizenArea = async (context) => {
     event.preventDefault();
     const submittedForm = event.currentTarget;
     if (sendingManifestation) return;
+    if (previewModal?.classList.contains('open')) return;
     syncCompose();
     const button = document.getElementById('submitManifestation');
     const status = document.getElementById('newManifestationStatus');
     if (isPresident) return showStatus(status, 'A Presidência do Conselho não pode abrir nova manifestação.', 'error');
     if (!submittedForm.reportValidity()) return;
-    const files = Array.from(manifestationFiles?.files || []);
+    if(document.getElementById('manifestationSubject').value.trim().length<3 || document.getElementById('manifestationDescription').value.trim().length<10)return showStatus(status,document.getElementById('composeSubmitHint').textContent,'error');
+    const files = composeAttachmentManager.getFiles();
     const fileError = validateFiles(files);
     if (fileError) return showStatus(status, fileError, 'error');
     const description = buildDescription();
@@ -458,7 +524,7 @@ const initializeCitizenArea = async (context) => {
     const privacyMode = selectedPrivacyMode();
     sendingManifestation = true;
     composeForm.setAttribute('aria-busy','true');
-    composeForm.querySelectorAll('input,textarea,select,button[data-close-modal],summary').forEach(node=>{node.dataset.composeWasDisabled=String(Boolean(node.disabled));if('disabled' in node)node.disabled=true;});
+    composeForm.querySelectorAll('input,textarea,select,button,summary').forEach(node=>{node.dataset.composeWasDisabled=String(Boolean(node.disabled));if('disabled' in node)node.disabled=true;});
     composeModal.querySelector('.citizen-modal-close').disabled=true;
     button.disabled = true;
     button.textContent = 'Enviando...';
@@ -483,6 +549,7 @@ const initializeCitizenArea = async (context) => {
       renderPrivacyNotice();
       if (descriptionCounter) descriptionCounter.textContent = '0/6500';
       if (manifestationFileList) { manifestationFileList.hidden = true; manifestationFileList.innerHTML = ''; }
+      composeAttachmentManager.clear();
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
       showStatus(status, `Manifestação enviada. Protocolo: ${protocol}.${attachmentMessage}`, failedUploads ? 'error' : 'success');
       await Promise.all([loadManifestations(), loadNotifications()]);
