@@ -126,7 +126,7 @@ function mount({document,window,context,user,isBusy,initialize}){
  function persist(){try{window.localStorage.setItem(keyFor(user),JSON.stringify({version:VERSION,steps:completed}));}catch(_){status.textContent='Progresso disponível nesta aba; armazenamento local indisponível.';}entryLabel();}
  function stop({save=true,focus=true}={}){
   const s=session;if(!s)return;session=null;starting=false;s.valid=false;s.abort.abort();s.controllers.forEach(c=>c.dispose?.());s.dialog?.close();s.dialog?.remove();s.savedNodes?.forEach(([node,marker])=>marker.replaceWith(node));s.unlock?.();
-  if(save&&current())persist();if(focus&&current()&&start.isConnected){entry.open=true;start.focus({preventScroll:true});}
+  if(save&&current()){persist();if(status.textContent.startsWith('Preparando a demonstração'))status.textContent='Tutorial pausado. Você pode retomar.';}if(focus&&current()&&start.isConnected){entry.open=true;start.focus({preventScroll:true});}
  }
  async function award(){
   if(awarding||!current()||session||completed.length!==STEPS.length)return;

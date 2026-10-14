@@ -8,7 +8,7 @@ const server=await serve(process.cwd()),browser=await chromium.launch({executabl
 async function entry(page){await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded',timeout:30000});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});}
 async function options(page){if(!await page.locator('[data-citizen-tutorial-entry]').evaluate(n=>n.open)){await page.locator('[data-tutorial-options]').focus();await page.keyboard.press('Enter');}}
 async function start(page){await options(page);await page.locator('[data-tutorial-start]').focus();await page.keyboard.press('Enter');await page.locator('dialog.citizen-tutorial #tutorialTitle').waitFor();return page.locator('dialog.citizen-tutorial');}
-async function stop(page,d){await d.locator('[data-tutorial-pause]').click();await page.locator('dialog.citizen-tutorial').waitFor({state:'detached'});}
+async function stop(page,d){await d.locator('[data-tutorial-pause]').click();await page.locator('dialog.citizen-tutorial').waitFor({state:'detached'});assert.match(await page.locator('[data-tutorial-status]').textContent(),/Tutorial pausado/);}
 try{
  for(const width of (process.env.LIFECYCLE_WIDTHS||'390,1280').split(',').map(Number)){
   const result={width,errors:[],passed:false},{page,context,audit}=await newPage(browser,{width,theme:'dark',seedOnce:true},server.origin,result);
