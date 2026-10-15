@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { installAuditFixture } from './dark-audit-fixture.mjs';
+import { installAuditFixture, agendaContactCapabilityFromSource } from './dark-audit-fixture.mjs';
 import { projectTutorialAdditions } from './citizen-tutorial-preservation.mjs';
 import { compareAgainstBase } from './dark-audit-base-comparison.mjs';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
 import { writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 async function sampleCouncilReflection(page,info){
@@ -189,7 +190,15 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     // The complete mobile catalogue exceeds 90 million physical pixels. Keep
     // it intact and allow the bounded, repeated full-page captures to finish.
     if(route==='/medico/')test.setTimeout(180_000);
-    const network=await installAuditFixture(context,{theme,authenticated:!['/login/','/cadastro/'].includes(route)});
+    // Each source runs against its own synthetic backend protocol. Comparing a
+    // current bridge with a legacy response would test the upgrade warning
+    // against the base connected state instead of preserving the same state.
+    const agendaCapabilities=route==='/agenda/sync/'?{
+      current:agendaContactCapabilityFromSource(readFileSync(new URL('../../js/agenda-sync-bridge.js',import.meta.url),'utf8')),
+      base:agendaContactCapabilityFromSource(execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE||'origin/main'}:js/agenda-sync-bridge.js`],{encoding:'utf8'}))
+    }:null;
+    const network=await installAuditFixture(context,{theme,authenticated:!['/login/','/cadastro/'].includes(route),
+      ...(agendaCapabilities?{agendaContactCapability:request=>request.frame().page()===page?agendaCapabilities.current:agendaCapabilities.base}:{})});
     const shared=sharedCitizenRoutes.has(route);
     const mobileRedesign=shared&&isMobile&&theme==='light'&&media==='screen';
     const loginRedesign=route==='/login/'&&isMobile;

@@ -267,13 +267,13 @@ test('navigation-only candidate does not change two-phone ambiguity after normal
  assert.equal(flow.tools.report().failures.ambiguous_phone,1);assert.equal(flow.tools.report().collected,0);
 });
 
-test('shipped navigation checks current guarded readiness before elapsed deadline and exposes 1.2.8',()=>{
+test('shipped navigation checks current guarded readiness before elapsed deadline and exposes 1.2.9',()=>{
  const source=read('agenda/digsaude-agenda-sync.user.js');
  const navigation=source.slice(source.indexOf('  async function navigateContactWindow('),source.indexOf('  async function extractContact('));
  assert.match(navigation,/while \(true\)/);
  assert.ok(navigation.indexOf('return { root, frameWindow: contactWindow }') < navigation.indexOf('if (Date.now() - startedAt >= CONTACT_WINDOW_TIMEOUT_MS) break;'));
- assert.match(source,/@version      1\.2\.8/);
- assert.match(source,/@updateURL.*20261009-navigation-1/);
- assert.match(source,/@downloadURL.*20261009-navigation-1/);
- assert.match(read('agenda/index.html'),/digsaude-agenda-sync\.user\.js\?v=20261009-navigation-1/);
+ assert.match(source,/@version      1\.2\.9/);
+ assert.match(source,/@updateURL.*20261015-directory-1/);
+ assert.match(source,/@downloadURL.*20261015-directory-1/);
+ assert.match(read('agenda/index.html'),/digsaude-agenda-sync\.user\.js\?v=20261015-directory-1/);
 });
