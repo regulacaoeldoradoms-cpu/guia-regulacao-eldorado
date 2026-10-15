@@ -50,13 +50,13 @@ test('matriz frontend novo/Worker antigo e capacidade ausente ou inválida não 
  assert.equal(legacy.phone,''); // Both previous and current frontend see no destination with Worker v2.
  const valid=w.normalizeRecord({...record,contactVersion:'patient-details-v2',contactSourceId:record.sourceId});
  const f=frontend(async()=>payload(CAP,[w.publicRecord(valid,'',new Map())]));
- assert.equal(await f.load(),true);await f.openVerifiedContact(record);assert.equal(new URL(f.opened[0]).pathname,'/5511990000001');
+ assert.equal(await f.load(),true);await f.openVerifiedContact(f.state.records[0]);assert.equal(new URL(f.opened[0]).pathname,'/5511990000001');
 });
 
-test('clique revalida capacidade, revogação, expiração e associação sem navegar com estado anterior',async()=>{
+test('clique revalida capacidade, revogação, prova inválida e associação sem navegar com estado anterior',async()=>{
  const w=backend(),valid=w.normalizeRecord({...record,contactVersion:'patient-details-v2',contactSourceId:record.sourceId});
- const expired=w.publicRecord({...valid,contactVerifiedAt:new Date(Date.now()-25*3600000).toISOString()},'',new Map());
- for(const next of [payload(undefined),payload(CAP,[]),payload(CAP,[{...record,phone:''}]),payload(CAP,[expired]),
+ const invalid=w.publicRecord({...valid,contactVerifiedAt:'invalid'},'',new Map());
+ for(const next of [payload(undefined),payload(CAP,[]),payload(CAP,[{...record,phone:''}]),payload(CAP,[invalid]),
   payload(CAP,[{...record,patient:'Paciente sintético B'}]),payload(CAP,[{...record,phone:'5521990000002'}]),
   payload(CAP,[{...record,patientSourceId:'synthetic-other-patient'}]),
   payload(CAP,[{...record,contactRevision:'synthetic-other-revision'}]),

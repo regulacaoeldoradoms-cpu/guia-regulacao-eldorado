@@ -1,6 +1,6 @@
 # Identidade DigSaúde — evidência local e compatibilidade
 
-Revisão local de 15/10/2026 sobre a candidata `c95c620e`; branch `fix/agenda-durable-patient-contacts`. Sem dados reais, rede clínica, push, PR, publicação ou migração. O checkout original permanece em `d6e4c349` e a frente do tutorial não foi alterada.
+Revisão local de 15/10/2026 sobre `2314cf19` (primeira candidata `c95c620e`); branch `fix/agenda-durable-patient-contacts`. Sem dados reais, rede clínica, push, PR, publicação ou migração. O checkout original permanece em `d6e4c349` e a frente do tutorial não foi alterada.
 
 ## O que o repositório comprova
 
@@ -20,13 +20,13 @@ O protótipo dessa hipótese permanece testável com um contrato sintético expl
 
 ## Compatibilidade corrigida
 
-O contato legado v2 válido continua disponível pela API e WhatsApp no vínculo original: mesma consulta/`sourceId`, paciente/data de solicitação associados na prova de captura, proveniência e validade anteriores. Verificar esses campos dentro da mesma consulta não associa pacientes entre consultas. Um ID técnico apenas proposto não remove o legado, não o promove nem força recoleta enquanto válido.
+O contato legado v2 válido continua disponível pela API e WhatsApp no vínculo original: mesma consulta/`sourceId`, paciente/data de solicitação associados na prova de captura, proveniência e validações de associação preservadas, sem expiração automática. Verificar esses campos dentro da mesma consulta não associa pacientes entre consultas. Um ID técnico apenas proposto não remove o legado, não o promove nem força recoleta enquanto válido.
 
-Novos contatos sem chave técnica continuam pelo fluxo v2 original por consulta. Vazio/falha não substituem o valor/prova armazenados. Contato expirado, sem versão ou com associação/prova divergente permanece indisponível conforme a proteção anterior; o valor é conservado sem renovar a validade. Homônimos em outra consulta não herdam telefone nem são afetados por correção/exclusão de um paciente do diretório somente por terem o mesmo nome.
+Novos contatos sem chave técnica continuam pelo fluxo v2 por consulta. A prova confirmada **não expira automaticamente após 24h**. Vazio/falha e outra captura automática não substituem valor/prova nem atualizam artificialmente a data de verificação. Versão ausente, data inválida/futura, associação divergente ou bloqueio continuam indisponíveis; remover o prazo não fabrica procedência. Homônimos em outra consulta não herdam telefone nem são afetados por correção/exclusão de um paciente do diretório somente por terem o mesmo nome.
 
 Uma consulta **já vinculada** ao diretório não pode perder seu ID e voltar ao modo legado para restaurar correção/exclusão. Essa perda fica marcada (`contactIdentityRequired`) até receber associação técnica explícita novamente. Exclusões do diretório são aplicadas às associações confirmadas; não se promete propagá-las a registros legados independentes cuja identidade é desconhecida.
 
-**Não é necessário mapear globalmente os contatos antigos para continuar usando a Agenda.** O diretório permite migração progressiva, individual, após comprovar a fonte técnica. As regras legadas de 24h continuam vigentes; a validade durável do diretório não foi aplicada a legados por inferência.
+**Não é necessário mapear globalmente os contatos antigos para continuar usando a Agenda.** O diretório permite migração progressiva, individual, após comprovar a fonte técnica. A durabilidade agora é comprovada na mesma consulta, usando a prova v2 original; não foi inferida identidade de paciente. `POST /api/agenda/contact` com `sourceId`, `action`, `expectedRevision` e `phone` somente na correção permite corrigir/excluir esse vínculo sob a mesma autorização. CAS e marcador persistido impedem replay/concorrência de desfazer correção/exclusão. Nova revisão explícita é exigida para restaurar o número. Não foi feito backfill nem criada uma nova base para a consulta.
 
 ## Organização: limite existente preservado
 
@@ -42,6 +42,6 @@ Confirmar também o escopo/unicidade desse campo e sua estabilidade após recarg
 
 ## Verificação desta revisão
 
-17 testes da suíte de durabilidade passaram, incluindo o novo caso de legado válido após captura, recarga, snapshots, remoção/reaparecimento, ausência de mapeamento e guarda de proveniência. A ponte real visita somente os desconhecidos, agora incluindo os legados ainda sem ID técnico. O adaptador hipotético permanece inativo mesmo diante de um link com formato compatível. Outros 10 testes afetados de Agenda/contrato passaram. Sintaxe dos três JS alterados, importação do módulo, diff e referências documentais foram verificados.
+82 testes dos três arquivos afetados passaram: Agenda, contrato e 21 de durabilidade. Os quatro novos cenários comprovam prova com mais de 24h e anos de idade, nova sessão, consulta removida/reaparecida, desconhecido ainda ausente, correção/exclusão explícitas sem backfill, replay concorrente e duas correções com uma revisão. A ponte real ignora o contato por consulta com prova antiga e ainda coleta o desconhecido; data/procedência originais permanecem. Datas futuras/inválidas e associação divergente continuam recusadas.
 
-Os demais resultados dos 153 testes da candidata `c95c620e` permanecem como evidência dos caminhos não alterados; a suíte completa não foi repetida nesta revisão. Recuperação Firebase, gateway, capacidade de salas, navegação/menu/diálogo e permissões não receberam mudanças.
+Os demais resultados anteriores foram reaproveitados somente nos caminhos inalterados; não se repetiram suítes gerais, recuperação Firebase, gateway, capacidade, recorrência/navegação ou tutorial. A fonte de ID do paciente continua não comprovada e o adaptador hipotético continua desativado. O único limite residual desta frente é o reuso **entre consultas diferentes**, cujo formato mínimo de evidência sanitizada está descrito acima.

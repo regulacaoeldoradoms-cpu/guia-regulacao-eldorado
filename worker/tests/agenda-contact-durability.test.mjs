@@ -270,7 +270,7 @@ test('não promove legado por nome; falha de upgrade preserva válido; captura v
   stored.contactVerifiedAt = '2020-01-01T00:00:00.000Z';
   await expired.sync([row({ phone: '' })]);
   assert.equal([...expired.db.documents.values()][0].phone, row().phone);
-  assert.equal((await expired.list())[0].phone, ''); // Preserved storage is not unverified authorization to send.
+  assert.equal((await expired.list())[0].phone, row().phone); // Confirmed proof is durable; missing proof below is still refused.
   const unverifiedStored = [...expired.db.documents.values()][0];
   unverifiedStored.contactVersion = '';
   unverifiedStored.contactVerifiedAt = '';
@@ -304,11 +304,110 @@ test('legado v2 continua disponível no vínculo original após recarga e snapsh
   for (const [changes, expected] of [
     [{ contactVersion: '' }, ''], [{ contactSourceId: 'synthetic-other-source' }, ''],
     [{ contactPatient: 'Outro nome sintético' }, ''], [{ contactRequestedAt: '2020-01-01' }, ''],
-    [{ contactVerifiedAt: '2020-01-01T00:00:00.000Z' }, '']]) {
+    [{ contactVerifiedAt: 'invalid' }, ''],
+    [{ contactVerifiedAt: new Date(Date.now() + 3600000).toISOString() }, '']]) {
     const isolated = backend(storage(JSON.parse(JSON.stringify([...reloaded.db.documents]))));
     Object.assign([...isolated.db.documents.values()][0], changes);
     assert.equal((await isolated.list())[0].phone, expected);
   }
+});
+
+test('consulta confirmada não expira após 24h, outra sessão e saída/retorno; consulta desconhecida continua ausente', async () => {
+  const w = backend();
+  const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
+  await w.sync([legacy]);
+  const stored = [...w.db.documents.values()][0];
+  stored.contactVerifiedAt = '2020-01-01T00:00:00.000Z';
+  const revision = stored.contactRevision;
+  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))));
+  reloaded.context.user = { username: 'synthetic-new-session', role: 'admin' };
+  assert.equal((await reloaded.list())[0].phone, legacy.phone);
+  assert.deepEqual((await reloaded.lookup([legacy])).body.knownSourceIds, [legacy.sourceId]);
+  const unknown = { ...legacy, sourceId: 'synthetic-new-consultation' };
+  assert.deepEqual((await reloaded.lookup([unknown])).body.knownSourceIds, []);
+  await reloaded.sync([{ ...legacy, phone: '5521990000002' }]); // stale/automatic capture is not correction
+  await reloaded.sync([{ ...legacy, phone: '' }]);
+  await reloaded.sync([], ORG, true);
+  assert.equal([...reloaded.db.documents.values()][0].phone, legacy.phone);
+  await reloaded.sync([{ ...legacy, phone: undefined, contactVersion: undefined }]);
+  assert.equal((await reloaded.list())[0].phone, legacy.phone);
+  assert.deepEqual((await reloaded.request('/contact-state')).body.knownSourceIds, [legacy.sourceId]);
+  const persisted = [...reloaded.db.documents.values()][0];
+  assert.equal(persisted.contactVerifiedAt, '2020-01-01T00:00:00.000Z');
+  assert.equal(persisted.contactRevision, revision);
+  assert.equal(contactEntries(reloaded.db).length, 0); // no patient association/migration
+});
+
+test('correção/exclusão por consulta são explícitas, versionadas e resistem a replay, recarga e snapshot vazio', async () => {
+  const w = backend();
+  const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
+  await w.sync([legacy]);
+  const oldStored = [...w.db.documents.values()][0];
+  delete oldStored.contactRevision; // pre-candidate row: no schema/backfill is required
+  oldStored.contactVerifiedAt = '2020-01-01T00:00:00.000Z';
+  const revise = (action, expectedRevision, phone, env = ORG) => w.request('/contact', {
+    sourceId: legacy.sourceId, action, expectedRevision, phone }, env);
+  const initial = (await w.list())[0].contactRevision;
+  assert.equal(initial, '2020-01-01T00:00:00.000Z');
+  assert.equal((await w.request('/contact', { sourceId: ' ' + legacy.sourceId, action: 'delete', expectedRevision: initial })).status, 400);
+  assert.equal((await revise('correct', initial, '')).status, 400);
+  assert.equal((await revise('delete', initial, undefined, { AGENDA_ORGANIZATION_ID: 'synthetic-b' })).status, 404);
+  assert.equal((await w.request('/contact', { sourceId: legacy.sourceId, patientSourceId: 'synthetic-other',
+    action: 'delete', expectedRevision: initial })).status, 400);
+  const corrected = await revise('correct', initial, '5521990000002');
+  assert.equal(corrected.status, 200);
+  await w.sync([legacy]);
+  assert.equal((await w.list())[0].phone, '5521990000002');
+  assert.equal((await revise('delete', initial)).status, 409);
+  const deleted = await revise('delete', corrected.body.revision);
+  assert.equal(deleted.status, 200);
+  await w.sync([legacy]);
+  await w.sync([{ ...legacy, patientSourceId: 'synthetic-proposed-patient', contactPatientSourceId: 'synthetic-proposed-patient' }]);
+  await w.sync([], ORG, true);
+  await w.sync([legacy]);
+  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))));
+  assert.equal((await reloaded.list())[0].phone, '');
+  assert.equal((await reloaded.list())[0].contactBlocked, true);
+  assert.equal([...reloaded.db.documents.values()][0].contactProvenance, 'authorized-correction');
+  assert.ok([...reloaded.db.documents.values()][0].contactVerifiedAt);
+  assert.deepEqual((await reloaded.lookup([legacy])).body.blockedSourceIds, [legacy.sourceId]);
+  assert.equal(contactEntries(reloaded.db).length, 0);
+  const restored = await reloaded.request('/contact', { sourceId: legacy.sourceId, action: 'correct',
+    expectedRevision: (await reloaded.list())[0].contactRevision, phone: legacy.phone });
+  assert.equal(restored.status, 200);
+  assert.equal((await reloaded.list())[0].phone, legacy.phone);
+  reloaded.context.user = null;
+  assert.equal((await reloaded.request('/contact', { sourceId: legacy.sourceId, action: 'delete',
+    expectedRevision: restored.body.revision })).status, 401);
+});
+
+test('correção ou exclusão concorrente vence snapshot obsoleto da consulta', async () => {
+  for (const action of ['correct', 'delete']) {
+    const w = backend();
+    const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
+    await w.sync([legacy]);
+    const revision = (await w.list())[0].contactRevision;
+    let mutated = false;
+    w.db.beforeCommit = async writes => {
+      if (mutated || !writes.some(write => write.documentPath.includes('/records/'))) return;
+      mutated = true;
+      assert.equal((await w.request('/contact', { sourceId: legacy.sourceId, action,
+        expectedRevision: revision, phone: '5521990000002' })).status, 200);
+    };
+    assert.equal((await w.sync([legacy])).status, 200);
+    assert.ok(mutated && w.db.conflicts > 0);
+    assert.equal((await w.list())[0].phone, action === 'delete' ? '' : '5521990000002');
+  }
+});
+
+test('duas correções da consulta com mesma revisão têm somente um vencedor', async () => {
+  const w = backend();
+  const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
+  await w.sync([legacy]);
+  const expectedRevision = (await w.list())[0].contactRevision;
+  const results = await Promise.all(['5521990000002', '5531990000003'].map(phone => w.request('/contact', {
+    sourceId: legacy.sourceId, action: 'correct', phone, expectedRevision })));
+  assert.deepEqual(results.map(result => result.status).sort(), [200, 409]);
 });
 
 test('ID ausente/inválido ou vínculo de coleta divergente não cria diretório e conflito não escolhe telefone arbitrário', async () => {
@@ -388,6 +487,10 @@ test('batchGet é limitado, deduplicado e confere respostas fora de ordem, ausê
 test('ponte real consulta snapshot atual e coletor só visita desconhecidos, respeitando exclusão', { timeout: 5000 }, async () => {
   const w = backend();
   await w.sync([row()]);
+  const agedLegacy = row({ sourceId: 'synthetic-known-legacy', contactSourceId: 'synthetic-known-legacy',
+    patientSourceId: '', contactPatientSourceId: '' });
+  await w.sync([agedLegacy]);
+  [...w.db.documents.values()].find(record => record.sourceId === agedLegacy.sourceId).contactVerifiedAt = '2020-01-01T00:00:00.000Z';
   const deletedRow = row({ sourceId: 'synthetic-deleted-appointment', contactSourceId: 'synthetic-deleted-appointment',
     patientSourceId: 'synthetic-deleted-patient', contactPatientSourceId: 'synthetic-deleted-patient' });
   await w.sync([deletedRow]);
@@ -397,7 +500,7 @@ test('ponte real consulta snapshot atual e coletor só visita desconhecidos, res
     row({ sourceId: 'synthetic-unknown', patientSourceId: 'synthetic-unknown-patient' }),
     row({ sourceId: 'synthetic-homonym', patientSourceId: 'synthetic-homonym-patient' }),
     row({ sourceId: 'synthetic-same-unknown-patient', patientSourceId: 'synthetic-unknown-patient' }),
-    row({ sourceId: 'synthetic-unidentified', patientSourceId: '' })] };
+    row({ sourceId: 'synthetic-unidentified', patientSourceId: '' }), agedLegacy] };
   let receiveBridge;
   const listeners = new Map(), visited = [], posted = [], replies = [];
   const frame = { closed: false, postMessage: message => { posted.push(message); return receiveBridge({

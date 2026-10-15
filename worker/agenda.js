@@ -11,7 +11,6 @@ import {
 import { telemedicineAccessFor, ensureTelemedicineUnderlyingRole } from './telemedicine-access.js';
 
 const CONTACT_VERSION = 'patient-details-v2';
-const CONTACT_TTL_MS = 24 * 60 * 60 * 1000;
 const CONTACT_DIRECTORY_VERSION = 'patient-directory-v1';
 const PORTAL_ORGANIZATION = 'eldorado-ms';
 
@@ -98,6 +97,8 @@ function normalizeRecord(input = {}) {
     sourceId,
     patientSourceId: patientSourceId(input.patientSourceId),
     contactIdentityRequired: false,
+    contactBlocked: false,
+    contactRevision: contactChecked && normalizeBrazilPhone(input.phone) ? crypto.randomUUID() : '',
     requestedAt: clean(input.requestedAt, 40),
     specialty: clean(input.specialty, 120),
     returnStatus: clean(input.returnStatus, 20),
@@ -125,6 +126,7 @@ function normalizeRecord(input = {}) {
 }
 
 function verifiedContactPhone(record, now = Date.now()) {
+  if (record?.contactBlocked || record?.contactIdentityRequired) return '';
   if (record?.contactVersion === CONTACT_DIRECTORY_VERSION) {
     return record.active !== false && patientSourceId(record.patientSourceId)
       && record.contactPatientSourceId === record.patientSourceId
@@ -135,29 +137,43 @@ function verifiedContactPhone(record, now = Date.now()) {
     || record.contactSourceId !== record.sourceId
     || record.contactPatient !== record.patient
     || record.contactRequestedAt !== record.requestedAt
-    || !Number.isFinite(age) || age < 0 || age >= CONTACT_TTL_MS) return '';
+    || !Number.isFinite(age) || age < 0) return '';
   return normalizeBrazilPhone(record.phone);
+}
+
+function contactRevisionFor(record) {
+  return clean(record?.contactRevision, 80) || clean(record?.contactVerifiedAt, 40)
+    || clean(record?._updateTime, 80);
 }
 
 function contactForSync(record, existing) {
   // Collection failures are not authorized erasure. Association checks still apply.
-  if (record.contactVersion === CONTACT_VERSION && record.phone) return record;
+  const same = existing && record.patient === existing.patient && record.requestedAt === existing.requestedAt;
+  if (existing?.contactBlocked) return { ...record, phone: '',
+    contactVersion: existing.contactVersion || '', contactVerifiedAt: existing.contactVerifiedAt || '',
+    contactSourceId: existing.contactSourceId || '', contactPatient: existing.contactPatient || '',
+    contactRequestedAt: existing.contactRequestedAt || '', contactProvenance: existing.contactProvenance || '',
+    contactBlocked: true, contactRevision: same ? contactRevisionFor(existing) : crypto.randomUUID() };
+  // Automatic collection fills unknown contacts only; it cannot undo an explicit correction.
+  if (record.contactVersion === CONTACT_VERSION && record.phone && !(same && verifiedContactPhone(existing))) return record;
   const savedPhone = existing && normalizeBrazilPhone(existing.phone);
-  if (existing && record.patient === existing.patient
-    && record.requestedAt === existing.requestedAt && savedPhone) {
+  if (same && savedPhone) {
     return {
       ...record,
       phone: savedPhone,
-      // Keep the original proof, including absent/expired/invalid proof. Retention is not permission to use.
+      // Keep the original proof. Retention never manufactures missing/invalid provenance.
       contactVersion: existing.contactVersion === CONTACT_VERSION ? CONTACT_VERSION : '',
       contactVerifiedAt: existing.contactVerifiedAt || '',
       contactSourceId: existing.contactSourceId || '',
       contactPatient: existing.contactPatient || '',
       contactRequestedAt: existing.contactRequestedAt || '',
-      contactPatientSourceId: existing.contactPatientSourceId || ''
+      contactPatientSourceId: existing.contactPatientSourceId || '',
+      contactRevision: contactRevisionFor(existing),
+      contactProvenance: existing.contactProvenance || ''
     };
   }
-  return { ...record, phone: '', contactVersion: '', contactVerifiedAt: '' };
+  return { ...record, phone: '', contactVersion: '', contactVerifiedAt: '',
+    contactRevision: same ? contactRevisionFor(existing) : crypto.randomUUID() };
 }
 
 function comparable(record = {}) {
@@ -227,6 +243,7 @@ async function directory(env, appointments) {
 }
 
 function directoryRecord(record, contacts) {
+  if (record.contactBlocked) return { ...record, phone: '', contactVersion: '' };
   const id = patientSourceId(record.patientSourceId);
   // Preserve the original consultation proof. This does not link patients by name or seed the directory.
   if (!id) return record.contactIdentityRequired
@@ -275,6 +292,7 @@ async function collectMissingContacts(env, records) {
 }
 
 async function updateContact(env, payload) {
+  if (payload?.sourceId !== undefined) return updateConsultationContact(env, payload);
   const id = patientSourceId(payload?.patientSourceId);
   const action = payload?.action;
   const phone = normalizeBrazilPhone(payload?.phone);
@@ -299,6 +317,38 @@ async function updateContact(env, payload) {
     throw error;
   }
   return { revision: data.revision, status: data.status };
+}
+
+async function updateConsultationContact(env, payload) {
+  const id = cleanSourceId(payload?.sourceId);
+  const action = payload?.action;
+  const phone = normalizeBrazilPhone(payload?.phone);
+  if (!id || payload.sourceId !== id || payload?.patientSourceId || !['correct', 'delete'].includes(action) || (action === 'correct' && !phone)) {
+    throw Object.assign(new Error('Correção de contato inválida.'), { status: 400 });
+  }
+  const documentPath = `${await agendaCollection(env)}/${await digestId(id)}`;
+  const existing = await firestoreGet(env, documentPath, { withMetadata: true });
+  if (!existing || existing.sourceId !== id) throw Object.assign(new Error('Contato não encontrado.'), { status: 404 });
+  if (existing.patientSourceId || existing.contactIdentityRequired) {
+    throw Object.assign(new Error('Este contato exige confirmar a associação de paciente.'), { status: 409 });
+  }
+  if (!existing._updateTime || !payload.expectedRevision || payload.expectedRevision !== contactRevisionFor(existing)) {
+    throw Object.assign(new Error('O contato mudou. Recarregue antes de corrigir.'), { status: 409 });
+  }
+  const { id: _id, _updateTime, ...stored } = existing;
+  const data = { ...stored, phone: action === 'delete' ? '' : phone,
+    contactVersion: CONTACT_VERSION, contactSourceId: id,
+    contactPatientSourceId: '',
+    contactPatient: clean(existing.patient, 180), contactRequestedAt: clean(existing.requestedAt, 40),
+    contactVerifiedAt: new Date().toISOString(), contactRevision: crypto.randomUUID(),
+    contactBlocked: action === 'delete', contactProvenance: 'authorized-correction' };
+  try {
+    await firestoreCommit(env, [{ documentPath, data, currentDocument: { updateTime: _updateTime } }]);
+  } catch (error) {
+    if (conflict(error)) throw Object.assign(new Error('O contato mudou. Recarregue antes de corrigir.'), { status: 409 });
+    throw error;
+  }
+  return { revision: data.contactRevision, status: data.contactBlocked ? 'deleted' : 'active' };
 }
 
 async function readUserKey(username) {
@@ -371,7 +421,7 @@ function publicRecord(record, username, readMemory) {
   return {
     sourceId: cleanSourceId(record.sourceId),
     patientSourceId: patientSourceId(record.patientSourceId),
-    contactRevision: record.contactRevision || '',
+    contactRevision: contactRevisionFor(record),
     contactBlocked: record.contactBlocked === true,
     contactIdentityRequired: record.contactIdentityRequired === true,
     requestedAt: clean(record.requestedAt, 40),
@@ -472,6 +522,12 @@ async function syncRecords(env, input, user, attempt = 0) {
   for (const record of normalized) {
     const documentId = await digestId(record.sourceId);
     const existing = existingBySourceId.get(record.sourceId) || null;
+    if (existing?.contactBlocked) {
+      record.phone = '';
+      record.contactVersion = '';
+      record.contactBlocked = true;
+      record.patientSourceId = existing.patientSourceId || '';
+    }
     // Older collectors must not drop a previously explicit patient association.
     if (!record.patientSourceId && existing?.patientSourceId && record.patient === existing.patient
       && record.requestedAt === existing.requestedAt) record.patientSourceId = existing.patientSourceId;
@@ -674,6 +730,7 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
           const normalized = normalizeRecord({ sourceId: item?.sourceId, patientSourceId: item?.patientSourceId,
             patient: item?.patient, requestedAt: item?.requestedAt });
           const existing = bySource.get(normalized.sourceId);
+          if (existing?.contactBlocked) return { ...existing, active: true };
           const same = existing && normalized.patient === existing.patient
             && normalized.requestedAt === existing.requestedAt
             && (!normalized.patientSourceId || normalized.patientSourceId === existing.patientSourceId

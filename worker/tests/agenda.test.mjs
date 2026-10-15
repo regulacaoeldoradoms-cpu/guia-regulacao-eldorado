@@ -450,15 +450,18 @@ test('contato legado não gera href nem permanece marcado como conhecido', () =>
   assert.equal(backend.contactState([legacy]).known, 0);
 });
 
-test('contato conferido expira e perde validade ao mudar associação da ficha', () => {
+test('contato conferido persiste após 24h e perde validade ao mudar associação ou prova da ficha', () => {
   const backend = backendContactTools();
   const verified = backend.normalizeRecord(syntheticContact);
   assert.equal(backend.contactState([verified]).known, 1);
+  const old = { ...verified, contactVerifiedAt: new Date(Date.now() - 25 * 3600000).toISOString() };
+  assert.equal(backend.publicRecord(old, '', new Map()).phone, syntheticContact.phone);
+  assert.equal(backend.contactState([old]).known, 1);
   for (const changed of [
     { ...verified, patient: 'Paciente de teste C' },
     { ...verified, requestedAt: '2026-10-02' },
     { ...verified, sourceId: 'synthetic-c' },
-    { ...verified, contactVerifiedAt: new Date(Date.now() - 25 * 3600000).toISOString() },
+    { ...verified, contactVerifiedAt: new Date(Date.now() + 3600000).toISOString() },
     { ...verified, contactVerifiedAt: 'invalid' }
   ]) {
     assert.equal(backend.publicRecord(changed, '', new Map()).phone, '');
