@@ -5,6 +5,10 @@ on:
     paths:
       - 'login/index.html'
       - 'js/login-opening.js'
+      - 'js/login-opening-mobile.js'
+      - 'assets/portal-opening-mobile-v1.webp'
+      - 'testing/browser/opening-mobile-ready.spec.mjs'
+      - 'worker/tests/mobile-login-opening.test.mjs'
       - 'js/login-home-transition.js'
       - 'js/portal-theme.js'
       - 'js/login.js'
@@ -29,6 +33,10 @@ on:
     paths:
       - 'login/index.html'
       - 'js/login-opening.js'
+      - 'js/login-opening-mobile.js'
+      - 'assets/portal-opening-mobile-v1.webp'
+      - 'testing/browser/opening-mobile-ready.spec.mjs'
+      - 'worker/tests/mobile-login-opening.test.mjs'
       - 'js/login-home-transition.js'
       - 'js/login.js'
       - 'js/portal-theme.js'
@@ -62,7 +70,7 @@ jobs:
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Conferir binário oficial e contratos de login
-        run: node --test worker/tests/post-login-opening.test.mjs worker/tests/home-transition-security.test.mjs
+        run: node --test worker/tests/post-login-opening.test.mjs worker/tests/home-transition-security.test.mjs worker/tests/mobile-login-opening.test.mjs
       - name: Executar laboratório da abertura
         working-directory: testing/browser
         run: npx playwright test --config playwright-opening.config.mjs

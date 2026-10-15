@@ -7,7 +7,25 @@
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <link rel="preload" href="/js/auth-client.js?v=20261001-v34-8" as="script">
   <link rel="preload" href="/assets/portal-regulacao-header.png?v=20260910-1" as="image" type="image/png" fetchpriority="high">
-  <link rel="preload" href="/assets/portal-opening-v1.mp4?v=20260918-1" as="video" type="video/mp4">
+  <script id="portalOpeningDevice">
+    (() => {
+      const touch = navigator.maxTouchPoints > 1
+        && Math.min(screen.width, screen.height) <= 860
+        && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      const mobile = navigator.userAgentData?.mobile === true
+        || /Android|iPhone|iPad|iPod|Mobile|webOS|IEMobile|Opera Mini/i.test(navigator.userAgent || '')
+        || touch;
+      document.documentElement.dataset.portalOpeningMode = mobile ? 'mobile' : 'desktop';
+      const preload = document.createElement('link');
+      preload.rel = 'preload';
+      preload.as = mobile ? 'image' : 'video';
+      preload.type = mobile ? 'image/webp' : 'video/mp4';
+      preload.href = mobile
+        ? '/assets/portal-opening-mobile-v1.webp?v=20261015-1'
+        : '/assets/portal-opening-v1.mp4?v=20260918-1';
+      document.head.appendChild(preload);
+    })();
+  </script>
 <meta name="theme-color" content="#0d3157">
   <meta name="description" content="Portal da Regulação de Saúde de Eldorado/MS: acesso de profissionais e cidadãos.">
   <title>Portal da Regulação de Saúde | Eldorado/MS</title>
@@ -326,7 +344,8 @@
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20261001-v34-8"></script>
   <script src="/js/login-home-transition.js?v=20261010-mobile-shell-1"></script>
-  <script src="/js/login-opening.js?v=20260918-1"></script>
+  <script src="/js/login-opening-mobile.js?v=20261015-mobile-opening-1"></script>
+  <script src="/js/login-opening.js?v=20261015-mobile-opening-1"></script>
   <script src="/js/tools-catalog.js?v=20260916-1"></script>
   <script src="/js/portal-interactions.js?v=20261015-citizen-tutorial-1"></script>
   <script src="/js/login.js?v=20261010-login-compact-1"></script>
