@@ -36,7 +36,7 @@ async function screenshot(page,name){await page.evaluate(()=>scrollTo(0,0));awai
 async function audit(page,selector){
  const result=await new AxeBuilder({page}).include(selector).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
  assert.deepEqual(result.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[]);
- assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'horizontal overflow');
+ const viewportWidth=page.viewportSize().width;assert((await page.evaluate(()=>document.documentElement.scrollWidth))<=viewportWidth+1,'horizontal overflow against configured viewport');
  return {violations:0,passes:result.passes.length};
 }
 async function submitSignup(page,width,theme){
@@ -139,6 +139,7 @@ try{
    await page.goto(origin+'/cadastro/');const baselineFont=await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize));await applyTextScale(page);assert((await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize)))>=baselineFont*scale-.1,'text enlargement remains effective');const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero',{exact:true});
    assert.equal(await gender.inputValue(),'');assert.equal(await gender.evaluate(n=>n.selectedOptions[0].disabled),true);
    await page.locator('#signupUsername').fill('synthetic.browser');await page.locator('#signupPassword').fill('Synthetic-Registration-2026');await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').check();
+   assert((await page.evaluate(()=>document.documentElement.scrollWidth))<=width+1,'signup stays within the configured viewport');
    const termsBox=await page.locator('.signup-consent').boundingBox(),buttonBox=await page.locator('#signupSubmit').boundingBox();assert(termsBox.y+termsBox.height<=buttonBox.y,'consent must not overlap submit');
    if(scale===2)await screenshot(page,`signup-entry-${width}-${theme}`);
    await submitSignup(page,width,theme);assert.equal(posts.length,0);
