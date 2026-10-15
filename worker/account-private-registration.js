@@ -3,7 +3,10 @@ import {validBirthDate,portalCalendarDate} from './private-pet-age.js';
 
 // Private registration data must never enter auth_users, tokens, public profiles
 // or logs. Gender is stored for future functions and grants no permission.
-export const validRegistrationGender = value => value === 'masculino' || value === 'feminino';
+export const REGISTRATION_GENDERS = Object.freeze(['mulher','homem','pessoa_nao_binaria','outra_identidade','prefiro_nao_informar']);
+export const validRegistrationGender = value => REGISTRATION_GENDERS.includes(value);
+export const validOptionalRegistrationGender = value => value == null || value === '' || validRegistrationGender(value);
+export const normalizedRegistrationGender = value => value == null || value === '' ? null : value;
 export function privateRegistrationStatement(db, username, gender) {
   return db.prepare(`INSERT INTO account_private_registration(auth_username,gender) VALUES(?,?)
     ON CONFLICT(auth_username) DO UPDATE SET gender=excluded.gender,legacy_birth_date_allowed=0`).bind(username, gender);
@@ -32,7 +35,9 @@ async function privateRows(db,username){
   ]);
   return {birthDate:birth?.birth_date,gender:registration?.gender};
 }
-const statusFor=rows=>({birthDateRecorded:rows.birthDate!==undefined,genderRecorded:validRegistrationGender(rows.gender)});
+// Only this authenticated own-account endpoint returns the editable gender.
+// Birth date is never read back; neither field enters public user projections.
+const statusFor=rows=>({birthDateRecorded:rows.birthDate!==undefined,genderRecorded:validRegistrationGender(rows.gender),gender:validRegistrationGender(rows.gender)?rows.gender:null});
 async function initialBirthCompletionAllowed(db,owner) {
   // A self-registered account already declared its date at creation. If that
   // row disappears, only authorized recovery may restore it, not a new claim.
@@ -45,44 +50,47 @@ export async function privateRegistrationStatus(db,user){
 export async function completePrivateRegistration(db,user,input,today=portalCalendarDate()){
   if(!input||typeof input!=='object'||Array.isArray(input)||!Object.keys(input).length||Object.keys(input).some(key=>!['birthDate','gender'].includes(key)))
     throw new RegistrationDetailsError('PAYLOAD_INVALID','Informe somente seus dados privados.');
-  const ownerRow=await activeOwner(db,user);
-  const prior=await privateRows(db,user.username);
-  if(prior.birthDate===undefined && !(await initialBirthCompletionAllowed(db,ownerRow)))throw new RegistrationDetailsError('BIRTH_DATE_LOCKED','A declaração do cadastro precisa de recuperação autorizada. Ela não pode ser substituída por este formulário.',409);
-  const birthDate=Object.hasOwn(input,'birthDate')?input.birthDate:prior.birthDate;
-  const gender=Object.hasOwn(input,'gender')?input.gender:prior.gender;
-  if(!validBirthDate(birthDate)||birthDate>today)throw new RegistrationDetailsError('BIRTH_DATE_INVALID','Informe uma data de nascimento válida.');
-  if(!validRegistrationGender(gender))throw new RegistrationDetailsError('GENDER_INVALID','Escolha Masculino ou Feminino.');
-  const assertUnchanged=rows=>{
-    if(rows.birthDate!==undefined&&rows.birthDate!==birthDate)throw new RegistrationDetailsError('BIRTH_DATE_LOCKED','A data já foi registrada. Este formulário não altera dados salvos.',409);
-    if(rows.gender!=null&&rows.gender!==gender)throw new RegistrationDetailsError('GENDER_LOCKED','O gênero já foi registrado. Este formulário não altera dados salvos.',409);
-  };
-  assertUnchanged(prior);
-  // Both writes recheck the owner/session and both immutable values inside the
-  // transaction. A competing declaration cannot partially save the other field.
-  const compatible=`NOT EXISTS(SELECT 1 FROM pet_private_age WHERE auth_username=? AND birth_date<>?)
-    AND NOT EXISTS(SELECT 1 FROM account_private_registration WHERE auth_username=? AND gender IS NOT NULL AND gender<>?)`;
-  const owner=`username=? AND active=1 AND session_version=? AND must_change_password=0 AND ${compatible}`;
-  const args=[user.username,user.sessionVersion,user.username,birthDate,user.username,gender];
-  await db.batch([
-    db.prepare(`INSERT INTO pet_private_age(auth_username,birth_date) SELECT username,? FROM auth_users WHERE ${owner}
-      ON CONFLICT(auth_username) DO NOTHING`).bind(birthDate,...args),
-    db.prepare(`INSERT INTO account_private_registration(auth_username,gender) SELECT username,? FROM auth_users WHERE ${owner}
-      ON CONFLICT(auth_username) DO UPDATE SET gender=COALESCE(account_private_registration.gender,excluded.gender)`).bind(gender,...args)
-  ]);
+  const ownerRow=await activeOwner(db,user),prior=await privateRows(db,user.username);
+  const birthGiven=Object.hasOwn(input,'birthDate'),genderGiven=Object.hasOwn(input,'gender');
+  const birthDate=input.birthDate,gender=normalizedRegistrationGender(input.gender);
+  if(birthGiven){
+    if(!validBirthDate(birthDate)||birthDate>today)throw new RegistrationDetailsError('BIRTH_DATE_INVALID','Informe uma data de nascimento válida.');
+    if(prior.birthDate!==undefined&&prior.birthDate!==birthDate)throw new RegistrationDetailsError('BIRTH_DATE_LOCKED','A data já foi registrada. A correção exige o processo autorizado da conta.',409);
+    if(prior.birthDate===undefined&&!(await initialBirthCompletionAllowed(db,ownerRow)))throw new RegistrationDetailsError('BIRTH_DATE_LOCKED','A declaração do cadastro precisa de recuperação autorizada.',409);
+  }
+  if(genderGiven&&!validOptionalRegistrationGender(input.gender))throw new RegistrationDetailsError('GENDER_INVALID','Selecione uma opção válida de gênero ou deixe em branco.');
+  // Recheck session, birth immutability and initial-declaration authority inside
+  // every write. A competing birthday cannot partially commit a gender edit.
+  let owner='username=? AND active=1 AND session_version=? AND must_change_password=0';
+  const args=[user.username,user.sessionVersion];
+  if(birthGiven){
+    owner+=` AND NOT EXISTS(SELECT 1 FROM pet_private_age WHERE auth_username=? AND birth_date<>?)
+      AND (COALESCE(self_registered,0)<>1
+        OR EXISTS(SELECT 1 FROM account_private_registration WHERE auth_username=auth_users.username AND legacy_birth_date_allowed=1)
+        OR EXISTS(SELECT 1 FROM pet_private_age WHERE auth_username=auth_users.username AND birth_date=?))`;
+    args.push(user.username,birthDate,birthDate);
+  }
+  const statements=[];
+  if(birthGiven)statements.push(db.prepare(`INSERT INTO pet_private_age(auth_username,birth_date)
+    SELECT username,? FROM auth_users WHERE ${owner} ON CONFLICT(auth_username) DO NOTHING`).bind(birthDate,...args));
+  if(genderGiven)statements.push(db.prepare(`INSERT INTO account_private_registration(auth_username,gender)
+    SELECT username,? FROM auth_users WHERE ${owner}
+    ON CONFLICT(auth_username) DO UPDATE SET gender=excluded.gender`).bind(gender,...args));
+  await db.batch(statements);
   await activeOwner(db,user);
-  const saved=await privateRows(db,user.username);assertUnchanged(saved);
-  if(saved.birthDate!==birthDate||saved.gender!==gender)throw new RegistrationDetailsError('REGISTRATION_DETAILS_UNAVAILABLE','Não foi possível salvar os dados privados.',503);
-  return {...statusFor(saved),canCompleteBirthDate:false};
+  const saved=await privateRows(db,user.username);
+  if(birthGiven&&saved.birthDate!==birthDate)throw new RegistrationDetailsError(saved.birthDate===undefined?'REGISTRATION_DETAILS_UNAVAILABLE':'BIRTH_DATE_LOCKED','Não foi possível salvar a data informada.',saved.birthDate===undefined?503:409);
+  return {...statusFor(saved),canCompleteBirthDate:saved.birthDate===undefined&&await initialBirthCompletionAllowed(db,ownerRow)};
 }
 
 // Technical schema checks only: never inspect a person's values for readiness.
 export async function privateRegistrationSchemaReady(db) {
   if(!db)return false;
   try {
-    const schema=await db.prepare(`SELECT count(*) AS count FROM sqlite_schema WHERE
+    const schema=await db.prepare(`SELECT count(*) AS count,MAX(CASE WHEN name='account_private_registration' THEN sql END) AS registration_sql FROM sqlite_schema WHERE
       (type='table' AND name IN ('pet_private_age','account_private_registration','account_private_registration_cutover'))
       OR (type='trigger' AND name='account_private_registration_legacy_bridge')`).first();
     const cutover=await db.prepare('SELECT singleton FROM account_private_registration_cutover WHERE singleton=1').first();
-    return Number(schema?.count)===4 && cutover?.singleton===1;
+    return Number(schema?.count)===4 && cutover?.singleton===1 && REGISTRATION_GENDERS.every(value=>String(schema.registration_sql).includes("\'"+value+"\'"));
   }catch{return false;}
 }

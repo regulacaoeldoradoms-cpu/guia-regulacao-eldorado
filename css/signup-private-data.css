@@ -14,3 +14,14 @@
 .signup-page .login-visual,#signupForm { overflow-wrap:anywhere; }
 #signupForm { max-width:100%; }
 @media(max-width:860px) { .signup-page .login-layout { grid-template-columns:minmax(0,1fr); } }
+
+/* Keep the full desktop introduction; phones start directly with the form. */
+@media(max-width:860px) {
+  .signup-page .login-visual { min-height:0; padding:16px 20px; }
+  .signup-page .login-visual .portal-brand img { width:44px; height:44px; border-radius:12px; }
+  .signup-page .login-visual .portal-brand h1 { font-size:1rem; }
+  .signup-page .login-message { display:none; }
+  .signup-page .login-panel { padding:16px; }
+  #signupForm { padding:22px 20px; }
+  #signupForm > p { margin-bottom:16px; }
+}

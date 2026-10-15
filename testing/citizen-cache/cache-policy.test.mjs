@@ -240,7 +240,7 @@ test('a current Citizen cache does not swallow the canonical redirect', async()=
 for (const asset of ['auth-client','signup','pets-page','security','citizen-mobile-shell','private-birth-date-input']) test(`private account controller refresh preserves installed caches: ${asset}`, async () => {
   const f=fixture(async()=>new Response('PRIVATE-CURRENT'));
   const cache=await f.caches.open('portal-static-20261009-pets-combined-8');
-  const previous=`/js/${asset}.js?v=20261015-citizen-tutorial-1`,current=`/js/${asset}.js?v=20261015-account-private-3`;
+  const previous=`/js/${asset}.js?v=20261015-citizen-tutorial-1`,current=`/js/${asset}.js?v=20261015-account-private-4`;
   await cache.put(origin+previous,new Response('PRIVATE-OLD'));await cache.put(origin+'/js/unrelated.js?v=1',new Response('UNRELATED'));
   for(let i=0;i<2;i++)assert.equal(await(await f.dispatch(previous,{method:'GET'}).response).text(),'PRIVATE-CURRENT');
   assert.equal(f.calls.length,1);assert.equal(new URL(f.calls[0].url).pathname+new URL(f.calls[0].url).search,current);

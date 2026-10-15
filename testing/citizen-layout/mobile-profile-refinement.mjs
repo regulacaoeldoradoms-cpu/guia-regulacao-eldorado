@@ -175,7 +175,7 @@ async function intercept(context, origin, audit) {
     else if (url.pathname === '/api/chat/messages') data = { messages:messages.filter(message => message.id > Number(url.searchParams.get('after') || 0)), pageSize:50, receipt:{} };
     else if (url.pathname === '/api/chat/realtime/ticket') data = { ticket:'synthetic-ticket' };
     else if (['/api/chat/presence','/api/chat/delivery','/api/chat/read','/api/chat/typing'].includes(url.pathname)) data = { ok:true };
-    else if (url.pathname === '/api/auth/registration-details' && method === 'GET') data = {birthDateRecorded:true,genderRecorded:true};
+    else if (url.pathname === '/api/auth/registration-details' && method === 'GET') data = {birthDateRecorded:true,genderRecorded:false,gender:null,canCompleteBirthDate:false};
     else if (url.pathname === '/api/auth/security') data = { security:{ emailVerified:true, email:'fixture@example.invalid', privacyMode:'anonima' } };
     else if (url.pathname === '/api/citizen/identity') data = { identity:{ displayName:ownName, handle:ownHandle, canChangeHandle:true } };
     else if (url.pathname === '/api/council/my') data = { manifestations:[] };

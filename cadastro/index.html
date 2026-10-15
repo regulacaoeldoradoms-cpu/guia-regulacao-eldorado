@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="/js/portal-performance.js?v=20260923-1" async></script>
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
-  <link rel="preload" href="/js/auth-client.js?v=20261015-account-private-3" as="script">
+  <link rel="preload" href="/js/auth-client.js?v=20261015-account-private-4" as="script">
 <meta name="theme-color" content="#0d3157">
   <title>Criar conta | Portal da Regulação</title>
   <link rel="icon" href="/assets/canal-cidadao-icon.png?v=20260817-1" type="image/png">
@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <script src="/js/portal-theme.js?v=20261013-theme-immediate-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
-  <link rel="stylesheet" href="/css/signup-private-data.css?v=20261015-account-private-3">
+  <link rel="stylesheet" href="/css/signup-private-data.css?v=20261015-account-private-4">
 </head>
 <body class="portal-page signup-page">
   <main class="login-layout">
@@ -38,16 +38,16 @@
       <form class="login-card" id="signupForm" autocomplete="off">
         <a href="/login/" style="display:inline-block;margin-bottom:16px;text-decoration:none">← Voltar ao login</a>
         <h2>Criar conta de cidadão</h2>
-        <p>Escolha um nome de usuário e uma senha e complete seus dados privados.</p>
+        <p>Você começa com uma Conta Bronze. Pode confirmar um e-mail depois.</p>
 
         <div class="portal-note info" style="margin-bottom:16px">
-          <strong>Se quiser preservar sua identificação:</strong> não use seu nome completo, CPF, telefone, e-mail, data de nascimento ou outro dado pessoal como nome de usuário.
+          <strong>Preserve sua identidade:</strong> não use nome completo, CPF, telefone, e-mail ou data de nascimento no usuário.
         </div>
 
         <div class="portal-field">
           <label for="signupUsername">Nome de usuário</label>
           <input id="signupUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Ex.: ipelima23">
-          <small>Use de 3 a 40 caracteres. São aceitos letras, números, ponto, hífen e sublinhado.</small>
+          <small>3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado.</small>
         </div>
         <div class="portal-field">
           <label for="signupPassword">Senha</label>
@@ -60,20 +60,21 @@
         <div class="portal-field">
           <label for="signupBirthDate">Data de nascimento</label>
           <input id="signupBirthDate" type="date" required autocomplete="bday" min="1900-01-01" aria-describedby="signupBirthHelp">
-          <small id="signupBirthHelp">Data autodeclarada para a restrição 18+ do Gnomo; não verifica identidade. Não aparece no perfil público, chat ou manifestações.</small>
+          <small id="signupBirthHelp">Data autodeclarada e privada. Não aparece no perfil público nem no chat.</small>
         </div>
 
         <div class="portal-field">
-          <label for="signupGender">Gênero</label>
-          <select id="signupGender" required aria-describedby="signupGenderHelp">
-            <option value="" selected disabled>Selecione uma opção</option>
-            <option value="masculino">Masculino</option>
-            <option value="feminino">Feminino</option>
+          <label for="signupGender">Gênero (opcional)</label>
+          <select id="signupGender" aria-describedby="signupGenderHelp">
+            <option value="" selected>Selecione uma opção</option>
+            <option value="mulher">Mulher</option>
+            <option value="homem">Homem</option>
+            <option value="pessoa_nao_binaria">Pessoa não binária</option>
+            <option value="outra_identidade">Outra identidade de gênero</option>
+            <option value="prefiro_nao_informar">Prefiro não informar</option>
           </select>
-          <small id="signupGenderHelp">Guardado de forma privada para futuras funções. Não altera suas permissões e não aparece no perfil público, chat ou manifestações.</small>
+          <small id="signupGenderHelp">Privado. Pode ser alterado depois na sua conta.</small>
         </div>
-
-        <div class="portal-note info" style="margin:4px 0 16px"><strong>Você começará como Conta Bronze.</strong><br>Não é preciso informar e-mail agora. A evolução para Prata será opcional e poderá ser feita depois em <em>Minha conta</em>.</div>
 
         <label class="signup-consent">
           <input id="signupTerms" type="checkbox" required>
@@ -87,9 +88,9 @@
   </main>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20261015-account-private-3"></script>
+  <script src="/js/auth-client.js?v=20261015-account-private-4"></script>
   <script src="/js/portal-interactions.js?v=20261015-citizen-tutorial-1"></script>
   <script src="/js/private-birth-date-input.js?v=20261015-account-private-1"></script>
-  <script src="/js/signup.js?v=20261015-account-private-1"></script>
+  <script src="/js/signup.js?v=20261015-account-private-4"></script>
 </body>
 </html>

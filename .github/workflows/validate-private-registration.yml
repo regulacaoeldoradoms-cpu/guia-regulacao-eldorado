@@ -47,6 +47,11 @@ jobs:
           JS
       - name: Native registration and pet flows, mobile/desktop and both themes
         run: node testing/account-registration/browser.mjs
+      - name: Optional gender may be omitted
+        env:
+          ACCOUNT_SKIP_GENDER: '1'
+          ACCOUNT_SIGNUP_ONLY: '1'
+        run: node testing/account-registration/browser.mjs .local/account-registration/optional
       - name: Old cached signup HTML fails closed without losing the draft
         env:
           ACCOUNT_LEGACY_HTML_ONLY: '1'

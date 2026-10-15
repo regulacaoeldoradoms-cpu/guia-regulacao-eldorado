@@ -39,12 +39,17 @@
         <article class="account-card wide security-secondary-card" id="emailSecurityCard"><h2>E-mail de segurança</h2><p>Ao confirmar o endereço, a conta alcança o nível Prata e libera a foto de perfil. O e-mail não é exibido a outros usuários nem no painel institucional do Conselho.</p><form id="securityEmailForm" class="account-form"><div class="portal-field"><label for="securityEmail">E-mail</label><input id="securityEmail" type="email" autocomplete="email" maxlength="254" placeholder="seuemail@exemplo.com"></div><div><span class="user-badge" id="emailStatusBadge">Verificando...</span></div><div class="account-actions"><button class="portal-button primary" type="submit">Salvar e-mail</button><button class="portal-button secondary" id="sendEmailVerification" type="button" hidden>Enviar verificação</button></div></form><div class="portal-note warning" style="margin-top:16px"><strong>Não encontrou o e-mail?</strong> Confira também Spam, Lixo eletrônico e Lixeira antes de solicitar um novo envio.</div><div class="portal-note info" id="privacyStatus" style="margin-top:16px;display:grid;gap:5px"><span>Verificando privacidade...</span></div><div class="account-status" id="securityStatus" role="status" aria-live="polite"></div></article>
         <article class="account-card wide security-secondary-card" id="privateRegistrationCard" hidden aria-labelledby="privateRegistrationTitle">
           <h2 id="privateRegistrationTitle">Dados privados da conta</h2>
-          <p id="privateRegistrationHelp">Informe seus próprios dados. A data é autodeclarada para a restrição 18+ do Gnomo e não verifica identidade. O gênero fica reservado para futuras funções, sem alterar permissões. Esses dados não aparecem no perfil público, chat ou manifestações.</p>
+          <p id="privateRegistrationHelp">Nascimento e gênero são privados e não aparecem no perfil público nem no chat. O gênero é opcional e pode ser alterado.</p>
           <p id="privateRegistrationSummary" role="status" aria-live="polite"></p>
           <form id="privateRegistrationForm" class="account-form" aria-describedby="privateRegistrationHelp privateRegistrationLock">
             <div class="portal-field" id="privateBirthDateField"><label for="privateBirthDate">Data de nascimento</label><input id="privateBirthDate" type="date" min="1900-01-01" autocomplete="bday" aria-describedby="privateRegistrationLock" required></div>
-            <div class="portal-field" id="privateGenderField"><label for="privateGender">Gênero</label><select id="privateGender" required><option value="" selected disabled>Selecione uma opção</option><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select></div>
-            <p id="privateRegistrationLock">Confira antes de salvar. Este formulário só completa dados ausentes e não altera dados já registrados.</p>
+            <div class="portal-field" id="privateGenderField"><label for="privateGender">Gênero (opcional)</label><select id="privateGender"><option value="" selected>Selecione uma opção</option>
+            <option value="mulher">Mulher</option>
+            <option value="homem">Homem</option>
+            <option value="pessoa_nao_binaria">Pessoa não binária</option>
+            <option value="outra_identidade">Outra identidade de gênero</option>
+            <option value="prefiro_nao_informar">Prefiro não informar</option></select></div>
+            <p id="privateRegistrationLock">A data salva só pode ser corrigida pelo processo autorizado da conta. Você pode atualizar ou deixar o gênero em branco.</p>
             <div class="account-actions"><button id="privateRegistrationSubmit" class="portal-button primary" type="submit" disabled>Salvar meus dados privados</button></div>
           </form>
           <button id="privateRegistrationRetry" class="portal-button secondary" type="button" hidden>Tentar carregar novamente</button>
@@ -62,7 +67,7 @@
   <script src="/js/social-navigation.js?v=20261011-citizen-continuity-3"></script>
 <script src="/js/citizen-mobile-shell.js?v=20261015-citizen-tutorial-1"></script>
   <script src="/js/account-section-shell.js?v=20261015-citizen-tutorial-1"></script>
-  <script src="/js/security.js?v=20261015-account-private-2"></script>
+  <script src="/js/security.js?v=20261015-account-private-4"></script>
   <script src="/js/portal-global-chat.js?v=20261010-mobile-shell-1" defer></script>
 <script type="module" src="/js/pets-bootstrap.js?v=20261012-pet-depth-speech-1"></script>
 </body>

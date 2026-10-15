@@ -18,6 +18,7 @@ import {declarePrivatePetAge} from '../../worker/private-pet-age-store.js';
 import {privateRegistrationStatement} from '../../worker/account-private-registration.js';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {applyTextScale}=await import('../citizen-layout/text-scale.mjs');
+const skipGender=process.env.ACCOUNT_SKIP_GENDER==='1';
 const scale=Number(process.env.ACCOUNT_TEXT_SCALE||1);process.env.TEXT_SCALE=scale===2?'2':'';
 const {newPage,ready,chromium,user}=await import('../citizen-layout/mobile-profile-refinement.mjs');
 const {default:AxeBuilder}=await import(pathToFileURL(process.env.AXE_PATH||'/tmp/account-browser/node_modules/@axe-core/playwright/dist/index.mjs').href);
@@ -54,7 +55,7 @@ async function submitSignup(page,width,theme){
 }
 async function privateStorage(page){
  const stored=await page.evaluate(()=>JSON.stringify([...Object.entries(localStorage),...Object.entries(sessionStorage)]));
- assert(!/1990-01-01|1993-07-19|2015-01-01|"gender"|"birthDate"|masculino|feminino/.test(stored));
+ assert(!/1990-01-01|1993-07-19|2015-01-01|"gender"|"birthDate"|homem|mulher|pessoa_nao_binaria|outra_identidade|prefiro_nao_informar/.test(stored));
 }
 const asRequest=req=>new Request(req.url(),{method:req.method(),headers:req.headers(),...(['GET','HEAD'].includes(req.method())?{}:{body:req.postData()})});
 async function fulfill(route,response){return route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});}
@@ -92,8 +93,9 @@ async function managedCases(width,theme){
    await page.locator('#privateRegistrationCard').waitFor();
    if(kind==='self-recovery'){
     await page.waitForFunction(()=>document.getElementById('privateRegistrationSummary').textContent.includes('recuperação autorizada'));
-    assert(await page.locator('#privateRegistrationForm').isHidden());assert(await page.locator('#privateBirthDateField').isHidden());
-    const rejected=await page.evaluate(async()=>{try{await RegulationAuth.api('/api/auth/registration-details',{method:'PATCH',body:JSON.stringify({birthDate:'1990-01-01',gender:'feminino'})});return 200;}catch(error){return error.status;}});assert.equal(rejected,409);
+    assert(await page.locator('#privateRegistrationForm').isVisible());assert(await page.locator('#privateBirthDateField').isHidden());
+    const rejected=await page.evaluate(async()=>{try{await RegulationAuth.api('/api/auth/registration-details',{method:'PATCH',body:JSON.stringify({birthDate:'1990-01-01',gender:'mulher'})});return 200;}catch(error){return error.status;}});assert.equal(rejected,409);
+    await page.locator('#privateGender').selectOption('prefiro_nao_informar');await page.locator('#privateRegistrationSubmit').click();await page.waitForFunction(()=>document.getElementById('privateRegistrationStatus')?.textContent.includes('Dados privados salvos'));assert.equal(env.AUTH_DB.database.prepare('SELECT birth_date FROM pet_private_age WHERE auth_username=?').get(user.username),undefined);
     await screenshot(page,`self-recovery-${width}-${theme}`);await privateStorage(page);
     results.push({scene:kind,width,theme,scale,success:true,redeclareRejected:true});continue;
    }
@@ -106,12 +108,25 @@ async function managedCases(width,theme){
     await page.locator('#privateBirthDate').fill(kind==='managed-first-access'?'2015-01-01':'1993-07-19');
    }
    const accessibility=await audit(page,'#privateRegistrationCard');await screenshot(page,`${kind}-${width}-${theme}`);
-   await page.locator('#privateGender').focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.locator('#privateRegistrationSubmit').click();
+   // Optional gender can remain blank while the birth date is completed.
+   await page.locator('#privateRegistrationSubmit').click();
    await page.waitForFunction(()=>document.getElementById('privateRegistrationStatus')?.textContent.includes('Dados privados salvos'));
-   assert(await page.locator('#privateRegistrationForm').isHidden());await privateStorage(page);
+   assert(await page.locator('#privateRegistrationForm').isVisible());assert(await page.locator('#privateBirthDateField').isHidden());await privateStorage(page);
    assert.equal(posts.length,1);if(kind==='managed-birth-saved')assert.deepEqual(Object.keys(posts[0]),['gender']);
    assert.equal(env.AUTH_DB.database.prepare('SELECT role FROM auth_users WHERE username=?').get(user.username).role,'medico');
    await screenshot(page,`${kind}-complete-${width}-${theme}`);
+   const unchangedBirth=env.AUTH_DB.database.prepare('SELECT birth_date FROM pet_private_age WHERE auth_username=?').get(user.username).birth_date;
+   const edits=width===390&&theme==='light'&&scale===1?['mulher','homem','pessoa_nao_binaria','outra_identidade','prefiro_nao_informar','']:['pessoa_nao_binaria',''];
+   for(const gender of edits){
+    await page.locator('#privateGender').selectOption(gender);
+    const [response]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/auth/registration-details')&&r.request().method()==='PATCH'),page.locator('#privateRegistrationSubmit').click()]);
+    assert.equal(response.status(),200);assert.equal((await response.json()).gender,gender||null);
+    await page.waitForFunction(()=>!document.getElementById('privateRegistrationSubmit').disabled);
+    assert.notEqual(await page.locator('#privateRegistrationSubmit').getAttribute('aria-busy'),'true');assert.equal(await page.locator('#privateRegistrationSubmit').evaluate(n=>n.classList.contains('portal-feedback-pending')),false);
+    assert.equal(env.AUTH_DB.database.prepare('SELECT birth_date FROM pet_private_age WHERE auth_username=?').get(user.username).birth_date,unchangedBirth);
+    if(gender==='pessoa_nao_binaria')await screenshot(page,`${kind}-gender-edit-${width}-${theme}`);
+   }
+   assert.equal(env.AUTH_DB.database.prepare('SELECT gender FROM account_private_registration WHERE auth_username=?').get(user.username).gender,null);
    const finalToken=await page.evaluate(()=>RegulationAuth.getToken());const age=await(await api('/api/pets/age',undefined,finalToken)).json();assert.equal(age.ageStatus,kind==='managed-first-access'?'underage':'adult');assert.equal(age.canDeclareBirthDate,false);
    await page.goto(origin+'/mascotes/');await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert(await page.locator('#petAgeDisclosure').isHidden());
    assert.equal(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).count(),kind==='managed-first-access'?0:1);
@@ -136,8 +151,8 @@ try{
     await page.locator('#signupTerms').check();await submitSignup(page,width,theme);await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Atualize a página'));
     assert.equal(posts.length,0);assert.equal(state.errors.length,0);await screenshot(page,`legacy-signup-html-${width}-${theme}`);results.push({scene:'legacy-signup-html',width,theme,success:true,noPost:true});continue;
    }
-   await page.goto(origin+'/cadastro/');const baselineFont=await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize));await applyTextScale(page);assert((await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize)))>=baselineFont*scale-.1,'text enlargement remains effective');const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero',{exact:true});
-   assert.equal(await gender.inputValue(),'');assert.equal(await gender.evaluate(n=>n.selectedOptions[0].disabled),true);
+   await page.goto(origin+'/cadastro/');const baselineFont=await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize));await applyTextScale(page);assert((await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize)))>=baselineFont*scale-.1,'text enlargement remains effective');const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero (opcional)',{exact:true});
+   assert.equal(await gender.inputValue(),'');assert.equal(await gender.evaluate(n=>n.selectedOptions[0].disabled),false);assert.equal(await gender.evaluate(n=>n.required),false);
    await page.locator('#signupUsername').fill('synthetic.browser');await page.locator('#signupPassword').fill('Synthetic-Registration-2026');await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').check();
    assert((await page.evaluate(()=>document.documentElement.scrollWidth))<=width+1,'signup stays within the configured viewport');
    const termsBox=await page.locator('.signup-consent').boundingBox(),buttonBox=await page.locator('#signupSubmit').boundingBox();assert(termsBox.y+termsBox.height<=buttonBox.y,'consent must not overlap submit');
@@ -145,9 +160,9 @@ try{
    await submitSignup(page,width,theme);assert.equal(posts.length,0);
    await birth.fill('2100-01-01');await submitSignup(page,width,theme);assert.equal(posts.length,0);assert(await birth.evaluate(n=>!n.validity.valid));
    await birth.fill('1899-12-31');await submitSignup(page,width,theme);assert.equal(posts.length,0);
-   await birth.fill('1993-07-19');await submitSignup(page,width,theme);assert.equal(posts.length,0);
+   await birth.fill('1993-07-19');
    await page.locator('#signupForm h2').click();await screenshot(page,`signup-${width}-${theme}`);
-   await gender.focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await gender.inputValue(),'masculino');
+   if(!skipGender){await gender.focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');}assert.equal(await gender.inputValue(),skipGender?'':'mulher');
    assert.equal(await birth.getAttribute('min'),'1900-01-01');assert(await birth.getAttribute('max'));assert(await birth.getAttribute('aria-describedby'));assert(await gender.getAttribute('aria-describedby'));
    for(const field of [birth,gender]){const box=await field.boundingBox();assert(box.height>=44);}
    const accessibility=await audit(page,'#signupForm');
@@ -156,17 +171,17 @@ try{
    await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').uncheck();await submitSignup(page,width,theme);assert.equal(posts.length,0);await page.locator('#signupTerms').check();
    // Pages may become available before the new Worker: do not send personal
    // data to an older contract, and preserve the draft for an explicit retry.
-   for(const status of [404,503]){
-    const unavailable=route=>route.fulfill({status,contentType:'application/json',body:'{}'});
+   for(const status of [404,503,200]){
+    const unavailable=route=>route.fulfill({status,contentType:'application/json',body:status===200?JSON.stringify({version:2,birthDateRequired:true,genderRequired:true}):'{}'});
     await context.route('**/api/auth/registration-capabilities',unavailable);
     await submitSignup(page,width,theme);await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Seus dados não foram enviados'));
-    assert.equal(posts.length,0);assert.equal(await birth.inputValue(),'1993-07-19');assert.equal(await gender.inputValue(),'masculino');
+    assert.equal(posts.length,0);assert.equal(await birth.inputValue(),'1993-07-19');assert.equal(await gender.inputValue(),skipGender?'':'mulher');
     await context.unroute('**/api/auth/registration-capabilities',unavailable);
    }
    await submitSignup(page,width,theme);await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Conta Bronze criada'));
-   assert.deepEqual(posts,[{username:'synthetic.browser',password:'Synthetic-Registration-2026',birthDate:'1993-07-19',gender:'masculino'}]);await privateStorage(page);
-   assert.equal(env.AUTH_DB.database.prepare('SELECT gender FROM account_private_registration').get().gender,'masculino');
-   assert.equal(state.errors.length,0);results.push({scene:'signup',width,theme,scale,accessibility,success:true,privateStorage:true});
+   assert.deepEqual(posts,[{username:'synthetic.browser',password:'Synthetic-Registration-2026',birthDate:'1993-07-19',...(skipGender?{}:{gender:'mulher'})}]);await privateStorage(page);
+   assert.equal(env.AUTH_DB.database.prepare('SELECT gender FROM account_private_registration').get().gender,skipGender?null:'mulher');
+   assert.equal(state.errors.length,0);results.push({scene:skipGender?'signup-optional':'signup',width,theme,scale,accessibility,success:true,privateStorage:true});
   }finally{await context.close();env.AUTH_DB.database.close();}
   if(process.env.ACCOUNT_SIGNUP_ONLY==='1')continue;
   for(const kind of ['legacy-missing','new-adult','new-minor']){
@@ -175,7 +190,7 @@ try{
    f.sql.exec(await fs.readFile('worker/migrations/account-private-registration.sql','utf8'));
    if(kind!=='legacy-missing'){
     f.sql.prepare('DELETE FROM account_private_registration WHERE auth_username=?').run(user.username);
-    await privateRegistrationStatement(f.db,user.username,'feminino').run();f.sql.prepare('INSERT INTO pet_private_age(auth_username,birth_date) VALUES(?,?)').run(user.username,kind==='new-adult'?'1993-07-19':'2015-01-01');
+    await privateRegistrationStatement(f.db,user.username,'mulher').run();f.sql.prepare('INSERT INTO pet_private_age(auth_username,birth_date) VALUES(?,?)').run(user.username,kind==='new-adult'?'1993-07-19':'2015-01-01');
    }
    const scene={errors:[]},{page,context,audit:network}=await newPage(browser,{width,theme,seedOnce:true},origin,scene);
    const router=createPetRouter({validateSession:async req=>req.headers.get('Authorization')?f.user:null});const writes=[];

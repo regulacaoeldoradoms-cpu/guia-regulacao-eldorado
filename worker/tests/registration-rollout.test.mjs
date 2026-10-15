@@ -18,11 +18,17 @@ test('new application creation overrides only its provisional row and remains no
 });
 test('public capabilities fail closed until the complete additive schema is ready',async t=>{
  const env=await fixture(t);assert.equal((await handlePortalRoute(request('/api/auth/registration-capabilities'),env,'')).status,503);
- env.AUTH_DB.database.exec(sql('account-private-registration.sql'));const response=await handlePortalRoute(request('/api/auth/registration-capabilities'),env,'');assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');assert.deepEqual(await response.json(),{version:2,birthDateRequired:true,genderRequired:true});
+ env.AUTH_DB.database.exec(sql('account-private-registration.sql'));const response=await handlePortalRoute(request('/api/auth/registration-capabilities'),env,'');assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');assert.deepEqual(await response.json(),{version:3,birthDateRequired:true,genderRequired:false});
 });
 
 test('old-worker registrations during schema preparation are covered before the cutover marker',async t=>{
  const env=await fixture(t),migration=sql('account-private-registration.sql'),snapshot=migration.indexOf('INSERT INTO account_private_registration(auth_username,legacy_birth_date_allowed)\nSELECT');
  assert(snapshot>0);env.AUTH_DB.database.exec(migration.slice(0,snapshot));await insertOld(env,'synthetic.during-schema');env.AUTH_DB.database.exec(migration.slice(snapshot));
  assert.equal(await canDeclarePrivatePetAge(env.AUTH_DB,'synthetic.during-schema'),true);
+});
+
+test('capabilities do not announce the optional five-choice contract over the old enum schema',async t=>{
+ const env=await fixture(t);env.AUTH_DB.database.exec(sql('account-private-registration.sql'));
+ env.AUTH_DB.database.exec("DROP TABLE account_private_registration; CREATE TABLE account_private_registration(auth_username TEXT PRIMARY KEY,gender TEXT CHECK(gender IN ('masculino','feminino')),legacy_birth_date_allowed INTEGER DEFAULT 0)");
+ assert.equal((await handlePortalRoute(request('/api/auth/registration-capabilities'),env,'')).status,503);
 });

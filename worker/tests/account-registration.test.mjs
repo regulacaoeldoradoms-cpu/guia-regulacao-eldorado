@@ -31,12 +31,12 @@ async function fixture(t){
 const migration=(db,file)=>db.exec(fs.readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
 const storedUser=(db,name)=>db.prepare('SELECT * FROM auth_users WHERE username=?').get(name);
 
-test('server requires a calendar date and explicit valid gender for every new self registration',async t=>{
+test('server requires a calendar date and validates any optional gender supplied',async t=>{
  const env=await fixture(t);
  const cases=[
   {birthDate:undefined},{birthDate:null},{birthDate:''},{birthDate:'2000-2-01'},{birthDate:'2000-02-30'},
   {birthDate:'1900-02-29'},{birthDate:'1899-12-31'},{birthDate:'0000-01-01'},{birthDate:'2100-01-01'},
-  {birthDate:'2000-01-01T00:00:00Z'},{birthDate:{}},{gender:undefined},{gender:null},{gender:''},
+  {birthDate:'2000-01-01T00:00:00Z'},{birthDate:{}},{gender:false},{gender:0},
   {gender:'outro'},{gender:'Feminino'},{gender:[]},{gender:{}}
  ];
  for(const [index,extra] of cases.entries()){
@@ -52,7 +52,7 @@ test('signup/login/me preserve credentials and permissions, and omit private fie
  const originalError=console.error,originalLog=console.log;
  console.error=(...args)=>logs.push(args.join(' '));console.log=(...args)=>logs.push(args.join(' '));
  try{
-  for(const [index,gender]of ['masculino','feminino'].entries()){
+  for(const [index,gender]of ['mulher','homem','pessoa_nao_binaria','outra_identidade','prefiro_nao_informar'].entries()){
    const username='synthetic.person.'+index;
    const signup=await worker.fetch(request('/api/auth/register',{username,password,birthDate:'1993-07-19',gender,role:'admin',adultEligible:true,legacy_birth_date_allowed:1}),env,{});
    assert.equal(signup.status,201);const payload=await signup.json();assert.equal(payload.user.role,'cidadao');assert.equal(payload.user.accountLevel,'bronze');
@@ -67,14 +67,14 @@ test('signup/login/me preserve credentials and permissions, and omit private fie
    }
    const profile=responses.find(value=>value.profile)?.profile;
    if(profile?.handle){const response=await worker.fetch(request('/api/social/profiles/'+profile.handle,undefined,token),env,{});assert.equal(response.status,200);responses.push(await response.json());}
-   for(const value of responses){const serialized=JSON.stringify(value);assert(!/1993-07-19|birth_date|birthDate|gender|masculino|feminino/.test(serialized),serialized);}
+   for(const value of responses){const serialized=JSON.stringify(value);assert(!/1993-07-19|birth_date|birthDate|gender|homem|mulher|pessoa_nao_binaria|outra_identidade|prefiro_nao_informar/.test(serialized),serialized);}
    const ownAge=responses.find(value=>value.ageStatus);assert.equal(ownAge.ageStatus,'adult');assert.equal(ownAge.canDeclareBirthDate,false);
    const cat=responses.find(value=>Array.isArray(value.types));assert(cat.types.some(type=>type.id==='gnome'));
    // Generic profile/security/admin payloads must not change the declaration.
-   await worker.fetch(request('/api/auth/security',{birthDate:'2015-01-01',gender:'masculino'},token,'PATCH'),env,{});
+   await worker.fetch(request('/api/auth/security',{birthDate:'2015-01-01',gender:'homem'},token,'PATCH'),env,{});
    assert.equal(db.prepare('SELECT birth_date FROM pet_private_age WHERE auth_username=?').get(username).birth_date,'1993-07-19');
   }
-  assert(!/1993-07-19|birthDate|gender|masculino|feminino/.test(JSON.stringify(logs)));
+  assert(!/1993-07-19|birthDate|gender|homem|mulher|pessoa_nao_binaria|outra_identidade|prefiro_nao_informar/.test(JSON.stringify(logs)));
  }finally{console.error=originalError;console.log=originalLog;}
 });
 
@@ -119,8 +119,8 @@ test('new minor cannot redeclare via pet API even if the stored date disappears;
  assert.equal((await post({birthDate:'1990-01-01'})).status,403);
  const age=await(await worker.fetch(request('/api/pets/age',undefined,token),env,{})).json();assert.deepEqual(age,{ageStatus:'unknown',canDeclareBirthDate:false});
  const catalog=await(await worker.fetch(request('/api/pets/catalog',undefined,token),env,{})).json();assert(!catalog.types.some(type=>type.id==='gnome'));
- const details=await(await worker.fetch(request('/api/auth/registration-details',undefined,token),env,{})).json();assert.deepEqual(details,{birthDateRecorded:false,genderRecorded:true,canCompleteBirthDate:false});
- assert.equal((await worker.fetch(request('/api/auth/registration-details',{birthDate:'1990-01-01',gender:'feminino'},token,'PATCH'),env,{})).status,409);
+ const details=await(await worker.fetch(request('/api/auth/registration-details',undefined,token),env,{})).json();assert.deepEqual(details,{birthDateRecorded:false,genderRecorded:true,gender:'mulher',canCompleteBirthDate:false});
+ assert.equal((await worker.fetch(request('/api/auth/registration-details',{birthDate:'1990-01-01',gender:'mulher'},token,'PATCH'),env,{})).status,409);
 });
 
 test('existing gnome and cat survive missing eligibility, remain blocked, and resume after authorized correction',async t=>{
@@ -171,4 +171,23 @@ test('registration accepts the minimum year, leap day and today, and rejects tom
  }
  const future=await worker.fetch(request('/api/auth/register',{...syntheticRegistrationDetails,username:'synthetic.tomorrow',password,birthDate:'2026-10-15'}),env,{});
  assert.equal(future.status,400);
+});
+
+
+test('registration can omit gender, use null or empty, without changing birth-based eligibility',async t=>{
+ const env=await fixture(t),db=env.AUTH_DB.database;
+ for(const [i,extra]of [{},{gender:null},{gender:''}].entries()){
+  const username='synthetic.optional.'+i,response=await worker.fetch(request('/api/auth/register',{username,password,birthDate:'1990-01-01',...extra}),env,{});assert.equal(response.status,201);
+  const {token}=await response.json();assert.equal(db.prepare('SELECT gender FROM account_private_registration WHERE auth_username=?').get(username).gender,null);
+  assert.deepEqual(await(await worker.fetch(request('/api/pets/age',undefined,token),env,{})).json(),{ageStatus:'adult',canDeclareBirthDate:false});
+ }
+});
+
+test('editing gender cannot bypass recovery of a lost self-registered birthday',async t=>{
+ const env=await fixture(t);const response=await worker.fetch(request('/api/auth/register',{...syntheticRegistrationDetails,username:'synthetic.recovery',password,birthDate:'2015-01-01'}),env,{});assert.equal(response.status,201);const {token}=await response.json();
+ env.AUTH_DB.database.exec("DELETE FROM pet_private_age WHERE auth_username='synthetic.recovery'");
+ const edit=await worker.fetch(request('/api/auth/registration-details',{gender:'pessoa_nao_binaria'},token,'PATCH'),env,{});assert.equal(edit.status,200);assert.deepEqual(await edit.json(),{birthDateRecorded:false,genderRecorded:true,gender:'pessoa_nao_binaria',canCompleteBirthDate:false});
+ assert.equal((await worker.fetch(request('/api/auth/registration-details',{birthDate:'1990-01-01'},token,'PATCH'),env,{})).status,409);
+ assert.equal((await worker.fetch(request('/api/pets/age',{birthDate:'1990-01-01'},token),env,{})).status,403);
+ assert.equal((await worker.fetch(request('/api/pets/gnome-speech',undefined,token),env,{})).status,403);
 });

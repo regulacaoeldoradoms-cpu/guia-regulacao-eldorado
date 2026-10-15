@@ -3,7 +3,7 @@
 -- with legacy_birth_date_allowed=0 in the same transaction as registration.
 CREATE TABLE IF NOT EXISTS account_private_registration (
   auth_username TEXT PRIMARY KEY REFERENCES auth_users(username) ON DELETE CASCADE,
-  gender TEXT CHECK(gender IN ('masculino','feminino')),
+  gender TEXT CHECK(gender IN ('mulher','homem','pessoa_nao_binaria','outra_identidade','prefiro_nao_informar')),
   legacy_birth_date_allowed INTEGER NOT NULL DEFAULT 0 CHECK(legacy_birth_date_allowed IN (0,1))
 );
 -- Record completion separately so replaying the snapshot cannot reclassify

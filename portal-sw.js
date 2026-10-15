@@ -741,9 +741,9 @@ async function fetchDefaultAvatarStyle(request, cache) {
 
 // Only known previous URLs of the changed account controllers are upgraded.
 // Preserve global namespaces, other modules, unknown future versions and offline fallbacks.
-const PRIVATE_ACCOUNT_RELEASE = '20261015-account-private-3';
+const PRIVATE_ACCOUNT_RELEASE = '20261015-account-private-4';
 const PRIVATE_ACCOUNT_ASSETS = new Set(['/js/auth-client.js','/js/signup.js','/js/pets-page.js','/js/security.js','/js/citizen-mobile-shell.js','/js/private-birth-date-input.js']);
-const PRIVATE_ACCOUNT_OLD_VERSIONS = new Set(['','20261001-v34-8','20261010-mobile-shell-1','20261012-gnome-age-1','20261015-citizen-tutorial-1','20261012-pet-depth-speech-1','20261010-citizen-prewarm-1','20261015-account-private-1','20261015-account-private-2']);
+const PRIVATE_ACCOUNT_OLD_VERSIONS = new Set(['','20261001-v34-8','20261010-mobile-shell-1','20261012-gnome-age-1','20261015-citizen-tutorial-1','20261012-pet-depth-speech-1','20261010-citizen-prewarm-1','20261015-account-private-1','20261015-account-private-2','20261015-account-private-3']);
 async function fetchVersionedReplacement(request, cache, version) {
   const url = new URL(request.url);
   url.searchParams.set('v', version);

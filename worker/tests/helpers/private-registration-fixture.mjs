@@ -1,7 +1,7 @@
 // Synthetic registration setup for integration suites which use real auth tokens.
 import fs from 'node:fs';
 import {ensureAuthSchema} from '../../auth-management-v2.js';
-export const syntheticRegistrationDetails = Object.freeze({birthDate:'1990-01-01',gender:'feminino'});
+export const syntheticRegistrationDetails = Object.freeze({birthDate:'1990-01-01',gender:'mulher'});
 export async function prepareRegistrationFixture(env) {
   await ensureAuthSchema(env);
   for (const file of ['pets-private-age.sql','account-private-registration.sql']) {

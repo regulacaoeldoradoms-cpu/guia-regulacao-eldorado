@@ -60,14 +60,14 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     if(request.method()==='GET'&&['/api/pets/me','/api/pets/catalog','/api/pets/achievements'].includes(url.pathname)) {
       return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'PETS_DISABLED',error:'Mascotes ainda não disponíveis.'})});
     }
-    if(url.pathname==='/api/auth/registration-capabilities'&&request.method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({version:2,birthDateRequired:true,genderRequired:true})});
+    if(url.pathname==='/api/auth/registration-capabilities'&&request.method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({version:3,birthDateRequired:true,genderRequired:false})});
     if (url.pathname === '/api/observability') return route.fulfill({status:204,body:''});
     if (url.pathname === '/api/auth/me' || url.pathname === '/api/auth/login') data = { user:authenticated ? user : null, token:'synthetic-audit-token-no-backend' };
     else if (url.pathname === '/api/auth/security') {
       if(request.method()==='PATCH') {Object.assign(security,request.postDataJSON()||{});Object.assign(user,{interfaceTheme:security.interfaceTheme,interfaceSoundsEnabled:security.interfaceSoundsEnabled,interfaceSoundsMuted:security.interfaceSoundsMuted});}
       data={security,user};
     }
-    else if (url.pathname === '/api/auth/registration-details' && request.method() === 'GET') data = {birthDateRecorded:true,genderRecorded:true};
+    else if (url.pathname === '/api/auth/registration-details' && request.method() === 'GET') data = {birthDateRecorded:true,genderRecorded:false,gender:null,canCompleteBirthDate:false};
     else if (url.pathname === '/api/auth/settings') data = { user };
     // Citizen mobile startup prepares the current user's profile in the
     // background. Model only its read; identity mutations remain fail-closed.

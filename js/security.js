@@ -40,7 +40,7 @@ const initializeCitizenArea = async (context) => {
   let privateBusy = false;
   const dateHelperReady = import('/js/private-birth-date-input.js?v=20261015-account-private-1').catch(() => null);
   const privateAvailable = () => !firstAccess && !(user.emailVerificationRequired && !(user.emailVerified || security.emailVerified));
-  const privateComplete = data => data?.birthDateRecorded === true && data?.genderRecorded === true;
+  const privateComplete = data => data?.birthDateRecorded === true;
 
   function renderPrivateDetails() {
     if (!privateCard) return;
@@ -48,20 +48,18 @@ const initializeCitizenArea = async (context) => {
     if (!privateDetails) return;
     const needsRecovery = privateDetails.birthDateRecorded !== true && privateDetails.canCompleteBirthDate !== true;
     const birthMissing = privateDetails.birthDateRecorded !== true && !needsRecovery;
-    const genderMissing = privateDetails.genderRecorded !== true;
     document.getElementById('privateBirthDateField').hidden = !birthMissing;
-    document.getElementById('privateGenderField').hidden = !genderMissing;
-    privateBirth.disabled = !birthMissing; privateBirth.required = birthMissing;
-    privateGender.disabled = !genderMissing; privateGender.required = genderMissing;
+    document.getElementById('privateGenderField').hidden = false;
+    privateBirth.disabled = !birthMissing || privateBusy; privateBirth.required = birthMissing;
+    privateGender.disabled = privateBusy; privateGender.required = false;
     if (!birthMissing) privateBirth.value = '';
-    if (!genderMissing) privateGender.value = '';
-    privateForm.hidden = needsRecovery || privateComplete(privateDetails);
-    privateButton.disabled = privateBusy || needsRecovery || privateComplete(privateDetails);
+    privateForm.hidden = false;
+    privateButton.disabled = privateBusy;
     document.getElementById('privateRegistrationSummary').textContent = needsRecovery
-      ? 'A declaração de nascimento do cadastro precisa de recuperação autorizada. Este formulário não pode substituí-la.'
+      ? 'Seu nascimento precisa de recuperação autorizada. O gênero pode ser atualizado abaixo.'
       : privateComplete(privateDetails)
-      ? 'Seus dados privados já estão registrados. Eles não são exibidos aqui nem no perfil público.'
-      : 'Complete apenas os dados ausentes. Os dados já registrados serão mantidos.';
+      ? 'Nascimento já registrado. Atualize o gênero abaixo, se quiser.'
+      : 'Complete seu nascimento. O gênero é opcional.';
   }
 
   async function loadPrivateDetails() {
@@ -73,7 +71,7 @@ const initializeCitizenArea = async (context) => {
       window.PortalBirthDateInput?.bind(privateBirth);
       const data = await auth.api('/api/auth/registration-details');
       if (token !== auth.getToken()) return null;
-      privateDetails = data; renderPrivateDetails();
+      privateDetails = data; privateGender.value = data.gender || ''; renderPrivateDetails();
       if (location.hash === '#privateRegistrationCard') privateCard.scrollIntoView({block:'start'});
       return data;
     } catch (error) {
@@ -90,23 +88,24 @@ const initializeCitizenArea = async (context) => {
     event.preventDefault();
     if (privateBusy || !privateAvailable() || !privateDetails) return;
     const input = {};
-    if (!privateDetails.birthDateRecorded) {
+    if (!privateDetails.birthDateRecorded && privateDetails.canCompleteBirthDate) {
       if (!window.PortalBirthDateInput?.validate(privateBirth)) { privateBirth.reportValidity(); return; }
       input.birthDate = privateBirth.value;
     }
-    if (!privateDetails.genderRecorded) input.gender = privateGender.value;
+    input.gender = privateGender.value || null;
     if (!privateForm.reportValidity()) return;
     const token = auth.getToken(); privateBusy = true; privateButton.disabled = true;
+    privateStatus.textContent = ''; privateStatus.className = 'account-status';
     try {
       const data = await auth.api('/api/auth/registration-details', {method:'PATCH',body:JSON.stringify(input)});
       if (token !== auth.getToken()) return;
-      privateDetails = data; privateForm.reset(); renderPrivateDetails();
-      show(privateStatus, 'Dados privados salvos. A elegibilidade do Gnomo usará a data registrada.', 'success');
+      privateDetails = data; privateForm.reset(); privateGender.value = data.gender || ''; renderPrivateDetails();
+      show(privateStatus, 'Dados privados salvos.', 'success');
     } catch (error) {
       if (token !== auth.getToken()) return;
       show(privateStatus, error.message || 'Não foi possível salvar os dados privados.', 'error');
       if (error.status === 409) await loadPrivateDetails();
-    } finally { privateBusy = false; if (token === auth.getToken()) renderPrivateDetails(); }
+    } finally { privateBusy = false; window.PortalInteractions?.endTask?.(privateButton); if (token === auth.getToken()) renderPrivateDetails(); }
   });
 
   function show(element, message, type = 'success') {
