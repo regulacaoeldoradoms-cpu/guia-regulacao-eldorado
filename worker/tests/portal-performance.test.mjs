@@ -86,8 +86,8 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
     assert.match(html, /portal-performance\.js\?v=(?:20260923-1|20261010-mobile-shell-1)" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
-      assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=(?:20261001-v34-8|20261010-mobile-shell-1|20261012-gnome-age-1|20261015-citizen-tutorial-1)" as="script"/);
-      assert.match(html, /auth-client\.js\?v=(?:20261001-v34-8|20261010-mobile-shell-1|20261012-gnome-age-1|20261015-citizen-tutorial-1)/);
+      assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=(?:20261001-v34-8|20261010-mobile-shell-1|20261012-gnome-age-1|20261015-citizen-tutorial-1|20261015-account-private-1)" as="script"/);
+      assert.match(html, /auth-client\.js\?v=(?:20261001-v34-8|20261010-mobile-shell-1|20261012-gnome-age-1|20261015-citizen-tutorial-1|20261015-account-private-1)/);
     }
   }
 });
@@ -150,7 +150,7 @@ test('preload da Central aquece somente a raiz e não antecipa pastas ou PDFs es
 
 test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20261009-pets-combined-8'/);
+  assert.match(source, /CACHE_VERSION = '20261015-account-private-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /PORTAL_WARM_DOCUMENTS/);
   assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);

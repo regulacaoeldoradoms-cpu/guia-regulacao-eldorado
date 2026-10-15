@@ -1,3 +1,4 @@
+import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
@@ -55,7 +56,11 @@ function fixture(t, options = {}) {
   t.after(() => db.close());
   db.exec(SCHEMA);
   const env = {
-    AUTH_DB: { prepare: (sql) => new Statement(db, sql) },
+    AUTH_DB: { prepare: (sql) => new Statement(db, sql), batch(statements) {
+      db.exec('BEGIN');
+      try { const results=statements.map(statement=>statement.run()); db.exec('COMMIT'); return results; }
+      catch(error) { db.exec('ROLLBACK'); throw error; }
+    } },
     AUTH_SESSION_SECRET: 'synthetic-auth-secret-for-4d-tests',
     AUTH_RATE_LIMIT_SECRET: 'synthetic-rate-secret-for-4d-tests',
     DRIVE_TOKEN_ENCRYPTION_KEY: 'synthetic-reference-secret-for-4d-tests',
@@ -292,8 +297,9 @@ test('preflight CORS is exact and cannot grant excluded routes', async (t) => {
 
 test('default authentication validates actual Portal sessions and current capability revocation', async (t) => {
   const f = fixture(t);
+  await prepareRegistrationFixture(f.env);
   const registration = await handlePortalRoute(request('/api/auth/register', {
-    method: 'POST', body: { username: USERNAME, password: 'Synthetic-Test-Password-2026' },
+    method: 'POST', body: { ...syntheticRegistrationDetails, username: USERNAME, password: 'Synthetic-Test-Password-2026' },
     headers: { 'CF-Connecting-IP': '127.0.0.201' }
   }), f.env, PAGES, true);
   assert.equal(registration.status, 201);
@@ -366,13 +372,15 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
     return Response.json(metadata);
   });
 
+  await prepareRegistrationFixture(f.env);
   const registered = await handlePortalRoute(request('/api/auth/register', {
-    method: 'POST', body: { username: USERNAME, password: 'Synthetic-Test-Password-2026' },
+    method: 'POST', body: { ...syntheticRegistrationDetails, username: USERNAME, password: 'Synthetic-Test-Password-2026' },
     headers: { 'CF-Connecting-IP': '127.0.0.202' }
   }), f.env, PAGES, true);
   assert.equal(registered.status, 201);
+  await prepareRegistrationFixture(f.env);
   const unrelated = await handlePortalRoute(request('/api/auth/register', {
-    method: 'POST', body: { username: 'unrelated.legacy', password: 'Synthetic-Test-Password-2026' },
+    method: 'POST', body: { ...syntheticRegistrationDetails, username: 'unrelated.legacy', password: 'Synthetic-Test-Password-2026' },
     headers: { 'CF-Connecting-IP': '127.0.0.203' }
   }), f.env, PAGES, true);
   assert.equal(unrelated.status, 201);

@@ -6,6 +6,8 @@
   const password = document.getElementById('signupPassword');
   const confirm = document.getElementById('signupConfirm');
   const birthDate = document.getElementById('signupBirthDate');
+  const gender = document.getElementById('signupGender');
+  window.PortalBirthDateInput?.bind(birthDate);
   const submit = document.getElementById('signupSubmit');
   const status = document.getElementById('signupStatus');
 
@@ -16,6 +18,7 @@
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!window.PortalBirthDateInput.validate(birthDate) || !form.reportValidity()) { birthDate.reportValidity(); return; }
     if (password.value !== confirm.value) {
       show('A confirmação da senha não corresponde à senha escolhida.');
       return;
@@ -28,7 +31,7 @@
     submit.textContent = 'Criando Conta Bronze...';
     status.className = 'login-status';
     try {
-      await window.RegulationAuth.registerCitizen(username.value, password.value, birthDate.value);
+      await window.RegulationAuth.registerCitizen(username.value, password.value, birthDate.value, gender.value);
       show('Conta Bronze criada. Abrindo o Portal...', 'success');
       window.setTimeout(() => location.replace('/'), 550);
     } catch (error) {

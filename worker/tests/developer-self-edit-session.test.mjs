@@ -1,3 +1,4 @@
+import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -77,13 +78,14 @@ function environment() {
 }
 
 async function register(env, username, ip = '127.0.0.91') {
+  await prepareRegistrationFixture(env);
   const response = await handlePortalRoute(new Request('https://portal.test/api/auth/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'CF-Connecting-IP': ip
     },
-    body: JSON.stringify({ username, password: 'Senha-Segura-2026' })
+    body: JSON.stringify({ ...syntheticRegistrationDetails, username, password: 'Senha-Segura-2026' })
   }), env, '', true);
 
   assert.equal(response.status, 201);

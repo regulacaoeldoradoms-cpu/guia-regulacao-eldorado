@@ -309,7 +309,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261015-citizen-tutorial-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : ['pets-page','pets-achievements'].includes(entry) ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261015-citizen-tutorial-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : entry === 'pets-page' ? '20261015-account-private-1' : entry === 'pets-achievements' ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {

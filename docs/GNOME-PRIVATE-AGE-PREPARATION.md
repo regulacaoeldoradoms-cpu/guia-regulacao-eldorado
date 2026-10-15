@@ -1,5 +1,7 @@
 # Gnomo e idade privada — implementação local
 
+**Atualização de cadastro em 15/10/2026:** veja [a candidata de cadastro privado](ACCOUNT-PRIVATE-REGISTRATION-CANDIDATE.md), que substitui a compatibilidade de cadastro sem data e restringe a declaração na Galeria ao snapshot de contas legadas. As evidências históricas abaixo não substituem os testes dessa candidata.
+
 Estado: implementação em branch isolada, sem merge ou publicação. Migração produtiva não executada. O lançamento depende da migração privada e de todos os gates de preservação.
 
 ## Idade e privacidade

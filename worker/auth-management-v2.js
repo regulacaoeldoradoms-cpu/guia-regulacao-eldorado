@@ -1,6 +1,7 @@
 'use strict';
 import {validBirthDate, portalCalendarDate} from './private-pet-age.js';
 import {ageDeclarationStatement} from './private-pet-age-store.js';
+import {validRegistrationGender, privateRegistrationStatement} from './account-private-registration.js';
 
 import {
   firebaseConfigured,
@@ -375,7 +376,10 @@ async function createDbUser(env, input, createdBy) {
       input.mustChangePassword ? 1 : 0,
       createdBy || null
     );
-  if (input.privateBirthDate) await env.AUTH_DB.batch([insert, ageDeclarationStatement(env.AUTH_DB,input.username,input.privateBirthDate)]);
+  if (input.privateBirthDate) await env.AUTH_DB.batch([
+    insert, ageDeclarationStatement(env.AUTH_DB,input.username,input.privateBirthDate),
+    privateRegistrationStatement(env.AUTH_DB,input.username,input.privateGender)
+  ]);
   else await insert.run();
   return getDbUser(env, input.username);
 }
@@ -474,10 +478,12 @@ async function registerCitizen(request, env, origin) {
     return json({ error: 'Muitas contas foram criadas recentemente desta conexão. Tente novamente mais tarde.' }, 429, origin);
   }
   const body = await request.json().catch(() => ({}));
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return json({error:'Cadastro inválido.'},400,origin);
   const username = normalizeUsername(body.username);
   const password = String(body.password || '');
   const privateBirthDate = body.birthDate;
-  if (privateBirthDate !== undefined && (!validBirthDate(privateBirthDate) || privateBirthDate > portalCalendarDate())) return json({error:'Informe uma data de nascimento válida.'},400,origin);
+  if (!validBirthDate(privateBirthDate) || privateBirthDate > portalCalendarDate()) return json({error:'Informe uma data de nascimento válida.',code:'BIRTH_DATE_INVALID'},400,origin);
+  if (!validRegistrationGender(body.gender)) return json({error:'Escolha Masculino ou Feminino.',code:'GENDER_INVALID'},400,origin);
   const validation = validatePassword(password);
   if (!usernameValid(username)) return json({ error: 'O usuário deve ter entre 3 e 40 caracteres.' }, 400, origin);
   if (validation) return json({ error: validation }, 400, origin);
@@ -496,7 +502,8 @@ async function registerCitizen(request, env, origin) {
     mustChangePassword: false,
     selfRegistered: true,
     acceptFriendRequests: false,
-    privateBirthDate
+    privateBirthDate,
+    privateGender: body.gender
   }, 'self');
   const token = await createSessionToken(created, env);
   return json({ token, user: publicUser(created), expiresIn: SESSION_TTL_SECONDS }, 201, origin);

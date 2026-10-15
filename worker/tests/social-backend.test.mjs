@@ -1,3 +1,4 @@
+import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -67,6 +68,12 @@ class D1Database {
     this.preparedSql = [];
   }
 
+  batch(statements) {
+    this.database.exec('BEGIN');
+    try { const results=statements.map(statement=>statement.run()); this.database.exec('COMMIT'); return results; }
+    catch(error) { this.database.exec('ROLLBACK'); throw error; }
+  }
+
   prepare(sql) {
     this.preparedSql.push(String(sql));
     return new D1Statement(this.database, sql);
@@ -88,10 +95,11 @@ async function payload(response) {
 }
 
 async function register(env, username, ip = '127.0.0.1') {
+  await prepareRegistrationFixture(env);
   const response = await handlePortalRoute(new Request('https://portal.test/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip },
-    body: JSON.stringify({ username, password: 'Senha-Segura-2026' })
+    body: JSON.stringify({ ...syntheticRegistrationDetails, username, password: 'Senha-Segura-2026' })
   }), env, '', true);
   assert.equal(response.status, 201);
   return payload(response);

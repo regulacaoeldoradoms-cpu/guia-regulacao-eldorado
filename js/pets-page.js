@@ -1,4 +1,5 @@
 'use strict';
+import './private-birth-date-input.js?v=20261015-account-private-1';
 import {gnomeCompanionState} from './pet-companions.mjs?v=20261012-gnome-coexist-1';
 import {petSession} from './pets-bootstrap.js?v=20261012-pet-depth-speech-1';
 import {mountPetsMobilePresentation} from './pets-mobile-presentation.js?v=20261012-gnome-coexist-1';
@@ -122,11 +123,13 @@ async function initialize(){
  await renderGallery();$('petDays').replaceChildren();
  // Availability of the optional private declaration cannot block existing cats.
  // Catalog/adoption/speech authorization remains entirely server-owned.
- if($('petAgeDisclosure')){const owner=session;owner.api.get('age').then(age=>{if(owner===session&&generation===pageEpoch&&owner.api.valid())$('petAgeDisclosure').hidden=age.ageStatus!=='unknown';}).catch(()=>{});}
+ if($('petAgeDisclosure')){const owner=session;owner.api.get('age').then(age=>{if(owner===session&&generation===pageEpoch&&owner.api.valid())$('petAgeDisclosure').hidden=age.canDeclareBirthDate!==true;}).catch(()=>{});}
  for(const [i,label] of ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].entries()){const l=node('label',label),input=document.createElement('input');input.type='checkbox';input.value=i;input.checked=i>=1&&i<=5;l.prepend(input);$('petDays').append(l);}
  if(!bound){bound=true;
+ window.PortalBirthDateInput?.bind($('petAgeBirthDate'));
  $('petAgeForm')?.addEventListener('submit',async event=>{
   event.preventDefault();if(busy||!session?.api.valid())return;
+  if(!window.PortalBirthDateInput.validate($('petAgeBirthDate'))||!$('petAgeForm').reportValidity())return;
   const owner=session,generation=pageEpoch,button=$('petAgeSubmit');button.disabled=true;
   try{const age=await owner.api.declareAge($('petAgeBirthDate').value);if(owner!==session||generation!==pageEpoch)return;
    session.catalog=await owner.api.get('catalog');if(owner!==session||generation!==pageEpoch)return;

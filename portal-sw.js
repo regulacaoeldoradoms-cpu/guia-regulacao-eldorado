@@ -1,7 +1,7 @@
 'use strict';
 
 // Renova a integração de mascotes e evita reutilizar assets da versão anterior.
-const CACHE_VERSION = '20261009-pets-combined-8';
+const CACHE_VERSION = '20261015-account-private-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 // Version this policy without replacing caches belonging to other modules.

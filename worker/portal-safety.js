@@ -146,6 +146,7 @@ export async function guardCitizenRegistrationBasics(request, origin, originAllo
   const url = new URL(request.url);
   if (url.pathname !== '/api/auth/register' || request.method !== 'POST') return null;
   const body = await request.clone().json().catch(() => ({}));
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return json({error:'Cadastro inválido.'},400,origin,originAllowed);
   const username = normalizeUsername(body.username);
   const password = String(body.password || '');
 
@@ -181,7 +182,8 @@ export async function sanitizeCitizenRegistrationRequest(request) {
   const cleanBody = {
     username: body.username,
     password: body.password,
-    ...(Object.prototype.hasOwnProperty.call(body,'birthDate') ? {birthDate:body.birthDate} : {})
+    ...(Object.prototype.hasOwnProperty.call(body,'birthDate') ? {birthDate:body.birthDate} : {}),
+    ...(Object.prototype.hasOwnProperty.call(body,'gender') ? {gender:body.gender} : {})
   };
 
   const headers = new Headers(request.headers);

@@ -1,0 +1,6 @@
+/* Private registration fields: readable help and native keyboard controls. */
+#signupForm > p { color:var(--portal-theme-muted,#425d73); }
+#signupForm .portal-field small { display:block; margin-top:7px; line-height:1.5; }
+#signupForm .portal-field :is(input,select) { min-height:48px; min-width:0; }
+#signupForm :is(input,select):focus-visible { outline:3px solid var(--portal-theme-accent,#246dab); outline-offset:3px; }
+#signupForm > a { color:var(--portal-theme-accent,#275d88); }
