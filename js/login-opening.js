@@ -10,6 +10,16 @@
 
   if (!document.getElementById('loginForm')) return;
 
+  // The mobile layer never prepares/downloads the desktop MP4. If its optional
+  // script is unavailable, keep normal navigation instead of blocking login.
+  if (document.documentElement?.dataset?.portalOpeningMode === 'mobile') {
+    window.PortalLoginOpening = window.PortalMobileLoginOpening || Object.freeze({
+      prepare: () => Promise.resolve(false), primeFromGesture() {},
+      beforeNavigate: async () => false
+    });
+    return;
+  }
+
   let video = null;
   let objectUrl = '';
   let preparation = null;
