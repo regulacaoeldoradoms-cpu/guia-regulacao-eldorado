@@ -8,7 +8,7 @@ const {applyTextScale}=await import('./text-scale.mjs');
 const output=path.resolve(process.env.TUTORIAL_OUTPUT||'.local/citizen-tutorial');await fs.mkdir(output,{recursive:true});
 const server=await serve(process.cwd()),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium'}),results=[];
 try{
- for(const width of (process.env.ENTRY_WIDTHS||'320,1280').split(',').map(Number))for(const theme of ['light','dark'])for(const scale of [1,2]){
+ for(const width of (process.env.ENTRY_WIDTHS||'320,1280').split(',').map(Number))for(const theme of (process.env.ENTRY_THEMES||'light,dark').split(','))for(const scale of (process.env.ENTRY_SCALES||'1,2').split(',').map(Number)){
   const result={width,theme,scale,errors:[]},{page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
   try{
    await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});assert.equal(await page.locator('[data-tutorial-options]').textContent().then(x=>x.trim()),'Ajuda');
