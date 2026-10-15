@@ -1,9 +1,9 @@
 .citizen-tutorial-entry{position:absolute;top:10px;right:12px;width:44px;min-height:44px;z-index:2;margin:0;color:var(--portal-theme-text,#173b5d)}
 .citizen-tutorial-entry[open]{z-index:15001}
-.citizen-tutorial-entry>summary{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-end;gap:4px;width:44px;height:calc(52px + max(0px,2.5em - 40px));min-height:44px;padding:0;list-style:none;cursor:pointer}
+.citizen-tutorial-entry>summary{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-end;gap:4px;width:44px;height:52px;min-height:44px;padding:0;list-style:none;cursor:pointer}
 .citizen-tutorial-entry>summary::-webkit-details-marker{display:none}
 .citizen-tutorial-entry>summary>span:not(.tutorial-help-label){display:grid;place-items:center;width:28px;height:28px;border:1px solid currentColor;border-radius:50%;line-height:1;background:var(--portal-theme-surface,#fff)}
-.citizen-tutorial-entry .tutorial-help-label{font-size:14px;line-height:20px;white-space:nowrap;font-weight:700;margin-top:max(0px,2.5em - 35px)}
+.citizen-tutorial-entry .tutorial-help-label{font-size:14px;line-height:20px;white-space:nowrap;font-weight:700}
 .citizen-tutorial-entry svg{display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .citizen-tutorial-entry>summary:focus-visible{outline:3px solid currentColor;outline-offset:-3px}
 .citizen-tutorial-entry .tutorial-entry-panel{position:fixed;right:12px;top:96px;display:flex;flex-wrap:wrap;gap:8px;width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow:auto;box-sizing:border-box;padding:12px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);border:1px solid var(--portal-theme-border,#426982);border-radius:12px;box-shadow:0 8px 24px #0003;z-index:15000}

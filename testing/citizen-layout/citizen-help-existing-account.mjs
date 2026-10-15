@@ -114,8 +114,8 @@ try{
  await run('cached-old-module',{width:390,theme:'light'},async({page,context,audit,result})=>{
   await context.addInitScript(()=>window.PortalCitizenTutorial={version:1,launcherVersion:2,mount(){throw new Error('Obsolete launcher must be replaced');}});
   await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});
-  assert.equal(await page.evaluate(()=>PortalCitizenTutorial.launcherVersion),3);
-  assert(audit.resources.includes('/js/citizen-tutorial.js?v=20261014-citizen-auto-1'));
+  assert.equal(await page.evaluate(()=>PortalCitizenTutorial.launcherVersion),4);
+  assert(audit.resources.includes('/js/citizen-tutorial.js?v=20261015-citizen-tutorial-1'));
   const d=await start(page);await d.locator('[data-tutorial-skip]').click();result.obsoleteModuleReplaced=true;
  });
 }finally{await browser.close();await new Promise(resolve=>server.server.close(resolve));}

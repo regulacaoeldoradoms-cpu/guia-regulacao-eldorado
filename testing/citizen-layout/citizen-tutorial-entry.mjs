@@ -14,14 +14,14 @@ try{
    await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});assert.equal(await page.locator('[data-tutorial-options]').textContent().then(x=>x.trim()),'Ajuda');
    process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
    const geometry=await page.evaluate(()=>{
-    const entry=document.querySelector('[data-citizen-tutorial-entry]'),summary=entry.querySelector('summary'),rects=[...summary.children].map(n=>n.getBoundingClientRect());
+    const entry=document.querySelector('[data-citizen-tutorial-entry]'),summary=entry.querySelector('summary'),rects=[...summary.children].flatMap(n=>{const range=document.createRange();range.selectNodeContents(n);return [n.getBoundingClientRect(),...range.getClientRects()];});
     const intersect=a=>rects.some(r=>a.left<r.right&&a.right>r.left&&a.top<r.bottom&&a.bottom>r.top);
     const hits=[];for(const node of document.querySelectorAll('.portal-hero-copy *'))for(const child of node.childNodes){if(child.nodeType!==Node.TEXT_NODE||!child.textContent.trim()||!node.getClientRects().length)continue;const range=document.createRange();range.selectNodeContents(child);for(const a of range.getClientRects())if(intersect(a))hits.push(child.textContent);}
     const native=()=>[...document.querySelectorAll('.portal-hero,.citizen-actions,.citizen-grid')].map(n=>{const a=n.getBoundingClientRect();return {x:a.x,y:a.y,width:a.width,height:a.height};});
     const before=native(),marker=document.createComment('entry-layout-test');entry.before(marker);entry.remove();const after=native();marker.replaceWith(entry);
-    return {before,after,hits,target:{width:summary.getBoundingClientRect().width,height:summary.getBoundingClientRect().height}};
+    return {before,after,hits,helpRects:rects.map(r=>({left:r.left,right:r.right,top:r.top,bottom:r.bottom})),target:{width:summary.getBoundingClientRect().width,height:summary.getBoundingClientRect().height}};
    });
-   assert.deepEqual(geometry.before,geometry.after);assert.deepEqual(geometry.hits,[],'Tutorial icon must not cover native text');assert(geometry.target.width>=44&&geometry.target.height>=44);
+   assert.deepEqual(geometry.before,geometry.after);assert.deepEqual(geometry.hits,[],'Help must not cover native text: '+JSON.stringify(geometry));assert(geometry.target.width>=44&&geometry.target.height>=44);
    await page.screenshot({timeout:30000,path:path.join(output,`${width}-${theme}-${scale}-entry.png`)});
    await page.locator('[data-tutorial-options]').focus();await page.keyboard.press('Enter');await page.locator('[data-tutorial-start]').waitFor();
    assert(await page.locator('[data-tutorial-start]').isVisible());await page.screenshot({timeout:30000,path:path.join(output,`${width}-${theme}-${scale}-options.png`)});

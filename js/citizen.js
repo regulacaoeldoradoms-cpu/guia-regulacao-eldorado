@@ -8,7 +8,7 @@ function ensureComposeHelper() {
   if (globalThis.PortalCitizenComposeAttachments?.create) return Promise.resolve(globalThis.PortalCitizenComposeAttachments);
   if (!composeHelperPromise) composeHelperPromise=new Promise((resolve,reject)=>{
     const script=globalThis.document.createElement('script');
-    script.src='/js/citizen-compose-attachments.js?v=20261014-citizen-auto-1';
+    script.src='/js/citizen-compose-attachments.js?v=20261015-citizen-tutorial-1';
     const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve(globalThis.PortalCitizenComposeAttachments);};
     const timer=setTimeout(()=>finish(new Error('Prévia local indisponível')),8000);
     script.onload=()=>finish(globalThis.PortalCitizenComposeAttachments?.create?null:new Error('Prévia local indisponível'));
@@ -715,6 +715,45 @@ const initializeCitizenArea = async (context) => {
     }, {signal:helpAbort.signal});
     context?.addController?.({dispose:()=>helpAbort.abort()});
   }
+  // Font metrics differ between browsers. Position only the absolute help label
+  // in an empty part of the existing hero; never reflow native copy or forms.
+  let helpFrame=0;
+  function positionHelp() {
+    const copy=helpHost?.querySelector('.portal-hero-copy');
+    const label=helpEntry?.querySelector('.tutorial-help-label'),summary=helpEntry?.querySelector('summary');
+    if(context?.disposed||!helpEntry?.isConnected||!copy?.getClientRects().length||!label||!summary)return;
+    label.style.marginTop='0px';summary.style.height='52px';
+    const bounds=[];
+    for(const node of copy.querySelectorAll('*')) {
+      if(!node.getClientRects().length||getComputedStyle(node).visibility==='hidden')continue;
+      for(const text of node.childNodes)if(text.nodeType===Node.TEXT_NODE&&text.textContent.trim()){
+        const range=globalThis.document.createRange();range.selectNodeContents(text);bounds.push(...range.getClientRects());
+      }
+    }
+    const range=globalThis.document.createRange();range.selectNodeContents(label);
+    const glyph=range.getBoundingClientRect(),box=label.getBoundingClientRect();
+    const rect={left:Math.min(box.left,glyph.left),right:Math.max(box.right,glyph.right),top:Math.min(box.top,glyph.top),bottom:Math.max(box.bottom,glyph.bottom)};
+    let offset=0;
+    for(let attempt=0;attempt<=bounds.length;attempt++) {
+      const hits=bounds.filter(r=>rect.left<r.right&&rect.right>r.left&&rect.top+offset<r.bottom&&rect.bottom+offset>r.top);
+      if(!hits.length)break;
+      offset=Math.max(...hits.map(r=>r.bottom))-rect.top+6;
+    }
+    label.style.marginTop=offset+'px';
+    summary.style.height=Math.max(52,rect.bottom+offset-summary.getBoundingClientRect().top+4)+'px';
+  }
+  function scheduleHelp(){cancelAnimationFrame(helpFrame);helpFrame=requestAnimationFrame(positionHelp);}
+  if(helpHost) {
+    const layoutAbort=new AbortController(),copy=helpHost.querySelector('.portal-hero-copy');
+    const resize=typeof ResizeObserver==='function'?new ResizeObserver(scheduleHelp):null;
+    if(copy)resize?.observe(copy);
+    const mutation=new MutationObserver(scheduleHelp);mutation.observe(helpEntry,{childList:true,subtree:true,characterData:true});
+    if(copy)mutation.observe(copy,{childList:true,subtree:true,characterData:true});
+    globalThis.addEventListener('resize',scheduleHelp,{signal:layoutAbort.signal});
+    globalThis.document.fonts?.addEventListener('loadingdone',scheduleHelp,{signal:layoutAbort.signal});
+    context?.addController?.({dispose(){layoutAbort.abort();resize?.disconnect();mutation.disconnect();cancelAnimationFrame(helpFrame);}});
+    positionHelp();
+  }
   async function loadTutorial() {
     if (demonstration || tutorial || tutorialLoading || context?.disposed || !liveAllowed()) return;
     tutorialLoading = true;
@@ -724,12 +763,12 @@ const initializeCitizenArea = async (context) => {
     if (loadButton) loadButton.disabled = true;
     if (loadStatus) loadStatus.textContent = 'Carregando ajuda…';
     try {
-      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 3) await new Promise((resolve, reject) => {
+      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 4) await new Promise((resolve, reject) => {
         const script=globalThis.document.createElement('script');
-        script.src='/js/citizen-tutorial.js?v=20261014-citizen-auto-1';
+        script.src='/js/citizen-tutorial.js?v=20261015-citizen-tutorial-1';
         const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve();};
         const timer=setTimeout(()=>finish(new Error('Tutorial indisponível')),8000);
-        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===3?null:new Error('Tutorial indisponível'));
+        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===4?null:new Error('Tutorial indisponível'));
         script.onerror=()=>finish(new Error('Tutorial indisponível'));
         globalThis.document.head.append(script);
       });
@@ -742,6 +781,7 @@ const initializeCitizenArea = async (context) => {
         initialize:initializeCitizenArea});
       if (!tutorial) throw new Error('Entrada de ajuda indisponível');
       helpAbort.abort();
+      positionHelp();
       context?.addController?.(tutorial);
       if (focused) helpEntry.querySelector(open?'[data-tutorial-start]':'summary').focus({preventScroll:true});
     } catch (_) {

@@ -42,7 +42,7 @@ jobs:
             social_api_version=20261011-citizen-continuity-3
             if [ "$file" = admin/social/index.html ]; then social_api_version=20260910-4; fi
             grep -Fq "social-api.js?v=$social_api_version" "$file"
-            interaction_version=20261013-theme-immediate-1
+            interaction_version=20261015-citizen-tutorial-1
             if [ "$file" = admin/social/index.html ]; then interaction_version=20260923-2; fi
             grep -Fq "portal-interactions.js?v=$interaction_version" "$file"
           done

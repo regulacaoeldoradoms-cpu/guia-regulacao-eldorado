@@ -1,7 +1,7 @@
 // No user text, files, tokens or API responses enter tutorial persistence.
 (() => {
 'use strict';
-if (globalThis.PortalCitizenTutorial?.launcherVersion === 3) return;
+if (globalThis.PortalCitizenTutorial?.launcherVersion === 4) return;
 const VERSION=1;
 const STEPS=Object.freeze(['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice']);
 const EXAMPLE={subject:'Exemplo fictício: mural com informações a apurar',description:'Exemplo inteiramente fictício: um mural da Unidade Modelo teria exposto dados pessoais inventados de usuários do serviço. Relato essa possível irregularidade para apuração, sem reproduzir esses dados. Não descreve pessoa ou atendimento real.'};
@@ -323,5 +323,5 @@ function mount({document,window,context,user,isBusy,initialize}){
  entryLabel();
  return {get active(){return Boolean(session)||starting;},beforeNavigate(){stop({focus:false});},deactivate(){stop({focus:false});},dispose(){disposed=true;stop({save:false,focus:false});abort.abort();entry.remove();}};
 }
-globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION,launcherVersion:3});
+globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION,launcherVersion:4});
 })();
