@@ -164,10 +164,28 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261015-1">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261015-2">';
 test('published Citizen HTML and service worker agree on the current release marker',()=>{
   assert.ok(source.includes(`CITIZEN_HTML_MARKER = '${citizenMarker}'`));
   assert.ok(fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8').includes(citizenMarker));
+});
+test('previous tutorial shell gets the new example CSS without replacing caches or the old asset',async()=>{
+  const previousCss='/css/citizen-tutorial.css?v=20261015-citizen-tutorial-1';
+  const currentCss='/css/citizen-tutorial.css?v=20261015-example-pulse-1';
+  const currentHtml=fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8');
+  assert.ok(currentHtml.includes(`href="${currentCss}"`));
+  const f=fixture(async request=>new Response(new URL(request.url).pathname==='/cidadao/'?currentHtml:'EXAMPLE-CSS-NEW'));
+  await f.seed('/cidadao/','<meta name="portal-citizen-first-paint" content="20261015-1"><link rel="stylesheet" href="'+previousCss+'">');
+  await f.seed('/perfil/','PROFILE-UNCHANGED');
+  const assets=await f.caches.open('portal-static-20261009-pets-combined-8');
+  await assets.put(origin+previousCss,new Response('EXAMPLE-CSS-OLD'));
+  const navigation=f.dispatch('/cidadao/');
+  assert.equal(await(await navigation.response).text(),currentHtml);await Promise.all(navigation.waits);
+  const asset=f.dispatch(currentCss,{method:'GET'});
+  assert.equal(await(await asset.response).text(),'EXAMPLE-CSS-NEW');await Promise.all(asset.waits);
+  assert.equal(await(await assets.match(origin+previousCss)).text(),'EXAMPLE-CSS-OLD');
+  assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/perfil/')).text(),'PROFILE-UNCHANGED');
+  assert.deepEqual([...f.stores.keys()],[namespace,'portal-static-20261009-pets-combined-8']);
 });
 test('only obsolete Citizen HTML gets the bounded refresh window', async () => {
   for(const [path,body,expected] of [['/cidadao/','OLD',8000],['/perfil/','OLD',2500]]){
