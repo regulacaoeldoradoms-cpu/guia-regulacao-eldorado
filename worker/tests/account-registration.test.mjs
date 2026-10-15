@@ -117,6 +117,8 @@ test('new minor cannot redeclare via pet API even if the stored date disappears;
  assert.equal((await post({birthDate:'1990-01-01'})).status,403);
  const age=await(await worker.fetch(request('/api/pets/age',undefined,token),env,{})).json();assert.deepEqual(age,{ageStatus:'unknown',canDeclareBirthDate:false});
  const catalog=await(await worker.fetch(request('/api/pets/catalog',undefined,token),env,{})).json();assert(!catalog.types.some(type=>type.id==='gnome'));
+ const details=await(await worker.fetch(request('/api/auth/registration-details',undefined,token),env,{})).json();assert.deepEqual(details,{birthDateRecorded:false,genderRecorded:true,canCompleteBirthDate:false});
+ assert.equal((await worker.fetch(request('/api/auth/registration-details',{birthDate:'1990-01-01',gender:'feminino'},token,'PATCH'),env,{})).status,409);
 });
 
 test('existing gnome and cat survive missing eligibility, remain blocked, and resume after authorized correction',async t=>{

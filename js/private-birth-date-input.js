@@ -1,5 +1,6 @@
 'use strict';
 (() => {
+  const bound = new WeakSet();
   function today() {
     const parts = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Campo_Grande',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
     const part = name => parts.find(p => p.type === name).value;
@@ -16,7 +17,8 @@
     return input.validity.valid;
   }
   function bind(input) {
-    if (!input) return;
+    if (!input || bound.has(input)) return;
+    bound.add(input);
     input.min = '1900-01-01'; input.max = today();
     input.addEventListener('input', () => validate(input));
     input.addEventListener('focus', () => { input.max=today(); });

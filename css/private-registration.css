@@ -1,0 +1,9 @@
+#privateRegistrationCard[hidden],#privateRegistrationCard [hidden]{display:none!important}
+#privateRegistrationCard{scroll-margin-top:100px}
+#privateRegistrationCard p{color:var(--portal-theme-muted,#425d73);line-height:1.55}
+#privateRegistrationCard .portal-field :is(input,select){min-height:48px;min-width:0}
+#privateRegistrationCard :is(input,select,button):focus-visible{outline:3px solid var(--portal-theme-accent,#246dab);outline-offset:3px}
+.security-verification-gate #privateRegistrationCard{display:none!important}
+/* Renewing a Security session replaces its document; do not animate that
+   authentication boundary with a cross-document snapshot. */
+@view-transition{navigation:none}

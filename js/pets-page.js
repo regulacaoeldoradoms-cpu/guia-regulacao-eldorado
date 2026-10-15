@@ -33,6 +33,7 @@ function resetPage(){
  for(const id of ['petWallet','petAchievement','petProposal'])$(id).textContent='';
  $('petPlacement').hidden=true;$('petPreferences').reset();delete $('petPreferences').dataset.editing;
  $('petAgeForm')?.reset();if($('petAgeDisclosure'))$('petAgeDisclosure').hidden=true;
+ if($('petAccountCompletion'))$('petAccountCompletion').hidden=true;
  $('petAdopt').disabled=true;message('Entre na sua conta para carregar o mascote.');
 }
 const node=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text||'';if(cls)n.className=cls;return n;};
@@ -123,7 +124,7 @@ async function initialize(){
  await renderGallery();$('petDays').replaceChildren();
  // Availability of the optional private declaration cannot block existing cats.
  // Catalog/adoption/speech authorization remains entirely server-owned.
- if($('petAgeDisclosure')){const owner=session;owner.api.get('age').then(age=>{if(owner===session&&generation===pageEpoch&&owner.api.valid())$('petAgeDisclosure').hidden=age.canDeclareBirthDate!==true;}).catch(()=>{});}
+ if($('petAgeDisclosure')){const owner=session;owner.api.get('age').then(age=>{if(owner===session&&generation===pageEpoch&&owner.api.valid()){$('petAgeDisclosure').hidden=age.canDeclareBirthDate!==true;if($('petAccountCompletion'))$('petAccountCompletion').hidden=age.ageStatus!=='unknown'||age.canDeclareBirthDate===true;}}).catch(()=>{});}
  for(const [i,label] of ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].entries()){const l=node('label',label),input=document.createElement('input');input.type='checkbox';input.value=i;input.checked=i>=1&&i<=5;l.prepend(input);$('petDays').append(l);}
  if(!bound){bound=true;
  window.PortalBirthDateInput?.bind($('petAgeBirthDate'));

@@ -66,6 +66,7 @@ export async function installAuditFixture(context, { theme='dark', authenticated
       if(request.method()==='PATCH') {Object.assign(security,request.postDataJSON()||{});Object.assign(user,{interfaceTheme:security.interfaceTheme,interfaceSoundsEnabled:security.interfaceSoundsEnabled,interfaceSoundsMuted:security.interfaceSoundsMuted});}
       data={security,user};
     }
+    else if (url.pathname === '/api/auth/registration-details' && request.method() === 'GET') data = {birthDateRecorded:true,genderRecorded:true};
     else if (url.pathname === '/api/auth/settings') data = { user };
     // Citizen mobile startup prepares the current user's profile in the
     // background. Model only its read; identity mutations remain fail-closed.

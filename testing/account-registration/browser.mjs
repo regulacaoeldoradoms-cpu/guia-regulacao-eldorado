@@ -5,6 +5,9 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {registerHooks} from 'node:module';
+const hook=registerHooks({resolve(specifier,context,next){if(specifier==='cloudflare:workers')return {url:'data:text/javascript,export class DurableObject {}',shortCircuit:true};return next(specifier,context);}});
+const {default:worker}=await import('../../worker/index.js');hook.deregister();
 import {GroupTestD1} from '../../worker/tests/helpers/chat-group-fixture.mjs';
 import {prepareRegistrationFixture,syntheticRegistrationDetails} from '../../worker/tests/helpers/private-registration-fixture.mjs';
 import {handlePortalRoute} from '../../worker/auth-management-v2.js';
@@ -42,8 +45,71 @@ async function privateStorage(page){
 }
 const asRequest=req=>new Request(req.url(),{method:req.method(),headers:req.headers(),...(['GET','HEAD'].includes(req.method())?{}:{body:req.postData()})});
 async function fulfill(route,response){return route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:await response.text()});}
+async function managedCases(width,theme){
+ for(const kind of (process.env.ACCOUNT_RECOVERY_CASES==='1'?['managed-empty','managed-first-access','managed-birth-saved','self-recovery']:['managed-empty','managed-first-access','managed-birth-saved'])){
+  const env={AUTH_DB:new GroupTestD1(),AUTH_SESSION_SECRET:'synthetic-browser-managed-secret',AUTH_RATE_LIMIT_SECRET:'synthetic-browser-managed-rate',PETS_ENABLED:'true',ALLOWED_ORIGINS:origin};
+  await prepareRegistrationFixture(env);env.AUTH_DB.database.exec(await fs.readFile('worker/migrations/pets-v1.sql','utf8'));
+  const api=async(path,body,token,method=body===undefined?'GET':'POST')=>worker.fetch(new Request('https://synthetic.test'+path,{method,headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.1.2.90',...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})}),env,{});
+  const password='Synthetic-Managed-Password-2026';
+  const signup=await api('/api/auth/register',{...syntheticRegistrationDetails,username:'synthetic.manager',password});assert.equal(signup.status,201);
+  env.AUTH_DB.database.exec("UPDATE auth_users SET role='admin' WHERE username='synthetic.manager'");
+  const manager=await(await api('/api/auth/login',{username:'synthetic.manager',password})).json();
+  const created=kind==='self-recovery'?await api('/api/auth/register',{...syntheticRegistrationDetails,username:user.username,password,birthDate:'2015-01-01'}):await api('/api/admin/users',{username:user.username,name:'Pessoa Fictícia Gerenciada',role:'medico',password,mustChangePassword:kind==='managed-first-access'},manager.token);assert.equal(created.status,201);
+  if(kind==='self-recovery')env.AUTH_DB.database.prepare('DELETE FROM pet_private_age WHERE auth_username=?').run(user.username);
+  env.AUTH_DB.database.prepare('UPDATE auth_users SET interface_theme=? WHERE username=?').run(theme,user.username);
+  if(kind==='managed-birth-saved')env.AUTH_DB.database.prepare('INSERT INTO pet_private_age(auth_username,birth_date) VALUES(?,?)').run(user.username,'1993-07-19');
+  const login=await(await api('/api/auth/login',{username:user.username,password})).json();assert(login.token);
+  const scene={errors:[]},{page,context,audit:network}=await newPage(browser,{width,theme,seedOnce:true,user:login.user},origin,scene),posts=[];
+  await context.addInitScript(({origin,token,user})=>{if(location.origin===origin&&!sessionStorage.getItem('__managedSeeded')){sessionStorage.setItem('regulacao.portal.session',token);sessionStorage.setItem('regulacao.portal.user',JSON.stringify(user));sessionStorage.setItem('regulacao.portal.user.validatedAt',String(Date.now()));sessionStorage.setItem('__managedSeeded','1');}},{origin,token:login.token,user:login.user});
+  await context.route('**/api/auth/**',async route=>{const request=route.request();const pathname=new URL(request.url()).pathname;if(request.method()==='PATCH'&&pathname==='/api/auth/registration-details')posts.push(request.postDataJSON());const response=await worker.fetch(asRequest(request),env,{});if(process.env.ACCOUNT_DEBUG==='1'&&['/api/auth/registration-details','/api/auth/change-password'].includes(pathname)){const data=await response.clone().json();console.log(JSON.stringify({kind,pathname,status:response.status,birthDateRecorded:data.birthDateRecorded,genderRecorded:data.genderRecorded,mustChangePassword:data.user?.mustChangePassword}));}return fulfill(route,response);});
+  await context.route('**/api/pets/**',async route=>fulfill(route,await worker.fetch(asRequest(route.request()),env,{})));
+  try{
+   if(kind==='managed-empty'){
+    await page.goto(origin+'/mascotes/');await page.locator('#petAccountCompletion').waitFor();assert(await page.locator('#petAgeDisclosure').isHidden());
+    await page.locator('#petAccountCompletion a').click();
+   }else await page.goto(origin+'/seguranca/'+(kind==='managed-first-access'?'?primeiro-acesso=1':''));
+   await page.waitForFunction(()=>Boolean(window.RegulationAuth));
+   if(kind==='managed-first-access'){
+    await page.waitForFunction(()=>document.body.classList.contains('security-first-access'));
+    assert(await page.locator('#privateRegistrationCard').isHidden());
+    await page.locator('#currentPassword').fill(password);await page.locator('#newPassword').fill('Synthetic-Changed-Password-2026');await page.locator('#confirmPassword').fill('Synthetic-Changed-Password-2026');await page.locator('#changePasswordButton').click();
+    await page.waitForFunction(()=>!document.getElementById('privateRegistrationCard')?.hidden && (location.hash==='#privateRegistrationCard'||document.getElementById('accountStatus')?.textContent.includes('Complete seus dados privados')));
+    assert.equal((await api('/api/auth/registration-details',undefined,login.token)).status,401);
+   }
+   await page.locator('#privateRegistrationCard').waitFor();
+   if(kind==='self-recovery'){
+    await page.waitForFunction(()=>document.getElementById('privateRegistrationSummary').textContent.includes('recuperação autorizada'));
+    assert(await page.locator('#privateRegistrationForm').isHidden());assert(await page.locator('#privateBirthDateField').isHidden());
+    const rejected=await page.evaluate(async()=>{try{await RegulationAuth.api('/api/auth/registration-details',{method:'PATCH',body:JSON.stringify({birthDate:'1990-01-01',gender:'feminino'})});return 200;}catch(error){return error.status;}});assert.equal(rejected,409);
+    await screenshot(page,`self-recovery-${width}-${theme}`);await privateStorage(page);
+    results.push({scene:kind,width,theme,scale,success:true,redeclareRejected:true});continue;
+   }
+   await page.locator('#privateRegistrationSubmit').waitFor({state:'visible'});await page.waitForFunction(()=>!document.getElementById('privateRegistrationSubmit').disabled);
+   await applyTextScale(page);assert.equal(await page.locator('#privateGender').inputValue(),'');
+   if(kind==='managed-birth-saved'){assert(await page.locator('#privateBirthDateField').isHidden());assert(await page.locator('#privateBirthDate').isDisabled());}
+   else{
+    await page.locator('#privateRegistrationSubmit').click();assert.equal(posts.length,0);
+    await page.locator('#privateBirthDate').fill('2100-01-01');await page.locator('#privateRegistrationSubmit').click();assert.equal(posts.length,0);
+    await page.locator('#privateBirthDate').fill(kind==='managed-first-access'?'2015-01-01':'1993-07-19');
+   }
+   const accessibility=await audit(page,'#privateRegistrationCard');await screenshot(page,`${kind}-${width}-${theme}`);
+   await page.locator('#privateGender').focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.locator('#privateRegistrationSubmit').click();
+   await page.waitForFunction(()=>document.getElementById('privateRegistrationStatus')?.textContent.includes('Dados privados salvos'));
+   assert(await page.locator('#privateRegistrationForm').isHidden());await privateStorage(page);
+   assert.equal(posts.length,1);if(kind==='managed-birth-saved')assert.deepEqual(Object.keys(posts[0]),['gender']);
+   assert.equal(env.AUTH_DB.database.prepare('SELECT role FROM auth_users WHERE username=?').get(user.username).role,'medico');
+   await screenshot(page,`${kind}-complete-${width}-${theme}`);
+   const finalToken=await page.evaluate(()=>RegulationAuth.getToken());const age=await(await api('/api/pets/age',undefined,finalToken)).json();assert.equal(age.ageStatus,kind==='managed-first-access'?'underage':'adult');assert.equal(age.canDeclareBirthDate,false);
+   await page.goto(origin+'/mascotes/');await page.getByRole('button',{name:'Gato dourado',exact:true}).waitFor();assert(await page.locator('#petAgeDisclosure').isHidden());
+   assert.equal(await page.getByRole('button',{name:'Gnomo · 18+',exact:true}).count(),kind==='managed-first-access'?0:1);
+   assert.equal(scene.errors.length,0,scene.errors.join('\n'));assert.deepEqual(network.unmappedApiCalls,[]);
+   results.push({scene:kind,width,theme,scale,accessibility,success:true,privateStorage:true});
+  }catch(error){console.log(JSON.stringify({kind,width,theme,errors:scene.errors,calls:network.apiCalls,ui:await page.evaluate(()=>({url:location.pathname+location.search,classes:document.body.className,status:document.getElementById('accountStatus')?.textContent,privateStatus:document.getElementById('privateRegistrationStatus')?.textContent,first:RegulationAuth?.getCachedUser()?.mustChangePassword}))}));throw error;}finally{await context.close();env.AUTH_DB.database.close();}
+ }
+}
 try{
  for(const width of (process.env.ACCOUNT_WIDTHS||'320,390,1440').split(',').map(Number))for(const theme of ['light','dark']){
+  if(process.env.ACCOUNT_MANAGED_ONLY==='1'){await managedCases(width,theme);continue;}
   const state={errors:[]},{page,context,audit:network}=await newPage(browser,{width,theme,seedOnce:true},origin,state);
   const env={AUTH_DB:new GroupTestD1(),AUTH_SESSION_SECRET:'synthetic-browser-account-secret',AUTH_RATE_LIMIT_SECRET:'synthetic-browser-rate'};await prepareRegistrationFixture(env);const posts=[];
   await context.route('**/api/auth/register',async route=>{posts.push(route.request().postDataJSON());return fulfill(route,await handlePortalRoute(await sanitizeCitizenRegistrationRequest(asRequest(route.request())),env,''));});
@@ -105,5 +171,5 @@ try{
    }finally{await context.close();f.close();}
   }
  }
- await fs.writeFile(path.join(output,process.env.ACCOUNT_SIGNUP_ONLY==='1'?'results-signup.json':scale===2?'results-text200.json':'results.json'),JSON.stringify(results,null,2));console.log(JSON.stringify({passed:results.length,output}));
+ await fs.writeFile(path.join(output,process.env.ACCOUNT_MANAGED_ONLY==='1'?(process.env.ACCOUNT_RECOVERY_CASES==='1'?'results-managed-guards.json':scale===2?'results-managed-text200.json':'results-managed.json'):process.env.ACCOUNT_SIGNUP_ONLY==='1'?'results-signup.json':scale===2?'results-text200.json':'results.json'),JSON.stringify(results,null,2));console.log(JSON.stringify({passed:results.length,output}));
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
