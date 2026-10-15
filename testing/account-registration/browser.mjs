@@ -39,6 +39,19 @@ async function audit(page,selector){
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'horizontal overflow');
  return {violations:0,passes:result.passes.length};
 }
+async function submitSignup(page,width,theme){
+ try{await page.locator('#signupSubmit').click();}
+ catch(error){
+  await page.screenshot({path:path.join(output,`signup-failure-${width}-${theme}.png`)});
+  // Numeric layout diagnostics only: never log input values or request bodies.
+  const geometry=await page.evaluate(()=>{
+   const box=n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
+   const elements=['#signupSubmit','.signup-consent','.signup-consent span','#signupForm'].map(selector=>{const n=document.querySelector(selector),c=getComputedStyle(n);return {selector,rect:box(n),fontSize:c.fontSize,lineHeight:c.lineHeight,position:c.position,transform:c.transform};});
+   const b=document.getElementById('signupSubmit').getBoundingClientRect(),hit=document.elementFromPoint(b.x+b.width/2,b.y+b.height/2);
+   return {elements,hitTag:hit?.tagName,hitClass:hit?.className,hitRect:hit?box(hit):null,scrollY,innerHeight,innerWidth,dpr:devicePixelRatio,viewport:{scale:visualViewport.scale,height:visualViewport.height,offsetTop:visualViewport.offsetTop}};
+  });await fs.writeFile(path.join(output,`signup-failure-${width}-${theme}.json`),JSON.stringify(geometry,null,2));console.log(JSON.stringify({signupFailureGeometry:geometry}));throw error;
+ }
+}
 async function privateStorage(page){
  const stored=await page.evaluate(()=>JSON.stringify([...Object.entries(localStorage),...Object.entries(sessionStorage)]));
  assert(!/1990-01-01|1993-07-19|2015-01-01|"gender"|"birthDate"|masculino|feminino/.test(stored));
@@ -120,36 +133,36 @@ try{
     assert(!markup.includes('id="signupGender"'));await context.route(origin+'/cadastro/',route=>route.fulfill({contentType:'text/html',body:markup}));
     await page.goto(origin+'/cadastro/');
     for(const [id,value]of [['signupUsername','synthetic.legacyhtml'],['signupPassword','Synthetic-Registration-2026'],['signupConfirm','Synthetic-Registration-2026'],['signupBirthDate','1993-07-19']])await page.locator('#'+id).fill(value);
-    await page.locator('#signupTerms').check();await page.locator('#signupSubmit').click();await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Atualize a página'));
+    await page.locator('#signupTerms').check();await submitSignup(page,width,theme);await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Atualize a página'));
     assert.equal(posts.length,0);assert.equal(state.errors.length,0);await screenshot(page,`legacy-signup-html-${width}-${theme}`);results.push({scene:'legacy-signup-html',width,theme,success:true,noPost:true});continue;
    }
-   await page.goto(origin+'/cadastro/');await applyTextScale(page);const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero',{exact:true});
+   await page.goto(origin+'/cadastro/');const baselineFont=await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize));await applyTextScale(page);assert((await page.locator('.signup-consent span').evaluate(n=>parseFloat(getComputedStyle(n).fontSize)))>=baselineFont*scale-.1,'text enlargement remains effective');const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero',{exact:true});
    assert.equal(await gender.inputValue(),'');assert.equal(await gender.evaluate(n=>n.selectedOptions[0].disabled),true);
    await page.locator('#signupUsername').fill('synthetic.browser');await page.locator('#signupPassword').fill('Synthetic-Registration-2026');await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').check();
    const termsBox=await page.locator('.signup-consent').boundingBox(),buttonBox=await page.locator('#signupSubmit').boundingBox();assert(termsBox.y+termsBox.height<=buttonBox.y,'consent must not overlap submit');
    if(scale===2)await screenshot(page,`signup-entry-${width}-${theme}`);
-   await page.locator('#signupSubmit').click();assert.equal(posts.length,0);
-   await birth.fill('2100-01-01');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);assert(await birth.evaluate(n=>!n.validity.valid));
-   await birth.fill('1899-12-31');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);
-   await birth.fill('1993-07-19');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);
+   await submitSignup(page,width,theme);assert.equal(posts.length,0);
+   await birth.fill('2100-01-01');await submitSignup(page,width,theme);assert.equal(posts.length,0);assert(await birth.evaluate(n=>!n.validity.valid));
+   await birth.fill('1899-12-31');await submitSignup(page,width,theme);assert.equal(posts.length,0);
+   await birth.fill('1993-07-19');await submitSignup(page,width,theme);assert.equal(posts.length,0);
    await page.locator('#signupForm h2').click();await screenshot(page,`signup-${width}-${theme}`);
    await gender.focus();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');assert.equal(await gender.inputValue(),'masculino');
    assert.equal(await birth.getAttribute('min'),'1900-01-01');assert(await birth.getAttribute('max'));assert(await birth.getAttribute('aria-describedby'));assert(await gender.getAttribute('aria-describedby'));
    for(const field of [birth,gender]){const box=await field.boundingBox();assert(box.height>=44);}
    const accessibility=await audit(page,'#signupForm');
    // Existing confirmation/terms validation stays active.
-   await page.locator('#signupConfirm').fill('Different-Synthetic-2026');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);assert.match(await page.locator('#signupStatus').textContent(),/confirmação/);
-   await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').uncheck();await page.locator('#signupSubmit').click();assert.equal(posts.length,0);await page.locator('#signupTerms').check();
+   await page.locator('#signupConfirm').fill('Different-Synthetic-2026');await submitSignup(page,width,theme);assert.equal(posts.length,0);assert.match(await page.locator('#signupStatus').textContent(),/confirmação/);
+   await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').uncheck();await submitSignup(page,width,theme);assert.equal(posts.length,0);await page.locator('#signupTerms').check();
    // Pages may become available before the new Worker: do not send personal
    // data to an older contract, and preserve the draft for an explicit retry.
    for(const status of [404,503]){
     const unavailable=route=>route.fulfill({status,contentType:'application/json',body:'{}'});
     await context.route('**/api/auth/registration-capabilities',unavailable);
-    await page.locator('#signupSubmit').click();await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Seus dados não foram enviados'));
+    await submitSignup(page,width,theme);await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Seus dados não foram enviados'));
     assert.equal(posts.length,0);assert.equal(await birth.inputValue(),'1993-07-19');assert.equal(await gender.inputValue(),'masculino');
     await context.unroute('**/api/auth/registration-capabilities',unavailable);
    }
-   await page.locator('#signupSubmit').click();await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Conta Bronze criada'));
+   await submitSignup(page,width,theme);await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Conta Bronze criada'));
    assert.deepEqual(posts,[{username:'synthetic.browser',password:'Synthetic-Registration-2026',birthDate:'1993-07-19',gender:'masculino'}]);await privateStorage(page);
    assert.equal(env.AUTH_DB.database.prepare('SELECT gender FROM account_private_registration').get().gender,'masculino');
    assert.equal(state.errors.length,0);results.push({scene:'signup',width,theme,scale,accessibility,success:true,privateStorage:true});

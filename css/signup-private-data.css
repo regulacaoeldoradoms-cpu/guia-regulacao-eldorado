@@ -9,3 +9,6 @@
 #signupForm .signup-consent { display:grid; grid-template-columns:20px minmax(0,1fr); gap:10px; align-items:start; margin:8px 0 18px; color:#516b82; font-size:.84rem; }
 #signupForm .signup-consent input { width:20px; height:20px; margin:3px 0 0; }
 #signupForm .signup-consent span { min-width:0; overflow-wrap:anywhere; line-height:1.5; }
+/* Responsive form already reflows; avoid a second mobile text inflation pass.
+   Explicit browser/user font enlargement remains available. */
+#signupForm { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
