@@ -1,6 +1,7 @@
+import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {generateKeyPairSync} from 'node:crypto';
 import {GroupTestD1} from './helpers/chat-group-fixture.mjs';
-import {ensureAuthSchema,handlePortalRoute} from '../auth-management-v2.js';
+import {handlePortalRoute} from '../auth-management-v2.js';
 import {handleCouncilRoute} from '../council-access-policy.js';
 const fields=value=>Object.fromEntries(Object.entries(value).map(([key,item])=>[key,typeof item==='object'?{mapValue:{fields:fields(item)}}:{stringValue:String(item)}]));
 test('speculative details have no view effects; every opening revalidates live permissions and all child data',async()=>{
@@ -8,8 +9,8 @@ test('speculative details have no view effects; every opening revalidates live p
  const originalFetch=globalThis.fetch,reads=[];let note='Observação sintética privada.';
  const doc={protocol,subject:'Caso inteiramente sintético.',privacyMode:'identificada',authorUsername:'synthetic.owner',authorLabel:'Pessoa fictícia',authorIdentity:{displayName:'Pessoa fictícia'},createdAt:'2026-10-12T12:00:00Z',updatedAt:'2026-10-12T12:00:00Z'};
  try{
-  await ensureAuthSchema(env);
-  const registration=await handlePortalRoute(new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.93'},body:JSON.stringify({username:'synthetic.detail',password:'Synthetic-Registration-2026'})}),env,'',true);assert.equal(registration.status,201);const {token}=await registration.json();
+  await prepareRegistrationFixture(env);
+  const registration=await handlePortalRoute(new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.93'},body:JSON.stringify({...syntheticRegistrationDetails,username:'synthetic.detail',password:'Synthetic-Registration-2026'})}),env,'',true);assert.equal(registration.status,201);const {token}=await registration.json();
   await env.AUTH_DB.prepare("UPDATE auth_users SET council_role='presidente' WHERE username=?").bind('synthetic.detail').run();
   const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});Object.assign(env,{FIREBASE_PROJECT_ID:'synthetic-detail-prefetch',FIREBASE_CLIENT_EMAIL:'synthetic@fixture.invalid',FIREBASE_PRIVATE_KEY:privateKey.export({type:'pkcs8',format:'pem'})});
   globalThis.fetch=async(input,options={})=>{

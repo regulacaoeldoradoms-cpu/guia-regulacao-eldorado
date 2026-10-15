@@ -3,7 +3,7 @@ import {validatePortalSession} from './auth-management-v2.js';
 import {petCatalog} from './pet-catalog.js';
 import {PetError} from './pet-domain.js';
 import {readPetAccount,persistPetCommand} from './pet-store.js';
-import {readPrivatePetAge,declarePrivatePetAge} from './private-pet-age-store.js';
+import {readPrivatePetAge,declarePrivatePetAge,canDeclarePrivatePetAge} from './private-pet-age-store.js';
 import {GNOME_PHRASE_CATALOG,GNOME_PHRASE_VERSION} from '../_server/gnome-phrases.js';
 export const isPetsApi=path=>path==='/api/pets'||path.startsWith('/api/pets/');
 const fields={
@@ -28,7 +28,10 @@ export function createPetRouter({validateSession=validatePortalSession}={}){
    if(user.mustChangePassword)return json({code:'FIRST_ACCESS_REQUIRED',error:'Conclua a etapa de segurança.'},403);
    const part=new URL(request.url).pathname.replace(/^\/api\/pets\/?/,'');
    if(request.method==='GET'){
-    if(part==='age')return json({ageStatus:await readPrivatePetAge(env.AUTH_DB,user.username)});
+    if(part==='age'){
+     const ageStatus=await readPrivatePetAge(env.AUTH_DB,user.username);
+     return json({ageStatus,canDeclareBirthDate:ageStatus==='unknown'&&await canDeclarePrivatePetAge(env.AUTH_DB,user.username)});
+    }
     if(part==='catalog')return json(petCatalog(env,{adultEligible:(await readPrivatePetAge(env.AUTH_DB,user.username))==='adult'}));
     if(part==='me'){
      const state=await readPetAccount(env.AUTH_DB,user.username,env);

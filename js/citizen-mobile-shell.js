@@ -309,7 +309,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261015-citizen-tutorial-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : ['pets-page','pets-achievements'].includes(entry) ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261015-citizen-tutorial-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : entry === 'security' ? '20261015-account-private-4' : entry === 'pets-page' ? '20261015-account-private-4' : entry === 'pets-achievements' ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
@@ -575,9 +575,10 @@
   window.addEventListener('portal:session-cleared', event => {
     if (ended) return;
     dispose();
-    // A replacement token already exists: create a fresh gated Home document
-    // directly instead of sending it through Login's authenticated redirect.
-    location.replace(event.detail?.replacementSession ? '/' : '/login/');
+    // A replacement token needs a fresh document. A Security renewal stays
+    // in its account flow; other replacements retain the gated Home entry.
+    const renewedSecurity = event.detail?.replacementSession && event.detail?.securityRenewal;
+    location.replace(renewedSecurity ? '/seguranca/#privateRegistrationCard' : event.detail?.replacementSession ? '/' : '/login/');
   });
   window.addEventListener('portal:session-ready', event => {
     if (ended) return;
@@ -585,7 +586,8 @@
     if (!valid() || String(user?.id || user?.username || '') !== sessionIdentity) {
       // Native owners must clear old drafts before pagehide can persist a
       // snapshot under the replacement account's credentials.
-      window.dispatchEvent(new CustomEvent('portal:session-cleared', { detail:{ replacementSession:Boolean(window.RegulationAuth.getToken()) } }));
+      const sameAccount = String(user?.id || user?.username || '') === sessionIdentity;
+      window.dispatchEvent(new CustomEvent('portal:session-cleared', { detail:{ replacementSession:Boolean(window.RegulationAuth.getToken()), securityRenewal:sameAccount && active?.url.pathname === '/seguranca/' } }));
     }
   });
   window.PortalCitizenShell = Object.freeze({

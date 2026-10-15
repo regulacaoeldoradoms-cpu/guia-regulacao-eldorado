@@ -1,3 +1,4 @@
+import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
@@ -143,7 +144,8 @@ run('grupo: roteador real exige sess√£o e preserva CORS antes de qualquer opera√
   const preflight=await handleChatRoute(new Request(origin+'/api/chat/groups',{method:'OPTIONS'}),f.env,origin,true);assert.equal(preflight.status,204);
   const anon=await handleChatRoute(new Request(origin+'/api/chat/groups'),f.env,origin,true);assert.equal(anon.status,403);
   const deniedOrigin=await handleChatRoute(new Request(origin+'/api/chat/groups'),f.env,origin,false);assert.equal(deniedOrigin.status,403);assert.equal(deniedOrigin.headers.get('Access-Control-Allow-Origin'),null);
-  const registration=await handlePortalRoute(new Request(origin+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.71'},body:JSON.stringify({username:'token.fixture',password:'Synthetic-Registration-2026'})}),f.env,origin,true);
+  await prepareRegistrationFixture(f.env);
+  const registration=await handlePortalRoute(new Request(origin+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.71'},body:JSON.stringify({...syntheticRegistrationDetails,username:'token.fixture',password:'Synthetic-Registration-2026'})}),f.env,origin,true);
   const session=await registration.json();assert.ok(session.token);
   const response=await handleChatRoute(new Request(origin+'/api/chat/groups',{headers:{Authorization:'Bearer '+session.token}}),f.env,origin,true);
   // Account with no social identity cannot acquire groups by relying on the professional directory.

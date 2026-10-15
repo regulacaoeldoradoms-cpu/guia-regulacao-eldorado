@@ -123,7 +123,9 @@ jobs:
           node testing/citizen-layout/citizen-html-first-paint.mjs
           node testing/citizen-layout/citizen-paint-recovery.mjs
       - name: Citizen first frames, cold/warm assets and dark action contrast
-        run: node testing/citizen-layout/citizen-first-paint.mjs
+        run: |
+          node testing/citizen-layout/citizen-first-paint.mjs
+          STARTUP_STREAM_HTML=1 WIDTHS=320 STARTUP_OUTPUT=.local/citizen-first-paint/streamed node testing/citizen-layout/citizen-first-paint.mjs
       - name: Pets mobile first frames, native actions and repeated navigation
         run: |
           node testing/citizen-layout/fixture-asset-transport.mjs

@@ -9,7 +9,7 @@ import {GroupTestD1} from './helpers/chat-group-fixture.mjs';
 import {ensureAuthSchema,handlePortalRoute} from '../auth-management-v2.js';
 import {sanitizeCitizenRegistrationRequest} from '../portal-safety.js';
 const migration=fs.readFileSync(new URL('../migrations/pets-private-age.sql',import.meta.url),'utf8');
-const setup=()=>{const f=fixture();f.sql.exec(migration);return f;};
+const setup=()=>{const f=fixture();f.sql.exec(migration);f.sql.exec(fs.readFileSync(new URL('../migrations/account-private-registration.sql',import.meta.url),'utf8'));return f;};
 const adoption=()=>({operationId:crypto.randomUUID(),typeId:'gnome',variant:'garden',expectedPetRevision:0});
 
 test('missing migration and unknown age never expose the gnome or adult speech',async()=>{
@@ -57,10 +57,10 @@ test('simultaneous declarations cannot replace a stored minor date',async()=>{
 test('registration stores birth date atomically and omits it from public user and session',async()=>{
  const env={AUTH_DB:new GroupTestD1(),AUTH_SESSION_SECRET:'synthetic-session-key-private-age',AUTH_RATE_LIMIT_SECRET:'synthetic-rate-key'};
  try{
-  await ensureAuthSchema(env);env.AUTH_DB.database.exec(migration);
-  const request=new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.99'},body:JSON.stringify({username:'synthetic.birth',password:'Synthetic-Registration-2026',birthDate:'1990-01-01',role:'admin',adultEligible:true})});
+  await ensureAuthSchema(env);env.AUTH_DB.database.exec(migration);env.AUTH_DB.database.exec(fs.readFileSync(new URL('../migrations/account-private-registration.sql',import.meta.url),'utf8'));
+  const request=new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.99'},body:JSON.stringify({username:'synthetic.birth',password:'Synthetic-Registration-2026',birthDate:'1990-01-01',gender:'mulher',role:'admin',adultEligible:true})});
   const sanitized=await sanitizeCitizenRegistrationRequest(request);
-  assert.deepEqual(Object.keys(await sanitized.clone().json()).sort(),['birthDate','password','username']);
+  assert.deepEqual(Object.keys(await sanitized.clone().json()).sort(),['birthDate','gender','password','username']);
   const response=await handlePortalRoute(sanitized,env,'',true);assert.equal(response.status,201);const data=await response.json();assert.equal(data.user.role,'cidadao');assert(!JSON.stringify(data).includes('1990-01-01'));assert(!('birthDate' in data.user));
   assert.equal(await readPrivatePetAge(env.AUTH_DB,'synthetic.birth'),'adult');
  }finally{env.AUTH_DB.database.close();}
@@ -69,7 +69,7 @@ test('an unapplied private migration rolls registration back instead of creating
  const env={AUTH_DB:new GroupTestD1(),AUTH_SESSION_SECRET:'synthetic-session-key-private-age',AUTH_RATE_LIMIT_SECRET:'synthetic-rate-key'};
  try{
   await ensureAuthSchema(env);
-  const request=new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.98'},body:JSON.stringify({username:'synthetic.rollback',password:'Synthetic-Registration-2026',birthDate:'1990-01-01'})});
+  const request=new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.98'},body:JSON.stringify({username:'synthetic.rollback',password:'Synthetic-Registration-2026',birthDate:'1990-01-01',gender:'mulher'})});
   await assert.rejects(handlePortalRoute(request,env,'',true));
   assert.equal(env.AUTH_DB.database.prepare('SELECT count(*) AS n FROM auth_users WHERE username=?').get('synthetic.rollback').n,0);
  }finally{env.AUTH_DB.database.close();}

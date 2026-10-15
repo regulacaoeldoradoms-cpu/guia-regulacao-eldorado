@@ -29,6 +29,84 @@ const initializeCitizenArea = async (context) => {
   const privacyStatus = document.getElementById('privacyStatus');
   const levelLabel = document.getElementById('securityLevelLabel');
   const levelHint = document.getElementById('securityLevelHint');
+  const privateCard = document.getElementById('privateRegistrationCard');
+  const privateForm = document.getElementById('privateRegistrationForm');
+  const privateBirth = document.getElementById('privateBirthDate');
+  const privateGender = document.getElementById('privateGender');
+  const privateButton = document.getElementById('privateRegistrationSubmit');
+  const privateStatus = document.getElementById('privateRegistrationStatus');
+  const privateRetry = document.getElementById('privateRegistrationRetry');
+  let privateDetails = null;
+  let privateBusy = false;
+  const dateHelperReady = import('/js/private-birth-date-input.js?v=20261015-account-private-1').catch(() => null);
+  const privateAvailable = () => !firstAccess && !(user.emailVerificationRequired && !(user.emailVerified || security.emailVerified));
+  const privateComplete = data => data?.birthDateRecorded === true;
+
+  function renderPrivateDetails() {
+    if (!privateCard) return;
+    privateCard.hidden = !privateAvailable();
+    if (!privateDetails) return;
+    const needsRecovery = privateDetails.birthDateRecorded !== true && privateDetails.canCompleteBirthDate !== true;
+    const birthMissing = privateDetails.birthDateRecorded !== true && !needsRecovery;
+    document.getElementById('privateBirthDateField').hidden = !birthMissing;
+    document.getElementById('privateGenderField').hidden = false;
+    privateBirth.disabled = !birthMissing || privateBusy; privateBirth.required = birthMissing;
+    privateGender.disabled = privateBusy; privateGender.required = false;
+    if (!birthMissing) privateBirth.value = '';
+    privateForm.hidden = false;
+    privateButton.disabled = privateBusy;
+    document.getElementById('privateRegistrationSummary').textContent = needsRecovery
+      ? 'Seu nascimento precisa de recuperação autorizada. O gênero pode ser atualizado abaixo.'
+      : privateComplete(privateDetails)
+      ? 'Nascimento já registrado. Atualize o gênero abaixo, se quiser.'
+      : 'Complete seu nascimento. O gênero é opcional.';
+  }
+
+  async function loadPrivateDetails() {
+    if (!privateCard || !privateAvailable()) { if (privateCard) privateCard.hidden = true; return null; }
+    const token = auth.getToken(); privateBusy = true; privateButton.disabled = true; privateRetry.hidden = true;
+    privateCard.hidden = false;
+    try {
+      await dateHelperReady;
+      window.PortalBirthDateInput?.bind(privateBirth);
+      const data = await auth.api('/api/auth/registration-details');
+      if (token !== auth.getToken()) return null;
+      privateDetails = data; privateGender.value = data.gender || ''; renderPrivateDetails();
+      if (location.hash === '#privateRegistrationCard') privateCard.scrollIntoView({block:'start'});
+      return data;
+    } catch (error) {
+      if (token !== auth.getToken()) return null;
+      privateForm.hidden = true; privateRetry.hidden = false;
+      show(privateStatus, error.message || 'Não foi possível carregar os dados privados.', 'error');
+      return null;
+    } finally { privateBusy = false; if (token === auth.getToken() && privateDetails) renderPrivateDetails(); }
+  }
+
+  window.addEventListener('portal:session-cleared', () => { privateDetails = null; privateForm?.reset(); if (privateCard) privateCard.hidden = true; });
+  privateRetry?.addEventListener('click', loadPrivateDetails);
+  privateForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (privateBusy || !privateAvailable() || !privateDetails) return;
+    const input = {};
+    if (!privateDetails.birthDateRecorded && privateDetails.canCompleteBirthDate) {
+      if (!window.PortalBirthDateInput?.validate(privateBirth)) { privateBirth.reportValidity(); return; }
+      input.birthDate = privateBirth.value;
+    }
+    input.gender = privateGender.value || null;
+    if (!privateForm.reportValidity()) return;
+    const token = auth.getToken(); privateBusy = true; privateButton.disabled = true;
+    privateStatus.textContent = ''; privateStatus.className = 'account-status';
+    try {
+      const data = await auth.api('/api/auth/registration-details', {method:'PATCH',body:JSON.stringify(input)});
+      if (token !== auth.getToken()) return;
+      privateDetails = data; privateForm.reset(); privateGender.value = data.gender || ''; renderPrivateDetails();
+      show(privateStatus, 'Dados privados salvos.', 'success');
+    } catch (error) {
+      if (token !== auth.getToken()) return;
+      show(privateStatus, error.message || 'Não foi possível salvar os dados privados.', 'error');
+      if (error.status === 409) await loadPrivateDetails();
+    } finally { privateBusy = false; window.PortalInteractions?.endTask?.(privateButton); if (token === auth.getToken()) renderPrivateDetails(); }
+  });
 
   function show(element, message, type = 'success') {
     if (!element) return;
@@ -61,6 +139,7 @@ const initializeCitizenArea = async (context) => {
     document.body.classList.toggle('security-first-access', firstAccess);
     const emailGate = !firstAccess && Boolean(user.emailVerificationRequired) && !Boolean(user.emailVerified || security.emailVerified);
     document.body.classList.toggle('security-verification-gate', emailGate);
+    if (privateCard) privateCard.hidden = !privateAvailable();
     if (firstAccessNotice) firstAccessNotice.hidden = !firstAccess;
     if (emailVerificationNotice) emailVerificationNotice.hidden = !emailGate && !(verificationFlow && !user.emailVerified);
   }
@@ -98,10 +177,11 @@ const initializeCitizenArea = async (context) => {
       security = await auth.getSecurity();
       if (security.emailVerified) await refreshUser();
       renderSecurity();
+      const details = await loadPrivateDetails();
       if (params.get('email-verificado') === '1' && security.emailVerified) {
         show(securityStatus, 'E-mail confirmado. Sua conta agora está no nível Prata.', 'success');
         const destination = safeNext();
-        if (destination) window.setTimeout(() => location.replace(destination), 900);
+        if (destination && privateComplete(details)) window.setTimeout(() => location.replace(destination), 900);
       }
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível carregar a segurança da conta.', 'error');
@@ -131,6 +211,13 @@ const initializeCitizenArea = async (context) => {
           document.getElementById('emailSecurityCard')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
           return;
         }
+        applyGateState();
+        const details = await loadPrivateDetails();
+        if (!privateComplete(details)) {
+          show(passwordStatus, 'Senha alterada. Complete seus dados privados abaixo.', 'success');
+          privateCard?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+          return;
+        }
         show(passwordStatus, 'Senha alterada com sucesso. Abrindo seu ambiente...', 'success');
         window.setTimeout(() => location.replace(safeNext() || '/'), 550);
         return;
@@ -150,6 +237,7 @@ const initializeCitizenArea = async (context) => {
       security = await auth.updateSecurity({ email: emailInput.value.trim() });
       await refreshUser();
       renderSecurity();
+      await loadPrivateDetails();
       show(securityStatus, security.emailVerified ? 'E-mail de segurança confirmado.' : 'E-mail salvo. Agora envie a verificação para confirmar o endereço.', 'success');
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível salvar o e-mail.', 'error');
@@ -170,6 +258,7 @@ const initializeCitizenArea = async (context) => {
   });
 
   await loadSecurity();
+  if (!privateDetails && privateAvailable()) await loadPrivateDetails();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('security', initializeCitizenArea);
 else initializeCitizenArea();

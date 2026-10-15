@@ -170,9 +170,17 @@
     return user;
   }
 
-  async function registerCitizen(username, password, birthDate) {
+  async function registerCitizen(username, password, birthDate, gender) {
+    let capabilities;
+    try { capabilities = await api('/api/auth/registration-capabilities', {method:'GET'}); }
+    catch (error) {
+      if (error.status !== 404 && error.status !== 503) throw error;
+      throw new Error('O cadastro está sendo atualizado. Seus dados não foram enviados. Tente novamente em instantes.');
+    }
+    if (capabilities?.version !== 3 || capabilities.birthDateRequired !== true || capabilities.genderRequired !== false)
+      throw new Error('O cadastro está sendo atualizado. Seus dados não foram enviados. Tente novamente em instantes.');
     const payload = await api('/api/auth/register', {
-      method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || ''), ...(birthDate !== undefined ? {birthDate} : {}) })
+      method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || ''), birthDate, ...(gender ? {gender} : {}) })
     });
     if (!payload?.token || !payload?.user) throw new Error('Não foi possível concluir o cadastro.');
     saveSession(payload.token, payload.user, false);

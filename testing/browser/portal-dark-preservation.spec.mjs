@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { installAuditFixture, agendaContactCapabilityFromSource } from './dark-audit-fixture.mjs';
 import { projectTutorialAdditions } from './citizen-tutorial-preservation.mjs';
+import { projectPrivateAccountAdditions } from './account-private-preservation.mjs';
 import { compareAgainstBase } from './dark-audit-base-comparison.mjs';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
 import { writeFile } from 'node:fs/promises';
@@ -217,7 +218,8 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const homeContracts=[];
     const nativeContracts=[];
     let friendsSource=0;
-    let signupSource=0;
+    let signupSource=0,privateAccountSource=0;
+    const privateAccountBase=['/cadastro/','/seguranca/'].includes(route)?execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:${route.slice(1)}index.html`],{encoding:'utf8'}):null;
     const signupContracts=[];
     const baseFriendsNotice=route==='/amigos/' ? execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:amigos/index.html`],{encoding:'utf8'}).includes('Descoberta protegida') : false;
     const baseSignupPrivateBirth=route==='/cadastro/' ? execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:cadastro/index.html`],{encoding:'utf8'}).includes('id="signupBirthDate"') : false;
@@ -225,6 +227,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     let layout;
     let tutorialSource=0;
     const prepare=async target=>{
+      if(privateAccountBase!==null)await projectPrivateAccountAdditions(target,info,route,privateAccountSource++===0,privateAccountBase);
       if(['/cidadao/','/conquistas/'].includes(route))await projectTutorialAdditions(target,info,route,tutorialSource++===0);
       if(route==='/cadastro/'){
         const current=signupSource++===0,field=target.locator('#signupBirthDate');

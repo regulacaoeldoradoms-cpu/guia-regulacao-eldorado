@@ -1,14 +1,15 @@
+import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {generateKeyPairSync} from 'node:crypto';
 import {GroupTestD1} from './helpers/chat-group-fixture.mjs';
-import {ensureAuthSchema,handlePortalRoute} from '../auth-management-v2.js';
+import {handlePortalRoute} from '../auth-management-v2.js';
 import {handleCouncilRoute} from '../council.js';
 
 test('institutional cursor keeps bounded pages, privacy and fresh Council authorization',async()=>{
  const env={AUTH_DB:new GroupTestD1(),AUTH_SESSION_SECRET:'synthetic-council-cursor-secret',AUTH_RATE_LIMIT_SECRET:'synthetic-rate-key'};
  const originalFetch=globalThis.fetch,requests=[];
  try{
-  await ensureAuthSchema(env);
-  const registered=await handlePortalRoute(new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.88'},body:JSON.stringify({username:'synthetic.council.cursor',password:'Synthetic-Registration-2026'})}),env,'',true);assert.equal(registered.status,201);const {token}=await registered.json();
+  await prepareRegistrationFixture(env);
+  const registered=await handlePortalRoute(new Request('https://synthetic.test/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'127.0.0.88'},body:JSON.stringify({...syntheticRegistrationDetails,username:'synthetic.council.cursor',password:'Synthetic-Registration-2026'})}),env,'',true);assert.equal(registered.status,201);const {token}=await registered.json();
   await env.AUTH_DB.prepare("UPDATE auth_users SET council_role='presidente' WHERE username=?").bind('synthetic.council.cursor').run();
   const {privateKey}=generateKeyPairSync('rsa',{modulusLength:2048});Object.assign(env,{FIREBASE_PROJECT_ID:'synthetic-council-pagination',FIREBASE_CLIENT_EMAIL:'synthetic@fixture.invalid',FIREBASE_PRIVATE_KEY:privateKey.export({type:'pkcs8',format:'pem'})});
   globalThis.fetch=async input=>{

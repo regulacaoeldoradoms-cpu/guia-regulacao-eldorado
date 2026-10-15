@@ -1,6 +1,7 @@
 'use strict';
 import {validBirthDate, portalCalendarDate} from './private-pet-age.js';
 import {ageDeclarationStatement} from './private-pet-age-store.js';
+import {validOptionalRegistrationGender, normalizedRegistrationGender, privateRegistrationStatement, privateRegistrationStatus, completePrivateRegistration, RegistrationDetailsError, privateRegistrationSchemaReady} from './account-private-registration.js';
 
 import {
   firebaseConfigured,
@@ -375,8 +376,11 @@ async function createDbUser(env, input, createdBy) {
       input.mustChangePassword ? 1 : 0,
       createdBy || null
     );
-  if (input.privateBirthDate) await env.AUTH_DB.batch([insert, ageDeclarationStatement(env.AUTH_DB,input.username,input.privateBirthDate)]);
-  else await insert.run();
+  if (input.privateBirthDate) await env.AUTH_DB.batch([
+    insert, ageDeclarationStatement(env.AUTH_DB,input.username,input.privateBirthDate),
+    privateRegistrationStatement(env.AUTH_DB,input.username,input.privateGender)
+  ]);
+  else await env.AUTH_DB.batch([insert,privateRegistrationStatement(env.AUTH_DB,input.username,null)]);
   return getDbUser(env, input.username);
 }
 
@@ -474,10 +478,12 @@ async function registerCitizen(request, env, origin) {
     return json({ error: 'Muitas contas foram criadas recentemente desta conexão. Tente novamente mais tarde.' }, 429, origin);
   }
   const body = await request.json().catch(() => ({}));
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return json({error:'Cadastro inválido.'},400,origin);
   const username = normalizeUsername(body.username);
   const password = String(body.password || '');
   const privateBirthDate = body.birthDate;
-  if (privateBirthDate !== undefined && (!validBirthDate(privateBirthDate) || privateBirthDate > portalCalendarDate())) return json({error:'Informe uma data de nascimento válida.'},400,origin);
+  if (!validBirthDate(privateBirthDate) || privateBirthDate > portalCalendarDate()) return json({error:'Informe uma data de nascimento válida.',code:'BIRTH_DATE_INVALID'},400,origin);
+  if (!validOptionalRegistrationGender(body.gender)) return json({error:'Selecione uma opção válida de gênero ou deixe em branco.',code:'GENDER_INVALID'},400,origin);
   const validation = validatePassword(password);
   if (!usernameValid(username)) return json({ error: 'O usuário deve ter entre 3 e 40 caracteres.' }, 400, origin);
   if (validation) return json({ error: validation }, 400, origin);
@@ -496,10 +502,31 @@ async function registerCitizen(request, env, origin) {
     mustChangePassword: false,
     selfRegistered: true,
     acceptFriendRequests: false,
-    privateBirthDate
+    privateBirthDate,
+    privateGender: normalizedRegistrationGender(body.gender)
   }, 'self');
   const token = await createSessionToken(created, env);
   return json({ token, user: publicUser(created), expiresIn: SESSION_TTL_SECONDS }, 201, origin);
+}
+
+async function registrationDetails(request,env,origin) {
+  const user=await validatePortalSession(request,env,[]);
+  if(!user)return json({error:'Sessão inválida ou expirada.'},401,origin);
+  if(user.mustChangePassword)return json({code:'FIRST_ACCESS_REQUIRED',error:'Troque a senha temporária antes de completar seus dados.'},403,origin);
+  try {
+    if(request.method==='GET')return json(await privateRegistrationStatus(env.AUTH_DB,user),200,origin);
+    if(request.method==='PATCH'){
+      const raw=await request.text();
+      if(raw.length>512)return json({error:'Pedido muito grande.'},413,origin);
+      let body;try{body=JSON.parse(raw);}catch{return json({error:'Pedido inválido.'},400,origin);}
+      return json(await completePrivateRegistration(env.AUTH_DB,user,body),200,origin);
+    }
+    return json({error:'Método não permitido.'},405,origin);
+  } catch(error) {
+    if(error instanceof RegistrationDetailsError)return json({code:error.code,error:error.message},error.status,origin);
+    // No SQL exception, request data or personal values enter responses/logs.
+    return json({code:'REGISTRATION_DETAILS_UNAVAILABLE',error:'Dados privados temporariamente indisponíveis.'},503,origin);
+  }
 }
 
 async function securityGet(request, env, origin) {
@@ -746,8 +773,13 @@ export async function handlePortalRoute(request, env, origin, originAllowed = tr
   if (url.pathname === '/api/auth/login' && request.method === 'POST') return login(request, env, origin);
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') return json({ ok: true }, 200, origin);
   if (url.pathname === '/api/auth/me' && request.method === 'GET') return me(request, env, origin);
+  if (url.pathname === '/api/auth/registration-capabilities' && request.method === 'GET') {
+    if(!(await privateRegistrationSchemaReady(env.AUTH_DB)))return json({code:'REGISTRATION_PREPARING',error:'O cadastro está sendo atualizado. Tente novamente em instantes.'},503,origin);
+    return json({version:3,birthDateRequired:true,genderRequired:false},200,origin);
+  }
   if (url.pathname === '/api/auth/register' && request.method === 'POST') return registerCitizen(request, env, origin);
   if (url.pathname === '/api/auth/change-password' && request.method === 'POST') return changePassword(request, env, origin);
+  if (url.pathname === '/api/auth/registration-details') return registrationDetails(request,env,origin);
   if (url.pathname === '/api/auth/security' && request.method === 'GET') return securityGet(request, env, origin);
   if (url.pathname === '/api/auth/security' && request.method === 'PATCH') return securityPatch(request, env, origin);
   if (url.pathname === '/api/auth/email/send-verification' && request.method === 'POST') return sendEmailVerification(request, env, origin);

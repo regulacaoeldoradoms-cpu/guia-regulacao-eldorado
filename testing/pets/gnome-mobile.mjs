@@ -9,7 +9,7 @@ const server=await serve(process.cwd()),browser=await chromium.launch({headless:
 try{
  const cases=[{age:'unknown',width:390,theme:'dark',scale:1},{age:'underage',width:390,theme:'dark',scale:1},...[320,360,390].flatMap(width=>['light','dark'].flatMap(theme=>[1,2].map(scale=>({age:'adult',width,theme,scale}))))];
  for(const {age,width,theme,scale} of cases){
-  const f=fixture();f.sql.exec(await fs.readFile(new URL('../../worker/migrations/pets-private-age.sql',import.meta.url),'utf8'));f.sql.prepare('INSERT INTO auth_users(username) VALUES(?)').run(user.username);f.user={username:user.username,sessionVersion:1};
+  const f=fixture();f.sql.exec(await fs.readFile(new URL('../../worker/migrations/pets-private-age.sql',import.meta.url),'utf8'));f.sql.prepare('INSERT INTO auth_users(username) VALUES(?)').run(user.username);f.user={username:user.username,sessionVersion:1};f.sql.exec(await fs.readFile(new URL('../../worker/migrations/account-private-registration.sql',import.meta.url),'utf8'));
   if(age!=='unknown')await declarePrivatePetAge(f.db,f.user,age==='adult'?'1990-01-01':'2015-01-01');
   const result={age,width,theme,scale,errors:[],writes:[],requests:[],assets:[]};const {page,context}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);await page.emulateMedia({reducedMotion:'no-preference'});page.on('request',request=>{if(new URL(request.url()).pathname.includes('gnome-sheet'))result.assets.push(request.url());});
   let releaseSprite;

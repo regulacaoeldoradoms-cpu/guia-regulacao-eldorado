@@ -1,0 +1,27 @@
+/* Private registration fields: readable help and native keyboard controls. */
+#signupForm > p { color:var(--portal-theme-muted,#425d73); }
+#signupForm .portal-field small { display:block; margin-top:7px; line-height:1.5; }
+#signupForm .portal-field :is(input,select) { min-height:48px; min-width:0; }
+#signupForm :is(input,select):focus-visible { outline:3px solid var(--portal-theme-accent,#246dab); outline-offset:3px; }
+#signupForm > a { color:var(--portal-theme-accent,#275d88); }
+
+/* Let long consent text determine its full height, including text-only zoom. */
+#signupForm .signup-consent { display:grid; grid-template-columns:20px minmax(0,1fr); gap:10px; align-items:start; margin:8px 0 18px; color:#516b82; font-size:.84rem; }
+#signupForm .signup-consent input { width:20px; height:20px; margin:3px 0 0; }
+#signupForm .signup-consent span { min-width:0; overflow-wrap:anywhere; line-height:1.5; }
+/* A grid item's intrinsic text/input width must not widen a mobile viewport. */
+.signup-page .login-visual,.signup-page .login-panel,#signupForm { min-width:0; }
+.signup-page .login-visual,#signupForm { overflow-wrap:anywhere; }
+#signupForm { max-width:100%; }
+@media(max-width:860px) { .signup-page .login-layout { grid-template-columns:minmax(0,1fr); } }
+
+/* Keep the full desktop introduction; phones start directly with the form. */
+@media(max-width:860px) {
+  .signup-page .login-visual { min-height:0; padding:16px 20px; }
+  .signup-page .login-visual .portal-brand img { width:44px; height:44px; border-radius:12px; }
+  .signup-page .login-visual .portal-brand h1 { font-size:1rem; }
+  .signup-page .login-message { display:none; }
+  .signup-page .login-panel { padding:16px; }
+  #signupForm { padding:22px 20px; }
+  #signupForm > p { margin-bottom:16px; }
+}

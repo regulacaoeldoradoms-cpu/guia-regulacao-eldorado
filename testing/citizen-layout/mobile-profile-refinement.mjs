@@ -175,12 +175,16 @@ async function intercept(context, origin, audit) {
     else if (url.pathname === '/api/chat/messages') data = { messages:messages.filter(message => message.id > Number(url.searchParams.get('after') || 0)), pageSize:50, receipt:{} };
     else if (url.pathname === '/api/chat/realtime/ticket') data = { ticket:'synthetic-ticket' };
     else if (['/api/chat/presence','/api/chat/delivery','/api/chat/read','/api/chat/typing'].includes(url.pathname)) data = { ok:true };
+    else if (url.pathname === '/api/auth/registration-details' && method === 'GET') data = {birthDateRecorded:true,genderRecorded:false,gender:null,canCompleteBirthDate:false};
     else if (url.pathname === '/api/auth/security') data = { security:{ emailVerified:true, email:'fixture@example.invalid', privacyMode:'anonima' } };
     else if (url.pathname === '/api/citizen/identity') data = { identity:{ displayName:ownName, handle:ownHandle, canChangeHandle:true } };
     else if (url.pathname === '/api/council/my') data = { manifestations:[] };
     else if (url.pathname === '/api/pets/me') data = { state:petState };
     else if (url.pathname === '/api/pets/catalog') data = petCatalog();
-    else if (url.pathname === '/api/pets/age' && method === 'GET') data = { ageStatus:'unknown' };
+    // This preservation owner has recorded private details and only a cat.
+    // A stored minor declaration keeps the original cat-only presentation;
+    // missing/legacy dates use their separate native Worker fixtures.
+    else if (url.pathname === '/api/pets/age' && method === 'GET') data = { ageStatus:'underage',canDeclareBirthDate:false };
     else if (url.pathname === '/api/portal-tutorials/citizen' && method === 'GET') data = { completion:null };
     else if (url.pathname === '/api/pets/achievements') data = { achievements:[] };
     else if (url.pathname === '/api/observability' && method === 'POST') data = { ok:true };
