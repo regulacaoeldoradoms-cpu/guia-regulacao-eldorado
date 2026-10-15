@@ -6,7 +6,7 @@
   if (!user) return;
 
   const WHATSAPP_SUPPORT_NUMBER = '556781631815';
-  const CONTACT_CAPABILITY = 'patient-details-v2';
+  const CONTACT_CAPABILITY = 'patient-directory-v1';
   const capacityRules = window.AgendaCapacity;
   const els = {
     userName: document.getElementById('portalUserName'),
@@ -413,7 +413,7 @@
     actions.className = 'agenda-card-actions';
 
     const pastAppointment = isPastAppointment(record);
-    const whatsappUrl = state.contactCapability === CONTACT_CAPABILITY && record.active && !pastAppointment ? patientWhatsappUrl(record) : '';
+    const whatsappUrl = state.contactCapability === CONTACT_CAPABILITY && record.active && !record.contactBlocked && !pastAppointment ? patientWhatsappUrl(record) : '';
     const notify = document.createElement('button');
     notify.className = 'agenda-whatsapp-patient-button';
     notify.type = 'button';
@@ -429,6 +429,12 @@
       } else if (pastAppointment) {
         notify.textContent = 'Data já passou';
         notify.title = 'Lembretes por WhatsApp são preparados somente para hoje e datas futuras.';
+      } else if (record.contactBlocked) {
+        notify.textContent = 'Contato removido';
+        notify.title = 'A remoção foi registrada. A sincronização automática não restaura este contato.';
+      } else if (record.contactIdentityRequired) {
+        notify.textContent = 'Contato indisponível';
+        notify.title = 'O paciente precisa ser identificado pela sincronização para disponibilizar o contato.';
       } else {
         notify.textContent = 'Sincronizando contato…';
         notify.title = 'O contato será disponibilizado após a próxima sincronização do DigSaúde.';
@@ -515,13 +521,13 @@
       if (!target) return;
       target.opener = null;
       const expected = JSON.stringify([record.sourceId, record.patient, record.requestedAt,
-        record.appointmentDate, record.appointmentTime, record.phone]);
+        record.appointmentDate, record.appointmentTime, record.phone, record.patientSourceId || '', record.contactRevision || '']);
       const generation = loadGeneration + 1;
       const loaded = await load();
       const current = state.records.find((item) => item.sourceId === record.sourceId);
       const actual = current && JSON.stringify([current.sourceId, current.patient, current.requestedAt,
-        current.appointmentDate, current.appointmentTime, current.phone]);
-      const url = current?.active && !isPastAppointment(current) ? patientWhatsappUrl(current) : '';
+        current.appointmentDate, current.appointmentTime, current.phone, current.patientSourceId || '', current.contactRevision || '']);
+      const url = current?.active && !current.contactBlocked && !isPastAppointment(current) ? patientWhatsappUrl(current) : '';
       if (!loaded || generation !== loadGeneration || state.contactCapability !== CONTACT_CAPABILITY
           || actual !== expected || !url || target.closed) {
         target.close();

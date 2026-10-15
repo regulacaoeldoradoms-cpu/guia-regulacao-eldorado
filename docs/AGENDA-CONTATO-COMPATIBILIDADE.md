@@ -1,5 +1,7 @@
 # Contrato de contato v2 da Agenda
 
+Candidata local de 15/10/2026: a capacidade de entrega passa a `patient-directory-v1`; a proveniência de captura continua `patient-details-v2`. [Escopo, compatibilidade legada e testes sintéticos](AGENDA-DIGSAUDE-DURABILIDADE-LOCAL.md). A prova v2 confirmada no vínculo da consulta agora persiste sem prazo automático, com correção/exclusão versionadas; reuso entre consultas continua pendente. Sem publicação; o contrato v2 abaixo é o histórico da base e não deve ser misturado com clientes da candidata.
+
 Worker, frontend, ponte e coletor usam o identificador exato `patient-details-v2`. O Worker declara `contactCapability` nas respostas autenticadas de listagem, estado de contatos e sincronização. Ausência, tipo inválido, versão diferente ou erro não autorizam uso de contato.
 
 ## Consumidores atualizados

@@ -160,15 +160,42 @@ export async function firestoreCreate(env, collectionPath, documentId, data) {
   return { id: documentId, ...fromFsFields(payload.fields || {}) };
 }
 
-export async function firestoreGet(env, documentPath) {
+export async function firestoreGet(env, documentPath, options = {}) {
   try {
     const payload = await firestoreRequest(env, documentPath, { method: 'GET' });
     const id = String(payload.name || '').split('/').pop();
-    return { id, ...fromFsFields(payload.fields || {}) };
+    return { id, ...fromFsFields(payload.fields || {}),
+      ...(options.withMetadata ? { _updateTime: payload.updateTime } : {}) };
   } catch (error) {
     if (error.status === 404) return null;
     throw error;
   }
+}
+
+export async function firestoreBatchGet(env, documentPaths = []) {
+  const paths = [...new Set(documentPaths)];
+  if (!paths.length) return [];
+  if (paths.length > 250) throw new Error('Consulta de documentos acima do limite seguro.');
+  const prefix = `projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/`;
+  const requested = new Set(paths.map(path => prefix + path));
+  const token = await googleAccessToken(env, FIRESTORE_SCOPE);
+  const response = await fetch(`${firestoreDatabaseRoot(env)}/documents:batchGet`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify({ documents: [...requested] })
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(payload)) throw new Error('Falha ao consultar documentos do Firestore.');
+  const answered = new Set();
+  const documents = [];
+  for (const item of payload) {
+    const name = item.found?.name || item.missing;
+    if (!requested.has(name)) continue;
+    answered.add(name);
+    if (item.found) documents.push({ id: name.split('/').pop(), ...fromFsFields(item.found.fields || {}) });
+  }
+  if (answered.size !== requested.size) throw new Error('Resposta incompleta do Firestore.');
+  return documents;
 }
 
 export async function firestorePatch(env, documentPath, data) {
@@ -204,7 +231,8 @@ export async function firestoreCommit(env, writes = []) {
       update: {
         name: `projects/${projectId}/databases/(default)/documents/${documentPath}`,
         fields: fsFields(item?.data || {})
-      }
+      },
+      ...(item.currentDocument ? { currentDocument: item.currentDocument } : {})
     };
   });
 
@@ -222,6 +250,7 @@ export async function firestoreCommit(env, writes = []) {
     const message = payload?.error?.message || payload?.error || `Falha no commit do Firestore (${response.status}).`;
     const error = new Error(message);
     error.status = response.status;
+    error.code = payload?.error?.status || '';
     throw error;
   }
   return payload;
@@ -236,7 +265,8 @@ export async function firestoreList(env, collectionPath, options = {}) {
   return {
     documents: (payload.documents || []).map((doc) => ({
       id: String(doc.name || '').split('/').pop(),
-      ...fromFsFields(doc.fields || {})
+      ...fromFsFields(doc.fields || {}),
+      ...(options.withMetadata ? { _updateTime: doc.updateTime } : {})
     })),
     nextPageToken: payload.nextPageToken || ''
   };

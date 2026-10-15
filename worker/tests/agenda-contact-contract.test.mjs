@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const read=(p)=>fs.readFileSync(new URL('../../'+p,import.meta.url),'utf8');
-const CAP='patient-details-v2';
+const CAP='patient-directory-v1';
 const record={sourceId:'synthetic-a',patient:'Paciente sintético A',requestedAt:'2026-10-01',appointmentDate:'2026-10-15',appointmentTime:'10:00',phone:'5511990000001',active:true};
 const payload=(...args)=>({contactCapability:args.length?args[0]:CAP,records:args[1]||[record],summary:{active:(args[1]||[record]).length}});
 
@@ -40,7 +40,7 @@ test('contrato v2 é explícito nas três respostas autenticadas do Worker',asyn
 });
 
 test('matriz frontend novo/Worker antigo e capacidade ausente ou inválida não reaproveita telefone legado',async()=>{
- for(const cap of [undefined,null,false,{},'patient-details-v1',CAP+' ']){
+ for(const cap of [undefined,null,false,{},'patient-details-v1','patient-details-v2',CAP+' ']){
   const f=frontend(async()=>payload(cap));
   assert.equal(await f.load(),false);assert.equal(f.state.contactCapability,'');assert.equal(f.state.records[0].phone,'');
   await f.openVerifiedContact(record);assert.equal(f.tabs.length,0);assert.equal(f.opened.length,0);
@@ -48,16 +48,19 @@ test('matriz frontend novo/Worker antigo e capacidade ausente ou inválida não 
  const w=backend();
  const legacy=w.publicRecord({...record},'',new Map());
  assert.equal(legacy.phone,''); // Both previous and current frontend see no destination with Worker v2.
- const valid=w.normalizeRecord({...record,contactVersion:CAP,contactSourceId:record.sourceId});
+ const valid=w.normalizeRecord({...record,contactVersion:'patient-details-v2',contactSourceId:record.sourceId});
  const f=frontend(async()=>payload(CAP,[w.publicRecord(valid,'',new Map())]));
- assert.equal(await f.load(),true);await f.openVerifiedContact(record);assert.equal(new URL(f.opened[0]).pathname,'/5511990000001');
+ assert.equal(await f.load(),true);await f.openVerifiedContact(f.state.records[0]);assert.equal(new URL(f.opened[0]).pathname,'/5511990000001');
 });
 
-test('clique revalida capacidade, revogação, expiração e associação sem navegar com estado anterior',async()=>{
- const w=backend(),valid=w.normalizeRecord({...record,contactVersion:CAP,contactSourceId:record.sourceId});
- const expired=w.publicRecord({...valid,contactVerifiedAt:new Date(Date.now()-25*3600000).toISOString()},'',new Map());
- for(const next of [payload(undefined),payload(CAP,[]),payload(CAP,[{...record,phone:''}]),payload(CAP,[expired]),
+test('clique revalida capacidade, revogação, prova inválida e associação sem navegar com estado anterior',async()=>{
+ const w=backend(),valid=w.normalizeRecord({...record,contactVersion:'patient-details-v2',contactSourceId:record.sourceId});
+ const invalid=w.publicRecord({...valid,contactVerifiedAt:'invalid'},'',new Map());
+ for(const next of [payload(undefined),payload(CAP,[]),payload(CAP,[{...record,phone:''}]),payload(CAP,[invalid]),
   payload(CAP,[{...record,patient:'Paciente sintético B'}]),payload(CAP,[{...record,phone:'5521990000002'}]),
+  payload(CAP,[{...record,patientSourceId:'synthetic-other-patient'}]),
+  payload(CAP,[{...record,contactRevision:'synthetic-other-revision'}]),
+  payload(CAP,[{...record,contactBlocked:true}]),
   payload(CAP,[{...record,appointmentTime:'11:00'}]),payload(CAP,[{...record,active:false}])]){
   const f=frontend(async()=>next);await f.openVerifiedContact(record);
   assert.equal(f.opened.length,0);assert.equal(f.readMarks.length,0);assert.ok(f.tabs.every(t=>t.closed));
@@ -111,7 +114,7 @@ function producer(){
 }
 
 test('coletor perde capacidade, cancela entrega e limpa cache/IDs; READY antigo não autoriza nova coleta',async()=>{
- for(const type of ['PORTAL_AGENDA_DIGSAUDE_READY','PORTAL_AGENDA_DIGSAUDE_RESULT'])for(const cap of [undefined,{},'patient-details-v1']){
+ for(const type of ['PORTAL_AGENDA_DIGSAUDE_READY','PORTAL_AGENDA_DIGSAUDE_RESULT'])for(const cap of [undefined,{},'patient-details-v1','patient-details-v2']){
   const p=producer();p.prime();p.reply({type,contactCapability:cap,syncId:'synthetic-sync',ok:true,knownSourceIds:['synthetic-a']});
   assert.deepEqual(JSON.parse(JSON.stringify(p.state())),{autoEnabled:false,contactCapabilityVerified:false,cache:0,known:0,pendingSyncId:''});
   p.retry();await p.run();assert.equal(p.sent.length,0);

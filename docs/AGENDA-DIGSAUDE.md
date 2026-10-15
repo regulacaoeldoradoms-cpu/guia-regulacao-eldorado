@@ -1,5 +1,7 @@
 # Agenda DigSaúde
 
+Candidata local de 15/10/2026: [contatos duráveis por organização e ID técnico de paciente](AGENDA-DIGSAUDE-DURABILIDADE-LOCAL.md). Entrega persistência sem expiração automática do contato v2 confirmado na mesma consulta, com correção/exclusão explícitas e sem mapeamento global. O reuso entre consultas aguarda prova do ID técnico do paciente. Ainda sem publicação ou migração; as seções abaixo documentam a evolução anterior da base.
+
 Decisão registrada em 16/09/2026.
 
 ## Objetivo

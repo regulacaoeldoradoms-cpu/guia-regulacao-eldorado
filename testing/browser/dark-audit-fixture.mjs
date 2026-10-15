@@ -1,5 +1,15 @@
 // Synthetic API data only. Real HTML/CSS/JS run unchanged against intercepted APIs.
 import { syntheticProtocolSource } from './dark-audit-protocol-fixture.mjs';
+import { readFileSync } from 'node:fs';
+
+export function agendaContactCapabilityFromSource(source) {
+  const match = source.match(/^[\t ]*const CONTACT_CAPABILITY = ['"]([^'"]+)['"];\s*$/mu);
+  if (!match) throw new Error('Agenda bridge source must declare its contact capability');
+  return match[1];
+}
+const currentAgendaContactCapability = agendaContactCapabilityFromSource(
+  readFileSync(new URL('../../js/agenda-sync-bridge.js', import.meta.url), 'utf8')
+);
 export const auditUser = {
   id:'audit-user-synthetic', username:'audit.synthetic', name:'Pessoa Fictícia Auditoria',
   email:'audit@example.invalid', role:'admin', councilRole:'presidente', emailVerified:true,
@@ -13,7 +23,7 @@ export const auditNotifications=[{id:'audit-notification',actor:auditFriend,text
 export const auditPatient = { id:'audit-patient', name:'PACIENTE FICTÍCIO AUDITORIA', birthDate:'1980-01-01', cpf:'00000000000', phone:'00000000000', cns:'000000000000000', city:'Município fictício' };
 export const auditFollowup = { id:'audit-followup', patientId:auditPatient.id, patientName:auditPatient.name, specialty:'Cardiologia', condition:'Condição fictícia de teste', lastConsultationDate:'2026-09-01', returnDueDate:'2026-10-01', reminderDates:['2026-09-16','2026-09-21','2026-09-24'], status:'SOLICITAR', alertToday:true, reminderNumber:3, returnMonths:1, resolution:'Informação exclusivamente sintética.' };
 export const auditAgenda = Array.from({length:3},(_,i)=>({sourceId:`audit-appointment-${i}`,patient:`PACIENTE FICTÍCIO ${i+1}`,specialty:'Cardiologia',specialist:'PROFISSIONAL FICTÍCIO',appointmentDate:'2026-09-25',appointmentTime:'08:00',requestedAt:'24/09/2026',active:true,unread:i<2}));
-export async function installAuditFixture(context, { theme='dark', authenticated=true, responses={}, userOverrides={} } = {}) {
+export async function installAuditFixture(context, { theme='dark', authenticated=true, responses={}, userOverrides={}, agendaContactCapability=currentAgendaContactCapability } = {}) {
   const calls = [], unexpected = [], errors = [], blocked=[];
   const user = { ...auditUser, interfaceTheme:theme, ...userOverrides };
   const security={email:user.email,emailVerified:user.emailVerified,firebaseReady:true,interfaceTheme:theme,interfaceSoundsEnabled:false,interfaceSoundsMuted:false,interfaceSoundVolume:32};
@@ -103,8 +113,8 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/chat/messages') data = {messages:[{id:1,fromUser:auditFriend.username,body:'MENSAGEM FICTÍCIA RECEBIDA',sentAt:'2026-09-24T12:00:00Z'},{id:2,fromUser:user.username,body:'MENSAGEM FICTÍCIA ENVIADA',sentAt:'2026-09-24T12:01:00Z'}]};
     else if (url.pathname === '/api/telemedicina/dashboard') data = { today:'2026-09-24', actor:{ admin:true }, patients:[auditPatient], followups:[auditFollowup], counts:{ total:1, pending:1, due:1 } };
     else if (/^\/api\/telemedicina\/patients\/[^/]+$/.test(url.pathname)) data = { patient:auditPatient, followups:[auditFollowup], events:[] };
-    else if (url.pathname === '/api/agenda/contact-state' && request.method() === 'GET') data = {contactCapability:'patient-details-v2',active:auditAgenda.length,known:auditAgenda.length,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)};
-    else if (url.pathname === '/api/agenda') data = { contactCapability:'patient-details-v2', records:auditAgenda, summary:{ active:3, unread:2, lastSyncAt:'2026-09-24T12:00:00Z' } };
+    else if (url.pathname === '/api/agenda/contact-state' && request.method() === 'GET') data = {contactCapability:typeof agendaContactCapability==='function'?agendaContactCapability(request):agendaContactCapability,active:auditAgenda.length,known:auditAgenda.length,missing:0,knownSourceIds:auditAgenda.map(item=>item.sourceId)};
+    else if (url.pathname === '/api/agenda') data = { contactCapability:typeof agendaContactCapability==='function'?agendaContactCapability(request):agendaContactCapability, records:auditAgenda, summary:{ active:3, unread:2, lastSyncAt:'2026-09-24T12:00:00Z' } };
     else if (url.pathname === '/api/documents/access') data = { capabilities:user.documentCapabilities, drive:{ connected:true, configured:true, writeEnabled:false } };
     else if (url.pathname === '/api/documents/drive/list') data = { items:[], nextPageToken:'' };
     else if (url.pathname === '/api/documents/preferences') data = { preferences:{} };

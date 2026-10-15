@@ -57,7 +57,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20261005-contact-2/);
+  assert.match(html, /js\/agenda\.js\?v=20261015-directory-1/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -121,7 +121,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.2\.8/);
+  assert.match(source, /@version\s+1\.2\.9/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -287,14 +287,24 @@ function contactTools(windowOverrides = {}, clock = Date) {
 
 function backendContactTools(existing = []) {
   const writes = [];
+  const contacts = new Map();
+  const contactDocuments = new Map();
   const context = {
     Date, TextEncoder, crypto: globalThis.crypto,
     firestoreList: async () => ({ documents: existing }),
-    firestoreCommit: async (_env, batch) => { writes.push(...batch); }
+    firestoreBatchGet: async (_env, paths) => paths.filter(path => contactDocuments.has(path)).map(path => contactDocuments.get(path)),
+    firestoreCommit: async (_env, batch) => {
+      writes.push(...batch);
+      for (const write of batch.filter(item => item.documentPath.includes('/contacts/'))) {
+        contacts.set(write.data.patientSourceId, write.data);
+        contactDocuments.set(write.documentPath, write.data);
+      }
+    }
   };
-  const source = read('worker/agenda.js').replace(/import[\s\S]*?from\s+'[^']+';/g, '').replace(/export /g, '');
-  vm.runInNewContext(source + '\nglobalThis.tools = { normalizeBrazilPhone, normalizeRecord, publicRecord, contactState, syncRecords, contactForSync };', context);
-  return { ...context.tools, writes };
+  const source = read('worker/agenda.js').replace(/import[\s\S]*?from\s+'[^']+';/g, '').replace(/export /g, '')
+    .replace('const PATIENT_DIRECTORY_ENABLED = false;', 'const PATIENT_DIRECTORY_ENABLED = true;'); // prepared directory fixture only
+  vm.runInNewContext(source + '\nglobalThis.tools = { normalizeBrazilPhone, normalizeRecord, publicRecord, contactState, syncRecords, contactForSync, directoryRecord };', context);
+  return { ...context.tools, writes, contacts };
 }
 
 function reminderTools() {
@@ -418,14 +428,14 @@ test('fichas sintéticas percorrem coleta → espelho → href sem trocar destin
   const backend = backendContactTools();
   const frontend = reminderTools();
   for (const [sourceId, patient] of [['synthetic-a', 'Paciente de teste A'], ['synthetic-b', 'Paciente de teste B']]) {
-    const record = { sourceId, patient, requestedAt: '2026-10-01' };
+    const record = { sourceId, patient, patientSourceId: 'patient-' + sourceId, requestedAt: '2026-10-01' };
     const result = await tools.enrichSnapshotContacts({ records: [record] });
     assert.equal(result.found, 1);
     assert.equal(record.contactSourceId, sourceId);
     assert.equal(record.contactVersion, 'patient-details-v2');
     await backend.syncRecords({}, { records: [record] }, { username: 'synthetic-operator' });
     const saved = backend.writes.at(-1).data;
-    const published = backend.publicRecord(saved, 'synthetic-operator', new Map());
+    const published = backend.publicRecord(backend.directoryRecord(saved, backend.contacts), 'synthetic-operator', new Map());
     const url = new URL(frontend.patientWhatsappUrl(published));
     assert.equal(url.pathname.slice(1), sourceId === 'synthetic-a' ? '5511990000001' : '5521990000002');
     assert.ok(url.searchParams.get('text').includes(patient));
@@ -441,15 +451,18 @@ test('contato legado não gera href nem permanece marcado como conhecido', () =>
   assert.equal(backend.contactState([legacy]).known, 0);
 });
 
-test('contato conferido expira e perde validade ao mudar associação da ficha', () => {
+test('contato conferido persiste após 24h e perde validade ao mudar associação ou prova da ficha', () => {
   const backend = backendContactTools();
   const verified = backend.normalizeRecord(syntheticContact);
   assert.equal(backend.contactState([verified]).known, 1);
+  const old = { ...verified, contactVerifiedAt: new Date(Date.now() - 25 * 3600000).toISOString() };
+  assert.equal(backend.publicRecord(old, '', new Map()).phone, syntheticContact.phone);
+  assert.equal(backend.contactState([old]).known, 1);
   for (const changed of [
     { ...verified, patient: 'Paciente de teste C' },
     { ...verified, requestedAt: '2026-10-02' },
     { ...verified, sourceId: 'synthetic-c' },
-    { ...verified, contactVerifiedAt: new Date(Date.now() - 25 * 3600000).toISOString() },
+    { ...verified, contactVerifiedAt: new Date(Date.now() + 3600000).toISOString() },
     { ...verified, contactVerifiedAt: 'invalid' }
   ]) {
     assert.equal(backend.publicRecord(changed, '', new Map()).phone, '');
@@ -457,7 +470,7 @@ test('contato conferido expira e perde validade ao mudar associação da ficha',
   }
 });
 
-test('rechecagem vazia revoga destino salvo; versão antiga não restaura telefone legado', async () => {
+test('rechecagem vazia preserva contato válido; mudança de associação e legado continuam recusados', async () => {
   const initial = backendContactTools().normalizeRecord(syntheticContact);
   for (const incoming of [
     { ...syntheticContact, phone: '' },
@@ -466,11 +479,13 @@ test('rechecagem vazia revoga destino salvo; versão antiga não restaura telefo
   ]) {
     const backend = backendContactTools([{ ...initial, id: 'synthetic-doc' }]);
     await backend.syncRecords({}, { records: [incoming] }, { username: 'synthetic-operator' });
-    assert.equal(backend.writes[0].data.phone, '');
+    assert.equal(backend.writes[0].data.phone,
+      incoming.patient === syntheticContact.patient ? initial.phone : '');
   }
   const legacyBackend = backendContactTools([{ ...syntheticContact, id: 'synthetic-doc' }]);
   await legacyBackend.syncRecords({}, { records: [{ ...syntheticContact, contactVersion: undefined }] }, { username: 'synthetic-operator' });
-  assert.equal(legacyBackend.writes[0].data.phone, '');
+  assert.equal(legacyBackend.writes[0].data.phone, syntheticContact.phone);
+  assert.equal(legacyBackend.publicRecord(legacyBackend.writes[0].data, '', new Map()).phone, '');
   const backend = backendContactTools();
   const unattempted = backend.normalizeRecord({ ...syntheticContact, phone: undefined, contactVersion: undefined });
   assert.equal(backend.contactForSync(unattempted, initial).phone, initial.phone);
@@ -483,7 +498,7 @@ test('frontend recusa destino inválido sem fabricar nono dígito', () => {
   }
 });
 
-test('falha de coleta segue ao espelho como contato vazio e revoga destino anterior', async () => {
+test('falha de coleta envia vazio e preserva contato anterior válido na mesma associação', async () => {
   let tick = Date.now();
   class TestClock extends Date { static now() { tick += 2000; return tick; } }
   const tools = contactTools({ setTimeout(resolve) { resolve(); } }, TestClock);
@@ -503,7 +518,7 @@ test('falha de coleta segue ao espelho como contato vazio e revoga destino anter
   const existing = backendContactTools().normalizeRecord(syntheticContact);
   const backend = backendContactTools([{ ...existing, id: 'synthetic-doc' }]);
   await backend.syncRecords({}, { records: [record] }, { username: 'synthetic-operator' });
-  assert.equal(backend.publicRecord(backend.writes[0].data, '', new Map()).phone, '');
+  assert.equal(backend.publicRecord(backend.writes[0].data, '', new Map()).phone, existing.phone);
 });
 
 test('Filament homologado trata role=dialog e fi-modal-window aninhados como um diálogo', () => {
@@ -582,11 +597,11 @@ function syntheticConsultationFlow({ phone = '(11) 99000-0001', dialogDelay = 0,
     menuClicks: () => menuClicks, actionClicks: () => actionClicks, otherClicks: () => otherClicks };
 }
 
-async function hrefAfterSyntheticCollection(flow, record = { sourceId: 'synthetic-a', patient: 'Paciente de teste A', requestedAt: '2026-10-01' }) {
+async function hrefAfterSyntheticCollection(flow, record = { sourceId: 'synthetic-a', patientSourceId: 'synthetic-patient-a', patient: 'Paciente de teste A', requestedAt: '2026-10-01' }) {
   const result = await flow.tools.enrichSnapshotContacts({ records: [record] });
   const backend = backendContactTools();
   await backend.syncRecords({}, { records: [record] }, { username: 'synthetic-operator' });
-  const published = backend.publicRecord(backend.writes[0].data, '', new Map());
+  const published = backend.publicRecord(backend.directoryRecord(backend.writes.at(-1).data, backend.contacts), '', new Map());
   return { result, record, href: reminderTools().patientWhatsappUrl(published) };
 }
 
@@ -622,7 +637,7 @@ function automaticSourceFlow({ autoReady = true } = {}) {
   Object.defineProperty(frame, 'location', { ...locationProperty, set(value) {
     locationProperty.set(value);
     if (autoReady && String(value).startsWith(portal)) queueMicrotask(() => listeners.get('message')?.({
-      origin: portal, source: frame, data: { type: 'PORTAL_AGENDA_DIGSAUDE_READY', contactCapability: 'patient-details-v2', knownSourceIds: [] }
+      origin: portal, source: frame, data: { type: 'PORTAL_AGENDA_DIGSAUDE_READY', contactCapability: 'patient-directory-v1', knownSourceIds: [] }
     }));
   } });
   frame.postMessage = (message) => sent.push(structuredClone(message));
@@ -720,7 +735,7 @@ test('fluxo sintético repete contato só para mesma associação e cancela cach
   assert.equal((await hrefAfterSyntheticCollection(flow)).href, first.href);
   assert.equal(flow.navigations(), 1);
   flow.setPhone('(21) 99000-0002');
-  const changed = await hrefAfterSyntheticCollection(flow, { sourceId: 'synthetic-a', patient: 'Paciente de teste B', requestedAt: '2026-10-02' });
+  const changed = await hrefAfterSyntheticCollection(flow, { sourceId: 'synthetic-a', patientSourceId: 'synthetic-patient-b', patient: 'Paciente de teste B', requestedAt: '2026-10-02' });
   assert.equal(new URL(changed.href).pathname, '/5521990000002');
   assert.equal(flow.navigations(), 2);
   flow.frame.closed = true;
@@ -768,11 +783,12 @@ async function syntheticBridgeFlow() {
     window: { opener, addEventListener: (_name, fn) => { receive = fn; }, RegulationAuth: {
       requireRole: async () => ({ role: 'telemedicina' }),
       async api(path, options) {
-        if (path.endsWith('/contact-state')) return backend.contactState(records);
+        if (path.endsWith('/contact-state')) return backend.contactState(records.map(record => backend.directoryRecord(record, backend.contacts)));
         assert.equal(path, '/api/agenda/sync');
         syncCalls++;
         const result = await backend.syncRecords({}, JSON.parse(options.body), { username: 'synthetic-operator' });
         for (const write of backend.writes) {
+          if (write.documentPath.includes('/contacts/')) continue;
           const row = { ...write.data, id: write.documentPath.split('/').at(-1) };
           const index = records.findIndex((item) => item.sourceId === row.sourceId);
           if (index < 0) records.push(row); else records[index] = row;
@@ -788,7 +804,12 @@ async function syntheticBridgeFlow() {
 
 test('automático sintético atravessa ponte real, ignora resposta antiga e deduplica repetição até href', async () => {
   const source = automaticSourceFlow();
-  source.setFetcher(async () => syntheticSnapshot());
+  source.setFetcher(async () => {
+    const snapshot = syntheticSnapshot();
+    snapshot.records[0].patientSourceId = 'synthetic-patient-a';
+    snapshot.records[0].contactPatientSourceId = 'synthetic-patient-a';
+    return snapshot;
+  });
   await source.runAutomaticSync();
   const currentId = source.state().pendingSyncId;
   source.reply({ type: 'PORTAL_AGENDA_DIGSAUDE_RESULT', syncId: 'synthetic-old-sync', ok: true, knownSourceIds: ['synthetic-b'] });
@@ -804,7 +825,7 @@ test('automático sintético atravessa ponte real, ignora resposta antiga e dedu
   assert.equal(results.length, 2);
   source.reply(results[0]); source.reply(results[1]);
   assert.equal(source.state().pendingSyncId, '');
-  const published = bridge.backend.publicRecord(bridge.records[0], '', new Map());
+  const published = bridge.backend.publicRecord(bridge.backend.directoryRecord(bridge.records[0], bridge.backend.contacts), '', new Map());
   assert.equal(new URL(reminderTools().patientWhatsappUrl(published)).pathname, '/5511990000001');
   assert.equal(bridge.records[0].sourceId, 'synthetic-a');
 });
