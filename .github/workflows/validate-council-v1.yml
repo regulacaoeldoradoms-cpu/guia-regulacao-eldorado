@@ -144,7 +144,9 @@ jobs:
           ! grep -q 'email:' worker/council.js
           ! grep -q 'signupDisplayName' cadastro/index.html
           ! grep -q 'displayName.value' js/signup.js
-          grep -q 'não use seu nome completo' cadastro/index.html
+          grep -q 'Pode aparecer para outras pessoas no perfil e no chat.' cadastro/index.html
+          grep -q 'aria-describedby="signupUsernameHelp"' cadastro/index.html
+          ! grep -q 'Preserve sua identidade:' cadastro/index.html
           grep -q 'requiredLevel: .prata.' worker/profile-photo.js
           grep -q 'accountPhotoUnlocked' js/social-profile.js
           grep -q 'guardSecurityEmailRemoval' worker/index.js

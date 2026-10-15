@@ -6,6 +6,34 @@ async function genderContract(page,id){
  return field.evaluate(node=>({tag:node.localName,label:node.labels?.[0]?.textContent.trim(),value:node.value,options:[...node.options].map(option=>({value:option.value,label:option.textContent.trim(),disabled:option.disabled,selected:option.selected}))}));
 }
 
+// Check the approved Portal identity and disclosure before projecting only
+// those editorial changes out of the existing strict pixel/control comparison.
+async function projectSignupPortalBranding(page,base){
+ const brand=page.locator('.signup-portal-brand');await expect(brand).toHaveCount(1);
+ await expect(page.locator('.login-visual')).toHaveAttribute('aria-label','Portal da Regulação de Saúde');
+ await expect(brand.locator('h1')).toHaveText('Portal da Regulação de Saúde');
+ await expect(brand.locator('p')).toHaveText('Cadastro de conta · Eldorado/MS');
+ await expect(brand.locator('img')).toHaveAttribute('src','/assets/portal-regulacao-header_512x512.png?v=20260911-1');
+ await expect(brand.locator('img')).toHaveAttribute('alt','Símbolo do Portal da Regulação de Saúde');
+ await expect(page.locator('#signupForm > .portal-note.info')).toHaveCount(0);
+ await expect(page.locator('#signupUsername')).toHaveAttribute('aria-describedby','signupUsernameHelp');
+ await expect(page.locator('#signupUsernameHelp')).toHaveText('3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado. Pode aparecer para outras pessoas no perfil e no chat.');
+ if(base.signupBranding.approved)return;
+ await page.evaluate(base=>{
+  document.querySelector('.signup-portal-brand').outerHTML=base.signupBranding.html;
+  document.querySelector('.login-visual').setAttribute('aria-label',base.signupBranding.label);
+  document.title=base.signupBranding.title;
+  document.querySelector('link[rel="icon"]').setAttribute('href',base.signupBranding.icon);
+  document.querySelector('link[rel="preload"][as="image"]')?.remove();
+  const username=document.getElementById('signupUsername'),help=username.closest('.portal-field').querySelector('small');
+  username.removeAttribute('aria-describedby');help.removeAttribute('id');
+  help.textContent='3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado.';
+  const note=document.createElement('div');note.className='portal-note info';note.style.marginBottom='16px';
+  note.innerHTML='<strong>Preserve sua identidade:</strong> não use seu nome completo, CPF, telefone, e-mail ou data de nascimento no usuário.';
+  username.closest('.portal-field').before(note);
+ },base);
+}
+
 // Assert the approved private additions before projecting only those additions
 // out of the historical comparison. Prior controls, styles, pixels and the
 // raster tolerance stay subject to the same current-vs-base gates.
@@ -13,12 +41,14 @@ export async function projectPrivateAccountAdditions(page,info,route,current,bas
  const base=await page.evaluate(html=>{
   const doc=new DOMParser().parseFromString(html,'text/html'),birth=doc.getElementById('signupBirthDate'),terms=doc.getElementById('signupTerms');
   return {gender:Boolean(doc.getElementById('signupGender')),card:Boolean(doc.getElementById('privateRegistrationCard')),caption:doc.querySelector('#signupForm > p')?.textContent,
+   signupBranding:{approved:Boolean(doc.querySelector('.signup-portal-brand')),html:doc.querySelector('.login-visual .portal-brand')?.outerHTML,label:doc.querySelector('.login-visual')?.getAttribute('aria-label'),title:doc.title,icon:doc.querySelector('link[rel="icon"]')?.getAttribute('href')},
    birth:birth?{min:birth.getAttribute('min'),max:birth.getAttribute('max'),described:birth.getAttribute('aria-describedby'),help:birth.closest('.portal-field').querySelector('small')?.textContent,helpId:birth.closest('.portal-field').querySelector('small')?.getAttribute('id')}:null,
    backStyle:doc.querySelector('#signupForm > a')?.getAttribute('style'),privacyHtml:doc.querySelector('#signupForm > .portal-note.info')?.innerHTML,lastNoteHtml:[...doc.querySelectorAll('#signupForm > .portal-note.info')].at(-1)?.outerHTML,usernameHelp:doc.getElementById('signupUsername')?.closest('.portal-field').querySelector('small')?.textContent,
    terms:terms?{text:terms.closest('label').textContent.trim(),labelStyle:terms.closest('label').getAttribute('style'),labelClass:terms.closest('label').getAttribute('class'),inputStyle:terms.getAttribute('style')}:null};
  },baseHtml);
  if(route==='/cadastro/'){
   if(!current){await expect(page.locator('#signupGender')).toHaveCount(Number(base.gender));return;}
+  await projectSignupPortalBranding(page,base);
   const gender=await genderContract(page,'signupGender');expect(gender).toEqual({tag:'select',label:'Gênero (opcional)',value:'',options:genderOptions});
   await expect(page.locator('#signupGender')).toHaveJSProperty('required',false);
   if(base.gender)return;
