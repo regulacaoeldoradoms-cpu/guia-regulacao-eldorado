@@ -29,7 +29,7 @@ export async function projectPrivateAccountAdditions(page,info,route,current,bas
   await expect(page.locator('#signupBirthHelp')).toHaveText('Data autodeclarada e privada. Não aparece no perfil público nem no chat.');
   await expect(page.locator('#signupForm > p')).toHaveText('Você começa com uma Conta Bronze. Pode confirmar um e-mail depois.');
   await expect(page.locator('#signupForm > .portal-note.info')).toHaveCount(1);
-  await expect(page.locator('#signupForm > .portal-note.info')).toHaveText('Preserve sua identidade: não use nome completo, CPF, telefone, e-mail ou data de nascimento no usuário.');
+  await expect(page.locator('#signupForm > .portal-note.info')).toHaveText('Preserve sua identidade: não use seu nome completo, CPF, telefone, e-mail ou data de nascimento no usuário.');
   await expect(page.locator('#signupUsername').locator('..').locator('small')).toHaveText('3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado.');
   if(page.viewportSize().width<=860){await expect(page.locator('.login-message')).toBeHidden();expect((await page.locator('.login-visual').boundingBox()).height).toBeLessThan(150);}else await expect(page.locator('.login-message')).toBeVisible();
   expect(await page.locator('.signup-consent').textContent().then(s=>s.trim())).toBe(base.terms.text);
