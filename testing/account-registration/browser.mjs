@@ -112,6 +112,7 @@ try{
   if(process.env.ACCOUNT_MANAGED_ONLY==='1'){await managedCases(width,theme);continue;}
   const state={errors:[]},{page,context,audit:network}=await newPage(browser,{width,theme,seedOnce:true},origin,state);
   const env={AUTH_DB:new GroupTestD1(),AUTH_SESSION_SECRET:'synthetic-browser-account-secret',AUTH_RATE_LIMIT_SECRET:'synthetic-browser-rate'};await prepareRegistrationFixture(env);const posts=[];
+  await context.route('**/api/auth/registration-capabilities',async route=>fulfill(route,await handlePortalRoute(asRequest(route.request()),env,'')));
   await context.route('**/api/auth/register',async route=>{posts.push(route.request().postDataJSON());return fulfill(route,await handlePortalRoute(await sanitizeCitizenRegistrationRequest(asRequest(route.request())),env,''));});
   try{
    await page.goto(origin+'/cadastro/');await applyTextScale(page);const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero',{exact:true});
@@ -129,6 +130,15 @@ try{
    // Existing confirmation/terms validation stays active.
    await page.locator('#signupConfirm').fill('Different-Synthetic-2026');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);assert.match(await page.locator('#signupStatus').textContent(),/confirmação/);
    await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').uncheck();await page.locator('#signupSubmit').click();assert.equal(posts.length,0);await page.locator('#signupTerms').check();
+   // Pages may become available before the new Worker: do not send personal
+   // data to an older contract, and preserve the draft for an explicit retry.
+   for(const status of [404,503]){
+    const unavailable=route=>route.fulfill({status,contentType:'application/json',body:'{}'});
+    await context.route('**/api/auth/registration-capabilities',unavailable);
+    await page.locator('#signupSubmit').click();await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Seus dados não foram enviados'));
+    assert.equal(posts.length,0);assert.equal(await birth.inputValue(),'1993-07-19');assert.equal(await gender.inputValue(),'masculino');
+    await context.unroute('**/api/auth/registration-capabilities',unavailable);
+   }
    await page.locator('#signupSubmit').click();await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Conta Bronze criada'));
    assert.deepEqual(posts,[{username:'synthetic.browser',password:'Synthetic-Registration-2026',birthDate:'1993-07-19',gender:'masculino'}]);await privateStorage(page);
    assert.equal(env.AUTH_DB.database.prepare('SELECT gender FROM account_private_registration').get().gender,'masculino');

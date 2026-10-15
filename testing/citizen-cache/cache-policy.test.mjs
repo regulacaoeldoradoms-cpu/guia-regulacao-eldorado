@@ -235,3 +235,25 @@ test('a current Citizen cache does not swallow the canonical redirect', async()=
   const f=fixture(async()=>new Response(null,{status:301,headers:{Location:'/cidadao/'}}));await f.seed('/cidadao/',citizenMarker+'PUBLIC');
   const response=await f.dispatch('/cidadao').response;assert.equal(response.status,301);assert.equal(response.headers.get('Location'),'/cidadao/');
 });
+
+
+for (const asset of ['auth-client','signup','pets-page','security','citizen-mobile-shell','private-birth-date-input']) test(`private account controller refresh preserves installed caches: ${asset}`, async () => {
+  const f=fixture(async()=>new Response('PRIVATE-CURRENT'));
+  const cache=await f.caches.open('portal-static-20261009-pets-combined-8');
+  const previous=`/js/${asset}.js?v=20261015-citizen-tutorial-1`,current=`/js/${asset}.js?v=20261015-account-private-3`;
+  await cache.put(origin+previous,new Response('PRIVATE-OLD'));await cache.put(origin+'/js/unrelated.js?v=1',new Response('UNRELATED'));
+  for(let i=0;i<2;i++)assert.equal(await(await f.dispatch(previous,{method:'GET'}).response).text(),'PRIVATE-CURRENT');
+  assert.equal(f.calls.length,1);assert.equal(new URL(f.calls[0].url).pathname+new URL(f.calls[0].url).search,current);
+  assert.equal(await(await cache.match(origin+previous)).text(),'PRIVATE-OLD');
+  assert.equal(await(await cache.match(origin+'/js/unrelated.js?v=1')).text(),'UNRELATED');
+  assert.deepEqual([...f.stores.keys()],['portal-static-20261009-pets-combined-8']);
+});
+test('account controller refresh retains offline fallback and leaves future versions untouched',async()=>{
+  const f=fixture(async request=>{if(new URL(request.url).search==='?v=2099-future')return new Response('FUTURE');throw Error('synthetic-offline');}),cache=await f.caches.open('portal-static-20261009-pets-combined-8');
+  const previous='/js/security.js?v=20261015-citizen-tutorial-1',future='/js/security.js?v=2099-future';
+  await cache.put(origin+previous,new Response('OFFLINE-OLD'));await cache.put(origin+future,new Response('FUTURE'));
+  assert.equal(await(await f.dispatch(previous,{method:'GET'}).response).text(),'OFFLINE-OLD');
+  assert.equal(await(await f.dispatch(future,{method:'GET'}).response).text(),'FUTURE');
+  assert.equal(f.calls.length,2);assert.equal(new URL(f.calls[1].url).search,'?v=2099-future');
+  assert.equal(await(await cache.match(origin+future)).text(),'FUTURE');
+});

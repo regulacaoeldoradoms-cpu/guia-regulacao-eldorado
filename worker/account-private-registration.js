@@ -5,7 +5,8 @@ import {validBirthDate,portalCalendarDate} from './private-pet-age.js';
 // or logs. Gender is stored for future functions and grants no permission.
 export const validRegistrationGender = value => value === 'masculino' || value === 'feminino';
 export function privateRegistrationStatement(db, username, gender) {
-  return db.prepare('INSERT INTO account_private_registration(auth_username,gender) VALUES(?,?)').bind(username, gender);
+  return db.prepare(`INSERT INTO account_private_registration(auth_username,gender) VALUES(?,?)
+    ON CONFLICT(auth_username) DO UPDATE SET gender=excluded.gender,legacy_birth_date_allowed=0`).bind(username, gender);
 }
 export async function legacyBirthDateAllowed(db, username) {
   try {
@@ -72,4 +73,16 @@ export async function completePrivateRegistration(db,user,input,today=portalCale
   const saved=await privateRows(db,user.username);assertUnchanged(saved);
   if(saved.birthDate!==birthDate||saved.gender!==gender)throw new RegistrationDetailsError('REGISTRATION_DETAILS_UNAVAILABLE','Não foi possível salvar os dados privados.',503);
   return {...statusFor(saved),canCompleteBirthDate:false};
+}
+
+// Technical schema checks only: never inspect a person's values for readiness.
+export async function privateRegistrationSchemaReady(db) {
+  if(!db)return false;
+  try {
+    const schema=await db.prepare(`SELECT count(*) AS count FROM sqlite_schema WHERE
+      (type='table' AND name IN ('pet_private_age','account_private_registration','account_private_registration_cutover'))
+      OR (type='trigger' AND name='account_private_registration_legacy_bridge')`).first();
+    const cutover=await db.prepare('SELECT singleton FROM account_private_registration_cutover WHERE singleton=1').first();
+    return Number(schema?.count)===4 && cutover?.singleton===1;
+  }catch{return false;}
 }

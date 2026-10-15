@@ -1,7 +1,7 @@
 'use strict';
 import {validBirthDate, portalCalendarDate} from './private-pet-age.js';
 import {ageDeclarationStatement} from './private-pet-age-store.js';
-import {validRegistrationGender, privateRegistrationStatement, privateRegistrationStatus, completePrivateRegistration, RegistrationDetailsError} from './account-private-registration.js';
+import {validRegistrationGender, privateRegistrationStatement, privateRegistrationStatus, completePrivateRegistration, RegistrationDetailsError, privateRegistrationSchemaReady} from './account-private-registration.js';
 
 import {
   firebaseConfigured,
@@ -483,7 +483,7 @@ async function registerCitizen(request, env, origin) {
   const password = String(body.password || '');
   const privateBirthDate = body.birthDate;
   if (!validBirthDate(privateBirthDate) || privateBirthDate > portalCalendarDate()) return json({error:'Informe uma data de nascimento válida.',code:'BIRTH_DATE_INVALID'},400,origin);
-  if (!validRegistrationGender(body.gender)) return json({error:'Escolha Masculino ou Feminino.',code:'GENDER_INVALID'},400,origin);
+  if (!validRegistrationGender(body.gender)) return json({error:'Escolha Masculino ou Feminino. Se o campo não aparecer, atualize a página para continuar.',code:'GENDER_INVALID'},400,origin);
   const validation = validatePassword(password);
   if (!usernameValid(username)) return json({ error: 'O usuário deve ter entre 3 e 40 caracteres.' }, 400, origin);
   if (validation) return json({ error: validation }, 400, origin);
@@ -773,6 +773,10 @@ export async function handlePortalRoute(request, env, origin, originAllowed = tr
   if (url.pathname === '/api/auth/login' && request.method === 'POST') return login(request, env, origin);
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') return json({ ok: true }, 200, origin);
   if (url.pathname === '/api/auth/me' && request.method === 'GET') return me(request, env, origin);
+  if (url.pathname === '/api/auth/registration-capabilities' && request.method === 'GET') {
+    if(!(await privateRegistrationSchemaReady(env.AUTH_DB)))return json({code:'REGISTRATION_PREPARING',error:'O cadastro está sendo atualizado. Tente novamente em instantes.'},503,origin);
+    return json({version:2,birthDateRequired:true,genderRequired:true},200,origin);
+  }
   if (url.pathname === '/api/auth/register' && request.method === 'POST') return registerCitizen(request, env, origin);
   if (url.pathname === '/api/auth/change-password' && request.method === 'POST') return changePassword(request, env, origin);
   if (url.pathname === '/api/auth/registration-details') return registrationDetails(request,env,origin);

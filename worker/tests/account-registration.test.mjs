@@ -12,6 +12,7 @@ const {default:worker}=await import('../index.js');hook.deregister();
 import {GroupTestD1} from './helpers/chat-group-fixture.mjs';
 import {ensureAuthSchema,handlePortalRoute} from '../auth-management-v2.js';
 import {prepareRegistrationFixture,syntheticRegistrationDetails} from './helpers/private-registration-fixture.mjs';
+import {privateRegistrationStatement} from '../account-private-registration.js';
 import {createPetRouter} from '../pets.js';
 import {declarePrivatePetAge} from '../private-pet-age-store.js';
 import {persistPetCommand,readPetAccount} from '../pet-store.js';
@@ -102,8 +103,9 @@ test('migration snapshots only existing missing-date accounts; client flags cann
  assert.equal((await router(request('/api/pets/age',{birthDate:'1990-01-01'}),petEnv)).status,409);
  // After the snapshot, even a later managed account without date is not legacy.
  db.prepare("INSERT INTO auth_users(username,name,role,password_hash,password_salt) VALUES('later.managed','Synthetic','cidadao','h','s')").run();
+ await privateRegistrationStatement(env.AUTH_DB,'later.managed',null).run();
  migration(db,'account-private-registration.sql');
- assert.equal(db.prepare("SELECT * FROM account_private_registration WHERE auth_username='later.managed'").get(),undefined);
+ assert.equal(db.prepare("SELECT legacy_birth_date_allowed FROM account_private_registration WHERE auth_username='later.managed'").get().legacy_birth_date_allowed,0);
  await assert.rejects(declarePrivatePetAge(env.AUTH_DB,{username:'later.managed',sessionVersion:1},'1990-01-01'),{code:'BIRTH_DATE_REGISTRATION_REQUIRED'});
 });
 

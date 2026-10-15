@@ -17,6 +17,7 @@ const RESERVED_CITIZEN_PREFIXES = [
   'saude.', 'secretaria.', 'sistema.', 'suporte.', 'oficial.', 'telemedicina.'
 ];
 const EMAIL_GATE_EXEMPT_PATHS = new Set([
+  '/api/auth/registration-capabilities',
   '/api/auth/login',
   '/api/auth/me',
   '/api/auth/logout',

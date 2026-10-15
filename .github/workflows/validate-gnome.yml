@@ -6,6 +6,16 @@ on:
       - '_config.yml'
       - '_redirects'
       - 'worker/private-pet-age*'
+      - 'worker/account-private-registration.js'
+      - 'worker/migrations/account-private-registration.sql'
+      - 'worker/tests/*registration*.mjs'
+      - 'worker/tests/helpers/private-registration-fixture.mjs'
+      - 'testing/account-registration/**'
+      - 'js/private-birth-date-input.js'
+      - 'js/security.js'
+      - 'seguranca/index.html'
+      - 'css/*registration*.css'
+      - 'css/signup-private-data.css'
       - 'worker/migrations/pets-private-age.sql'
       - 'worker/pet*.js'
       - 'worker/auth-management-v2.js'
@@ -69,7 +79,7 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_ENV,`CHROMIUM_PATH=${executable}\nPETS_BROWSER_EXECUTABLE=${executable}\n`);
           JS
       - name: Private age, registration, static exclusions and phrase cycles
-        run: node --test worker/tests/private-pet-age.test.mjs worker/tests/gnome-age-integration.test.mjs worker/tests/gnome-speech.test.mjs worker/tests/gnome-static-content.test.mjs worker/tests/pets.test.mjs
+        run: node --test worker/tests/account-registration.test.mjs worker/tests/managed-registration-details.test.mjs worker/tests/registration-rollout.test.mjs worker/tests/private-pet-age.test.mjs worker/tests/gnome-age-integration.test.mjs worker/tests/gnome-speech.test.mjs worker/tests/gnome-static-content.test.mjs worker/tests/pets.test.mjs
       - name: Isolated atlas, complete body, movement and fall phase
         run: |
           node --test testing/pets/gnome-motion.test.mjs

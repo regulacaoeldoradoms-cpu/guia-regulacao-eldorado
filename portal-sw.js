@@ -1,7 +1,7 @@
 'use strict';
 
 // Renova a integração de mascotes e evita reutilizar assets da versão anterior.
-const CACHE_VERSION = '20261015-account-private-2';
+const CACHE_VERSION = '20261009-pets-combined-8';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 // Version this policy without replacing caches belonging to other modules.
@@ -736,8 +736,17 @@ async function handlePage(event) {
 // Migrate only the legacy profile stylesheet, including requests from cached
 // HTML. Other assets, future versions and private caches keep their keys.
 async function fetchDefaultAvatarStyle(request, cache) {
+  return fetchVersionedReplacement(request,cache,'20261014-avatar-1');
+}
+
+// Only known previous URLs of the changed account controllers are upgraded.
+// Preserve global namespaces, other modules, unknown future versions and offline fallbacks.
+const PRIVATE_ACCOUNT_RELEASE = '20261015-account-private-3';
+const PRIVATE_ACCOUNT_ASSETS = new Set(['/js/auth-client.js','/js/signup.js','/js/pets-page.js','/js/security.js','/js/citizen-mobile-shell.js','/js/private-birth-date-input.js']);
+const PRIVATE_ACCOUNT_OLD_VERSIONS = new Set(['','20261001-v34-8','20261010-mobile-shell-1','20261012-gnome-age-1','20261015-citizen-tutorial-1','20261012-pet-depth-speech-1','20261010-citizen-prewarm-1','20261015-account-private-1','20261015-account-private-2']);
+async function fetchVersionedReplacement(request, cache, version) {
   const url = new URL(request.url);
-  url.searchParams.set('v', '20261014-avatar-1');
+  url.searchParams.set('v', version);
   const current = new Request(url.toString(), request);
   const cached = await cache.match(current);
   if (cached) return cached;
@@ -764,6 +773,7 @@ async function fetchAsset(request, event) {
       && (!assetUrl.searchParams.has('v') || assetUrl.searchParams.get('v') === '20260814-1')) {
     return fetchDefaultAvatarStyle(request, cache);
   }
+  if(assetUrl.origin===self.location.origin && PRIVATE_ACCOUNT_ASSETS.has(assetUrl.pathname) && PRIVATE_ACCOUNT_OLD_VERSIONS.has(assetUrl.searchParams.get('v')||''))return fetchVersionedReplacement(request,cache,PRIVATE_ACCOUNT_RELEASE);
   const cached = await cache.match(request);
   const versioned = new URL(request.url).searchParams.has('v');
   const id = `asset:${request.url}`;

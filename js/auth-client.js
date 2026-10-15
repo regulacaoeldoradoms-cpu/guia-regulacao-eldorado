@@ -171,6 +171,14 @@
   }
 
   async function registerCitizen(username, password, birthDate, gender) {
+    let capabilities;
+    try { capabilities = await api('/api/auth/registration-capabilities', {method:'GET'}); }
+    catch (error) {
+      if (error.status !== 404 && error.status !== 503) throw error;
+      throw new Error('O cadastro está sendo atualizado. Seus dados não foram enviados. Tente novamente em instantes.');
+    }
+    if (capabilities?.version !== 2 || capabilities.birthDateRequired !== true || capabilities.genderRequired !== true)
+      throw new Error('O cadastro está sendo atualizado. Seus dados não foram enviados. Tente novamente em instantes.');
     const payload = await api('/api/auth/register', {
       method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || ''), birthDate, gender })
     });

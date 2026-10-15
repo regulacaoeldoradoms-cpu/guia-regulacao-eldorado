@@ -1,0 +1,67 @@
+name: Cadastro privado — servidor e renderização sintética
+on:
+  pull_request:
+    paths:
+      - 'worker/account-private-registration.js'
+      - 'worker/auth-management-v2.js'
+      - 'worker/portal-safety.js'
+      - 'worker/private-pet-age*'
+      - 'worker/migrations/account-private-registration.sql'
+      - 'worker/tests/*registration*.mjs'
+      - 'worker/tests/helpers/private-registration-fixture.mjs'
+      - 'cadastro/index.html'
+      - 'seguranca/index.html'
+      - 'js/auth-client.js'
+      - 'js/signup.js'
+      - 'js/security.js'
+      - 'js/private-birth-date-input.js'
+      - 'js/pets-page.js'
+      - 'js/citizen-mobile-shell.js'
+      - 'css/signup-private-data.css'
+      - 'css/private-registration.css'
+      - 'testing/account-registration/**'
+      - '.github/workflows/validate-private-registration.yml'
+permissions:
+  contents: read
+jobs:
+  private-account:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_PATH: /tmp/account-browser/node_modules/playwright/index.mjs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Server calendar, privacy, transactions and rollout
+        run: node --test worker/tests/account-registration.test.mjs worker/tests/managed-registration-details.test.mjs worker/tests/registration-rollout.test.mjs worker/tests/private-pet-age.test.mjs worker/tests/gnome-age-integration.test.mjs
+      - name: Install isolated browser dependencies
+        run: |
+          npm install --prefix /tmp/account-browser --no-package-lock --no-audit --no-fund playwright@1.55.0 @axe-core/playwright@4.10.2
+          /tmp/account-browser/node_modules/.bin/playwright install --with-deps chromium
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from '/tmp/account-browser/node_modules/playwright/index.mjs';
+          fs.appendFileSync(process.env.GITHUB_ENV,`CHROMIUM_PATH=${chromium.executablePath()}\n`);
+          JS
+      - name: Native registration and pet flows, mobile/desktop and both themes
+        run: node testing/account-registration/browser.mjs
+      - name: Own-user completion, first password and recovery guards
+        env:
+          ACCOUNT_MANAGED_ONLY: '1'
+          ACCOUNT_RECOVERY_CASES: '1'
+        run: node testing/account-registration/browser.mjs
+      - name: Text 200 percent, both themes
+        env:
+          ACCOUNT_TEXT_SCALE: '2'
+          ACCOUNT_WIDTHS: '320,1440'
+        run: |
+          node testing/account-registration/browser.mjs
+          ACCOUNT_MANAGED_ONLY=1 node testing/account-registration/browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: private-registration-synthetic-rendering
+          path: .local/account-registration/
+          if-no-files-found: warn

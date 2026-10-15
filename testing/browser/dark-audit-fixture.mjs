@@ -60,6 +60,7 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     if(request.method()==='GET'&&['/api/pets/me','/api/pets/catalog','/api/pets/achievements'].includes(url.pathname)) {
       return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'PETS_DISABLED',error:'Mascotes ainda não disponíveis.'})});
     }
+    if(url.pathname==='/api/auth/registration-capabilities'&&request.method()==='GET')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({version:2,birthDateRequired:true,genderRequired:true})});
     if (url.pathname === '/api/observability') return route.fulfill({status:204,body:''});
     if (url.pathname === '/api/auth/me' || url.pathname === '/api/auth/login') data = { user:authenticated ? user : null, token:'synthetic-audit-token-no-backend' };
     else if (url.pathname === '/api/auth/security') {
