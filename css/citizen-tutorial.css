@@ -21,6 +21,8 @@ dialog.citizen-tutorial::backdrop{background:rgb(7 25 43 / .75)}
 .citizen-tutorial .tutorial-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .citizen-tutorial .tutorial-controls button{min-height:44px;white-space:normal;max-width:100%}
 .citizen-tutorial .tutorial-controls button:disabled{opacity:1;color:var(--portal-theme-muted,#60798b);background:var(--portal-theme-surface,#fff)}
+.citizen-tutorial .tutorial-controls [data-tutorial-example]:not([hidden]):enabled{color:#422006!important;background:#fde68a!important;border-color:#92400e!important;animation:citizen-tutorial-example-pulse 3.6s ease-in-out infinite}
+@keyframes citizen-tutorial-example-pulse{0%,100%{box-shadow:0 0 0 0 rgb(250 204 21 / 0)}50%{box-shadow:0 0 0 4px rgb(250 204 21 / .45)}}
 .citizen-tutorial .tutorial-workspace{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;padding:12px;scroll-padding:12px}
 .citizen-tutorial .citizen-actions,.citizen-tutorial .citizen-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
 .citizen-tutorial #notificationsCard#notificationsCard,.citizen-tutorial #manifestationsCard#manifestationsCard{display:block!important}
