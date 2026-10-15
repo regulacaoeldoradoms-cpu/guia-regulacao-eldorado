@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   SAFE_DEPLOY,
@@ -56,6 +57,182 @@ function activeBindings() {
     { name: 'ALLOWED_ORIGINS', type: 'plain_text', text: 'https://example.test' }
   ];
 }
+
+// Execute the unchanged gate module with a local, fail-closed Wrangler double.
+// The fixture CLI cannot call Cloudflare, including its upload/deploy paths.
+async function deployFixture(t, { tutorial = 'enabled' } = {}) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-deploy-flow-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const script = path.join(root, 'scripts', 'deploy-safe.mjs');
+  const cli = path.join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+  fs.mkdirSync(path.dirname(script), { recursive: true });
+  fs.mkdirSync(path.dirname(cli), { recursive: true });
+  fs.copyFileSync(new URL('../scripts/deploy-safe.mjs', import.meta.url), script);
+  fs.writeFileSync(path.join(root, 'package.json'), '{"type":"module"}');
+  fs.writeFileSync(path.join(root, 'wrangler.toml'), [
+    `name = "${SAFE_DEPLOY.worker}"`, 'keep_vars = true',
+    '[[d1_databases]]', 'binding = "AUTH_DB"', 'database_name = "synthetic-only"'
+  ].join('\n'));
+  const original = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const candidate = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
+  const concurrent = 'cccccccc-dddd-eeee-ffff-aaaaaaaaaaaa';
+  const statePath = path.join(root, 'fixture-state.json');
+  const bindings = activeBindings();
+  if (tutorial) bindings.push({
+    name: 'PORTAL_TUTORIAL_COMPLETION_ENABLED', type: 'plain_text',
+    text: String(tutorial === 'enabled')
+  });
+  fs.writeFileSync(statePath, JSON.stringify({
+    original, candidate, concurrent, bindings, uploaded: false,
+    versions: [{ version_id: original, percentage: 100 }], events: []
+  }));
+  const read = () => JSON.parse(fs.readFileSync(statePath, 'utf8'));
+  const update = (change) => {
+    const state = read();
+    change(state);
+    fs.writeFileSync(statePath, JSON.stringify(state));
+  };
+  fs.writeFileSync(cli, `
+    import fs from 'node:fs';
+    const file = new URL('../../../fixture-state.json', import.meta.url);
+    const state = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const args = process.argv.slice(2);
+    state.events.push({ command: args.slice(0, 3) });
+    let result;
+    let failed = false;
+    if (args[0] === 'deployments' && args[1] === 'status') {
+      result = { versions: state.versions };
+      failed = !!state.failStatus;
+    } else if (args[0] === 'versions' && args[1] === 'view') {
+      if (![state.original, state.candidate, state.concurrent].includes(args[2])) failed = true;
+      result = { resources: { bindings: state.bindings } };
+    } else if (args[0] === 'versions' && args[1] === 'list') {
+      result = [{ id: state.original, metadata: { created_on: '2026-01-01T00:00:00Z' } }];
+      if (state.uploaded) result.push({
+        id: state.candidate, metadata: { created_on: '2026-01-02T00:00:00Z' }
+      });
+    } else if (args[0] === 'versions' && args[1] === 'upload') {
+      if (!args.includes('--dry-run')) state.uploaded = true;
+      result = {};
+    } else if (args[0] === 'versions' && args[1] === 'deploy') {
+      const id = args[2].replace('@100%', '');
+      if (![state.original, state.candidate].includes(id)) failed = true;
+      else state.versions = [{ version_id: id, percentage: 100 }];
+      result = {};
+    } else failed = true;
+    fs.writeFileSync(file, JSON.stringify(state));
+    if (failed) { console.error('synthetic fixture command rejected'); process.exit(1); }
+    console.log(JSON.stringify(result));
+  `);
+  const gate = await import(pathToFileURL(script).href);
+  const logs = [];
+  t.mock.method(console, 'log', (...args) => logs.push(args.join(' ')));
+  let tutorialProbes = 0;
+  let afterProbe = () => tutorialResponse();
+  const tutorialResponse = () => new Response(JSON.stringify({
+    code: tutorial === 'enabled' ? 'SESSION_REQUIRED' : 'TUTORIAL_DISABLED'
+  }), { status: tutorial === 'enabled' ? 401 : 503 });
+  const fetcher = async (url, options) => {
+    assert.ok(['GET', 'OPTIONS'].includes(options.method));
+    assert.equal(options.body, undefined);
+    assert.equal(new Headers(options.headers).has('authorization'), false);
+    update(state => state.events.push({ probe: url, method: options.method }));
+    if (url === SAFE_DEPLOY.portalTutorialApi) {
+      tutorialProbes += 1;
+      return tutorialProbes === 1 ? tutorialResponse() : afterProbe();
+    }
+    if (url === SAFE_DEPLOY.agendaApi) return new Response(null, { status: 401 });
+    if (url === SAFE_DEPLOY.adminUsersApi) return new Response(null, {
+      status: options.method === 'OPTIONS' ? 204 : 401,
+      headers: { 'Access-Control-Allow-Origin': SAFE_DEPLOY.portalOrigin }
+    });
+    if (url === SAFE_DEPLOY.chatRealtimeHealthApi) return Response.json({ ok: true });
+    assert.fail('Unexpected request: fixture never falls back to network');
+  };
+  return {
+    root, original, candidate, concurrent, read, update, logs,
+    run: () => gate.safeDeploy({ workerRoot: root, fetcher }),
+    afterProbe: (callback) => { afterProbe = callback; },
+    tutorialResponse
+  };
+}
+
+test('gate rejeita troca de versão durante a sondagem sem sobrescrever publicação concorrente', async (t) => {
+  const fixture = await deployFixture(t);
+  const entered = Promise.withResolvers();
+  const response = Promise.withResolvers();
+  fixture.afterProbe(() => { entered.resolve(); return response.promise; });
+  const pending = fixture.run();
+  await entered.promise;
+  fixture.update(state => {
+    state.versions = [{ version_id: fixture.concurrent, percentage: 100 }];
+  });
+  response.resolve(fixture.tutorialResponse());
+  await assert.rejects(pending, /VERSAO_FINAL_DIVERGENTE/);
+  assert.deepEqual(fixture.read().versions, [{ version_id: fixture.concurrent, percentage: 100 }]);
+  assert.deepEqual(fixture.read().events.filter(event => event.command?.[1] === 'deploy')
+    .map(event => event.command[2]), [fixture.candidate + '@100%']);
+  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=IGNORADO_VERSAO_CONCORRENTE'));
+  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+});
+
+for (const tutorial of ['enabled', 'disabled', null]) {
+  test(`gate confirma candidata após a última sondagem: tutorial ${tutorial ?? 'ausente'}`, async (t) => {
+    const fixture = await deployFixture(t, { tutorial });
+    const result = await fixture.run();
+    assert.equal(result.candidateVersion, fixture.candidate);
+    assert.ok(fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+    const events = fixture.read().events;
+    assert.deepEqual(events.at(-2).command, ['versions', 'view', fixture.candidate]);
+    assert.equal(events.at(-1).command?.[0], 'deployments');
+    assert.equal(events.filter(event => event.probe === SAFE_DEPLOY.portalTutorialApi).length, tutorial ? 2 : 0);
+    assert.ok(!fs.readdirSync(fixture.root).some(file => file.startsWith('.wrangler.safe-deploy-')));
+  });
+}
+
+for (const uncertain of ['split', 'unavailable']) {
+  test(`gate bloqueia deployment ${uncertain} após sondagem sem promover rollback às cegas`, async (t) => {
+    const fixture = await deployFixture(t);
+    fixture.afterProbe(() => {
+      fixture.update(state => {
+        if (uncertain === 'split') state.versions = [
+          { version_id: fixture.candidate, percentage: 50 },
+          { version_id: fixture.concurrent, percentage: 50 }
+        ];
+        else state.failStatus = true;
+      });
+      return fixture.tutorialResponse();
+    });
+    await assert.rejects(fixture.run(), uncertain === 'split'
+      ? /PRODUCAO_NAO_E_VERSAO_UNICA_EM_100/ : /FALHA_AO_LER_DEPLOYMENT/);
+    assert.equal(fixture.read().events.filter(event => event.command?.[1] === 'deploy').length, 1);
+    assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=FALHOU'));
+    assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+  });
+}
+
+test('estado do tutorial divergente restaura versão anterior quando a candidata ainda está ativa', async (t) => {
+  const fixture = await deployFixture(t);
+  fixture.afterProbe(() => Response.json({ code: 'TUTORIAL_DISABLED' }, { status: 503 }));
+  await assert.rejects(fixture.run(), /PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY/);
+  assert.deepEqual(fixture.read().versions, [{ version_id: fixture.original, percentage: 100 }]);
+  assert.deepEqual(fixture.read().events.filter(event => event.command?.[1] === 'deploy')
+    .map(event => event.command[2]), [fixture.candidate + '@100%', fixture.original + '@100%']);
+  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=OK'));
+  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+});
+
+test('rollback já realizado durante a sondagem não é promovido novamente', async (t) => {
+  const fixture = await deployFixture(t);
+  fixture.afterProbe(() => {
+    fixture.update(state => { state.versions = [{ version_id: fixture.original, percentage: 100 }]; });
+    return fixture.tutorialResponse();
+  });
+  await assert.rejects(fixture.run(), /VERSAO_FINAL_DIVERGENTE/);
+  assert.equal(fixture.read().events.filter(event => event.command?.[1] === 'deploy').length, 1);
+  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=OK'));
+  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+});
 
 test('aceita somente deployment produtivo único em 100%', () => {
   const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';

@@ -837,10 +837,6 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     safeLine('chatRealtimeHealthHttp', chatRealtime.status);
 
     console.log('9/9 Reconfirmando versão e bindings em produção...');
-    const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
-    must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
-    validateCandidateBindings(activeView, versionView(finalVersion, readConfig, tempRoot));
-
     if (tutorialBefore) {
       const tutorialAfter = await probePortalTutorial(fetcher);
       must(tutorialAfter.known && tutorialAfter.state === tutorialBefore.state,
@@ -849,6 +845,12 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
       safeLine('portalTutorialHttpAnonimo', tutorialAfter.status);
       console.log('portalTutorialFlagPreservada=OK');
     }
+
+    // All asynchronous probes must finish before the final deployment check.
+    // A concurrent rollout may preserve the tutorial state while replacing us.
+    validateCandidateBindings(activeView, versionView(candidateVersion, readConfig, tempRoot));
+    const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+    must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
 
     completed = true;
     console.log('');
@@ -867,16 +869,25 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     if (promotionStarted && !completed && UUID.test(originalVersion)) {
       try {
         console.log('');
-        console.log('Falha após iniciar promoção. Restaurando a versão produtiva anterior...');
-        promoteVersion(
-          originalVersion,
-          readConfig,
-          tempRoot,
-          'Portal: rollback automático do gate de deploy seguro'
-        );
-        const restored = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
-        must(restored === originalVersion, 'ROLLBACK_NAO_RESTAURADO');
-        console.log('ROLLBACK_DE_SEGURANCA=OK');
+        const rollbackVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+        if (rollbackVersion === originalVersion) {
+          console.log('ROLLBACK_DE_SEGURANCA=OK');
+        } else if (!candidateVersion || rollbackVersion !== candidateVersion) {
+          // Do not undo another publisher's version when our probe detected it.
+          console.log('ROLLBACK_DE_SEGURANCA=IGNORADO_VERSAO_CONCORRENTE');
+          console.log('ACAO_URGENTE=interromper novos deploys e conferir o Worker manualmente');
+        } else {
+          console.log('Falha após iniciar promoção. Restaurando a versão produtiva anterior...');
+          promoteVersion(
+            originalVersion,
+            readConfig,
+            tempRoot,
+            'Portal: rollback automático do gate de deploy seguro'
+          );
+          const restored = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+          must(restored === originalVersion, 'ROLLBACK_NAO_RESTAURADO');
+          console.log('ROLLBACK_DE_SEGURANCA=OK');
+        }
       } catch {
         console.log('ROLLBACK_DE_SEGURANCA=FALHOU');
         console.log('ACAO_URGENTE=interromper novos deploys e conferir o Worker manualmente');

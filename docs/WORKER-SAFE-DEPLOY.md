@@ -1,6 +1,6 @@
 # Gate de Deploy Seguro do Worker
 
-Atualizado em 18/09/2026.
+Atualizado em 15/10/2026.
 
 ## Objetivo
 
@@ -30,14 +30,22 @@ O fluxo aprovado é:
 14. promover somente a versão candidata validada para 100%;
 15. consultar anonimamente `/api/agenda`;
 16. considerar 401/403 saudável, porque significa que a requisição alcançou a barreira de autenticação;
-17. considerar 503 falha de Firebase/armazenamento e restaurar automaticamente a versão produtiva anterior;
-18. reconfirmar versão e bindings depois da promoção.
+17. considerar 503 falha de Firebase/armazenamento e restaurar a versão produtiva anterior quando a candidata ainda está única em 100%;
+18. concluir todas as sondagens, inclusive a do tutorial quando houver flag, e então reconfirmar versão e bindings antes de declarar sucesso.
 
 ## Bindings críticos fixos
 
 ### Preservação do tutorial já ativado — 14/10/2026
 
 `PORTAL_TUTORIAL_COMPLETION_ENABLED` continua gerenciado remotamente, com `keep_vars=true`, sem declará-lo/reconfigurá-lo no TOML e sem reaplicar SQL. Quando existe na produção, um binding público deve manter exatamente tipo/valor na candidata; um secret permanece opaco e é protegido pela lista dinâmica de nomes/tipos. Um GET anônimo na rota do tutorial confirma seu estado antes do upload e depois da promoção: `401/SESSION_REQUIRED` comprova habilitado e autenticação fechada; `503/TUTORIAL_DISABLED` identifica desabilitado. Nenhuma sessão, manifestação, anexo ou conclusão real é usada. Estado desconhecido bloqueia o gate; mudança após promoção aciona o rollback existente. Os recibos `portalTutorialAntes`, `portalTutorialDepois`, `portalTutorialHttpAnonimo` e `portalTutorialFlagPreservada=OK` registram comportamento público, sem revelar valores secretos. Um binding ausente continua opcional, preservando builds anteriores à ativação.
+
+### Publicação concorrente durante a sondagem — 15/10/2026
+
+A confirmação final da candidata ocorre depois do último `await`. Outra publicação pode manter o mesmo estado público do tutorial e assumir o tráfego durante a sondagem; nesse caso o gate interrompe com `VERSAO_FINAL_DIVERGENTE`, sem emitir `DEPLOY_SEGURO_CONCLUIDO`. Tráfego dividido ou leitura indisponível também bloqueiam a conclusão.
+
+Antes do rollback, o gate consulta novamente a versão ativa. Só restaura automaticamente quando a sua própria candidata ainda está única em 100%; se a original já está ativa, apenas confirma a restauração. Outra versão gera `ROLLBACK_DE_SEGURANCA=IGNORADO_VERSAO_CONCORRENTE` e orientação de revisão manual. Leitura indisponível, tráfego dividido ou candidata ainda desconhecida impedem rollback às cegas. A falha original continua sendo propagada.
+
+O teste executa uma cópia exata do módulo do gate com CLI Wrangler e respostas HTTP sintéticos locais, sem fallback de rede. Uma Promise controlada troca a versão durante a sondagem e comprova rejeição, ausência de recibo de sucesso e preservação da publicação concorrente. Também cobre tutorial habilitado/desabilitado/ausente, leitura indisponível, tráfego dividido, rollback legítimo e restauração já feita. Os **40 testes específicos** passaram. A consulta seguida de promoção não constitui operação atômica nem trava publicações externas; a coordenação de releases continua necessária.
 
 O gate exige atualmente:
 
