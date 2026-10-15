@@ -1,6 +1,6 @@
 # Contatos duráveis da Agenda — candidata local
 
-Atualizado em 15/10/2026. Base `d6e4c3497d22b219d2c891afff1ba2d33146d763` (merge #657), branch `fix/agenda-durable-patient-contacts`, worktree `/workspace/agenda-durable-contacts`. Revisão sobre `2314cf19`; a primeira candidata local era `c95c620e`. Somente código/testes locais; sem push, PR, publicação ou migração de produção. Checkout original e tutorial/PR658 preservados.
+Atualizado em 15/10/2026. Base `d6e4c3497d22b219d2c891afff1ba2d33146d763` (merge #657), branch `fix/agenda-durable-patient-contacts`, worktree `/workspace/agenda-durable-contacts`. Revisão sobre `2314cf19`; a primeira candidata local era `c95c620e`. PR rascunho, integração e publicação da persistência por consulta autorizados em 15/10/2026; sem migração de dados. A confirmação de publicação depende dos recibos do pipeline e é registrada na PR. Checkout original e tutorial/PR658 preservados.
 
 ## Diagnóstico e revisão
 
@@ -44,4 +44,10 @@ node --test --test-timeout=10000 \
 
 Sintaxe/importação do Worker, diff e referências documentais aprovados. Demais evidências anteriores foram reaproveitadas somente nos caminhos não alterados; sem repetição de suítes gerais, gateway, recuperação Firebase, capacidade, recorrência/navegação ou tutorial inalterados. [Detalhes da identidade e formato mínimo de evidência sanitizada](AGENDA-DIGSAUDE-IDENTIDADE-EVIDENCIAS.md).
 
-Próxima ação: revisar a candidata local; obter apenas o contrato estrutural do ID se for habilitar reuso entre consultas. Sem push, PR, merge, publicação ou migração autorizados nesta tarefa. `AGENTS.md` e o checkpoint foram lidos; o checkpoint bancário não foi alterado.
+Próxima ação: concluir PR/checks/integração e acompanhar a publicação autorizada somente da persistência por consulta; reuso entre consultas segue desativado e exigirá evidência/autorização próprias. Migração de dados reais não está autorizada. `AGENTS.md` e o checkpoint foram lidos; o checkpoint bancário não foi alterado.
+
+## Preparação da entrega autorizada
+
+A `main` atual `eab5fb3b` (PR658) foi incorporada sem conflitos; tutorial, caches do Cidadão e gate de deploy ficaram idênticos à `main`. O Worker agora fixa `PATIENT_DIRECTORY_ENABLED = false`: API não lê/escreve o diretório por paciente nem reutiliza contato em outra consulta, mesmo por payload ou variável de implantação. O adaptador hipotético também continua desativado. Os testes do caminho futuro usam uma variante sintética explicitamente habilitada; os casos de entrega por consulta e de bloqueio usam o módulo com a constante real falsa. Isso não é habilitação/homologação de reuso por paciente.
+
+Passaram localmente `npm run check`, **1001 testes Worker**, **157 testes do gate Agenda** e sintaxe/diff no código de consolidação. Checks remotos e publicação ainda precisam corresponder ao head final da PR. Não houve mudança de binding, credencial, permissão, gate ou dados reais. Acesso CLI à API GitHub foi recusado pelo túnel do ambiente; a integração GitHub autorizada foi validada e é usada para metadados/PR/checks.

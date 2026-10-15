@@ -54,14 +54,16 @@ function storage(serialized) {
   return state;
 }
 
-function backend(db = storage()) {
+function backend(db = storage(), preparedDirectory = true) {
   const context = { Date, TextEncoder, crypto: globalThis.crypto, Request, Response, URL,
     firebaseConfigured: () => true,
     validatePortalSession: async () => context.user,
     telemedicineAccessFor: async () => false,
     firestoreList: db.list, firestoreGet: db.get, firestoreBatchGet: db.batchGet, firestoreCommit: db.commit,
     user: { username: 'synthetic-operator', role: 'admin' } };
-  vm.runInNewContext(source + '\nglobalThis.api={handleAgendaRoute,syncRecords,contactCollection,agendaCollection,normalizeRecord};', context);
+  // Prepared directory regressions use a synthetic enabled build. Release cases keep the exact false constant.
+  const build = preparedDirectory ? source.replace('const PATIENT_DIRECTORY_ENABLED = false;', 'const PATIENT_DIRECTORY_ENABLED = true;') : source;
+  vm.runInNewContext(build + '\nglobalThis.api={handleAgendaRoute,syncRecords,contactCollection,agendaCollection,normalizeRecord};', context);
   return { ...context.api, context, db,
     async request(path, body, env = ORG, originAllowed = true) {
       const response = await context.api.handleAgendaRoute(new Request('https://portal.test/api/agenda' + path,
@@ -313,13 +315,13 @@ test('legado v2 continua disponível no vínculo original após recarga e snapsh
 });
 
 test('consulta confirmada não expira após 24h, outra sessão e saída/retorno; consulta desconhecida continua ausente', async () => {
-  const w = backend();
+  const w = backend(storage(), false);
   const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
   await w.sync([legacy]);
   const stored = [...w.db.documents.values()][0];
   stored.contactVerifiedAt = '2020-01-01T00:00:00.000Z';
   const revision = stored.contactRevision;
-  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))));
+  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))), false);
   reloaded.context.user = { username: 'synthetic-new-session', role: 'admin' };
   assert.equal((await reloaded.list())[0].phone, legacy.phone);
   assert.deepEqual((await reloaded.lookup([legacy])).body.knownSourceIds, [legacy.sourceId]);
@@ -339,7 +341,7 @@ test('consulta confirmada não expira após 24h, outra sessão e saída/retorno;
 });
 
 test('correção/exclusão por consulta são explícitas, versionadas e resistem a replay, recarga e snapshot vazio', async () => {
-  const w = backend();
+  const w = backend(storage(), false);
   const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
   await w.sync([legacy]);
   const oldStored = [...w.db.documents.values()][0];
@@ -365,7 +367,7 @@ test('correção/exclusão por consulta são explícitas, versionadas e resistem
   await w.sync([{ ...legacy, patientSourceId: 'synthetic-proposed-patient', contactPatientSourceId: 'synthetic-proposed-patient' }]);
   await w.sync([], ORG, true);
   await w.sync([legacy]);
-  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))));
+  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))), false);
   assert.equal((await reloaded.list())[0].phone, '');
   assert.equal((await reloaded.list())[0].contactBlocked, true);
   assert.equal([...reloaded.db.documents.values()][0].contactProvenance, 'authorized-correction');
@@ -383,7 +385,7 @@ test('correção/exclusão por consulta são explícitas, versionadas e resistem
 
 test('correção ou exclusão concorrente vence snapshot obsoleto da consulta', async () => {
   for (const action of ['correct', 'delete']) {
-    const w = backend();
+    const w = backend(storage(), false);
     const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
     await w.sync([legacy]);
     const revision = (await w.list())[0].contactRevision;
@@ -401,13 +403,30 @@ test('correção ou exclusão concorrente vence snapshot obsoleto da consulta', 
 });
 
 test('duas correções da consulta com mesma revisão têm somente um vencedor', async () => {
-  const w = backend();
+  const w = backend(storage(), false);
   const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
   await w.sync([legacy]);
   const expectedRevision = (await w.list())[0].contactRevision;
   const results = await Promise.all(['5521990000002', '5531990000003'].map(phone => w.request('/contact', {
     sourceId: legacy.sourceId, action: 'correct', phone, expectedRevision })));
   assert.deepEqual(results.map(result => result.status).sort(), [200, 409]);
+});
+
+test('build publicado bloqueia reuso por paciente na API mesmo com payload/configuração propondo ativação', async () => {
+  assert.match(source, /const PATIENT_DIRECTORY_ENABLED = false;/);
+  const prepared = backend();
+  await prepared.sync([row()]);
+  const w = backend(prepared.db, false);
+  const changes = w.db.history.length;
+  w.db.reads.length = 0;
+  assert.equal((await w.list())[0].phone, '');
+  const next = row({ sourceId: 'synthetic-new-patient-appointment' });
+  assert.deepEqual((await w.lookup([next])).body.knownSourceIds, []);
+  assert.equal((await w.sync([next], { ...ORG, PATIENT_DIRECTORY_ENABLED: true })).status, 409);
+  assert.equal((await w.request('/contact', { patientSourceId: row().patientSourceId,
+    action: 'correct', expectedRevision: 'synthetic', phone: row().phone })).status, 409);
+  assert.ok(w.db.reads.every(path => !path.includes('/contacts/')));
+  assert.equal(w.db.history.length, changes);
 });
 
 test('ID ausente/inválido ou vínculo de coleta divergente não cria diretório e conflito não escolhe telefone arbitrário', async () => {

@@ -12,6 +12,8 @@ import { telemedicineAccessFor, ensureTelemedicineUnderlyingRole } from './telem
 
 const CONTACT_VERSION = 'patient-details-v2';
 const CONTACT_DIRECTORY_VERSION = 'patient-directory-v1';
+// This release is consultation-only. No payload or deployment variable can enable patient reuse.
+const PATIENT_DIRECTORY_ENABLED = false;
 const PORTAL_ORGANIZATION = 'eldorado-ms';
 
 const COLLECTION = 'telemedicine_digsaude_agenda';
@@ -226,6 +228,7 @@ async function listAll(env) {
 }
 
 async function directory(env, appointments) {
+  if (!PATIENT_DIRECTORY_ENABLED) throw Object.assign(new Error('Reuso entre consultas desativado.'), { status: 409 });
   const ids = [...new Set(appointments.map(item => patientSourceId(item.patientSourceId)).filter(Boolean))];
   const collection = await contactCollection(env);
   const records = [];
@@ -245,6 +248,7 @@ async function directory(env, appointments) {
 function directoryRecord(record, contacts) {
   if (record.contactBlocked) return { ...record, phone: '', contactVersion: '' };
   const id = patientSourceId(record.patientSourceId);
+  if (id && !PATIENT_DIRECTORY_ENABLED) return { ...record, phone: '', contactVersion: '', contactIdentityRequired: true };
   // Preserve the original consultation proof. This does not link patients by name or seed the directory.
   if (!id) return record.contactIdentityRequired
     ? { ...record, phone: '', contactVersion: '' } : record;
@@ -293,6 +297,7 @@ async function collectMissingContacts(env, records) {
 
 async function updateContact(env, payload) {
   if (payload?.sourceId !== undefined) return updateConsultationContact(env, payload);
+  if (!PATIENT_DIRECTORY_ENABLED) throw Object.assign(new Error('Reuso entre consultas desativado.'), { status: 409 });
   const id = patientSourceId(payload?.patientSourceId);
   const action = payload?.action;
   const phone = normalizeBrazilPhone(payload?.phone);
@@ -615,6 +620,7 @@ async function syncRecords(env, input, user, attempt = 0) {
 
   // No durable phone is copied into mutable appointment snapshots.
   if (normalized.some(record => record.patientSourceId)) {
+    if (!PATIENT_DIRECTORY_ENABLED) throw Object.assign(new Error('Reuso entre consultas desativado.'), { status: 409 });
     await collectMissingContacts(env, normalized);
     for (const write of writes) {
       if (write.data.patientSourceId) {
@@ -729,6 +735,7 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
         records = payload.records.map(item => {
           const normalized = normalizeRecord({ sourceId: item?.sourceId, patientSourceId: item?.patientSourceId,
             patient: item?.patient, requestedAt: item?.requestedAt });
+          if (!PATIENT_DIRECTORY_ENABLED) normalized.patientSourceId = '';
           const existing = bySource.get(normalized.sourceId);
           if (existing?.contactBlocked) return { ...existing, active: true };
           const same = existing && normalized.patient === existing.patient
@@ -738,7 +745,7 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
           return same ? { ...existing, active: true } : { ...normalized, active: true };
         });
       }
-      const contacts = records.some(record => record.patientSourceId) ? await directory(env, records) : new Map();
+      const contacts = PATIENT_DIRECTORY_ENABLED && records.some(record => record.patientSourceId) ? await directory(env, records) : new Map();
       return json(contactState(records.map(record => directoryRecord(record, contacts))), 200, origin, originAllowed);
     } catch (_) {
       return json({ error: 'Não foi possível consultar contatos.' }, 503, origin, originAllowed);
@@ -757,7 +764,7 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
   if (url.pathname === '/api/agenda' && request.method === 'GET') {
     try {
       const sourceRecords = await listAll(env);
-      const contacts = sourceRecords.some(record => record.patientSourceId) ? await directory(env, sourceRecords) : new Map();
+      const contacts = PATIENT_DIRECTORY_ENABLED && sourceRecords.some(record => record.patientSourceId) ? await directory(env, sourceRecords) : new Map();
       const { collectionPath, memory } = await listReadMemory(env, user.username);
       await migrateEmbeddedReadMemory(env, user.username, sourceRecords, collectionPath, memory);
 

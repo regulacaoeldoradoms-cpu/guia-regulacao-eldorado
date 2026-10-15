@@ -1,6 +1,6 @@
 # Identidade DigSaúde — evidência local e compatibilidade
 
-Revisão local de 15/10/2026 sobre `2314cf19` (primeira candidata `c95c620e`); branch `fix/agenda-durable-patient-contacts`. Sem dados reais, rede clínica, push, PR, publicação ou migração. O checkout original permanece em `d6e4c349` e a frente do tutorial não foi alterada.
+Revisão local de 15/10/2026 sobre `2314cf19` (primeira candidata `c95c620e`); branch `fix/agenda-durable-patient-contacts`. Investigação sem dados reais ou rede clínica. A publicação posterior foi autorizada somente para persistência por consulta; migração e reuso entre consultas continuam fora do escopo. O checkout original permanece em `d6e4c349` e a frente do tutorial não foi alterada.
 
 ## O que o repositório comprova
 
@@ -45,3 +45,5 @@ Confirmar também o escopo/unicidade desse campo e sua estabilidade após recarg
 82 testes dos três arquivos afetados passaram: Agenda, contrato e 21 de durabilidade. Os quatro novos cenários comprovam prova com mais de 24h e anos de idade, nova sessão, consulta removida/reaparecida, desconhecido ainda ausente, correção/exclusão explícitas sem backfill, replay concorrente e duas correções com uma revisão. A ponte real ignora o contato por consulta com prova antiga e ainda coleta o desconhecido; data/procedência originais permanecem. Datas futuras/inválidas e associação divergente continuam recusadas.
 
 Os demais resultados anteriores foram reaproveitados somente nos caminhos inalterados; não se repetiram suítes gerais, recuperação Firebase, gateway, capacidade, recorrência/navegação ou tutorial. A fonte de ID do paciente continua não comprovada e o adaptador hipotético continua desativado. O único limite residual desta frente é o reuso **entre consultas diferentes**, cujo formato mínimo de evidência sanitizada está descrito acima.
+
+A entrega autorizada também fixa `PATIENT_DIRECTORY_ENABLED = false` no Worker, bloqueando a API do diretório por paciente. A variante habilitada existe somente nos testes sintéticos do caminho preparado. Nenhum cliente, payload ou variável de implantação ativa esse recurso.

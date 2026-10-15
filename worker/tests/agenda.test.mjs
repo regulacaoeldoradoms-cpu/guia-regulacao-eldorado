@@ -301,7 +301,8 @@ function backendContactTools(existing = []) {
       }
     }
   };
-  const source = read('worker/agenda.js').replace(/import[\s\S]*?from\s+'[^']+';/g, '').replace(/export /g, '');
+  const source = read('worker/agenda.js').replace(/import[\s\S]*?from\s+'[^']+';/g, '').replace(/export /g, '')
+    .replace('const PATIENT_DIRECTORY_ENABLED = false;', 'const PATIENT_DIRECTORY_ENABLED = true;'); // prepared directory fixture only
   vm.runInNewContext(source + '\nglobalThis.tools = { normalizeBrazilPhone, normalizeRecord, publicRecord, contactState, syncRecords, contactForSync, directoryRecord };', context);
   return { ...context.tools, writes, contacts };
 }
