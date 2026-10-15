@@ -2,7 +2,8 @@
 
 (async () => {
   const DIGSAUDE_ORIGIN = 'https://teleatendimento.saude.ms.gov.br';
-  const CONTACT_CAPABILITY = 'patient-details-v2';
+  const CONTACT_CAPABILITY = 'patient-directory-v1';
+  const CONTACT_DIRECTORY_CAPABILITY = 'patient-directory-v1';
   const auth = window.RegulationAuth;
   const status = document.getElementById('syncBridgeStatus');
   const agendaLink = document.getElementById('syncBridgeAgendaLink');
@@ -23,12 +24,16 @@
     } catch (_) {}
   }
 
-  async function loadContactState() {
+  async function loadContactState(records) {
     try {
-      const state = await auth.api('/api/agenda/contact-state', { method: 'GET' });
+      const state = await auth.api('/api/agenda/contact-state', records
+        ? { method: 'POST', body: JSON.stringify({ records }) } : { method: 'GET' });
       const contactCapability = state?.contactCapability === CONTACT_CAPABILITY ? CONTACT_CAPABILITY : '';
       return {
         contactCapability,
+        contactDirectoryCapability: state?.contactDirectoryCapability === CONTACT_DIRECTORY_CAPABILITY
+          ? CONTACT_DIRECTORY_CAPABILITY : '',
+        blockedSourceIds: Array.isArray(state?.blockedSourceIds) ? state.blockedSourceIds : [],
         active: Number(state?.active || 0),
         known: Number(state?.known || 0),
         missing: Number(state?.missing || 0),
@@ -44,6 +49,14 @@
   window.addEventListener('message', async (event) => {
     if (event.origin !== DIGSAUDE_ORIGIN) return;
     if (event.source !== window.opener) return;
+    if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_CONTACT_LOOKUP') {
+      const requestId = String(event.data?.requestId || '');
+      const records = event.data?.records;
+      if (!requestId || !Array.isArray(records) || records.length > 250) return;
+      const result = await loadContactState(records);
+      reply({ type: 'PORTAL_AGENDA_DIGSAUDE_CONTACT_STATE', requestId, ...result });
+      return;
+    }
     if (event.data?.type !== 'PORTAL_AGENDA_DIGSAUDE_SYNC') return;
 
     const syncId = String(event.data?.syncId || '').trim();
@@ -107,7 +120,9 @@
         complete: result.complete === true,
         contactsAvailable: contactState.known,
         contactsMissing: contactState.missing,
-        knownSourceIds: contactState.knownSourceIds
+        knownSourceIds: contactState.knownSourceIds,
+        blockedSourceIds: contactState.blockedSourceIds,
+        contactDirectoryCapability: contactState.contactDirectoryCapability
       };
 
       lastSyncId = syncId;
@@ -143,6 +158,8 @@
     type: 'PORTAL_AGENDA_DIGSAUDE_READY',
     contactsAvailable: initialContactState.known,
     contactsMissing: initialContactState.missing,
-    knownSourceIds: initialContactState.knownSourceIds
+    knownSourceIds: initialContactState.knownSourceIds,
+    blockedSourceIds: initialContactState.blockedSourceIds,
+    contactDirectoryCapability: initialContactState.contactDirectoryCapability
   });
 })();

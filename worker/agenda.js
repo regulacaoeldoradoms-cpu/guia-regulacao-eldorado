@@ -3,6 +3,7 @@
 import { validatePortalSession } from './auth-management-v2.js';
 import {
   firebaseConfigured,
+  firestoreBatchGet,
   firestoreCommit,
   firestoreGet,
   firestoreList
@@ -11,6 +12,8 @@ import { telemedicineAccessFor, ensureTelemedicineUnderlyingRole } from './telem
 
 const CONTACT_VERSION = 'patient-details-v2';
 const CONTACT_TTL_MS = 24 * 60 * 60 * 1000;
+const CONTACT_DIRECTORY_VERSION = 'patient-directory-v1';
+const PORTAL_ORGANIZATION = 'eldorado-ms';
 
 const COLLECTION = 'telemedicine_digsaude_agenda';
 const READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state';
@@ -45,6 +48,35 @@ function cleanSourceId(value) {
   return /^[A-Za-z0-9_-]{1,80}$/.test(sourceId) ? sourceId : '';
 }
 
+function patientSourceId(value) {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value) ? value : '';
+}
+
+function organizationId(env) {
+  // Deployment-owned scope; neither payload nor query string can select another organization.
+  const value = env.AGENDA_ORGANIZATION_ID ?? PORTAL_ORGANIZATION;
+  if (typeof value !== 'string' || !/^[a-z0-9_-]{1,80}$/.test(value)) {
+    throw Object.assign(new Error('Organização da Agenda indisponível.'), { status: 503 });
+  }
+  return value;
+}
+
+async function agendaCollection(env) {
+  const org = organizationId(env);
+  // Preserve this portal's existing appointments. Other deployments never read the legacy namespace.
+  return org === PORTAL_ORGANIZATION ? COLLECTION
+    : `${COLLECTION}_organizations/${await digestId('organization:' + org)}/records`;
+}
+
+async function contactCollection(env) {
+  return `${COLLECTION}_organizations/${await digestId('organization:' + organizationId(env))}/contacts`;
+}
+
+function conflict(error) {
+  return [409, 412].includes(Number(error?.status))
+    || ['FAILED_PRECONDITION', 'ALREADY_EXISTS', 'ABORTED'].includes(error?.code);
+}
+
 function normalizeBrazilPhone(value) {
   const source = String(value ?? '').trim();
   if (!/^\+?[\d\s().-]+$/.test(source)) return '';
@@ -64,6 +96,7 @@ function normalizeRecord(input = {}) {
     && cleanSourceId(input.contactSourceId) === sourceId;
   return {
     sourceId,
+    patientSourceId: patientSourceId(input.patientSourceId),
     requestedAt: clean(input.requestedAt, 40),
     specialty: clean(input.specialty, 120),
     returnStatus: clean(input.returnStatus, 20),
@@ -82,6 +115,7 @@ function normalizeRecord(input = {}) {
     contactVersion: contactChecked
       ? CONTACT_VERSION : '',
     contactSourceId: sourceId,
+    contactPatientSourceId: contactChecked ? patientSourceId(input.contactPatientSourceId) : '',
     contactPatient: clean(input.patient, 180),
     contactRequestedAt: clean(input.requestedAt, 40),
     contactVerifiedAt: contactChecked
@@ -90,6 +124,11 @@ function normalizeRecord(input = {}) {
 }
 
 function verifiedContactPhone(record, now = Date.now()) {
+  if (record?.contactVersion === CONTACT_DIRECTORY_VERSION) {
+    return record.active !== false && patientSourceId(record.patientSourceId)
+      && record.contactPatientSourceId === record.patientSourceId
+      ? normalizeBrazilPhone(record.phone) : '';
+  }
   const age = now - Date.parse(record?.contactVerifiedAt || '');
   if (record?.contactVersion !== CONTACT_VERSION
     || record.contactSourceId !== record.sourceId
@@ -100,15 +139,21 @@ function verifiedContactPhone(record, now = Date.now()) {
 }
 
 function contactForSync(record, existing) {
-  // A checked-but-empty contact revokes an earlier destination. Old clients cannot restore it.
-  if (record.contactVersion === CONTACT_VERSION) return record;
+  // Collection failures are not authorized erasure. Association checks still apply.
+  if (record.contactVersion === CONTACT_VERSION && record.phone) return record;
+  const savedPhone = existing && normalizeBrazilPhone(existing.phone);
   if (existing && record.patient === existing.patient
-    && record.requestedAt === existing.requestedAt && verifiedContactPhone(existing)) {
+    && record.requestedAt === existing.requestedAt && savedPhone) {
     return {
       ...record,
-      phone: verifiedContactPhone(existing),
-      contactVersion: existing.contactVersion,
-      contactVerifiedAt: existing.contactVerifiedAt
+      phone: savedPhone,
+      // Keep the original proof, including absent/expired/invalid proof. Retention is not permission to use.
+      contactVersion: existing.contactVersion === CONTACT_VERSION ? CONTACT_VERSION : '',
+      contactVerifiedAt: existing.contactVerifiedAt || '',
+      contactSourceId: existing.contactSourceId || '',
+      contactPatient: existing.contactPatient || '',
+      contactRequestedAt: existing.contactRequestedAt || '',
+      contactPatientSourceId: existing.contactPatientSourceId || ''
     };
   }
   return { ...record, phone: '', contactVersion: '', contactVerifiedAt: '' };
@@ -125,6 +170,7 @@ function comparable(record = {}) {
     appointmentTime: record.appointmentTime || '',
     specialist: record.specialist || '',
     patient: record.patient || '',
+    patientSourceId: record.patientSourceId || '',
     municipality: record.municipality || '',
     appointmentType: record.appointmentType || '',
     facility: record.facility || '',
@@ -149,16 +195,108 @@ async function listCollection(env, collectionPath) {
   let pageToken = '';
   let guard = 0;
   do {
-    const page = await firestoreList(env, collectionPath, { pageSize: 100, pageToken });
+    const page = await firestoreList(env, collectionPath, { pageSize: 100, pageToken, withMetadata: true });
     output.push(...(page.documents || []));
     pageToken = page.nextPageToken || '';
     guard += 1;
   } while (pageToken && guard < MAX_LIST_PAGES);
+  if (pageToken) throw Object.assign(new Error('A leitura da Agenda excedeu o limite seguro.'), { status: 503 });
   return output;
 }
 
 async function listAll(env) {
-  return listCollection(env, COLLECTION);
+  return listCollection(env, await agendaCollection(env));
+}
+
+async function directory(env, appointments) {
+  const ids = [...new Set(appointments.map(item => patientSourceId(item.patientSourceId)).filter(Boolean))];
+  const collection = await contactCollection(env);
+  const records = [];
+  for (let index = 0; index < ids.length; index += MAX_RECORDS_PER_SYNC) {
+    const paths = await Promise.all(ids.slice(index, index + MAX_RECORDS_PER_SYNC)
+      .map(async id => `${collection}/${await digestId('patient:' + id)}`));
+    try {
+      records.push(...await firestoreBatchGet(env, paths));
+    } catch (_) {
+      throw Object.assign(new Error('Não foi possível consultar contatos.'), { status: 503 });
+    }
+  }
+  return new Map(records.filter(item => item.organizationId === organizationId(env)
+    && patientSourceId(item.patientSourceId)).map(item => [item.patientSourceId, item]));
+}
+
+function directoryRecord(record, contacts) {
+  const id = patientSourceId(record.patientSourceId);
+  // Unbound legacy copies cannot be checked against patient-level corrections/deletions.
+  if (!id) return { ...record, phone: '', contactVersion: '' };
+  const contact = contacts.get(id);
+  const valid = contact?.status === 'active' && contact.revision
+    && [CONTACT_VERSION, 'authorized-correction'].includes(contact.provenance)
+    && Number.isFinite(Date.parse(contact.verifiedAt));
+  // A stable identity never falls back to a stale phone embedded in a snapshot.
+  return { ...record, phone: valid ? normalizeBrazilPhone(contact.phone) : '',
+    contactVersion: CONTACT_DIRECTORY_VERSION, contactPatientSourceId: id,
+    contactRevision: contact?.revision || '', contactBlocked: contact?.status === 'deleted' };
+}
+
+async function collectMissingContacts(env, records) {
+  const phones = new Map();
+  for (const record of records) {
+    if (!record.patientSourceId || !record.phone || record.contactPatientSourceId !== record.patientSourceId) continue;
+    if (phones.has(record.patientSourceId) && phones.get(record.patientSourceId) !== record.phone) {
+      throw Object.assign(new Error('Contatos conflitantes para o mesmo paciente.'), { status: 400 });
+    }
+    phones.set(record.patientSourceId, record.phone);
+  }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const contacts = await directory(env, records);
+    const writes = [];
+    for (const record of records) {
+      const id = patientSourceId(record.patientSourceId);
+      if (!id || contacts.has(id) || !record.phone || record.contactVersion !== CONTACT_VERSION
+        || record.contactPatientSourceId !== id) continue;
+      const data = { organizationId: organizationId(env), patientSourceId: id,
+        phone: record.phone, status: 'active', revision: crypto.randomUUID(),
+        verifiedAt: record.contactVerifiedAt, provenance: CONTACT_VERSION };
+      // Insert only: retries, stale snapshots and concurrent sessions cannot undo corrections/deletions.
+      contacts.set(id, data);
+      writes.push({ documentPath: `${await contactCollection(env)}/${await digestId('patient:' + id)}`,
+        data, currentDocument: { exists: false } });
+    }
+    try {
+      await commitWrites(env, writes);
+      return;
+    } catch (error) {
+      if (!conflict(error) || attempt === 2) throw error;
+    }
+  }
+}
+
+async function updateContact(env, payload) {
+  const id = patientSourceId(payload?.patientSourceId);
+  const action = payload?.action;
+  const phone = normalizeBrazilPhone(payload?.phone);
+  if (!id || !['correct', 'delete'].includes(action) || (action === 'correct' && !phone)) {
+    throw Object.assign(new Error('Correção de contato inválida.'), { status: 400 });
+  }
+  const documentPath = `${await contactCollection(env)}/${await digestId('patient:' + id)}`;
+  const existing = await firestoreGet(env, documentPath, { withMetadata: true });
+  if (!existing || existing.organizationId !== organizationId(env)) {
+    throw Object.assign(new Error('Contato não encontrado.'), { status: 404 });
+  }
+  if (!existing._updateTime || !payload.expectedRevision || payload.expectedRevision !== existing.revision) {
+    throw Object.assign(new Error('O contato mudou. Recarregue antes de corrigir.'), { status: 409 });
+  }
+  const data = { organizationId: organizationId(env), patientSourceId: id,
+    phone: action === 'delete' ? '' : phone, status: action === 'delete' ? 'deleted' : 'active',
+    revision: crypto.randomUUID(), verifiedAt: new Date().toISOString(), provenance: 'authorized-correction' };
+  try {
+    await firestoreCommit(env, [{ documentPath, data, currentDocument: { updateTime: existing._updateTime } }]);
+  } catch (error) {
+    if (conflict(error)) throw Object.assign(new Error('O contato mudou. Recarregue antes de corrigir.'), { status: 409 });
+    throw error;
+  }
+  return { revision: data.revision, status: data.status };
 }
 
 async function readUserKey(username) {
@@ -167,12 +305,15 @@ async function readUserKey(username) {
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 40);
 }
 
-async function readReceiptCollection(username) {
-  return `${READ_STATE_COLLECTION}/${await readUserKey(username)}/records`;
+async function readReceiptCollection(username, env = {}) {
+  const org = organizationId(env);
+  const key = org === PORTAL_ORGANIZATION ? await readUserKey(username)
+    : await digestId('read-user:' + JSON.stringify([org, clean(username, 80)]));
+  return `${READ_STATE_COLLECTION}/${key}/records`;
 }
 
 async function listReadMemory(env, username) {
-  const collectionPath = await readReceiptCollection(username);
+  const collectionPath = await readReceiptCollection(username, env);
   const receipts = await listCollection(env, collectionPath);
   const memory = new Map();
   for (const receipt of receipts) {
@@ -227,6 +368,9 @@ function publicRecord(record, username, readMemory) {
   const readAt = effectiveReadAt(record, username, readMemory);
   return {
     sourceId: cleanSourceId(record.sourceId),
+    patientSourceId: patientSourceId(record.patientSourceId),
+    contactRevision: record.contactRevision || '',
+    contactBlocked: record.contactBlocked === true,
     requestedAt: clean(record.requestedAt, 40),
     specialty: clean(record.specialty, 120),
     returnStatus: clean(record.returnStatus, 20),
@@ -254,19 +398,23 @@ function publicRecord(record, username, readMemory) {
 function contactState(records = []) {
   const active = [];
   const knownSourceIds = [];
+  const blockedSourceIds = [];
   for (const record of records) {
     if (record?.active === false) continue;
     const sourceId = cleanSourceId(record?.sourceId);
     if (!sourceId) continue;
     active.push(sourceId);
     if (verifiedContactPhone(record)) knownSourceIds.push(sourceId);
+    if (record.contactBlocked) blockedSourceIds.push(sourceId);
   }
   return {
-    contactCapability: CONTACT_VERSION,
+    contactCapability: CONTACT_DIRECTORY_VERSION,
+    contactDirectoryCapability: CONTACT_DIRECTORY_VERSION,
     active: active.length,
     known: knownSourceIds.length,
     missing: Math.max(0, active.length - knownSourceIds.length),
-    knownSourceIds
+    knownSourceIds,
+    blockedSourceIds
   };
 }
 
@@ -284,7 +432,7 @@ async function commitWrites(env, writes) {
   }
 }
 
-async function syncRecords(env, input, user) {
+async function syncRecords(env, input, user, attempt = 0) {
   const rows = Array.isArray(input?.records) ? input.records : [];
   const declaredComplete = input?.complete === true;
   const expectedTotal = Math.max(0, Number.parseInt(String(input?.totalCount ?? ''), 10) || 0);
@@ -306,6 +454,7 @@ async function syncRecords(env, input, user) {
 
   const now = new Date().toISOString();
   const existingRecords = await listAll(env);
+  const collectionPath = await agendaCollection(env);
   const existingBySourceId = new Map();
   for (const existing of existingRecords) {
     const sourceId = cleanSourceId(existing.sourceId);
@@ -320,10 +469,27 @@ async function syncRecords(env, input, user) {
   for (const record of normalized) {
     const documentId = await digestId(record.sourceId);
     const existing = existingBySourceId.get(record.sourceId) || null;
+    // Older collectors must not drop a previously explicit patient association.
+    if (!record.patientSourceId && existing?.patientSourceId && record.patient === existing.patient
+      && record.requestedAt === existing.requestedAt) record.patientSourceId = existing.patientSourceId;
+    if (!record.patientSourceId) {
+      // A new unbound capture could bypass a patient's deletion marker under another appointment ID.
+      record.phone = '';
+      record.contactVersion = '';
+      record.contactVerifiedAt = '';
+    }
+    if (record.patientSourceId && !existing?.patientSourceId && existing
+      && record.patient === existing.patient && record.requestedAt === existing.requestedAt
+      && normalizeBrazilPhone(existing.phone)
+      && !(record.phone && record.contactPatientSourceId === record.patientSourceId)) {
+      // A failed identity upgrade must neither erase nor promote an unbound legacy contact.
+      record.patientSourceId = '';
+    }
 
     if (!existing) {
       writes.push({
-        documentPath: `${COLLECTION}/${documentId}`,
+        documentPath: `${collectionPath}/${documentId}`,
+        currentDocument: { exists: false },
         data: {
           ...record,
           firstSeenAt: now,
@@ -341,9 +507,10 @@ async function syncRecords(env, input, user) {
 
     const didChange = comparable(existing) !== comparable(record);
     const stateChanged = didChange || existing.active === false;
-    const { id: _existingId, ...existingData } = existing;
+    const { id: _existingId, _updateTime, ...existingData } = existing;
     writes.push({
-      documentPath: `${COLLECTION}/${existing.id || documentId}`,
+      documentPath: `${collectionPath}/${existing.id || documentId}`,
+      currentDocument: _updateTime ? { updateTime: _updateTime } : { exists: true },
       data: {
         ...existingData,
         ...contactForSync(record, existing),
@@ -369,9 +536,10 @@ async function syncRecords(env, input, user) {
       if (existing.active === false) continue;
       const sourceId = cleanSourceId(existing.sourceId);
       if (!sourceId || seen.has(sourceId)) continue;
-      const { id: _existingId, ...existingData } = existing;
+      const { id: _existingId, _updateTime, ...existingData } = existing;
       writes.push({
-        documentPath: `${COLLECTION}/${existing.id}`,
+        documentPath: `${collectionPath}/${existing.id}`,
+        currentDocument: _updateTime ? { updateTime: _updateTime } : { exists: true },
         data: {
           ...existingData,
           active: false,
@@ -385,11 +553,28 @@ async function syncRecords(env, input, user) {
     }
   }
 
-  await commitWrites(env, writes);
+  // No durable phone is copied into mutable appointment snapshots.
+  if (normalized.some(record => record.patientSourceId)) {
+    await collectMissingContacts(env, normalized);
+    for (const write of writes) {
+      if (write.data.patientSourceId) {
+        write.data.phone = '';
+        write.data.contactVersion = '';
+        write.data.contactVerifiedAt = '';
+      }
+    }
+  }
+  try {
+    await commitWrites(env, writes);
+  } catch (error) {
+    if (conflict(error) && attempt < 2) return syncRecords(env, input, user, attempt + 1);
+    throw error;
+  }
 
   const phoneReceived = normalized.filter((record) => normalizeBrazilPhone(record.phone)).length;
   return {
-    contactCapability: CONTACT_VERSION,
+    contactCapability: CONTACT_DIRECTORY_VERSION,
+    contactDirectoryCapability: CONTACT_DIRECTORY_VERSION,
     synchronizedAt: now,
     received: normalized.length,
     totalCount: expectedTotal || normalized.length,
@@ -428,10 +613,10 @@ async function markRead(env, sourceId, username) {
   if (!validSourceId) throw Object.assign(new Error('Agendamento inválido.'), { status: 400 });
 
   const documentId = await digestId(validSourceId);
-  const existing = await firestoreGet(env, `${COLLECTION}/${documentId}`);
+  const existing = await firestoreGet(env, `${await agendaCollection(env)}/${documentId}`);
   if (!existing) throw Object.assign(new Error('Agendamento não encontrado.'), { status: 404 });
 
-  const collectionPath = await readReceiptCollection(username);
+  const collectionPath = await readReceiptCollection(username, env);
   const receiptId = await digestId(validSourceId);
   const now = new Date().toISOString();
 
@@ -471,30 +656,67 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
   const user = await authorizedUser(request, env);
   if (user?.authorizationDenied) return json({ error: user.error }, user.status, origin, originAllowed);
 
-  if (url.pathname === '/api/agenda/contact-state' && request.method === 'GET') {
-    const sourceRecords = await listAll(env);
-    return json(contactState(sourceRecords), 200, origin, originAllowed);
+  if (url.pathname === '/api/agenda/contact-state' && ['GET', 'POST'].includes(request.method)) {
+    try {
+      const sourceRecords = await listAll(env);
+      let records = sourceRecords;
+      if (request.method === 'POST') {
+        const payload = await parseBody(request);
+        if (!Array.isArray(payload?.records) || payload.records.length > MAX_RECORDS_PER_SYNC) {
+          return json({ error: 'Consulta de contatos inválida.' }, 400, origin, originAllowed);
+        }
+        const bySource = new Map(sourceRecords.map(record => [record.sourceId, record]));
+        records = payload.records.map(item => {
+          const normalized = normalizeRecord({ sourceId: item?.sourceId, patientSourceId: item?.patientSourceId,
+            patient: item?.patient, requestedAt: item?.requestedAt });
+          const existing = bySource.get(normalized.sourceId);
+          const same = existing && normalized.patient === existing.patient
+            && normalized.requestedAt === existing.requestedAt
+            && (!normalized.patientSourceId || normalized.patientSourceId === existing.patientSourceId);
+          return same ? { ...existing, active: true } : { ...normalized, active: true };
+        });
+      }
+      const contacts = records.some(record => record.patientSourceId) ? await directory(env, records) : new Map();
+      return json(contactState(records.map(record => directoryRecord(record, contacts))), 200, origin, originAllowed);
+    } catch (_) {
+      return json({ error: 'Não foi possível consultar contatos.' }, 503, origin, originAllowed);
+    }
+  }
+
+  if (url.pathname === '/api/agenda/contact' && request.method === 'POST') {
+    try {
+      return json({ ok: true, ...await updateContact(env, await parseBody(request)) }, 200, origin, originAllowed);
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      return json({ error: status < 500 ? error.message : 'Não foi possível corrigir o contato.' }, status, origin, originAllowed);
+    }
   }
 
   if (url.pathname === '/api/agenda' && request.method === 'GET') {
-    const sourceRecords = await listAll(env);
-    const { collectionPath, memory } = await listReadMemory(env, user.username);
-    await migrateEmbeddedReadMemory(env, user.username, sourceRecords, collectionPath, memory);
+    try {
+      const sourceRecords = await listAll(env);
+      const contacts = sourceRecords.some(record => record.patientSourceId) ? await directory(env, sourceRecords) : new Map();
+      const { collectionPath, memory } = await listReadMemory(env, user.username);
+      await migrateEmbeddedReadMemory(env, user.username, sourceRecords, collectionPath, memory);
 
-    const records = sourceRecords
-      .map((item) => publicRecord(item, user.username, memory))
-      .filter((item) => item.sourceId)
-      .sort(agendaSort);
-    const active = records.filter((item) => item.active);
+      const records = sourceRecords
+        .map((item) => publicRecord(directoryRecord(item, contacts), user.username, memory))
+        .filter((item) => item.sourceId)
+        .sort(agendaSort);
+      const active = records.filter((item) => item.active);
       return json({
-        contactCapability: CONTACT_VERSION,
+        contactCapability: CONTACT_DIRECTORY_VERSION,
+        contactDirectoryCapability: CONTACT_DIRECTORY_VERSION,
         records,
-      summary: {
-        active: active.length,
-        unread: active.filter((item) => item.unread).length,
-        lastSyncAt: records.reduce((latest, item) => item.lastSeenAt > latest ? item.lastSeenAt : latest, '')
-      }
-    }, 200, origin, originAllowed);
+        summary: {
+          active: active.length,
+          unread: active.filter((item) => item.unread).length,
+          lastSyncAt: records.reduce((latest, item) => item.lastSeenAt > latest ? item.lastSeenAt : latest, '')
+        }
+      }, 200, origin, originAllowed);
+    } catch (_) {
+      return json({ error: 'Não foi possível carregar a Agenda.' }, 503, origin, originAllowed);
+    }
   }
 
   if (url.pathname === '/api/agenda/sync' && request.method === 'POST') {
@@ -503,7 +725,7 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
       const result = await syncRecords(env, payload, user);
       return json({ ok: true, ...result }, 200, origin, originAllowed);
     } catch (error) {
-      return json({ error: error?.message || 'Falha ao sincronizar a Agenda.' }, Number(error?.status || 500), origin, originAllowed);
+      return json({ error: 'Falha ao sincronizar a Agenda.' }, Number(error?.status || 500), origin, originAllowed);
     }
   }
 

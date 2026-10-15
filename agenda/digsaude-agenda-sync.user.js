@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.2.8
+// @version      1.2.9
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261009-navigation-1
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261009-navigation-1
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261015-directory-1
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20261015-directory-1
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -28,6 +28,7 @@
   const BRIDGE_WATCH_MS = 15 * 1000;
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
   const CONTACT_VERSION = 'patient-details-v2';
+  const CONTACT_DIRECTORY_VERSION = 'patient-directory-v1';
   const CONTACT_CONCURRENCY = 1;
     const CONTACT_WINDOW_TIMEOUT_MS = 8 * 1000;
     const CONTACT_RETRY_DELAY_MS = 250;
@@ -57,6 +58,9 @@
   let bridgeReadyTimer = null;
   let sessionGeneration = 0;
   let contactCapabilityVerified = false;
+  let directoryCapabilityVerified = false;
+  let contactLookup = null;
+  const blockedContactIds = new Set();
   const contactCache = new Map();
     const knownContactIds = new Set();
     let contactDiagnostics = null;
@@ -79,7 +83,7 @@
 
     function safeContactDiagnostics(value = {}) {
       const report = {};
-      for (const key of ['snapshotRows', 'declaredRows', 'uncapturedRows', 'alreadyKnown', 'pastUncollected',
+      for (const key of ['snapshotRows', 'declaredRows', 'uncapturedRows', 'alreadyKnown', 'pastUncollected', 'identityMissing',
         'selected', 'attempted', 'readAttempts', 'retries', 'recovered', 'elapsedMsTotal', 'maxAttemptMs',
         'collected', 'persisted', 'persistenceUnconfirmed', 'mirrorMissing']) {
         report[key] = diagnosticCount(value[key]);
@@ -173,6 +177,21 @@
     return compact(checkbox?.value || '');
   }
 
+  function patientSourceIdFor(cell) {
+    // Only an explicit patient resource in the patient cell qualifies. Never hash a name/phone.
+    const ids = new Set();
+    const prefix = window.location.pathname.split('/consultas')[0] + '/pacientes/';
+    for (const link of cell?.querySelectorAll('a[href]') || []) {
+      try {
+        const url = new URL(link.getAttribute('href'), window.location.href);
+        if (url.origin !== window.location.origin || !url.pathname.startsWith(prefix)) continue;
+        const match = url.pathname.slice(prefix.length).match(/^([A-Za-z0-9_-]{1,80})(?:\/(?:view|edit))?\/?$/);
+        if (match) ids.add(match[1]);
+      } catch (_) {}
+    }
+    return ids.size === 1 ? [...ids][0] : '';
+  }
+
   function agendadosTotal(root = document) {
     const buttons = [...root.querySelectorAll('.fi-tabs-item')];
     const tab = buttons.find((item) => compact(item.querySelector('.fi-tabs-item-label')?.textContent) === 'Agendados');
@@ -205,6 +224,7 @@
         appointmentTime: compact(cells[7]?.textContent),
         specialist: compact(cells[8]?.textContent),
         patient: compact(cells[9]?.textContent),
+        patientSourceId: patientSourceIdFor(cells[9]),
         municipality: compact(cells[10]?.textContent),
         appointmentType: compact(cells[11]?.textContent),
         facility: compact(cells[12]?.textContent),
@@ -432,7 +452,7 @@
   async function extractContact(record, generation = sessionGeneration) {
     assertContactSession(portalWindow, generation);
     const { sourceId, patient, requestedAt } = record;
-    const cacheKey = JSON.stringify([sourceId, patient, requestedAt]);
+    const cacheKey = JSON.stringify([sourceId, patient, requestedAt, record.patientSourceId || '']);
     const cached = contactCache.get(cacheKey);
     if (cached && Date.now() - cached.checkedAt < CONTACT_CACHE_TTL_MS) return cached.phone;
 
@@ -493,7 +513,7 @@
   }
 
   async function extractContactWithRetry(record, generation, diagnostic) {
-    const identity = JSON.stringify([record.sourceId, record.patient, record.requestedAt]);
+    const identity = JSON.stringify([record.sourceId, record.patient, record.requestedAt, record.patientSourceId || '']);
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const startedAt = Date.now();
       diagnostic.readAttempts += 1;
@@ -519,7 +539,7 @@
         try { failedRoot = frame.document; } catch (_) { throw contactError('route_changed', 'A origem da consulta mudou.'); }
         const checkRetry = () => {
           assertContactSession(frame, generation);
-          if (JSON.stringify([record.sourceId, record.patient, record.requestedAt]) !== identity) {
+          if (JSON.stringify([record.sourceId, record.patient, record.requestedAt, record.patientSourceId || '']) !== identity) {
             throw contactError('record_changed', 'A associação da ficha mudou antes da repetição.');
           }
           try {
@@ -559,14 +579,19 @@
     const targets = records.filter((record) => (
       record?.sourceId
       && contactEligible(record)
+      && (!directoryCapabilityVerified || record.patientSourceId)
       && !knownContactIds.has(record.sourceId)
+      && !blockedContactIds.has(record.sourceId)
     ));
     let cursor = 0;
     let found = 0;
     let failed = 0;
+    const patientResults = new Map();
     const diagnostic = safeContactDiagnostics({ snapshotRows: records.length, declaredRows: snapshot.totalCount,
       uncapturedRows: Math.max(0, Number(snapshot.totalCount || 0) - records.length), snapshotComplete: snapshot.complete,
       alreadyKnown: records.filter(record => knownContactIds.has(record.sourceId)).length,
+      identityMissing: records.filter(record => contactEligible(record) && !record.patientSourceId
+        && !knownContactIds.has(record.sourceId)).length,
       pastUncollected: records.filter(record => !contactEligible(record) && !knownContactIds.has(record.sourceId)).length,
       selected: targets.length });
     updateContactDiagnostics(diagnostic);
@@ -576,22 +601,32 @@
         if (generation !== sessionGeneration) return;
         const index = cursor++;
         const record = targets[index];
-        diagnostic.attempted += 1;
         setButton(
           `Automático ativo · contatos ${index + 1}/${targets.length} · ${knownContactIds.size} já salvos…`,
           'working'
         );
         record.contactVersion = CONTACT_VERSION;
         record.contactSourceId = record.sourceId;
+        record.contactPatientSourceId = record.patientSourceId || '';
+        let failureCode = '';
         try {
-          record.phone = await extractContactWithRetry(record, generation, diagnostic);
+          const previous = record.patientSourceId && patientResults.get(record.patientSourceId);
+          if (previous) {
+            record.phone = previous.phone;
+            failureCode = previous.failureCode;
+          } else {
+            diagnostic.attempted += 1;
+            record.phone = await extractContactWithRetry(record, generation, diagnostic);
+          }
           if (record.phone) found += 1;
-          else { failed += 1; diagnostic.failures.field_unavailable += 1; }
+          else { failed += 1; failureCode ||= 'field_unavailable'; diagnostic.failures[failureCode] += 1; }
         } catch (error) {
           record.phone = '';
           failed += 1;
-          diagnostic.failures[contactDiagnosticCode(error)] += 1;
+          failureCode = contactDiagnosticCode(error);
+          diagnostic.failures[failureCode] += 1;
         }
+        if (record.patientSourceId) patientResults.set(record.patientSourceId, { phone: record.phone, failureCode });
         diagnostic.collected = found;
         updateContactDiagnostics(diagnostic);
       }
@@ -635,7 +670,8 @@
     return JSON.stringify({
       totalCount: snapshot.totalCount,
       complete: snapshot.complete,
-      records: (snapshot.records || []).map(({ phone: _phone, contactVersion: _version, contactSourceId: _source, ...record }) => record)
+      records: (snapshot.records || []).map(({ phone: _phone, contactVersion: _version, contactSourceId: _source,
+        contactPatientSourceId: _patientSource, ...record }) => record)
     });
   }
 
@@ -798,11 +834,32 @@
     stopDeliveryRetry();
     bridgeReadyReject?.(new Error('A sincronização foi pausada.'));
     clearBridgeReadyWait();
+    contactLookup?.reject(new Error('A sincronização foi pausada.'));
     syncInFlight = false;
     pendingSnapshot = null;
     pendingFingerprint = '';
     pendingSyncId = '';
     setButton(reason, 'error');
+  }
+
+  async function lookupSnapshotContacts(snapshot) {
+    const requestId = `${sessionGeneration}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise((resolve, reject) => {
+      const finish = (callback, value) => {
+        window.clearTimeout(timer);
+        if (contactLookup?.requestId === requestId) contactLookup = null;
+        callback(value);
+      };
+      const timer = window.setTimeout(() => finish(reject, new Error('O Portal não respondeu à consulta de contatos.')), BRIDGE_READY_TIMEOUT_MS);
+      contactLookup = { requestId, resolve: () => finish(resolve), reject: error => finish(reject, error) };
+      try {
+        portalWindow.postMessage({ type: 'PORTAL_AGENDA_DIGSAUDE_CONTACT_LOOKUP', requestId,
+          records: snapshot.records.map(({ sourceId, patientSourceId, patient, requestedAt }) => (
+            { sourceId, patientSourceId, patient, requestedAt })) }, PORTAL_ORIGIN);
+      } catch (error) {
+        finish(reject, error);
+      }
+    });
   }
 
   async function runAutomaticSync({ force = false } = {}) {
@@ -823,6 +880,8 @@
       if (!autoEnabled || generation !== sessionGeneration) return;
       assertContactSession(syncWindow, generation);
       lastCheckAt = Date.now();
+      if (directoryCapabilityVerified) await lookupSnapshotContacts(nextSnapshot);
+      if (!autoEnabled || generation !== sessionGeneration) return;
       const contactResult = await enrichSnapshotContacts(nextSnapshot);
       if (!autoEnabled || generation !== sessionGeneration) return;
       assertContactSession(syncWindow, generation);
@@ -935,6 +994,8 @@
     contactCapabilityVerified = false;
     contactCache.clear();
     knownContactIds.clear();
+    blockedContactIds.clear();
+    directoryCapabilityVerified = false;
     lastFingerprint = '';
     pauseAutomatic('O Portal precisa confirmar a atualização dos contatos. Reative após atualizar.');
   }
@@ -943,12 +1004,29 @@
     if (event.origin !== PORTAL_ORIGIN) return;
     if (portalWindow && event.source !== portalWindow) return;
 
+    if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_CONTACT_STATE') {
+      if (!contactLookup || contactLookup.requestId !== event.data.requestId) return;
+      if (event.data.contactCapability !== CONTACT_DIRECTORY_VERSION
+        || event.data.contactDirectoryCapability !== CONTACT_DIRECTORY_VERSION) {
+        contactLookup.reject(new Error('O Portal não confirmou os contatos persistidos.'));
+        revokeContactCapability();
+        return;
+      }
+      contactCache.clear();
+      updateKnownContactIds(event.data.knownSourceIds);
+      blockedContactIds.clear();
+      for (const id of event.data.blockedSourceIds || []) blockedContactIds.add(id);
+      contactLookup.resolve();
+      return;
+    }
+
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
-      if (event.data.contactCapability !== CONTACT_VERSION) {
+      if (event.data.contactCapability !== CONTACT_DIRECTORY_VERSION) {
         revokeContactCapability();
         return;
       }
       contactCapabilityVerified = true;
+      directoryCapabilityVerified = event.data.contactDirectoryCapability === CONTACT_DIRECTORY_VERSION;
       updateKnownContactIds(event.data?.knownSourceIds);
       if (bridgeReadyResolve) {
         bridgeReadyResolve();
@@ -965,7 +1043,7 @@
 
     if (event.data?.type !== 'PORTAL_AGENDA_DIGSAUDE_RESULT') return;
     if (!pendingSyncId || event.data?.syncId !== pendingSyncId) return;
-    if (event.data.contactCapability !== CONTACT_VERSION) {
+    if (event.data.contactCapability !== CONTACT_DIRECTORY_VERSION) {
       revokeContactCapability();
       return;
     }

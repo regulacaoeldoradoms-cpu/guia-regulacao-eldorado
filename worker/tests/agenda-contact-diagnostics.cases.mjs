@@ -238,7 +238,7 @@ test('contato capturado mas nao presente no estado pos-escrita continua sem conf
 
 test('ponte acrescenta somente contagem recebida ao ACK e mantem recusa por capacidade ausente', async () => {
   const bridgeSource = fs.readFileSync(new URL('../../js/agenda-sync-bridge.js', import.meta.url), 'utf8');
-  for (const capability of ['patient-details-v2', undefined]) {
+  for (const capability of ['patient-directory-v1', undefined]) {
     const replies = [];
     let receive;
     let posts = 0;

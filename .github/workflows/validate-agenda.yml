@@ -10,10 +10,13 @@ on:
       - 'js/agenda-sync-bridge.js'
       - 'js/tools-catalog.js'
       - 'worker/agenda.js'
+      - 'worker/firebase-gateway.js'
       - 'worker/index.js'
       - 'worker/tests/agenda.test.mjs'
       - 'worker/tests/agenda-contact-contract.test.mjs'
       - 'worker/tests/agenda-contact-recurrence.test.mjs'
+      - 'worker/tests/agenda-contact-durability.test.mjs'
+      - 'worker/tests/agenda-contact-diagnostics.cases.mjs'
       - 'worker/tests/agenda-capacity.test.mjs'
       - 'worker/tests/fixtures/agenda-patient-dialog.html'
       - 'docs/AGENDA-DIGSAUDE*.md'
@@ -29,10 +32,13 @@ on:
       - 'js/agenda-sync-bridge.js'
       - 'js/tools-catalog.js'
       - 'worker/agenda.js'
+      - 'worker/firebase-gateway.js'
       - 'worker/index.js'
       - 'worker/tests/agenda.test.mjs'
       - 'worker/tests/agenda-contact-contract.test.mjs'
       - 'worker/tests/agenda-contact-recurrence.test.mjs'
+      - 'worker/tests/agenda-contact-durability.test.mjs'
+      - 'worker/tests/agenda-contact-diagnostics.cases.mjs'
       - 'worker/tests/agenda-capacity.test.mjs'
       - 'worker/tests/fixtures/agenda-patient-dialog.html'
       - 'docs/AGENDA-DIGSAUDE*.md'
@@ -58,10 +64,11 @@ jobs:
           node --check js/agenda-sync-bridge.js
           node --check agenda/digsaude-agenda-sync.user.js
           node --input-type=module --check < worker/agenda.js
+          node --input-type=module --check < worker/firebase-gateway.js
           node --input-type=module --check < worker/index.js
           node --check scripts/agenda/recuperar-firebase-agenda.mjs
       - name: Executar testes da Agenda
-        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-contact-contract.test.mjs worker/tests/agenda-contact-recurrence.test.mjs worker/tests/agenda-capacity.test.mjs scripts/agenda/recuperar-firebase-agenda.test.mjs
+        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-contact-contract.test.mjs worker/tests/agenda-contact-recurrence.test.mjs worker/tests/agenda-contact-durability.test.mjs worker/tests/agenda-capacity.test.mjs scripts/agenda/recuperar-firebase-agenda.test.mjs
 
   verify-published-userscript:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
