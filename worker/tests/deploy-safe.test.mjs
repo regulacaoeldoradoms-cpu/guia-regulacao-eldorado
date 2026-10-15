@@ -60,7 +60,7 @@ function activeBindings() {
 
 // Execute the unchanged gate module with a local, fail-closed Wrangler double.
 // The fixture CLI cannot call Cloudflare, including its upload/deploy paths.
-async function deployFixture(t, { tutorial = 'enabled' } = {}) {
+async function deployFixture(t, { tutorial = 'enabled', failingProbe = null } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-deploy-flow-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const script = path.join(root, 'scripts', 'deploy-safe.mjs');
@@ -102,6 +102,11 @@ async function deployFixture(t, { tutorial = 'enabled' } = {}) {
     let failed = false;
     if (args[0] === 'deployments' && args[1] === 'status') {
       result = { versions: state.versions };
+      if (state.swapAfterStatus) {
+        state.versions = [{ version_id: state.concurrent, percentage: 100 }];
+        state.swapAfterStatus = false;
+        state.events.push({ concurrentAfterSnapshot: true });
+      }
       failed = !!state.failStatus;
     } else if (args[0] === 'versions' && args[1] === 'view') {
       if (![state.original, state.candidate, state.concurrent].includes(args[2])) failed = true;
@@ -137,6 +142,7 @@ async function deployFixture(t, { tutorial = 'enabled' } = {}) {
     assert.equal(options.body, undefined);
     assert.equal(new Headers(options.headers).has('authorization'), false);
     update(state => state.events.push({ probe: url, method: options.method }));
+    if (url === failingProbe) throw new Error('synthetic legacy probe connection failure');
     if (url === SAFE_DEPLOY.portalTutorialApi) {
       tutorialProbes += 1;
       return tutorialProbes === 1 ? tutorialResponse() : afterProbe();
@@ -157,6 +163,34 @@ async function deployFixture(t, { tutorial = 'enabled' } = {}) {
   };
 }
 
+function assertTutorialIntervention(fixture) {
+  const events = fixture.read().events;
+  const lastProbe = events.findLastIndex(event => event.probe === SAFE_DEPLOY.portalTutorialApi);
+  assert.deepEqual(events.slice(lastProbe + 1).filter(event => event.command?.[1] === 'deploy'), []);
+  assert.deepEqual(events.filter(event => event.command?.[1] === 'deploy')
+    .map(event => event.command[2]), [fixture.candidate + '@100%']);
+  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=BLOQUEADO_SONDAGEM_TUTORIAL'));
+  assert.ok(fixture.logs.includes('INTERVENCAO_MANUAL=OBRIGATORIA'));
+  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+  assert.ok(!fixture.logs.includes('portalTutorialFlagPreservada=OK'));
+}
+
+test('sondagem falha fechada sem entrar na janela check-then-act do rollback', async (t) => {
+  const fixture = await deployFixture(t);
+  fixture.afterProbe(() => {
+    // The c84 gate reads ownership, then this double activates another release
+    // before the rollback promotion. The fixed path must issue neither command.
+    fixture.update(state => { state.swapAfterStatus = true; });
+    return Response.json({ code: 'TUTORIAL_DISABLED' }, { status: 503 });
+  });
+  await assert.rejects(fixture.run(), /PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY/);
+  assertTutorialIntervention(fixture);
+  const events = fixture.read().events;
+  const lastProbe = events.findLastIndex(event => event.probe === SAFE_DEPLOY.portalTutorialApi);
+  assert.deepEqual(events.slice(lastProbe + 1), []);
+  assert.deepEqual(fixture.read().versions, [{ version_id: fixture.candidate, percentage: 100 }]);
+});
+
 test('gate rejeita troca de versão durante a sondagem sem sobrescrever publicação concorrente', async (t) => {
   const fixture = await deployFixture(t);
   const entered = Promise.withResolvers();
@@ -170,10 +204,7 @@ test('gate rejeita troca de versão durante a sondagem sem sobrescrever publica�
   response.resolve(fixture.tutorialResponse());
   await assert.rejects(pending, /VERSAO_FINAL_DIVERGENTE/);
   assert.deepEqual(fixture.read().versions, [{ version_id: fixture.concurrent, percentage: 100 }]);
-  assert.deepEqual(fixture.read().events.filter(event => event.command?.[1] === 'deploy')
-    .map(event => event.command[2]), [fixture.candidate + '@100%']);
-  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=IGNORADO_VERSAO_CONCORRENTE'));
-  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+  assertTutorialIntervention(fixture);
 });
 
 for (const tutorial of ['enabled', 'disabled', null]) {
@@ -183,8 +214,14 @@ for (const tutorial of ['enabled', 'disabled', null]) {
     assert.equal(result.candidateVersion, fixture.candidate);
     assert.ok(fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
     const events = fixture.read().events;
-    assert.deepEqual(events.at(-2).command, ['versions', 'view', fixture.candidate]);
-    assert.equal(events.at(-1).command?.[0], 'deployments');
+    if (tutorial) {
+      assert.equal(events.at(-2).probe, SAFE_DEPLOY.portalTutorialApi);
+      assert.equal(events.at(-1).command?.[0], 'deployments');
+      assert.ok(events.findLastIndex(event => event.command?.[1] === 'view') < events.length - 2);
+    } else {
+      assert.equal(events.at(-2).command?.[0], 'deployments');
+      assert.deepEqual(events.at(-1).command, ['versions', 'view', fixture.candidate]);
+    }
     assert.equal(events.filter(event => event.probe === SAFE_DEPLOY.portalTutorialApi).length, tutorial ? 2 : 0);
     assert.ok(!fs.readdirSync(fixture.root).some(file => file.startsWith('.wrangler.safe-deploy-')));
   });
@@ -205,34 +242,66 @@ for (const uncertain of ['split', 'unavailable']) {
     });
     await assert.rejects(fixture.run(), uncertain === 'split'
       ? /PRODUCAO_NAO_E_VERSAO_UNICA_EM_100/ : /FALHA_AO_LER_DEPLOYMENT/);
-    assert.equal(fixture.read().events.filter(event => event.command?.[1] === 'deploy').length, 1);
-    assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=FALHOU'));
-    assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+    assertTutorialIntervention(fixture);
   });
 }
 
-test('estado do tutorial divergente restaura versão anterior quando a candidata ainda está ativa', async (t) => {
+test('estado do tutorial divergente exige intervenção e não promove outra versão mesmo com candidata ativa', async (t) => {
   const fixture = await deployFixture(t);
   fixture.afterProbe(() => Response.json({ code: 'TUTORIAL_DISABLED' }, { status: 503 }));
   await assert.rejects(fixture.run(), /PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY/);
-  assert.deepEqual(fixture.read().versions, [{ version_id: fixture.original, percentage: 100 }]);
-  assert.deepEqual(fixture.read().events.filter(event => event.command?.[1] === 'deploy')
-    .map(event => event.command[2]), [fixture.candidate + '@100%', fixture.original + '@100%']);
-  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=OK'));
-  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+  assert.deepEqual(fixture.read().versions, [{ version_id: fixture.candidate, percentage: 100 }]);
+  assertTutorialIntervention(fixture);
 });
 
-test('rollback já realizado durante a sondagem não é promovido novamente', async (t) => {
+test('versão original restaurada durante a sondagem não é promovida novamente nem declarada sucesso', async (t) => {
   const fixture = await deployFixture(t);
   fixture.afterProbe(() => {
     fixture.update(state => { state.versions = [{ version_id: fixture.original, percentage: 100 }]; });
     return fixture.tutorialResponse();
   });
   await assert.rejects(fixture.run(), /VERSAO_FINAL_DIVERGENTE/);
-  assert.equal(fixture.read().events.filter(event => event.command?.[1] === 'deploy').length, 1);
-  assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=OK'));
-  assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+  assert.deepEqual(fixture.read().versions, [{ version_id: fixture.original, percentage: 100 }]);
+  assertTutorialIntervention(fixture);
 });
+
+for (const failure of ['network', 'unknown', 'malformed']) {
+  test(`falha ${failure} da sondagem exige intervenção sem novo comando Wrangler`, async (t) => {
+    const fixture = await deployFixture(t);
+    fixture.afterProbe(() => {
+      fixture.update(state => { state.versions = [{ version_id: fixture.concurrent, percentage: 100 }]; });
+      if (failure === 'network') throw new Error('synthetic connection failure');
+      return failure === 'malformed' ? new Response('synthetic-invalid-json', { status: 401 })
+        : Response.json({ code: 'SYNTHETIC_UNKNOWN' }, { status: 401 });
+    });
+    await assert.rejects(fixture.run(), failure === 'network'
+      ? /PORTAL_TUTORIAL_NAO_RESPONDE/ : /PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY/);
+    assert.deepEqual(fixture.read().versions, [{ version_id: fixture.concurrent, percentage: 100 }]);
+    assertTutorialIntervention(fixture);
+    const events = fixture.read().events;
+    const lastProbe = events.findLastIndex(event => event.probe === SAFE_DEPLOY.portalTutorialApi);
+    assert.deepEqual(events.slice(lastProbe + 1), []);
+  });
+}
+
+for (const tutorial of ['enabled', null]) {
+  for (const [name, api, error] of [
+    ['Agenda', SAFE_DEPLOY.agendaApi, /AGENDA_NAO_RESPONDE/],
+    ['Usuários', SAFE_DEPLOY.adminUsersApi, /ADMIN_USERS_NAO_RESPONDE/],
+    ['Chat', SAFE_DEPLOY.chatRealtimeHealthApi, /CHAT_REALTIME_NAO_RESPONDE/]
+  ]) {
+    test(`falha antiga de ${name} preserva rollback antes da nova fase: tutorial ${tutorial ?? 'ausente'}`, async (t) => {
+      const fixture = await deployFixture(t, { tutorial, failingProbe: api });
+      await assert.rejects(fixture.run(), error);
+      assert.deepEqual(fixture.read().versions, [{ version_id: fixture.original, percentage: 100 }]);
+      assert.deepEqual(fixture.read().events.filter(event => event.command?.[1] === 'deploy')
+        .map(event => event.command[2]), [fixture.candidate + '@100%', fixture.original + '@100%']);
+      assert.ok(fixture.logs.includes('ROLLBACK_DE_SEGURANCA=OK'));
+      assert.ok(!fixture.logs.includes('INTERVENCAO_MANUAL=OBRIGATORIA'));
+      assert.ok(!fixture.logs.includes('DEPLOY_SEGURO_CONCLUIDO'));
+    });
+  }
+}
 
 test('aceita somente deployment produtivo único em 100%', () => {
   const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';

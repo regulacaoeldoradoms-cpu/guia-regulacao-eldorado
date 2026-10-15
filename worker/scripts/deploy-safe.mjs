@@ -7,7 +7,8 @@
  * - validar a versão candidata contra a produção ativa;
  * - promover somente a candidata íntegra;
  * - confirmar a Agenda após a promoção;
- * - restaurar a versão anterior se o pós-deploy falhar.
+ * - restaurar a versão anterior se os checks pós-deploy existentes falharem;
+ * - exigir intervenção, sem nova promoção, se a nova fase do tutorial falhar.
  *
  * Este arquivo não contém nem lê valores de secrets. O Wrangler pode expor
  * nomes/tipos dos bindings de uma versão, mas valores de secret_text/secret_key
@@ -700,6 +701,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
   let candidateVersion = '';
   let promotionStarted = false;
   let completed = false;
+  let tutorialFinalizationStarted = false;
 
   try {
     console.log('1/7 Conferindo produção e cadeia de versões...');
@@ -837,20 +839,25 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     safeLine('chatRealtimeHealthHttp', chatRealtime.status);
 
     console.log('9/9 Reconfirmando versão e bindings em produção...');
+    // Preserve the pre-existing checks and their rollback policy before entering
+    // the new tutorial-only finalization phase.
+    let finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+    must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
+    validateCandidateBindings(activeView, versionView(finalVersion, readConfig, tempRoot));
+
     if (tutorialBefore) {
+      // Ownership cannot be checked atomically with a rollback promotion. Once
+      // this new probe starts, failure requires intervention, never another deploy.
+      tutorialFinalizationStarted = true;
       const tutorialAfter = await probePortalTutorial(fetcher);
       must(tutorialAfter.known && tutorialAfter.state === tutorialBefore.state,
         'PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY');
+      finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+      must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
       safeLine('portalTutorialDepois', tutorialAfter.state);
       safeLine('portalTutorialHttpAnonimo', tutorialAfter.status);
       console.log('portalTutorialFlagPreservada=OK');
     }
-
-    // All asynchronous probes must finish before the final deployment check.
-    // A concurrent rollout may preserve the tutorial state while replacing us.
-    validateCandidateBindings(activeView, versionView(candidateVersion, readConfig, tempRoot));
-    const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
-    must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
 
     completed = true;
     console.log('');
@@ -866,28 +873,27 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
       chatRealtimeStatus: chatRealtime.status
     };
   } catch (error) {
-    if (promotionStarted && !completed && UUID.test(originalVersion)) {
+    if (promotionStarted && !completed && tutorialFinalizationStarted) {
+      // Do not query-then-promote on this path: even a fresh ownership snapshot
+      // could become stale before the rollback command reaches the provider.
+      console.log('ROLLBACK_DE_SEGURANCA=BLOQUEADO_SONDAGEM_TUTORIAL');
+      console.log('INTERVENCAO_MANUAL=OBRIGATORIA');
+      safeLine('versaoAnteriorParaRevisao', originalVersion);
+      safeLine('versaoCandidataParaRevisao', candidateVersion);
+      console.log('ACAO_URGENTE=nao repetir o deploy; conferir a versao ativa e decidir explicitamente eventual rollback');
+    } else if (promotionStarted && !completed && UUID.test(originalVersion)) {
       try {
         console.log('');
-        const rollbackVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
-        if (rollbackVersion === originalVersion) {
-          console.log('ROLLBACK_DE_SEGURANCA=OK');
-        } else if (!candidateVersion || rollbackVersion !== candidateVersion) {
-          // Do not undo another publisher's version when our probe detected it.
-          console.log('ROLLBACK_DE_SEGURANCA=IGNORADO_VERSAO_CONCORRENTE');
-          console.log('ACAO_URGENTE=interromper novos deploys e conferir o Worker manualmente');
-        } else {
-          console.log('Falha após iniciar promoção. Restaurando a versão produtiva anterior...');
-          promoteVersion(
-            originalVersion,
-            readConfig,
-            tempRoot,
-            'Portal: rollback automático do gate de deploy seguro'
-          );
-          const restored = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
-          must(restored === originalVersion, 'ROLLBACK_NAO_RESTAURADO');
-          console.log('ROLLBACK_DE_SEGURANCA=OK');
-        }
+        console.log('Falha após iniciar promoção. Restaurando a versão produtiva anterior...');
+        promoteVersion(
+          originalVersion,
+          readConfig,
+          tempRoot,
+          'Portal: rollback automático do gate de deploy seguro'
+        );
+        const restored = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+        must(restored === originalVersion, 'ROLLBACK_NAO_RESTAURADO');
+        console.log('ROLLBACK_DE_SEGURANCA=OK');
       } catch {
         console.log('ROLLBACK_DE_SEGURANCA=FALHOU');
         console.log('ACAO_URGENTE=interromper novos deploys e conferir o Worker manualmente');
