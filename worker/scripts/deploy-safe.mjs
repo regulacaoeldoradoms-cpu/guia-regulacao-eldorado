@@ -7,7 +7,8 @@
  * - validar a versão candidata contra a produção ativa;
  * - promover somente a candidata íntegra;
  * - confirmar a Agenda após a promoção;
- * - restaurar a versão anterior se o pós-deploy falhar.
+ * - restaurar a versão anterior se os checks pós-deploy existentes falharem;
+ * - exigir intervenção, sem nova promoção, se a nova fase do tutorial falhar.
  *
  * Este arquivo não contém nem lê valores de secrets. O Wrangler pode expor
  * nomes/tipos dos bindings de uma versão, mas valores de secret_text/secret_key
@@ -27,6 +28,7 @@ export const SAFE_DEPLOY = Object.freeze({
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
   adminUsersApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/admin/users',
   chatRealtimeHealthApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/chat/realtime/health',
+  portalTutorialApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/portal-tutorials/citizen',
   portalOrigin: 'https://regulacaoeldoradoms.com.br',
   candidateMessage: 'Portal: candidato validado pelo gate de deploy seguro',
   candidateTag: 'portal-safe-deploy',
@@ -368,6 +370,16 @@ export function validateCandidateBindings(activeVersion, candidateVersion, optio
     );
   }
 
+  // This remote feature flag is intentionally absent from local configuration.
+  // Preserve its public value exactly; opaque secrets remain metadata-only and
+  // are already protected by the dynamic secret-preservation check above.
+  const tutorialFlag = active.get('PORTAL_TUTORIAL_COMPLETION_ENABLED');
+  if (tutorialFlag?.type === 'plain_text') {
+    const actual = candidate.get(tutorialFlag.name);
+    must(actual?.type === 'plain_text' && String(actual.text || '') === String(tutorialFlag.text || ''),
+      'PORTAL_TUTORIAL_FLAG_NAO_PRESERVADA');
+  }
+
   return {
     critical: CRITICAL_BINDINGS.length,
     preservedSecrets: currentSecretBindingNames(activeVersion).length,
@@ -558,6 +570,23 @@ async function waitForChatRealtime(fetcher = fetch) {
   return last || { status: 0, healthy: false };
 }
 
+export function classifyPortalTutorialProbe(status, payload = {}) {
+  const state = Number(status) === 401 && payload.code === 'SESSION_REQUIRED' ? 'enabled'
+    : Number(status) === 503 && payload.code === 'TUTORIAL_DISABLED' ? 'disabled' : 'unknown';
+  return { status: Number(status), state, known: state !== 'unknown' };
+}
+
+export async function probePortalTutorial(fetcher = fetch) {
+  try {
+    const response = await fetcher(SAFE_DEPLOY.portalTutorialApi, {
+      method: 'GET', redirect: 'manual', cache: 'no-store',
+      headers: { Accept: 'application/json', Origin: SAFE_DEPLOY.portalOrigin },
+      signal: AbortSignal.timeout(15000)
+    });
+    return classifyPortalTutorialProbe(response.status, await response.json().catch(() => ({})));
+  } catch { throw new SafeDeployError('PORTAL_TUTORIAL_NAO_RESPONDE'); }
+}
+
 async function probeAgenda(fetcher = fetch) {
   let response;
   try {
@@ -672,6 +701,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
   let candidateVersion = '';
   let promotionStarted = false;
   let completed = false;
+  let tutorialFinalizationStarted = false;
 
   try {
     console.log('1/7 Conferindo produção e cadeia de versões...');
@@ -724,6 +754,15 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
 
     safeLine('versaoProducao', originalVersion);
     safeLine('segredosAtuais', activeValidation.preservedSecrets);
+
+    // An anonymous state probe confirms an opaque flag without reading secrets
+    // or authenticating against real accounts. It never reaches tutorial data.
+    const hasTutorialFlag = bindingMap(activeView).has('PORTAL_TUTORIAL_COMPLETION_ENABLED');
+    const tutorialBefore = hasTutorialFlag ? await probePortalTutorial(fetcher) : null;
+    if (tutorialBefore) {
+      must(tutorialBefore.known, 'PORTAL_TUTORIAL_ESTADO_ANTERIOR_NAO_CONFIRMADO');
+      safeLine('portalTutorialAntes', tutorialBefore.state);
+    }
 
     console.log('2/9 Preparando configuração efêmera e executando dry-run...');
     fs.writeFileSync(
@@ -800,9 +839,25 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     safeLine('chatRealtimeHealthHttp', chatRealtime.status);
 
     console.log('9/9 Reconfirmando versão e bindings em produção...');
-    const finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+    // Preserve the pre-existing checks and their rollback policy before entering
+    // the new tutorial-only finalization phase.
+    let finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
     validateCandidateBindings(activeView, versionView(finalVersion, readConfig, tempRoot));
+
+    if (tutorialBefore) {
+      // Ownership cannot be checked atomically with a rollback promotion. Once
+      // this new probe starts, failure requires intervention, never another deploy.
+      tutorialFinalizationStarted = true;
+      const tutorialAfter = await probePortalTutorial(fetcher);
+      must(tutorialAfter.known && tutorialAfter.state === tutorialBefore.state,
+        'PORTAL_TUTORIAL_ESTADO_MUDOU_APOS_DEPLOY');
+      finalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
+      must(finalVersion === candidateVersion, 'VERSAO_FINAL_DIVERGENTE');
+      safeLine('portalTutorialDepois', tutorialAfter.state);
+      safeLine('portalTutorialHttpAnonimo', tutorialAfter.status);
+      console.log('portalTutorialFlagPreservada=OK');
+    }
 
     completed = true;
     console.log('');
@@ -818,7 +873,15 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
       chatRealtimeStatus: chatRealtime.status
     };
   } catch (error) {
-    if (promotionStarted && !completed && UUID.test(originalVersion)) {
+    if (promotionStarted && !completed && tutorialFinalizationStarted) {
+      // Do not query-then-promote on this path: even a fresh ownership snapshot
+      // could become stale before the rollback command reaches the provider.
+      console.log('ROLLBACK_DE_SEGURANCA=BLOQUEADO_SONDAGEM_TUTORIAL');
+      console.log('INTERVENCAO_MANUAL=OBRIGATORIA');
+      safeLine('versaoAnteriorParaRevisao', originalVersion);
+      safeLine('versaoCandidataParaRevisao', candidateVersion);
+      console.log('ACAO_URGENTE=nao repetir o deploy; conferir a versao ativa e decidir explicitamente eventual rollback');
+    } else if (promotionStarted && !completed && UUID.test(originalVersion)) {
       try {
         console.log('');
         console.log('Falha após iniciar promoção. Restaurando a versão produtiva anterior...');

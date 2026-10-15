@@ -164,7 +164,7 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261014-6">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261015-1">';
 test('published Citizen HTML and service worker agree on the current release marker',()=>{
   assert.ok(source.includes(`CITIZEN_HTML_MARKER = '${citizenMarker}'`));
   assert.ok(fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8').includes(citizenMarker));

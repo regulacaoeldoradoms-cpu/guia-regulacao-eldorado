@@ -1,28 +1,28 @@
 // No user text, files, tokens or API responses enter tutorial persistence.
 (() => {
 'use strict';
-if (globalThis.PortalCitizenTutorial) return;
+if (globalThis.PortalCitizenTutorial?.launcherVersion === 4) return;
 const VERSION=1;
 const STEPS=Object.freeze(['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice']);
 const EXAMPLE={subject:'Exemplo fictício: mural com informações a apurar',description:'Exemplo inteiramente fictício: um mural da Unidade Modelo teria exposto dados pessoais inventados de usuários do serviço. Relato essa possível irregularidade para apuração, sem reproduzir esses dados. Não descreve pessoa ou atendimento real.'};
 const PROTOCOL='DEMO-FICTICIO-001';
 const lessons=[
- ['Comece pelo botão do Canal','Clique em Nova manifestação. Tudo nesta janela é uma demonstração: nada será enviado.','#openNewManifestation'],
- ['Sugestão: proponha uma melhoria','Selecione Sugestão. Exemplo fictício: propor placas para orientar quem chega à Unidade Modelo.','input[value="sugestao"]'],
- ['Reclamação: conte um problema','Selecione Reclamação. Exemplo fictício: a sinalização da Unidade Modelo dificultou encontrar a recepção.','input[value="reclamacao"]'],
- ['Elogio: reconheça o que foi positivo','Selecione Elogio. Exemplo fictício: agradecer à equipe da Unidade Modelo por explicar o funcionamento do serviço.','input[value="elogio"]'],
- ['Denúncia: relate fatos a apurar','Selecione Denúncia. Exemplo fictício: informar que um mural da Unidade Modelo teria exposto dados pessoais inventados, sem reproduzi-los. Diferencie o que viu do que precisa ser apurado.','input[value="denuncia"]'],
- ['Escreva um relato claro','Preencha assunto e relato com uma situação inventada, ou use o exemplo fictício. Evite CPF, Cartão SUS e outros dados pessoais.','#composeReport'],
- ['Acrescente o que souber','Abra Adicionar detalhes e preencha um campo com informação fictícia. Data, serviço, local e expectativa são opcionais no envio real.','#composeDetails'],
- ['Experimente anexar','Abra Anexar arquivos e clique em Escolher arquivos. Aqui esse botão adiciona somente uma imagem fictícia local. No portal, aceita JPG, PNG e PDF, até 5 arquivos de 5 MB.','#composeAttachments'],
- ['Confira a miniatura','Clique na miniatura para ampliar e depois feche a imagem. Uma prévia local permite revisar antes de enviar.','#manifestationFileList'],
- ['Remova o que não precisa','Use Remover anexo na imagem fictícia. No portal real, revise nomes, imagens e PDFs: eles podem revelar sua identidade.','#manifestationFileList'],
- ['Conheça a identificação','Selecione Me identificar. O Conselho vê nome, @ e função; o e-mail permanece protegido. Esta demonstração usa apenas um perfil fictício.','input[value="identificada"]'],
- ['Entenda a proteção da identidade','Selecione a opção de identidade protegida. Com e-mail confirmado, o envio é sigiloso. A opção chamada anônima em outras contas oculta o perfil ao Conselho, mas o protocolo continua ligado à conta. Isso não garante anonimato perante o sistema. Texto e arquivos também podem identificar você.','.compose-privacy'],
- ['Revise e simule o envio','Leia o aviso, marque a confirmação e use Enviar manifestação. O canal não agenda consultas ou exames e não substitui urgência. Aqui o protocolo é fictício e não há envio ou upload.','.compose-privacy'],
- ['Acompanhe pelo protocolo','Feche a janela do protocolo, se estiver aberta, e clique na manifestação fictícia em Minhas manifestações. Confira andamento, conversa e histórico.','#manifestationList'],
- ['Experimente responder','No protocolo fictício, escreva uma resposta inventada ou use o exemplo. Clique em Enviar resposta. No portal real, respostas ficam nesta conta.','#replyForm'],
- ['Confira os avisos','Feche o protocolo e clique no aviso fictício em Notificações. Abrir um aviso no portal o marca como lido; aqui somente o exemplo muda.','#notificationList']
+ ['Vamos praticar','Clique em Nova manifestação. Aqui nada será enviado.','#openNewManifestation'],
+ ['Sugestão melhora o serviço','Selecione Sugestão. Exemplo fictício: propor placas de orientação.','input[value="sugestao"]'],
+ ['Reclamação aponta um problema','Selecione Reclamação. Exemplo fictício: placas difíceis de entender.','input[value="reclamacao"]'],
+ ['Elogio reconhece o que foi bom','Selecione Elogio. Exemplo fictício: agradecer uma boa orientação.','input[value="elogio"]'],
+ ['Denúncia pede apuração','Selecione Denúncia. Relate fatos, sem expor dados pessoais.','input[value="denuncia"]'],
+ ['Conte um fato inventado','Preencha assunto e relato; saia do campo ao terminar. Ou use o exemplo, sem dados pessoais.','#composeReport'],
+ ['Detalhes são opcionais','Abra Adicionar detalhes, preencha um campo fictício e saia dele. Ou use o exemplo.','#composeDetails'],
+ ['Anexe um exemplo','Em Anexar arquivos, clique em Escolher arquivos. Só adicionamos uma imagem fictícia. JPG, PNG ou PDF: até 5 arquivos de 5 MB.','#composeAttachments'],
+ ['Confira antes de enviar','Abra a miniatura e feche a imagem para continuar.','#manifestationFileList'],
+ ['Um arquivo pode identificar você','Clique em Remover anexo. Revise também nomes, imagens e PDFs.','#manifestationFileList'],
+ ['Você escolhe se identificar','Selecione Me identificar: o Conselho vê seu perfil, mas não o e-mail.','input[value="identificada"]'],
+ ['Proteja seu perfil','Selecione a opção protegida: o Conselho não vê seu perfil. Sigiloso ou “anônimo”, o protocolo segue ligado à conta; o sistema pode identificar você.','.compose-privacy'],
+ ['Simule o envio','Revise o aviso, marque a confirmação e clique em Enviar manifestação. Sem envio ou upload real. O Canal não agenda nem atende urgências.','.compose-privacy'],
+ ['Veja o andamento','Clique no protocolo fictício em Minhas manifestações.','#manifestationList'],
+ ['Converse pelo protocolo','Escreva uma resposta inventada ou use o exemplo. Clique em Enviar resposta.','#replyForm'],
+ ['Abra o aviso','Clique no aviso fictício em Notificações. Só este exemplo será marcado como lido.','#notificationList']
 ];
 function identity(user){return String(user?.id||'')+'|'+String(user?.username||'');}
 function keyFor(user){return 'portal.citizen.tutorial.v1:'+encodeURIComponent(identity(user));}
@@ -32,7 +32,7 @@ function readProgress(storage,user){
 }
 // This adapter has no reference to fetch, auth.api, storage or an endpoint.
 // Even a retained handler or late Promise can only update synthetic memory.
-function demoAdapter({verified,valid,onAction}){
+function demoAdapter({verified,valid,onAction,allowAction}){
  let submitted=false,read=false;
  const messages=[{senderType:'council',body:'Resposta fictícia: informe qual placa poderia ajudar. Nenhuma análise real foi realizada.',createdAt:'2026-01-02T12:00:00Z'}];
  const item={protocol:PROTOCOL,type:'denuncia',subject:EXAMPLE.subject,description:EXAMPLE.description,createdAt:'2026-01-01T12:00:00Z',status:'aguardando_cidadao',privacyMode:verified?'sigilosa':'anonima'};
@@ -43,14 +43,16 @@ function demoAdapter({verified,valid,onAction}){
    check();const url=new URL(path,'https://example.invalid'),method=options.method||'GET',p=url.pathname;
    if(p==='/api/council/my'&&method==='GET')return {manifestations:submitted?[{...item}]:[]};
    if(p==='/api/council/notifications'&&method==='GET')return {notifications:submitted?[{id:1,protocol:PROTOCOL,title:'Aviso fictício: resposta disponível',createdAt:item.createdAt,readAt:read?item.createdAt:null}]:[]};
-   if(p==='/api/council/notifications'&&method==='PATCH'){read=true;onAction('notice');return {ok:true};}
+   if(p==='/api/council/notifications'&&method==='PATCH'){if(allowAction('notice')){read=true;onAction('notice');}return {ok:true};}
    if(p==='/api/council/manifestations'&&method==='POST'){
+    if(!allowAction('send'))throw new Error('Siga a orientação do tutorial antes de simular o envio.');
     submitted=true;item.privacyMode=JSON.parse(options.body).privacyMode;onAction('send');return {manifestation:{...item}};
    }
    if(p===`/api/council/manifestations/${PROTOCOL}`&&method==='GET'){
     onAction('track');return {manifestation:{...item},messages:messages.map(m=>({...m})),events:[{type:'status_changed',fromStatus:'recebida',toStatus:'aguardando_cidadao',detail:'Histórico fictício',createdAt:item.createdAt}],attachments:[]};
    }
    if(p===`/api/council/manifestations/${PROTOCOL}/messages`&&method==='POST'){
+    if(!allowAction('reply'))throw new Error('Escreva uma resposta fictícia na etapa indicada.');
     // Discard entered text; it never becomes a fixture or a persisted message.
     messages.push({senderType:'citizen',body:'Resposta fictícia simulada. Nenhum conteúdo foi transmitido.',createdAt:item.createdAt});onAction('reply');return {ok:true};
    }
@@ -115,17 +117,18 @@ function cloneWorkspace(document){
  return root;
 }
 function mount({document,window,context,user,isBusy,initialize}){
- const host=document.querySelector('.portal-hero');if(!host||host.querySelector('[data-citizen-tutorial-entry]'))return;
- const token=window.RegulationAuth.getToken(),owner=identity(user),entry=globalThis.document.createElement('details');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
- entry.innerHTML='<summary data-tutorial-options aria-label="Tutorial do Canal" title="Tutorial do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><button type="button" class="portal-button secondary" data-tutorial-close-options>Fechar ajuda</button><p role="status" data-tutorial-status></p></div>';
- host.append(entry);
+ const host=document.querySelector('.portal-hero');if(!host)return;
+ const existing=host.querySelector('[data-citizen-tutorial-entry]');if(existing&&!existing.hasAttribute('data-tutorial-bootstrap'))return;
+ const token=window.RegulationAuth.getToken(),owner=identity(user),entry=existing||globalThis.document.createElement('details');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
+ entry.innerHTML='<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><button type="button" class="portal-button secondary" data-tutorial-close-options>Fechar ajuda</button><p role="status" data-tutorial-status></p></div>';
+ entry.removeAttribute('data-tutorial-bootstrap');host.append(entry);
  let completed=readProgress(window.localStorage,user),session=null,disposed=false,starting=false,awarding=false,logoutInProgress=false;
  const status=entry.querySelector('[data-tutorial-status]'),start=entry.querySelector('[data-tutorial-start]'),restart=entry.querySelector('[data-tutorial-restart]');
  const current=()=>!disposed&&!context?.disposed&&window.RegulationAuth.getToken()===token&&identity(window.RegulationAuth.getCachedUser())===owner;
  function entryLabel(){start.textContent=completed.length===STEPS.length?'Registrar conclusão do tutorial':completed.length?'Retomar tutorial':'Aprender usando o Canal';restart.hidden=!completed.length;}
  function persist(){try{window.localStorage.setItem(keyFor(user),JSON.stringify({version:VERSION,steps:completed}));}catch(_){status.textContent='Progresso disponível nesta aba; armazenamento local indisponível.';}entryLabel();}
  function stop({save=true,focus=true}={}){
-  const s=session;if(!s)return;session=null;starting=false;s.valid=false;s.abort.abort();s.controllers.forEach(c=>c.dispose?.());s.dialog?.close();s.dialog?.remove();s.savedNodes?.forEach(([node,marker])=>marker.replaceWith(node));s.unlock?.();
+  const s=session;if(!s)return;session=null;starting=false;s.valid=false;s.abort.abort();cancelAnimationFrame(s.advanceFrame);s.timers?.forEach(id=>clearTimeout(id));s.controllers.forEach(c=>c.dispose?.());s.dialog?.close();s.dialog?.remove();s.savedNodes?.forEach(([node,marker])=>marker.replaceWith(node));s.unlock?.();
   if(save&&current()){persist();if(status.textContent.startsWith('Preparando a demonstração'))status.textContent='Tutorial pausado. Você pode retomar.';}if(focus&&current()&&start.isConnected){entry.open=true;start.focus({preventScroll:true});}
  }
  async function award(){
@@ -141,7 +144,7 @@ function mount({document,window,context,user,isBusy,initialize}){
   if(completed.length===STEPS.length)return award();
   if(isBusy()){status.textContent='Aguarde a ação em andamento no Canal para iniciar o tutorial.';return;}
   starting=true;
-  const s={valid:true,controllers:[],abort:new AbortController(),index:completed.length,evidence:false,preparing:true};
+  const s={valid:true,controllers:[],abort:new AbortController(),index:completed.length,epoch:0,pending:false,preparing:true,timers:new Set(),advanceFrame:0};
   session=s;
   try{
    if(!window.RegulationAuth.whenNetworkIdle)throw new Error('Abra uma nova aba do Portal para iniciar o tutorial com segurança.');
@@ -151,7 +154,7 @@ function mount({document,window,context,user,isBusy,initialize}){
    try{await Promise.race([window.RegulationAuth.whenNetworkIdle(),new Promise((_,reject)=>{idleTimer=setTimeout(()=>reject(new Error('Ações ainda em andamento')),8000);})]);}finally{clearTimeout(idleTimer);}
    if(!s.valid||session!==s||!current())return;
    const dialog=globalThis.document.createElement('dialog');s.dialog=dialog;dialog.className='citizen-tutorial';dialog.setAttribute('aria-labelledby','tutorialTitle');dialog.setAttribute('aria-describedby','tutorialExplanation');
-   dialog.innerHTML='<section class="tutorial-guide"><strong class="tutorial-mode">DEMONSTRAÇÃO · sem envio</strong><p data-tutorial-progress></p><h2 id="tutorialTitle" tabindex="-1"></h2><p id="tutorialExplanation" data-tutorial-explanation></p><div class="tutorial-controls"><button type="button" class="portal-button secondary" data-tutorial-back>Voltar</button><button type="button" class="portal-button primary" data-tutorial-next disabled>Avançar</button><button type="button" class="portal-button secondary" data-tutorial-example hidden>Usar exemplo fictício</button><button type="button" class="portal-button secondary" data-tutorial-pause>Pausar</button><button type="button" class="portal-button secondary" data-tutorial-skip>Pular</button></div><p data-tutorial-feedback role="status" aria-live="polite"></p></section>';
+   dialog.innerHTML='<section class="tutorial-guide"><strong class="tutorial-mode">DEMONSTRAÇÃO · sem envio</strong><p id="tutorialProgress" data-tutorial-progress></p><h2 id="tutorialTitle" tabindex="-1" aria-describedby="tutorialProgress tutorialExplanation"></h2><p id="tutorialExplanation" data-tutorial-explanation></p><div class="tutorial-controls"><button type="button" class="portal-button secondary" data-tutorial-back>Voltar</button><button type="button" class="portal-button secondary" data-tutorial-example hidden>Usar exemplo fictício</button><button type="button" class="portal-button secondary" data-tutorial-pause>Pausar</button><button type="button" class="portal-button secondary" data-tutorial-skip>Pular</button></div><p data-tutorial-feedback role="status" aria-live="polite"></p></section>';
    dialog.prepend(dialog.querySelector('.tutorial-mode'));
    const root=cloneWorkspace(document);s.root=root;dialog.append(root);
    // Keep one set of native IDs in the document, so labels and ARIA references
@@ -161,10 +164,31 @@ function mount({document,window,context,user,isBusy,initialize}){
    for(const selector of ['main','#newManifestationModal','#composeFilePreview','#manifestationDetailModal']){const node=document.querySelector(selector);if(node){const marker=globalThis.document.createComment('Tutorial preserves native component');node.before(marker);s.savedNodes.push([node,marker]);node.remove();}}
    entry.open=false;(context?.root||globalThis.document.body).append(dialog);dialog.showModal();
    const valid=()=>s.valid&&session===s&&current();
-   const feedback=dialog.querySelector('[data-tutorial-feedback]'),next=dialog.querySelector('[data-tutorial-next]');
-   function evidence(action){if(!valid()||s.preparing||action!==STEPS[s.index])return;s.evidence=true;next.disabled=false;feedback.textContent='Etapa praticada. Use Avançar para continuar.';}
-   const adapter=demoAdapter({verified:user.emailVerified===true,valid,onAction:evidence});s.adapter=adapter;
-   const localWindow=new Proxy(window,{get(target,property){if(property==='RegulationAuth')return adapter;const value=Reflect.get(target,property,target);return typeof value==='function'?value.bind(target):value;}});
+   const feedback=dialog.querySelector('[data-tutorial-feedback]'),events=new WeakMap(),tickets={};
+   const ready=()=>valid()&&!s.preparing&&!s.pending;
+   const allowAction=action=>ready()&&action===STEPS[s.index]&&tickets[action]===s.epoch;
+   // One rendered transition per initiating action. Native change/click pairs,
+   // duplicate events and late synthetic API callbacks cannot skip a lesson.
+   function evidence(action,epoch,condition=()=>true){
+    if(!ready()||epoch!==s.epoch||action!==STEPS[s.index]||!condition())return;
+    s.pending=true;const index=s.index;
+    s.advanceFrame=requestAnimationFrame(()=>{
+     if(!valid()||s.preparing||epoch!==s.epoch)return;
+     s.pending=false;if(!condition())return;
+     if(index===completed.length){completed.push(STEPS[index]);persist();}
+     if(index===STEPS.length-1){stop();award();return;}
+     s.epoch++;s.index++;s.timers.forEach(id=>clearTimeout(id));s.timers.clear();
+     if(s.index===13||s.index===15){s.preparing=true;root.querySelectorAll('.citizen-modal.open').forEach(n=>n.querySelector('[data-close-modal]')?.click());s.preparing=false;}
+     render();
+    });
+   }
+   const apiAction=action=>{const epoch=tickets[action];tickets[action]=null;evidence(action,epoch);};
+   const adapter=demoAdapter({verified:user.emailVerified===true,valid,onAction:apiAction,allowAction});s.adapter=adapter;
+   const localWindow=new Proxy(window,{get(target,property){
+    if(property==='RegulationAuth')return adapter;
+    if(property==='setTimeout')return (callback,delay,...args)=>{const epoch=s.epoch;const id=setTimeout(()=>{s.timers.delete(id);if(valid()&&epoch===s.epoch)callback(...args);},delay);s.timers.add(id);return id;};
+    const value=Reflect.get(target,property,target);return typeof value==='function'?value.bind(target):value;
+   }});
    const demoContext={window:localWindow,document:scopeDocument(root,s.abort.signal),citizenDemo:{auth:adapter},addController:c=>s.controllers.push(c),get disposed(){return !valid();}};
    await initialize(demoContext);if(!valid())return;
    async function prepare(index){
@@ -174,6 +198,7 @@ function mount({document,window,context,user,isBusy,initialize}){
     if(index>=1&&index<=12){root.querySelector('#openNewManifestation').click();}
     if(index>=5&&index<=12){const n=root.querySelector('input[value="denuncia"]');n.checked=true;n.dispatchEvent(new Event('change',{bubbles:true}));}
     if(index>=6&&index<=12)setValues(root,{manifestationSubject:EXAMPLE.subject,manifestationDescription:EXAMPLE.description});
+    root.querySelectorAll('.compose-file-remove').forEach(n=>n.click());
     if(index===7||index===8||index===9)root.querySelector('#composeAttachments').open=true;
     if(index===8||index===9)syntheticFile();
     if(index>=13){adapter.seed();root.querySelector('#refreshManifestations').click();root.querySelector('#markNotificationsRead').click();await Promise.resolve();await Promise.resolve();if(index===14)root.querySelector('[data-protocol]')?.click();}
@@ -183,17 +208,17 @@ function mount({document,window,context,user,isBusy,initialize}){
     if(!valid())return;
     root.querySelectorAll('[data-tutorial-target]').forEach(n=>n.removeAttribute('data-tutorial-target'));
     const target=root.querySelector('#composeFilePreview.open')||root.querySelector(lessons[s.index][2]);
-    if(!target||!target.getClientRects().length){feedback.textContent='Abra ou feche a janela indicada para encontrar o componente. Seu progresso está preservado.';return;}
+    if(!target||!target.getClientRects().length){feedback.textContent='Abra o componente indicado. Seu progresso está salvo.';return;}
     const visibleTarget=target.matches('input')?target.closest('label')||target:target;
     visibleTarget.dataset.tutorialTarget='';visibleTarget.scrollIntoView({block:'nearest',behavior:'instant'});
    }
    function render(){
-    s.evidence=completed[s.index]===STEPS[s.index];s.previewed=false;next.disabled=!s.evidence;feedback.textContent=s.evidence?'Etapa já praticada. Você pode revisar e avançar.':'Pratique no componente destacado para avançar.';
+    s.previewed=false;feedback.textContent='';
     const [title,text]=lessons[s.index];dialog.querySelector('#tutorialTitle').textContent=title;dialog.querySelector('[data-tutorial-explanation]').textContent=text;
+    if(s.index===11)dialog.querySelector('[data-tutorial-explanation]').textContent=`Selecione ${user.emailVerified?'Enviar com sigilo':'Enviar anonimamente'}. O Conselho não vê seu perfil. O protocolo segue ligado à conta; não há anonimato perante o sistema.`;
     dialog.querySelector('[data-tutorial-progress]').textContent=`Etapa ${s.index+1} de ${STEPS.length}`;
     dialog.querySelector('[data-tutorial-back]').disabled=s.index===0;
     dialog.querySelector('[data-tutorial-example]').hidden=![5,6,14].includes(s.index);
-    next.textContent=s.index===STEPS.length-1?'Concluir tutorial':'Avançar';
     dialog.querySelector('#tutorialTitle').focus({preventScroll:true});requestAnimationFrame(highlight);
    }
    function syntheticFile(){
@@ -201,40 +226,64 @@ function mount({document,window,context,user,isBusy,initialize}){
     const transfer=new DataTransfer();transfer.items.add(new File([bytes],'exemplo-ficticio.png',{type:'image/png'}));
     const input=root.querySelector('#manifestationFiles');input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));
    }
+   // Stamp the action before native handlers run, including submit()/Enter.
+   for(const type of ['click','change','focusout','keydown','keyup','submit'])root.addEventListener(type,event=>{
+    events.set(event,s.epoch);if(!ready())return;
+    if(type==='submit'){
+     const action=event.target.id==='newManifestationForm'?'send':event.target.id==='replyForm'?'reply':null;
+     if(action===STEPS[s.index]&&event.target.checkValidity()&&(action!=='reply'||root.querySelector('#replyText').value.trim()))tickets[action]=s.epoch;
+    }
+    if(type==='click'){
+     const action=event.target.closest('#manifestationList [data-protocol]')?'track':event.target.closest('#notificationList [data-notification]')?'notice':null;
+     if(action===STEPS[s.index])tickets[action]=s.epoch;
+    }
+   },{capture:true,signal:s.abort.signal});
    // The native picker/attachment handler receives only this known local file.
    root.addEventListener('click',event=>{
     if(!valid()){event.preventDefault();event.stopImmediatePropagation();return;}
-    if(event.target.closest('#composeChooseFiles,#manifestationFiles,#attachmentFile')){event.preventDefault();event.stopImmediatePropagation();syntheticFile();evidence('files');}
+    if(event.target.closest('#composeChooseFiles,#manifestationFiles,#attachmentFile')){event.preventDefault();event.stopImmediatePropagation();syntheticFile();evidence('files',events.get(event));}
    },{capture:true,signal:s.abort.signal});
-   root.addEventListener('keydown',event=>{if(event.key==='Escape'&&s.previewed&&root.querySelector('#composeFilePreview.open'))evidence('preview');},{capture:true,signal:s.abort.signal});
+   root.addEventListener('keydown',event=>{if(event.key==='Escape'&&s.previewed&&root.querySelector('#composeFilePreview.open'))evidence('preview',events.get(event));},{capture:true,signal:s.abort.signal});
+   root.addEventListener('keyup',event=>{
+    const n=event.target;
+    if(![' ','Enter'].includes(event.key)||event.repeat||!n.matches('input[type=radio]')||!n.checked)return;
+    evidence(n.name==='manifestationType'?n.value:n.value==='identificada'?'identified':'protected',events.get(event),()=>n.checked);
+   },{signal:s.abort.signal});
+   const reportValid=()=>['manifestationSubject','manifestationDescription'].every(id=>{const n=root.querySelector('#'+id);return n.checkValidity()&&n.value.trim().length>=(id==='manifestationSubject'?3:10);});
+   const detailsValid=()=>root.querySelector('#composeDetails').open&&['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'].some(id=>{const n=root.querySelector('#'+id);return n.value.trim()&&n.checkValidity();});
+   function fieldFinished(event){
+    if(['manifestationSubject','manifestationDescription'].includes(event.target.id))evidence('report',events.get(event),reportValid);
+    if(['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'].includes(event.target.id))evidence('details',events.get(event),detailsValid);
+   }
    root.addEventListener('change',event=>{
-    if(event.target.name==='manifestationType')evidence(event.target.value);
-    if(event.target.name==='manifestationPrivacy')evidence(event.target.value==='identificada'?'identified':'protected');
+    if(event.target.name==='manifestationType')evidence(event.target.value,events.get(event),()=>event.target.checked);
+    if(event.target.name==='manifestationPrivacy')evidence(event.target.value==='identificada'?'identified':'protected',events.get(event),()=>event.target.checked);
+    fieldFinished(event);
    },{signal:s.abort.signal});
-   root.addEventListener('input',event=>{
-    if(s.index===5&&root.querySelector('#manifestationSubject').value.trim().length>=3&&root.querySelector('#manifestationDescription').value.trim().length>=10)evidence('report');
-    if(s.index===6&&root.querySelector('#composeDetails').open&&['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'].includes(event.target.id)&&event.target.value.trim())evidence('details');
-   },{signal:s.abort.signal});
+   root.addEventListener('focusout',fieldFinished,{signal:s.abort.signal});
    root.addEventListener('click',event=>{
-    if(event.target.closest('#openNewManifestation'))evidence('open');
-    if(event.target.closest('[data-close-local-preview]')&&s.previewed)evidence('preview');
-    if(event.target.closest('.compose-file-thumb'))s.previewed=true;
-    if(event.target.closest('.compose-file-remove'))evidence('remove');
+    const epoch=events.get(event),radio=event.target.closest('label')?.querySelector('input[type=radio]');
+    if(radio)queueMicrotask(()=>evidence(radio.name==='manifestationType'?radio.value:radio.value==='identificada'?'identified':'protected',epoch,()=>radio.checked));
+    if(event.target.closest('#openNewManifestation'))evidence('open',epoch);
+    if(event.target.closest('[data-close-local-preview]')&&s.previewed)evidence('preview',epoch);
+    if(event.target.closest('.compose-file-thumb')&&root.querySelector('#composeFilePreview.open'))s.previewed=true;
+    if(event.target.closest('.compose-file-remove'))evidence('remove',epoch,()=>!root.querySelector('.compose-file-remove'));
     if(event.target.closest('[data-close-modal="newManifestationModal"]')&&s.index>=1&&s.index<=12&&!s.preparing){stop();return;}
     requestAnimationFrame(highlight);
    },{signal:s.abort.signal});
-   dialog.querySelector('[data-tutorial-example]').addEventListener('click',()=>{
-    if(s.index===5)setValues(root,{manifestationSubject:EXAMPLE.subject,manifestationDescription:EXAMPLE.description});
-    if(s.index===6){root.querySelector('#composeDetails').open=true;setValues(root,{manifestationService:'Unidade Modelo — exemplo fictício'});}
+   dialog.querySelector('[data-tutorial-example]').addEventListener('click',event=>{
+    if(!ready()||event.detail>1)return;
+    const epoch=s.epoch;
+    if(s.index===5){setValues(root,{manifestationSubject:EXAMPLE.subject,manifestationDescription:EXAMPLE.description});evidence('report',epoch,reportValid);}
+    if(s.index===6){root.querySelector('#composeDetails').open=true;setValues(root,{manifestationService:'Unidade Modelo — exemplo fictício'});evidence('details',epoch,detailsValid);}
     if(s.index===14)setValues(root,{replyText:'Exemplo fictício: o mural ficava na entrada. Não reproduzo dados pessoais.'});
    });
-   next.addEventListener('click',()=>{
-    if(!valid()||!s.evidence)return;
-    if(s.index===completed.length){completed.push(STEPS[s.index]);persist();}
-    if(s.index===STEPS.length-1){stop();award();return;}
-    s.index++;render();
+   dialog.querySelector('[data-tutorial-back]').addEventListener('click',()=>{
+    if(!valid()||s.preparing||s.index===0)return;
+    cancelAnimationFrame(s.advanceFrame);s.pending=false;s.epoch++;const epoch=s.epoch;
+    s.index--;dialog.querySelector('[data-tutorial-back]').disabled=true;
+    prepare(s.index).then(()=>{if(valid()&&epoch===s.epoch)render();});
    });
-   dialog.querySelector('[data-tutorial-back]').addEventListener('click',()=>{if(s.index>0){s.index--;prepare(s.index).then(()=>{if(valid())render();});}});
    dialog.querySelector('[data-tutorial-pause]').addEventListener('click',()=>stop());
    dialog.querySelector('[data-tutorial-skip]').addEventListener('click',()=>{stop();status.textContent='Tutorial pulado. Nenhuma conquista foi concedida. Você pode retomar.';});
    dialog.addEventListener('keydown',event=>{
@@ -274,5 +323,5 @@ function mount({document,window,context,user,isBusy,initialize}){
  entryLabel();
  return {get active(){return Boolean(session)||starting;},beforeNavigate(){stop({focus:false});},deactivate(){stop({focus:false});},dispose(){disposed=true;stop({save:false,focus:false});abort.abort();entry.remove();}};
 }
-globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION});
+globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION,launcherVersion:4});
 })();

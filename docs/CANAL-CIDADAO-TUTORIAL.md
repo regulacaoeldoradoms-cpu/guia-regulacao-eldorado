@@ -1,5 +1,7 @@
 # Tutorial interativo do Canal do Cidadão
 
+Registro da implementação integrada pela PR656. A candidata local posterior, com Ajuda visível e avanço automático solicitado pelo usuário, está em [Tutorial automático](CANAL-CIDADAO-TUTORIAL-AUTOMATICO.md); os resultados abaixo são a evidência histórica da versão com Avançar.
+
 Base verificada: `71a2c8e90eb2516162c5deca7b4ff12c12db65c8` (14/10/2026), posterior ao merge da PR654 e à PR655. Branch isolada: `feat/citizen-interactive-tutorial-20261014`. AGENTS/checkpoint e workflows conferidos; não há skills locais adicionais. O checkpoint da Missão Bancária foi preservado.
 
 ## Plano e critérios

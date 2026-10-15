@@ -808,6 +808,9 @@
 
   function processLayer(element, initialize = false) {
     if (!(element instanceof Element) || !element.matches(LAYER_SELECTOR)) return;
+    // The explicit tutorial dialog owns nested component focus and guidance.
+    // Do not queue native layer focus/restoration over a new tutorial task.
+    if (element.closest('dialog.citizen-tutorial')) return;
     const open = layerOpen(element);
     const previous = layerSnapshots.get(element);
     layerSnapshots.set(element, open);

@@ -2,15 +2,21 @@ import {expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 const base=process.env.DARK_AUDIT_BASE||'origin/main';
 const achievementHtml=execFileSync('git',['show',`${base}:conquistas/index.html`],{encoding:'utf8'});
+let baseTutorial='';
+try{baseTutorial=execFileSync('git',['show',`${base}:js/citizen-tutorial.js`],{encoding:'utf8',stdio:['ignore','pipe','pipe']});}catch{}
+const baseHasTutorial=baseTutorial.includes('data-citizen-tutorial-entry');
+const baseHasHelpLabel=baseTutorial.includes('class="tutorial-help-label"');
 // Preserve the whole prior portal. Project only the exact additions explicitly
 // requested by this PR, after checking their contract and recording evidence.
 // No pixel/style tolerance, permissions check or comparison is bypassed.
 export async function projectTutorialAdditions(page,info,route,current){
  if(route==='/cidadao/'){
   const entry=page.locator('[data-citizen-tutorial-entry]');
-  if(!current){expect(await entry.count()).toBe(0);return;}
+  if(!current&&!baseHasTutorial){expect(await entry.count()).toBe(0);return;}
   await expect(entry).toHaveCount(1);
-  await expect(entry.locator('summary')).toHaveAttribute('aria-label','Tutorial do Canal');
+  if(current||baseHasHelpLabel)await expect(entry.locator('.tutorial-help-label')).toHaveText('Ajuda');
+  else expect(await entry.locator('.tutorial-help-label').count()).toBe(0);
+  await expect(entry.locator('summary')).toHaveAttribute('aria-label',current||baseHasHelpLabel?'Ajuda: tutorial do Canal do Cidadão':'Tutorial do Canal');
   expect(await entry.evaluate(n=>({tag:n.tagName,open:n.open}))).toEqual({tag:'DETAILS',open:false});
   await expect(entry.locator('[data-tutorial-start]')).toHaveText('Aprender usando o Canal');
   await expect(entry.locator('[data-tutorial-start]')).toHaveAttribute('type','button');
@@ -29,7 +35,8 @@ export async function projectTutorialAdditions(page,info,route,current){
  }
  if(route==='/conquistas/'){
   const card=page.locator('#citizenTutorialAchievement');
-  if(!current){expect(await card.count()).toBe(0);return;}
+  const baseHasCard=achievementHtml.includes('id="citizenTutorialAchievement"');
+  if(!current&&!baseHasCard){expect(await card.count()).toBe(0);return;}
   await expect(card).toHaveCount(1);
   await expect(card.locator('h3')).toHaveText('Canal do Cidadão');
   await expect(card.locator('.achievement-state')).toHaveText('Disponível');
@@ -37,6 +44,8 @@ export async function projectTutorialAdditions(page,info,route,current){
   await expect(card.locator('a')).toHaveAttribute('href','/cidadao/');
   await expect(card.locator('a')).toHaveText('Aprender usando o Canal');
   expect(await card.locator('a').count()).toBe(1);
+  // Once merged, this card is native baseline content and must compare intact.
+  if(baseHasCard)return;
   const evidence=await card.evaluate((node,html)=>{
    const old=new DOMParser().parseFromString(html,'text/html');
    const category=doc=>[...doc.querySelectorAll('.account-achievement-category')].find(n=>n.querySelector('h2')?.textContent==='Exploração do Portal');

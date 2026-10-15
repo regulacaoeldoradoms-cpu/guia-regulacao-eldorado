@@ -33,7 +33,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     const html = read(filename);
     assert.match(html, filename === 'admin/social/index.html' ? /portal-theme\.js\?v=20260923-1/ : /portal-theme\.js\?v=20261013-theme-immediate-1/);
     assert.match(html, /portal-interactions\.css\?v=20260924-dark-final-1/);
-    assert.match(html, filename === 'admin/social/index.html' ? /portal-interactions\.js\?v=20260923-2/ : /portal-interactions\.js\?v=20261013-theme-immediate-1/);
+    assert.match(html, filename === 'admin/social/index.html' ? /portal-interactions\.js\?v=20260923-2/ : /portal-interactions\.js\?v=20261015-citizen-tutorial-1/);
     assert.match(html, /social\.css\?v=20260922-2/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, filename === 'admin/social/index.html' ? /social-api\.js\?v=20260910-4/ : /social-api\.js\?v=20261011-citizen-continuity-3/);
@@ -119,7 +119,7 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(socialHome, /avatarVersion: String\(cachedProfile\.avatarVersion/);
   const homeScripts = [...index.matchAll(/<script\b[^>]*\bsrc\s*=\s*(["'])([^"']+)\1[^>]*>/gi)]
     .map((match) => match[2]).filter((source) => new URL(source, 'https://portal.invalid').pathname === '/js/home.js');
-  assert.deepEqual(homeScripts, ['/js/home.js?v=20261014-citizen-tutorial-1']);
+  assert.deepEqual(homeScripts, ['/js/home.js?v=20261015-citizen-tutorial-1']);
   assert.match(index, /<body class="portal-page home-loading-active" data-portal-home-bootstrap="1">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);
