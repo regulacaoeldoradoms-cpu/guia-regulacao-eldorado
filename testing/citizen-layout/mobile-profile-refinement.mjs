@@ -181,7 +181,10 @@ async function intercept(context, origin, audit) {
     else if (url.pathname === '/api/council/my') data = { manifestations:[] };
     else if (url.pathname === '/api/pets/me') data = { state:petState };
     else if (url.pathname === '/api/pets/catalog') data = petCatalog();
-    else if (url.pathname === '/api/pets/age' && method === 'GET') data = { ageStatus:'unknown' };
+    // This preservation owner has recorded private details and only a cat.
+    // A stored minor declaration keeps the original cat-only presentation;
+    // missing/legacy dates use their separate native Worker fixtures.
+    else if (url.pathname === '/api/pets/age' && method === 'GET') data = { ageStatus:'underage',canDeclareBirthDate:false };
     else if (url.pathname === '/api/portal-tutorials/citizen' && method === 'GET') data = { completion:null };
     else if (url.pathname === '/api/pets/achievements') data = { achievements:[] };
     else if (url.pathname === '/api/observability' && method === 'POST') data = { ok:true };
