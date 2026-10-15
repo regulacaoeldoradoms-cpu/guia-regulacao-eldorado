@@ -47,6 +47,11 @@ jobs:
           JS
       - name: Native registration and pet flows, mobile/desktop and both themes
         run: node testing/account-registration/browser.mjs
+      - name: Old cached signup HTML fails closed without losing the draft
+        env:
+          ACCOUNT_LEGACY_HTML_ONLY: '1'
+          ACCOUNT_WIDTHS: '390'
+        run: node testing/account-registration/browser.mjs .local/account-registration/legacy-html
       - name: Own-user completion, first password and recovery guards
         env:
           ACCOUNT_MANAGED_ONLY: '1'

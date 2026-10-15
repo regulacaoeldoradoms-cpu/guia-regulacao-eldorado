@@ -13,7 +13,7 @@ const CITIZEN_HTML_MARKER = '<meta name="portal-citizen-first-paint" content="20
 const CITIZEN_LEGACY_HTML_TIMEOUT_MS = 8000;
 const SHARED_HTML_PATHS = new Set([
   '/', '/cidadao/', '/amigos/', '/ferramentas/', '/perfil/',
-  '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/'
+  '/seguranca/', '/conquistas/', '/configuracoes/', '/notificacoes/', '/mascotes/', '/cadastro/'
 ]);
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
 const MAX_WARM_ROUTES = 18;

@@ -4,3 +4,8 @@
 #signupForm .portal-field :is(input,select) { min-height:48px; min-width:0; }
 #signupForm :is(input,select):focus-visible { outline:3px solid var(--portal-theme-accent,#246dab); outline-offset:3px; }
 #signupForm > a { color:var(--portal-theme-accent,#275d88); }
+
+/* Let long consent text determine its full height, including text-only zoom. */
+#signupForm .signup-consent { display:grid; grid-template-columns:20px minmax(0,1fr); gap:10px; align-items:start; margin:8px 0 18px; color:#516b82; font-size:.84rem; }
+#signupForm .signup-consent input { width:20px; height:20px; margin:3px 0 0; }
+#signupForm .signup-consent span { min-width:0; overflow-wrap:anywhere; line-height:1.5; }

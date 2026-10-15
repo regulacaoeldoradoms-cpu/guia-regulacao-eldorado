@@ -115,9 +115,19 @@ try{
   await context.route('**/api/auth/registration-capabilities',async route=>fulfill(route,await handlePortalRoute(asRequest(route.request()),env,'')));
   await context.route('**/api/auth/register',async route=>{posts.push(route.request().postDataJSON());return fulfill(route,await handlePortalRoute(await sanitizeCitizenRegistrationRequest(asRequest(route.request())),env,''));});
   try{
+   if(process.env.ACCOUNT_LEGACY_HTML_ONLY==='1'){
+    const markup=(await fs.readFile('cadastro/index.html','utf8')).replace(/<div class="portal-field">\s*<label for="signupGender">[\s\S]*?<\/div>/,'').replace(/<script src="\/js\/private-birth-date-input[^<]+<\/script>/,'');
+    assert(!markup.includes('id="signupGender"'));await context.route(origin+'/cadastro/',route=>route.fulfill({contentType:'text/html',body:markup}));
+    await page.goto(origin+'/cadastro/');
+    for(const [id,value]of [['signupUsername','synthetic.legacyhtml'],['signupPassword','Synthetic-Registration-2026'],['signupConfirm','Synthetic-Registration-2026'],['signupBirthDate','1993-07-19']])await page.locator('#'+id).fill(value);
+    await page.locator('#signupTerms').check();await page.locator('#signupSubmit').click();await page.waitForFunction(()=>document.getElementById('signupStatus')?.textContent.includes('Atualize a página'));
+    assert.equal(posts.length,0);assert.equal(state.errors.length,0);await screenshot(page,`legacy-signup-html-${width}-${theme}`);results.push({scene:'legacy-signup-html',width,theme,success:true,noPost:true});continue;
+   }
    await page.goto(origin+'/cadastro/');await applyTextScale(page);const birth=page.locator('#signupBirthDate'),gender=page.getByLabel('Gênero',{exact:true});
    assert.equal(await gender.inputValue(),'');assert.equal(await gender.evaluate(n=>n.selectedOptions[0].disabled),true);
    await page.locator('#signupUsername').fill('synthetic.browser');await page.locator('#signupPassword').fill('Synthetic-Registration-2026');await page.locator('#signupConfirm').fill('Synthetic-Registration-2026');await page.locator('#signupTerms').check();
+   const termsBox=await page.locator('.signup-consent').boundingBox(),buttonBox=await page.locator('#signupSubmit').boundingBox();assert(termsBox.y+termsBox.height<=buttonBox.y,'consent must not overlap submit');
+   if(scale===2)await screenshot(page,`signup-entry-${width}-${theme}`);
    await page.locator('#signupSubmit').click();assert.equal(posts.length,0);
    await birth.fill('2100-01-01');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);assert(await birth.evaluate(n=>!n.validity.valid));
    await birth.fill('1899-12-31');await page.locator('#signupSubmit').click();assert.equal(posts.length,0);

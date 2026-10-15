@@ -18,6 +18,7 @@
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!gender || !window.PortalBirthDateInput) { show('Atualize a página para concluir o cadastro.'); return; }
     if (!window.PortalBirthDateInput.validate(birthDate) || !form.reportValidity()) { birthDate.reportValidity(); return; }
     if (password.value !== confirm.value) {
       show('A confirmação da senha não corresponde à senha escolhida.');

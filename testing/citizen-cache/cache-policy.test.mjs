@@ -257,3 +257,9 @@ test('account controller refresh retains offline fallback and leaves future vers
   assert.equal(f.calls.length,2);assert.equal(new URL(f.calls[1].url).search,'?v=2099-future');
   assert.equal(await(await cache.match(origin+future)).text(),'FUTURE');
 });
+
+for(const offline of [false,true])test(`signup HTML refresh preserves installed cache and offline fallback: ${offline}`,async()=>{
+ const f=fixture(async()=>{if(offline)throw Error('synthetic-offline');return new Response('NEW-SIGNUP-WITH-GENDER');});await f.seed('/cadastro/','OLD-SIGNUP');
+ assert.equal(await(await f.dispatch('/cadastro/').response).text(),offline?'OLD-SIGNUP':'NEW-SIGNUP-WITH-GENDER');
+ assert.deepEqual([...f.stores.keys()],[namespace]);
+});
