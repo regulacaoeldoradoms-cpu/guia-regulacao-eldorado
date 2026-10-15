@@ -432,7 +432,7 @@
       } else if (record.contactBlocked) {
         notify.textContent = 'Contato removido';
         notify.title = 'A remoção foi registrada. A sincronização automática não restaura este contato.';
-      } else if (!record.patientSourceId) {
+      } else if (record.contactIdentityRequired) {
         notify.textContent = 'Contato indisponível';
         notify.title = 'O paciente precisa ser identificado pela sincronização para disponibilizar o contato.';
       } else {

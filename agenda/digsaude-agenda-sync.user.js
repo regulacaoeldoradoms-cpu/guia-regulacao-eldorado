@@ -29,6 +29,8 @@
   const CONTACT_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
   const CONTACT_VERSION = 'patient-details-v2';
   const CONTACT_DIRECTORY_VERSION = 'patient-directory-v1';
+  // No patient identity source is proven by the repository's sanitized evidence yet.
+  const PATIENT_ID_CONTRACT = '';
   const CONTACT_CONCURRENCY = 1;
     const CONTACT_WINDOW_TIMEOUT_MS = 8 * 1000;
     const CONTACT_RETRY_DELAY_MS = 250;
@@ -177,7 +179,8 @@
     return compact(checkbox?.value || '');
   }
 
-  function patientSourceIdFor(cell) {
+  function patientSourceIdFor(cell, contract = PATIENT_ID_CONTRACT) {
+    if (contract !== 'patient-resource-link-v1') return '';
     // Only an explicit patient resource in the patient cell qualifies. Never hash a name/phone.
     const ids = new Set();
     const prefix = window.location.pathname.split('/consultas')[0] + '/pacientes/';
@@ -579,7 +582,6 @@
     const targets = records.filter((record) => (
       record?.sourceId
       && contactEligible(record)
-      && (!directoryCapabilityVerified || record.patientSourceId)
       && !knownContactIds.has(record.sourceId)
       && !blockedContactIds.has(record.sourceId)
     ));

@@ -232,7 +232,7 @@ test('correções concorrentes com mesma revisão têm um único vencedor', asyn
   assert.deepEqual(results.map(result => result.status).sort(), [200, 409]);
 });
 
-test('replay sem identidade técnica não restaura número excluído nem sob novo ID de consulta', async () => {
+test('perda de identidade estabelecida não restaura contato excluído nem associa legado homônimo', async () => {
   const w = backend();
   await w.sync([row()]);
   const legacyCopy = row({ sourceId: 'synthetic-unbound-copy', contactSourceId: 'synthetic-unbound-copy',
@@ -243,9 +243,10 @@ test('replay sem identidade técnica não restaura número excluído nem sob nov
     expectedRevision: (await w.list()).find(item => item.sourceId === row().sourceId).contactRevision });
   await w.sync([row({ patientSourceId: undefined, contactPatientSourceId: undefined,
     patient: 'Nome sintético antigo', requestedAt: '2020-01-01' })]);
-  await w.sync([row({ sourceId: 'synthetic-legacy-replay', contactSourceId: 'synthetic-legacy-replay',
-    patientSourceId: undefined, contactPatientSourceId: undefined })]);
-  assert.ok((await w.list()).every(item => item.phone === ''));
+  await w.sync([row({ patientSourceId: undefined, contactPatientSourceId: undefined,
+    patient: 'Nome sintético antigo', requestedAt: '2020-01-01' })]);
+  assert.equal((await w.list()).find(item => item.sourceId === row().sourceId).phone, '');
+  assert.equal((await w.list()).find(item => item.sourceId === legacyCopy.sourceId).phone, row().phone);
   assert.equal(contactEntries(w.db)[0][1].status, 'deleted');
 });
 
@@ -254,11 +255,11 @@ test('não promove legado por nome; falha de upgrade preserva válido; captura v
   const legacy = row({ patientSourceId: undefined, contactPatientSourceId: undefined });
   const legacyPath = (await w.agendaCollection(ORG)) + '/synthetic-legacy-document';
   w.db.documents.set(legacyPath, { ...w.normalizeRecord(legacy), _updateTime: 'synthetic-legacy-version' });
-  assert.equal((await w.list())[0].phone, '');
+  assert.equal((await w.list())[0].phone, row().phone);
   assert.equal(w.db.documents.get(legacyPath).phone, row().phone);
   await w.sync([row({ phone: '' })]);
   assert.equal(contactEntries(w.db).length, 0);
-  assert.equal((await w.list())[0].phone, '');
+  assert.equal((await w.list())[0].phone, row().phone);
   assert.equal(w.db.documents.get(legacyPath).phone, row().phone);
   await w.sync([row()]);
   assert.equal(contactEntries(w.db).length, 1);
@@ -278,6 +279,38 @@ test('não promove legado por nome; falha de upgrade preserva válido; captura v
   assert.equal((await expired.list())[0].phone, '');
 });
 
+test('legado v2 continua disponível no vínculo original após recarga e snapshots sem mapeamento global', async () => {
+  const w = backend();
+  const legacy = row({ patientSourceId: '', contactPatientSourceId: '' });
+  assert.equal((await w.sync([legacy])).status, 200);
+  assert.equal((await w.list())[0].phone, legacy.phone);
+  assert.equal(contactEntries(w.db).length, 0);
+  const reloaded = backend(storage(JSON.parse(JSON.stringify([...w.db.documents]))));
+  assert.equal((await reloaded.list())[0].phone, legacy.phone);
+  assert.deepEqual((await reloaded.request('/contact-state')).body.knownSourceIds, [legacy.sourceId]);
+  for (const phone of ['', undefined, 'CPF 11990000001']) {
+    await reloaded.sync([{ ...legacy, phone }]);
+    assert.equal((await reloaded.list())[0].phone, legacy.phone);
+  }
+  // An unconfirmed proposed patient ID neither blocks the old consultation nor seeds a new patient entry.
+  assert.deepEqual((await reloaded.lookup([{ ...legacy, patientSourceId: 'synthetic-proposed-patient' }])).body.knownSourceIds, [legacy.sourceId]);
+  assert.deepEqual((await reloaded.lookup([{ ...legacy, sourceId: 'synthetic-other-consultation' }])).body.knownSourceIds, []);
+  assert.deepEqual((await reloaded.lookup([{ ...legacy, patient: 'Outro nome sintético' }])).body.knownSourceIds, []);
+  assert.deepEqual((await reloaded.lookup([{ ...legacy, requestedAt: '2027-01-01' }])).body.knownSourceIds, []);
+  await reloaded.sync([], ORG, true);
+  await reloaded.sync([{ ...legacy, phone: '', contactVersion: undefined }]);
+  assert.equal((await reloaded.list())[0].phone, legacy.phone);
+  assert.equal(contactEntries(reloaded.db).length, 0);
+  for (const [changes, expected] of [
+    [{ contactVersion: '' }, ''], [{ contactSourceId: 'synthetic-other-source' }, ''],
+    [{ contactPatient: 'Outro nome sintético' }, ''], [{ contactRequestedAt: '2020-01-01' }, ''],
+    [{ contactVerifiedAt: '2020-01-01T00:00:00.000Z' }, '']]) {
+    const isolated = backend(storage(JSON.parse(JSON.stringify([...reloaded.db.documents]))));
+    Object.assign([...isolated.db.documents.values()][0], changes);
+    assert.equal((await isolated.list())[0].phone, expected);
+  }
+});
+
 test('ID ausente/inválido ou vínculo de coleta divergente não cria diretório e conflito não escolhe telefone arbitrário', async () => {
   const w = backend();
   for (const invalid of ['', '../patient', 'a'.repeat(81), 12]) {
@@ -285,7 +318,7 @@ test('ID ausente/inválido ou vínculo de coleta divergente não cria diretório
   }
   await w.sync([row({ contactPatientSourceId: 'synthetic-other-patient' })]);
   assert.equal(contactEntries(w.db).length, 0);
-  assert.equal((await w.list())[0].phone, '');
+  assert.equal((await w.list())[0].phone, row().phone);
   const result = await w.sync([row(), row({ sourceId: 'synthetic-b', contactSourceId: 'synthetic-b', phone: '5521990000002' })]);
   assert.equal(result.status, 400);
   assert.equal(contactEntries(w.db).length, 0);
@@ -397,20 +430,21 @@ test('ponte real consulta snapshot atual e coletor só visita desconhecidos, res
   // READY would normally start the timer; tests invoke the exact lookup/enrichment functions directly.
   await context.api.lookupSnapshotContacts(snapshot);
   const result = await context.api.enrichSnapshotContacts(snapshot);
-  assert.equal(result.requested, 3);
-  assert.deepEqual(visited, ['synthetic-unknown', 'synthetic-homonym']);
+  assert.equal(result.requested, 4);
+  assert.deepEqual(visited, ['synthetic-unknown', 'synthetic-homonym', 'synthetic-unidentified']);
   assert.equal(snapshot.records.find(item => item.sourceId === 'synthetic-same-unknown-patient').phone, '5531990000003');
   assert.equal(context.api.pending(), false);
   const lookupReply = replies.find(item => item.type === 'PORTAL_AGENDA_DIGSAUDE_CONTACT_STATE');
   assert.equal(lookupReply.contactDirectoryCapability, DIRECTORY);
   assert.ok(!JSON.stringify(lookupReply).includes(row().phone));
   const links = paths => ({ querySelectorAll: () => paths.map(path => ({ getAttribute: () => path })) });
-  assert.equal(context.api.patientSourceIdFor(links(['/synthetic/pacientes/synthetic-patient-a/view'])), 'synthetic-patient-a');
+  assert.equal(context.api.patientSourceIdFor(links(['/synthetic/pacientes/synthetic-patient-a/view'])), '');
+  assert.equal(context.api.patientSourceIdFor(links(['/synthetic/pacientes/synthetic-patient-a/view']), 'patient-resource-link-v1'), 'synthetic-patient-a');
   for (const paths of [[], ['/synthetic/consultas/synthetic-patient-a/view'],
     ['https://untrusted.test/synthetic/pacientes/synthetic-patient-a/view'],
     ['/another/pacientes/synthetic-patient-a/view'],
     ['/synthetic/pacientes/a/view', '/synthetic/pacientes/b/view']]) {
-    assert.equal(context.api.patientSourceIdFor(links(paths)), '');
+    assert.equal(context.api.patientSourceIdFor(links(paths), 'patient-resource-link-v1'), '');
   }
   let finish;
   w.db.batchOverride = () => new Promise(resolve => { finish = resolve; });

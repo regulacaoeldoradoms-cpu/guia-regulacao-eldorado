@@ -1,6 +1,6 @@
 # Agenda DigSaúde
 
-Candidata local de 15/10/2026: [contatos duráveis por organização e ID técnico de paciente](AGENDA-DIGSAUDE-DURABILIDADE-LOCAL.md). Substitui expiração automática do diretório e revogação por falha, com transição explícita dos legados. Ainda sem publicação ou migração; as seções abaixo documentam a evolução anterior da base.
+Candidata local de 15/10/2026: [contatos duráveis por organização e ID técnico de paciente](AGENDA-DIGSAUDE-DURABILIDADE-LOCAL.md). Prepara diretório independente e corrige perda por falha, mantendo contatos v2 válidos no vínculo original e o fluxo legado sem mapeamento global. Ainda sem publicação ou migração; as seções abaixo documentam a evolução anterior da base.
 
 Decisão registrada em 16/09/2026.
 

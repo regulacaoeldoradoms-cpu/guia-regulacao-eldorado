@@ -97,6 +97,7 @@ function normalizeRecord(input = {}) {
   return {
     sourceId,
     patientSourceId: patientSourceId(input.patientSourceId),
+    contactIdentityRequired: false,
     requestedAt: clean(input.requestedAt, 40),
     specialty: clean(input.specialty, 120),
     returnStatus: clean(input.returnStatus, 20),
@@ -227,8 +228,9 @@ async function directory(env, appointments) {
 
 function directoryRecord(record, contacts) {
   const id = patientSourceId(record.patientSourceId);
-  // Unbound legacy copies cannot be checked against patient-level corrections/deletions.
-  if (!id) return { ...record, phone: '', contactVersion: '' };
+  // Preserve the original consultation proof. This does not link patients by name or seed the directory.
+  if (!id) return record.contactIdentityRequired
+    ? { ...record, phone: '', contactVersion: '' } : record;
   const contact = contacts.get(id);
   const valid = contact?.status === 'active' && contact.revision
     && [CONTACT_VERSION, 'authorized-correction'].includes(contact.provenance)
@@ -371,6 +373,7 @@ function publicRecord(record, username, readMemory) {
     patientSourceId: patientSourceId(record.patientSourceId),
     contactRevision: record.contactRevision || '',
     contactBlocked: record.contactBlocked === true,
+    contactIdentityRequired: record.contactIdentityRequired === true,
     requestedAt: clean(record.requestedAt, 40),
     specialty: clean(record.specialty, 120),
     returnStatus: clean(record.returnStatus, 20),
@@ -472,11 +475,12 @@ async function syncRecords(env, input, user, attempt = 0) {
     // Older collectors must not drop a previously explicit patient association.
     if (!record.patientSourceId && existing?.patientSourceId && record.patient === existing.patient
       && record.requestedAt === existing.requestedAt) record.patientSourceId = existing.patientSourceId;
-    if (!record.patientSourceId) {
-      // A new unbound capture could bypass a patient's deletion marker under another appointment ID.
+    if (!record.patientSourceId && (existing?.patientSourceId || existing?.contactIdentityRequired)) {
+      // Losing an established identity must not turn a known directory contact into a legacy replay.
       record.phone = '';
       record.contactVersion = '';
       record.contactVerifiedAt = '';
+      record.contactIdentityRequired = true;
     }
     if (record.patientSourceId && !existing?.patientSourceId && existing
       && record.patient === existing.patient && record.requestedAt === existing.requestedAt
@@ -672,7 +676,8 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
           const existing = bySource.get(normalized.sourceId);
           const same = existing && normalized.patient === existing.patient
             && normalized.requestedAt === existing.requestedAt
-            && (!normalized.patientSourceId || normalized.patientSourceId === existing.patientSourceId);
+            && (!normalized.patientSourceId || normalized.patientSourceId === existing.patientSourceId
+              || (!existing.patientSourceId && verifiedContactPhone(existing)));
           return same ? { ...existing, active: true } : { ...normalized, active: true };
         });
       }
