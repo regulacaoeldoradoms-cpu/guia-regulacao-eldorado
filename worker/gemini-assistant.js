@@ -203,14 +203,14 @@ function ambiguousPilotSystems(question, protocols) {
   const records = protocols.map(protocol => protocol.clinicalConditionRecord).filter(Boolean);
   const systems = new Set(records.filter(record => record.searchKind === 'shoulder').map(record => record.systemKind));
   const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const both = /dig\s*saude|digsus/.test(text) && /\bsisreg|campo grande/.test(text);
+  const both = /dig\s*saude|digsus|telessaude|teleatendimento/.test(text) && /\bsisreg|campo grande/.test(text);
   const comparison = /outro sistema/.test(text) || /compar|diferen/.test(text) && (/sistemas|fluxos/.test(text) || both);
   return systems.size > 1 && !comparison;
 }
 
 function scopePilotSystems(question, protocols) {
   const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const dig = /dig\s*saude|digsus/.test(text), sisreg = /\bsisreg|campo grande/.test(text);
+  const dig = /dig\s*saude|digsus|telessaude|teleatendimento/.test(text), sisreg = /\bsisreg|campo grande/.test(text);
   if (dig === sisreg || /outro sistema/.test(text) || /compar|diferen/.test(text) && /sistemas|fluxos/.test(text)) return protocols;
   const kind = dig ? 'digsaude' : 'sisreg_reference';
   return protocols.filter(protocol => protocol.clinicalConditionRecord?.searchKind !== 'shoulder' || protocol.clinicalConditionRecord.systemKind === kind);

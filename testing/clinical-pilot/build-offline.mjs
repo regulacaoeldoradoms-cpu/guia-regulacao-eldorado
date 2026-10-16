@@ -56,6 +56,12 @@ const canonical = fs.readdirSync(path.join(root, 'data/clinical-conditions')).fi
 const probe = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinicalConditionProbe: canonical.map(record => record.id) }) }), {});
 assert.equal(probe.status, 200); assert.deepEqual((await probe.json()).records, canonical); assert.equal(calls, 1);
 report.bundledCompatibilityProbe = { status: 200, records: canonical.length, providerCalls: 0, allCanonicalRecordsEqual: true };
+const related = canonical.find(item => item.systemKind === 'sisreg_reference');
+const aliasResponse = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Compare Teleatendimento e SISREG para dor no ombro', protocols: [record, related].map(item => ({ id: item.id, clinicalConditionId: item.id, clinicalConditionRecord: { revision: item.revision }, clinicalAge: null })) }) }), { AI_PROVIDER: 'cloudflare', CLOUDFLARE_AI_FALLBACK_ENABLED: 'true', AI: { run: async (model, input) => { calls++; prompt = input.messages[1].content; return { response: 'Comparação estritamente simulada.' }; } } });
+assert.equal(aliasResponse.status, 200); assert.equal(calls, 2);
+const aliasRecords = JSON.parse(prompt.split('PROTOCOLOS MAIS RELEVANTES:\n')[1].split('\n\nCATÁLOGO OPERACIONAL RESUMIDO:')[0]);
+assert.deepEqual(aliasRecords.map(protocol => protocol.clinicalConditionRecord), [record, related]);
+report.bundledAliasComparison = { status: 200, mockCalls: 1, bothCanonicalRecordsComplete: true };
 report.passed = true;
 const destination = path.resolve(process.argv[2] || path.join(dir, 'build-verification.json'));
 fs.mkdirSync(path.dirname(destination), { recursive: true }); fs.writeFileSync(destination, JSON.stringify(report, null, 2));

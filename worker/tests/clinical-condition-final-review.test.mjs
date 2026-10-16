@@ -184,3 +184,14 @@ test('registro indisponível não bloqueia assunto fora do piloto',async()=>{
 test('sondagem conserva 403, 429 e 503 e a política de sessão/cooldown',async()=>{
   for(const status of [403,429,503]){const c=await client('http-'+status),context=clone(c.requestContext('Quais exames para ombro DigSaúde?'));let failure;try{await c.askAssistant('Quais exames?',context);}catch(error){failure=error;}assert.equal(failure.status,status);assert.equal(failure.code,'PROBE_HTTP_FAILURE');assert.equal(c.sent.length,0);assert.equal(c.pause(failure),status!==403);if(status===403)assert.match(c.friendly(failure),/sessão/);else assert.doesNotMatch(c.friendly(failure),/não corresponde/);}
 });
+
+
+test('aliases de DigSaúde concordam entre cliente e Worker em seleção e comparação',async()=>{
+  for(const alias of ['DigSaúde','Digsus','Telessaúde','Teleatendimento']){
+    const c=await client();c.api.localAnswer('Quais exames para dor no ombro?');const single=clone(c.requestContext(alias));assert.equal(single.protocols[0].id,OM.id);assert.match(single.resolvedQuestion,/Quais exames para dor no ombro/);const answer=c.api.localAnswer(alias);assert.match(answer,/AP \+ P \+ axilar/);assert.doesNotMatch(answer,/Ruptura total/);
+    const protocols=[OM,SG].map(record=>clone(c.api.protocolContext({record,age:null})));let prompt='';const env={AI_PROVIDER:'cloudflare',CLOUDFLARE_AI_FALLBACK_ENABLED:'true',AI:{run:async(model,input)=>{prompt=input.messages[1].content;return{response:'Simulação.'};}}};
+    for(const[question,expected]of [['Compare '+alias+' e SISREG para dor no ombro',[OM.id,SG.id]],['Qual a diferença entre TC e RM no '+alias+' para ombro?',[OM.id]]]){
+      const response=await worker.fetch(new Request('https://local.invalid/api/ia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,protocols})}),env);assert.equal(response.status,200);const scoped=JSON.parse(prompt.split('PROTOCOLOS MAIS RELEVANTES:\n')[1].split('\n\nCATÁLOGO OPERACIONAL RESUMIDO:')[0]);assert.deepEqual(scoped.map(p=>p.id),expected);assert.deepEqual(clone(c.api.questionContexts(question)).map(p=>p.id),expected);
+    }
+  }
+});
