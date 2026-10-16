@@ -79,6 +79,33 @@ test('Escolha curta conserva pergunta e idade; seguir tema clínico não exige e
   assert.deepEqual(clone(c.api.questionContexts('E quais documentos?')).map(p=>p.id),[record.id]);
  }
 });
+
+test('Perguntas com motivos distintos pedem uma condição sem omitir a segunda nem reutilizar contexto antigo',async()=>{
+ for(const selected of [null,BT,CE]){
+  const c=await client();if(selected)c.select(selected);
+  for(const question of ['Quais exames para bursite e cefaleia?','Cefaleia e tendinite no ombro no DigSaúde','Cefaleia e convulsão no DigSaúde','Bursite e dor no ombro no DigSaúde']){
+   assert.equal(c.api.questionDecision(question).kind,'choose_condition');assert.equal(c.api.matches(question),false);
+   assert.deepEqual(clone(c.api.questionContexts(question)),[]);assert.equal(c.api.localOnlyQuestion(question),true);
+   const answer=c.api.localAnswer(question);assert.match(answer,/condição por vez|motivo por consulta/);assert.doesNotMatch(answer,/AP e perfil|Diário de cefaleia|monoterapia/);
+   assert.equal(c.api.acceptsQuestion(question,{record:BT,age:null}),false);
+   assert.equal(c.api.questionDecision('DigSaúde').kind,'choose_condition');assert.deepEqual(clone(c.api.questionContexts('E quais documentos?')),[]);
+  }
+  assert.deepEqual(clone(c.api.questionContexts('Cefaleia no DigSaúde')).map(p=>p.id),[CE.id]);
+  assert.deepEqual(clone(c.api.questionContexts('Tendinite no ombro no DigSaúde')).map(p=>p.id),[BT.id]);
+  c.api.localAnswer('Bursite e cefaleia');assert.equal(c.api.questionContexts('Quais exames para diabetes?'),null);
+ }
+ const c=await client();for(const query of ['bursite no ombro','Bursite e tendinite DigSaúde'])assert.deepEqual(clone(c.api.questionContexts(query.includes('DigSaúde')?query:query+' DigSaúde')).map(p=>p.id),[BT.id]);
+ assert.deepEqual(clone(c.api.questionContexts('Compare Dor no Ombro DigSaúde e SISREG')).map(p=>p.id),[c.api.SHOULDER,c.api.RELATED]);
+});
+
+test('Worker pede uma condição para pergunta mista mesmo com cliente antigo ou lista incompleta, sem provedor',async()=>{
+ let calls=0;const env={AI_PROVIDER:'cloudflare',CLOUDFLARE_AI_FALLBACK_ENABLED:'true',AI:{run:async()=>{calls++;return{response:'Não deveria ser chamado'};}}};
+ for(const question of ['Quais exames para bursite e cefaleia?','Cefaleia e tendinite no ombro DigSaúde','Cefaleia e convulsão DigSaúde','Bursite e dor no ombro DigSaúde'])for(const records of [[],[BT],[CE],[BT,CE]]){
+  const response=await worker.fetch(new Request('https://local.invalid/api/ia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,protocols:records.map(r=>({id:r.id,clinicalConditionId:r.id,clinicalConditionRecord:{revision:r.revision}}))})}),env);
+  assert.equal(response.status,200);const body=await response.json();assert.match(body.answer,/condição por vez|motivo por consulta/);assert.doesNotMatch(body.answer,/AP e perfil|Diário de cefaleia|monoterapia/);assert.equal(body.provider,'Consulta local de escopo');
+ }
+ assert.equal(calls,0);
+});
 test('Contexto e indisponibilidade: diabetes/autismo/joelho não herdam os novos recortes',async()=>{
  for(const record of [BT,CE])for(const other of ['Quais exames para diabetes?','Requisitos de Neuropediatria para autismo?','Dor no joelho: o que descrever?']){
   const c=await client();c.select(record);assert.equal(c.api.questionDecision(other),null);assert.equal(c.api.localAnswer(other),null);assert.equal(c.api.questionContexts('E quais exames?'),null);

@@ -218,6 +218,12 @@ function unsupportedNewPilotScope(question, protocols) {
   return /\bcore\b|\bsisreg|campo grande/.test(text) || unsupportedComparison || records.some(record => record.searchKind === 'headache' && /\badult[oa]/.test(text) || record.searchKind === 'tendon' && /\binfantil|\bpediatr|\bcrianc/.test(text));
 }
 
+function multiplePilotFamilies(question) {
+  const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const tendon = /bursite|tendinite/.test(text);
+  return [tendon, /cefaleia|dor de cabeca/.test(text), /ombro|manguito/.test(text) && (!tendon || /dor (?:no|do|em) ombro|manguito/.test(text)), /convuls|epilep/.test(text)].filter(Boolean).length > 1;
+}
+
 function scopePilotSystems(question, protocols) {
   const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const dig = /dig\s*saude|digsus|telessaude|teleatendimento/.test(text), sisreg = /\bsisreg|campo grande/.test(text);
@@ -554,6 +560,9 @@ export default {
         return jsonResponse({ error: 'Não envie dados pessoais identificáveis. Reformule a pergunta de forma anônima.' }, 400, origin, true);
       }
 
+      if (multiplePilotFamilies(question)) {
+        return jsonResponse({ answer: 'A pergunta menciona mais de um motivo. Envie uma condição por vez e informe o sistema; nenhum dos motivos foi escolhido automaticamente.', provider: 'Consulta local de escopo', assistantMode: 'pre_regulation_simulator', groundedInProtocols: true }, 200, origin, true);
+      }
       const protocols = scopePilotSystems(question, cleanProtocols(body.protocols));
       const catalog = cleanCatalog(body.catalog);
       if (unsupportedNewPilotScope(question, protocols)) {

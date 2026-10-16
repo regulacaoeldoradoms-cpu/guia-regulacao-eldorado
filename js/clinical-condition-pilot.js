@@ -16,7 +16,7 @@
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(), clone=value=>JSON.parse(JSON.stringify(value));
   const records=new Map(),errors=new Map(),sourceFor=d=>'/data/clinical-conditions/'+d.file+'.json?v='+VERSION;
-  let conversationContext=null,pendingQuestion=null,bypassPilotContext=false,legacyTerms=[];
+  let conversationContext=null,pendingQuestion=null,bypassPilotContext=false,legacyTerms=[],pendingFamilies=[];
   const ready=Promise.all(descriptors.map(async d=>{
     const controller=new AbortController();let timer;
     try{
@@ -33,6 +33,7 @@
   const recordFor=value=>records.get(typeof value==='string'?value:value?.id||ID);
   function matchingIds(query){
     const q=norm(query);if(/\bcore\b/.test(q))return[];
+    if(searchFamilies(query).length>1)return[];
     const family=searchKind(query),system=explicitSystem(query);
     if(unsupportedNewScope(query,family,system))return[];
     if(family==='shoulder')return system==='sisreg'?[RELATED]:system==='digsaude'?[SHOULDER]:[SHOULDER,RELATED];
@@ -40,7 +41,7 @@
     return families[family]||[];
   }
   function matches(query,id){return id?matchingIds(query).includes(id):matchingIds(query).length>0;}
-  function clearConditionUrl(){conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];document.body?.classList.remove('clinical-pilot-active');const url=new URL(location.href);if(descriptors.some(d=>d.id===url.searchParams.get('condicao'))){url.searchParams.delete('condicao');history.replaceState(null,'',url);}}
+  function clearConditionUrl(){conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];pendingFamilies=[];document.body?.classList.remove('clinical-pilot-active');const url=new URL(location.href);if(descriptors.some(d=>d.id===url.searchParams.get('condicao'))){url.searchParams.delete('condicao');history.replaceState(null,'',url);}}
   function ageFromText(text){const m=norm(text).match(/\b(\d{1,3})\s*anos?(?:\s*[,e]?\s*(\d{1,2})\s*mes(?:es)?(?:\s*[,e]?\s*(\d{1,2})\s*dias?)?)?/);return m?{years:Number(m[1]),months:Number(m[2]||0),days:Number(m[3]||0)}:null;}
   function ageNotice(age,value=ID){
     const record=recordFor(value);if(!record||!age)return null;const exact=record.contextualAlerts?.find(a=>a.trigger.ageYears===age.years);if(exact)return clone(exact);
@@ -49,7 +50,9 @@
   }
   function active(){const root=document.querySelector('#detailPanel > [data-clinical-condition-id], #receptionDetail > [data-clinical-condition-id]'),record=root&&recordFor(root.dataset.clinicalConditionId);return record?{record:clone(record),age:ageFromText(root.querySelector('[data-pilot-age]')?.value||''),query:root.dataset.clinicalQuery||'',channel:root.dataset.clinicalChannel}:null;}
   function unavailable(question){const root=document.querySelector('[data-clinical-pilot-unavailable]');return question===undefined?Boolean(root):Boolean(root&&questionDecision(question)?.kind==='unavailable');}
-  const searchKind=query=>/bursite|tendinite/.test(norm(query))?'tendon':/cefaleia|dor de cabeca/.test(norm(query))?'headache':/ombro|manguito/.test(norm(query))?'shoulder':/convuls|epilep/.test(norm(query))?'seizure':null;
+  function searchFamilies(query){const q=norm(query),tendon=/bursite|tendinite/.test(q);return[tendon?'tendon':null,/cefaleia|dor de cabeca/.test(q)?'headache':null,/ombro|manguito/.test(q)&&(!tendon||/dor (?:no|do|em) ombro|manguito/.test(q))?'shoulder':null,/convuls|epilep/.test(q)?'seizure':null].filter(Boolean);}
+  const searchKind=query=>{const found=searchFamilies(query);return found.length===1?found[0]:null;};
+  const conditionChoice=found=>({kind:'choose_condition',families:[...found],text:'A pergunta menciona '+found.map(family=>familyLabels[family]).join(' e ')+'. Envie uma condição por vez e informe o sistema; nenhum dos motivos foi escolhido automaticamente.'});
   function awaitingSystemChoice(){return Boolean(document.querySelector('[data-clinical-system-choice]'));}
   function explicitSystem(query){const q=norm(query),dig=/dig\s*saude|digsus|telessaude|teleatendimento/.test(q),sg=/\bsisreg|campo grande/.test(q);return /\bcore\b/.test(q)?'core':dig&&sg?'multiple':dig?'digsaude':sg?'sisreg':null;}
   function comparisonRequested(query){const q=norm(query);return /outro sistema/.test(q)||/compar|diferen/.test(q)&&(/sistemas|fluxos/.test(q)||explicitSystem(query)==='multiple');}
@@ -66,7 +69,10 @@
     return [...new Set(terms.filter(term=>!own.has(term)&&(catalog.has(term)||term.startsWith('autis')&&[...catalog].some(word=>word.startsWith('autis')))))];
   }
   function questionDecision(question,context){
-    const detected=searchKind(question);if(detected){bypassPilotContext=false;legacyTerms=[];}
+    const found=searchFamilies(question);
+    if(found.length>1){pendingFamilies=found;conversationContext=null;pendingQuestion=null;bypassPilotContext=true;legacyTerms=[];return conditionChoice(found);}
+    const detected=searchKind(question);if(detected){bypassPilotContext=false;legacyTerms=[];pendingFamilies=[];}
+    if(pendingFamilies.length){const other=targetsOtherTopic(question,null);if(!other.length)return conditionChoice(pendingFamilies);pendingFamilies=[];legacyTerms=other;return null;}
     if(context===undefined)context=conversationContext||(!bypassPilotContext?active():null);
     const q=norm(question),pending=document.querySelector('[data-clinical-system-choice]'),failed=document.querySelector('[data-clinical-pilot-unavailable]');
     const failedFamily=familyFor(failed?.dataset.clinicalPilotUnavailable)||null;
@@ -95,6 +101,7 @@
   function localOnlyQuestion(question,context){const decision=questionDecision(question,context);return Boolean(decision&&decision.kind!=='records');}
   function acceptsQuestion(question,context=active()){
     const r=context&&recordFor(context.record),q=norm(question);if(!r||/\bcore\b/.test(q))return false;
+    if(searchFamilies(question).length>1)return false;
     const detected=searchKind(question);if(detected&&detected!==r.searchKind)return false;
     if([TENDON,HEADACHE].includes(r.id))return explicitSystem(question)!=='sisreg'&&!unsupportedNewScope(question,r.searchKind,explicitSystem(question));
     if(r.id===ID)return !/\badult[oa]|\bsisreg|ombro|ortoped/.test(q);
@@ -136,7 +143,9 @@
   function addSearchChoice(protocols,open,channel='guide'){
     const query=document.getElementById(channel==='reception'?'receptionSearch':'sideSearchInput')?.value||'',ids=matchingIds(query),list=document.getElementById(channel==='reception'?'receptionProtocolList':'protocolList');if(!list||list.querySelector('[data-pilot-choice]'))return;
     const family=searchKind(query),panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');
-    if(!family){if(awaitingSystemChoice()&&panel){clearConditionUrl();panel.innerHTML='<div class="loading">Selecione uma especialidade ou exame.</div>';}return;}
+    const found=searchFamilies(query);
+    if(found.length>1){clearConditionUrl();pendingFamilies=found;bypassPilotContext=true;document.body?.classList.add('clinical-pilot-active');const message='<h2>Escolha um motivo por consulta</h2><p>'+esc(conditionChoice(found).text)+'</p>';if(panel)panel.innerHTML='<article class="clinical-pilot" data-clinical-condition-choice="true">'+message+'</article>';const box=document.createElement('section');box.className='clinical-pilot-choice';box.dataset.pilotChoice='multiple';box.innerHTML=message;list.querySelectorAll(':scope > .empty').forEach(node=>node.remove());list.prepend(box);return;}
+    if(!family){if((awaitingSystemChoice()||document.querySelector('[data-clinical-condition-choice]'))&&panel){clearConditionUrl();panel.innerHTML='<div class="loading">Selecione uma especialidade ou exame.</div>';}return;}
     const current=active(),offered=[];
     const showChoice=()=>{
       if(!panel||current&&matches(query,current.record.id))return;

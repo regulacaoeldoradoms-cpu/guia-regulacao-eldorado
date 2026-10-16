@@ -74,6 +74,9 @@ for (const record of canonical.filter(record => ['tendon', 'headache'].includes(
   report.newBundledRecords.push({ id: record.id, rules: record.rules.length, completeCanonicalRecord: true });
 }
 assert.equal(calls, 4);
+const mixedResponse = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Quais exames para bursite e cefaleia no DigSaúde?', protocols: [{ id: 'digsaude.ortopedia.bursite-tendinite', clinicalConditionId: 'digsaude.ortopedia.bursite-tendinite' }] }) }), { AI_PROVIDER: 'cloudflare', CLOUDFLARE_AI_FALLBACK_ENABLED: 'true', AI: { run: async () => { calls++; throw new Error('A pergunta mista deve ficar local.'); } } });
+assert.equal(mixedResponse.status, 200); assert.match((await mixedResponse.json()).answer, /condição por vez/); assert.equal(calls, 4);
+report.bundledMultipleConditions = { status: 200, asksOneCondition: true, providerCalls: 0, incompleteClientListIgnored: true };
 report.passed = true;
 const destination = path.resolve(process.argv[2] || path.join(dir, 'build-verification.json'));
 fs.mkdirSync(path.dirname(destination), { recursive: true }); fs.writeFileSync(destination, JSON.stringify(report, null, 2));
