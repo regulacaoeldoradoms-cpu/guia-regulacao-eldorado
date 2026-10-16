@@ -10,7 +10,7 @@
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(), clone=value=>JSON.parse(JSON.stringify(value));
   const records=new Map(),errors=new Map(),sourceFor=d=>'/data/clinical-conditions/'+d.file+'.json?v='+VERSION;
-  let conversationContext=null,pendingQuestion=null;
+  let conversationContext=null,pendingQuestion=null,bypassPilotContext=false,legacyTerms=[];
   const ready=Promise.all(descriptors.map(async d=>{
     const controller=new AbortController();let timer;
     try{
@@ -28,10 +28,10 @@
   function matchingIds(query){
     const q=norm(query);if(/\bcore\b/.test(q))return[];
     if(/ombro|manguito/.test(q)){const system=explicitSystem(query);return system==='sisreg'?[RELATED]:system==='digsaude'?[SHOULDER]:[SHOULDER,RELATED];}
-    return (/convuls|epilep/.test(q)||/^\s*17\s*anos?\s*$/.test(q))&&!/\badult[oa]|\bsisreg|campo grande/.test(q)?[ID]:[];
+    return (/convuls|epilep/.test(q))&&!/\badult[oa]|\bsisreg|campo grande/.test(q)?[ID]:[];
   }
   function matches(query,id){return id?matchingIds(query).includes(id):matchingIds(query).length>0;}
-  function clearConditionUrl(){conversationContext=null;pendingQuestion=null;document.body?.classList.remove('clinical-pilot-active');const url=new URL(location.href);if(descriptors.some(d=>d.id===url.searchParams.get('condicao'))){url.searchParams.delete('condicao');history.replaceState(null,'',url);}}
+  function clearConditionUrl(){conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];document.body?.classList.remove('clinical-pilot-active');const url=new URL(location.href);if(descriptors.some(d=>d.id===url.searchParams.get('condicao'))){url.searchParams.delete('condicao');history.replaceState(null,'',url);}}
   function ageFromText(text){const m=norm(text).match(/\b(\d{1,3})\s*anos?(?:\s*[,e]?\s*(\d{1,2})\s*mes(?:es)?(?:\s*[,e]?\s*(\d{1,2})\s*dias?)?)?/);return m?{years:Number(m[1]),months:Number(m[2]||0),days:Number(m[3]||0)}:null;}
   function ageNotice(age,value=ID){
     const record=recordFor(value);if(!record||!age)return null;const exact=record.contextualAlerts?.find(a=>a.trigger.ageYears===age.years);if(exact)return clone(exact);
@@ -39,16 +39,33 @@
     return (eligibility.ageMinimum&&compare(age,eligibility.ageMinimum)<0)||(eligibility.ageMaximum&&compare(age,eligibility.ageMaximum)>0)||(eligibility.ageMaximumYears!==undefined&&age.years>eligibility.ageMaximumYears)?{id:'FORA_FAIXA',title:'Idade fora da faixa descrita neste recorte',text:eligibility.text+' Confirme o fluxo com a Regulação; o piloto não define uma rota alternativa.'}:null;
   }
   function active(){const root=document.querySelector('#detailPanel > [data-clinical-condition-id], #receptionDetail > [data-clinical-condition-id]'),record=root&&recordFor(root.dataset.clinicalConditionId);return record?{record:clone(record),age:ageFromText(root.querySelector('[data-pilot-age]')?.value||''),query:root.dataset.clinicalQuery||'',channel:root.dataset.clinicalChannel}:null;}
-  function unavailable(){return Boolean(document.querySelector('[data-clinical-pilot-unavailable]'));}
-  const searchKind=query=>/ombro|manguito/.test(norm(query))?'shoulder':/convuls|epilep|neuropediatr/.test(norm(query))||/^\s*17\s*anos?\s*$/.test(norm(query))?'seizure':null;
+  function unavailable(question){const root=document.querySelector('[data-clinical-pilot-unavailable]');return question===undefined?Boolean(root):Boolean(root&&questionDecision(question)?.kind==='unavailable');}
+  const searchKind=query=>/ombro|manguito/.test(norm(query))?'shoulder':/convuls|epilep/.test(norm(query))?'seizure':null;
   function awaitingSystemChoice(){return Boolean(document.querySelector('[data-clinical-system-choice]'));}
   function explicitSystem(query){const q=norm(query),dig=/dig\s*saude|digsus|telessaude|teleatendimento/.test(q),sg=/\bsisreg|campo grande/.test(q);return /\bcore\b/.test(q)?'core':dig&&sg?'multiple':dig?'digsaude':sg?'sisreg':null;}
   function comparisonRequested(query){const q=norm(query);return /outro sistema/.test(q)||/compar|diferen/.test(q)&&(/sistemas|fluxos/.test(q)||explicitSystem(query)==='multiple');}
   function systemReply(query){return /^(?:(?:pelo|no|para|usar|o|sistema)\s+)*(?:dig\s*saude(?:\s*ms)?|digsus|telessaude|sisreg(?:\s*\/\s*campo grande)?|campo grande)(?:\s+por favor)?[.!]?\s*$/.test(norm(query).trim());}
+  function targetsOtherTopic(question,record){
+    const generic=new Set('para com sem uma uns das dos que qual quais como pelo pela esta estao pode deve ser tem ter sobre entre quando precisa preciso necessario necessaria solicitar encaminhar encaminhamento paciente exames exame documentos documento criterios criterio informacoes informacao clinico clinica atendimento teleatendimento digs us digsus digsaude telessaude sisreg campo grande core anos ano meses dias idade etaria faixa haver houver familiar responsavel obrigatorio obrigatoria opcional condicional novo nova outro outra agora antes depois atual anterior apenas tambem entao proceder fazer sistema sistemas fluxo fluxos compare comparar comparacao diferenca diferencas adulto adulta pediatrico pediatrica infantil melhora piora resposta dose posologia neurologico neurologica'.split(' '));
+    const terms=(norm(question).match(/[a-z]{3,}/g)||[]).filter(term=>!generic.has(term));
+    let legacy=[];try{if(typeof state!=='undefined'&&Array.isArray(state.protocols))legacy=state.protocols;}catch{}
+    if(!legacy.length)return [];
+    const words=text=>new Set(norm(text).match(/[a-z]{3,}/g)||[]);
+    const own=words([record?.condition,record?.specialty,...(record?.rules||[]).map(rule=>rule.text),...(record?.sections||[]).flatMap(section=>[section.title,section.label,section.note])].join(' '));
+    const explicitSubject=/\b(?:para|sobre|por|caso de|paciente com)\b/.test(norm(question));
+    const catalog=words(legacy.map(protocol=>[protocol.nome,...(protocol.tags||[]).filter(tag=>norm(tag).split(/\s+/).length<=3),...(protocol.subprotocolos||[]).map(sub=>sub.titulo),...(explicitSubject?[protocol.resumo,protocol._searchText]:[])].join(' ')).join(' '));
+    return [...new Set(terms.filter(term=>!own.has(term)&&(catalog.has(term)||term.startsWith('autis')&&[...catalog].some(word=>word.startsWith('autis')))))];
+  }
   function questionDecision(question,context){
-    if(context===undefined)context=conversationContext||active();
-    const q=norm(question),pending=document.querySelector('[data-clinical-system-choice]');
-    const detected=searchKind(question),family=detected||pendingQuestion?.family||context?.record.searchKind||pending?.dataset.clinicalSystemChoice;
+    const detected=searchKind(question);if(detected){bypassPilotContext=false;legacyTerms=[];}
+    if(context===undefined)context=conversationContext||(!bypassPilotContext?active():null);
+    const q=norm(question),pending=document.querySelector('[data-clinical-system-choice]'),failed=document.querySelector('[data-clinical-pilot-unavailable]');
+    const failedFamily=failed?.dataset.clinicalPilotUnavailable===ID?'seizure':failed?.dataset.clinicalPilotUnavailable?'shoulder':null;
+    const inherited=bypassPilotContext?null:pendingQuestion?.family||context?.record.searchKind||pending?.dataset.clinicalSystemChoice||failedFamily;
+    const inheritedRecord=context?.record||recordFor(inherited==='seizure'?ID:SHOULDER);
+    const otherTerms=!detected&&(inherited||bypassPilotContext)?targetsOtherTopic(question,inheritedRecord):[];
+    if(otherTerms.length){conversationContext=null;pendingQuestion=null;bypassPilotContext=true;legacyTerms=otherTerms;return null;}
+    const family=detected||inherited;
     if(!family)return null;
     const system=explicitSystem(question),comparison=comparisonRequested(question);
     if(system==='core')return{kind:'source_limit',text:'CORE: nenhuma fonte clínica ambulatorial foi validada neste recorte. Não usar os requisitos do DigSaúde ou de Campo Grande como regras CORE.'};
@@ -96,8 +113,8 @@
     const descriptor=descriptors.find(d=>d.id===options.conditionId),r=descriptor&&recordFor(descriptor.id),parent=r?.parentProtocolId||(descriptor?.id===ID?'neuropediatria':descriptor?'ortopedia':'');
     if(!descriptor||protocol?.id!==parent){document.body?.classList.remove('clinical-pilot-active');return false;}
     const panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');if(!panel)return false;document.body?.classList.add('clinical-pilot-active');
-    conversationContext=null;pendingQuestion=null;
-    if(!r){panel.innerHTML=`<div class="clinical-pilot" data-clinical-pilot-unavailable><p class="cp-alert">Não foi possível carregar o registro integral do piloto (${esc(errors.get(descriptor.id)||'carregando')}). Nenhuma lista geral foi usada como substituta.</p></div>`;return true;}
+    conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];
+    if(!r){panel.innerHTML=`<div class="clinical-pilot" data-clinical-pilot-unavailable="${descriptor.id}"><p class="cp-alert">Não foi possível carregar o registro integral do piloto (${esc(errors.get(descriptor.id)||'carregando')}). Nenhuma lista geral foi usada como substituta.</p></div>`;return true;}
     const query=options.query??document.getElementById(channel==='reception'?'receptionSearch':'sideSearchInput')?.value??'',age=options.age||ageFromText(query);
     panel.innerHTML=`<article class="clinical-pilot" data-clinical-condition-id="${r.id}" data-clinical-channel="${channel}" data-clinical-query="${esc(query)}">${contentMarkup(r,age,channel,query)}</article>`;
     document.querySelectorAll('#protocolList .protocol-card').forEach(card=>card.classList.remove('active'));const root=panel.firstElementChild;
@@ -133,8 +150,7 @@
     const box=document.createElement('section');box.className='clinical-pilot-choice';box.dataset.pilotDetailChoice='true';box.innerHTML='<p><strong>Consultar por motivo e sistema</strong></p>'+ids.map(id=>`<button type="button" data-condition="${id}">${id===ID?'Convulsão / Epilepsia - DigSaúde MS':id===SHOULDER?'Dor no Ombro - DigSaúde MS':'Ombro - seções relacionadas SISREG/Campo Grande'} →</button>`).join('');box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>open(protocol,{conditionId:b.dataset.condition})));panel.prepend(box);
   }
   function localAnswer(question,context){
-    if(unavailable())return 'O registro integral desta condição-piloto está indisponível. Não é possível confirmar seus requisitos nesta consulta. Recarregue o guia ou confirme a fonte com a Regulação; nenhuma lista geral foi usada como substituta.';
-    const decision=questionDecision(question,context);if(decision&&decision.kind!=='records'){if(decision.kind==='choose_system')pendingQuestion={family:decision.family,question:decision.query||question};return decision.text;}
+    const decision=questionDecision(question,context);if(!decision)return null;if(decision.kind!=='records'){if(decision.kind==='choose_system')pendingQuestion={family:decision.family,question:decision.query||question};return decision.text;}
     if(decision){context=decision.contexts[0];rememberDecision(decision);}
     if(!acceptsQuestion(question,context))return null;const r=recordFor(context.record),q=norm(context.query||question),notice=ageNotice(ageFromText(question)||context.age,r),rule=id=>r.rules.find(rule=>rule.id===id).text;
     const lines=[r.specialty+' - '+r.condition,r.system+' - em revisão, sem vigência ou aplicabilidade confirmadas.'];if(notice)lines.push('',notice.title,notice.text);if(r.systemBoundary)lines.push('',r.systemBoundary);
@@ -153,5 +169,5 @@
     return '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(r.condition)+' - em revisão</title><style>body{font:18px/1.45 Arial,sans-serif;color:#17343d;margin:0}p{margin:0 0 12px}h2{margin:12px 0 18px}h3{margin:0 0 12px}.cp-label{break-after:avoid}ul,ol{margin:12px 0;padding-left:26px}.clinical-pilot{max-width:900px;margin:auto}.cp-status,.cp-label{font-weight:bold}.cp-grid{display:block}.cp-grid>section{margin:24px 0}.cp-grid li{margin:10px 0}.cp-alert,.cp-exclusion{border-left:3px solid #94671f;background:#fff5df;padding:12px}.cp-requirement,.cp-pending,.cp-reference{border-top:1px solid #b5c5ba;margin-top:20px;padding-top:18px}h2,h3{break-after:avoid}li,.cp-requirement,.cp-pending{break-inside:avoid}@page{size:A4;margin:18mm}</style><article class="clinical-pilot">'+contentMarkup(r,context.age,'print',context.query)+'</article></html>';
   }
   function printActive(){const html=printDocument();if(!html)return;const popup=window.open('','_blank');if(!popup){window.alert('Permita abrir a orientação de impressão deste piloto.');return;}popup.document.open();popup.document.write(html);popup.document.close();popup.focus();popup.print();}
-  window.ClinicalConditionPilot={ID,SHOULDER,RELATED,REVISION:descriptors[0].revision,VERSION,SOURCE:sourceFor(descriptors[0]),ready,matches,clearConditionUrl,ageFromText,ageNotice,active,unavailable,awaitingSystemChoice,localOnlyQuestion,questionDecision,acceptsQuestion,protocolContext,questionContexts,render,addSearchChoice,addDetailChoice,localAnswer,printDocument,record:(id=ID)=>recordFor(id)?clone(recordFor(id)):null};
+  window.ClinicalConditionPilot={legacyTopicTerms:()=>bypassPilotContext?[...legacyTerms]:[],ID,SHOULDER,RELATED,REVISION:descriptors[0].revision,VERSION,SOURCE:sourceFor(descriptors[0]),ready,matches,clearConditionUrl,ageFromText,ageNotice,active,unavailable,awaitingSystemChoice,localOnlyQuestion,questionDecision,acceptsQuestion,protocolContext,questionContexts,render,addSearchChoice,addDetailChoice,localAnswer,printDocument,record:(id=ID)=>recordFor(id)?clone(recordFor(id)):null};
 })();

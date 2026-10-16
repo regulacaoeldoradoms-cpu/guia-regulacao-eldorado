@@ -6,18 +6,19 @@ import worker from '../gemini-assistant.js';
 import { clinicalPilotRecord } from '../clinical-condition-pilot.js';
 const root=new URL('../../',import.meta.url),read=p=>fs.readFileSync(new URL(p,root),'utf8'),clone=v=>JSON.parse(JSON.stringify(v));
 const NP=clinicalPilotRecord(),OM=clinicalPilotRecord('digsaude.ortopedia.dor-no-ombro'),SG=clinicalPilotRecord('sisreg-campo-grande.ortopedia.referencias-ombro');
-async function client(probeMode='compatible'){
-  let selected=null,pending=null;
+async function client(probeMode='compatible',missingId=null){
+  let selected=null,pending=null,failed=null;
   const document={readyState:'loading',addEventListener(){},querySelector(selector){
     if(selector.startsWith('#detailPanel >'))return selected?{dataset:{clinicalConditionId:selected.record.id,clinicalQuery:'',clinicalChannel:'guide'},querySelector:()=>({value:selected.age?selected.age.years+' anos':''})}:null;
     if(selector==='[data-clinical-system-choice]')return pending?{dataset:{clinicalSystemChoice:pending}}:null;
+    if(selector==='[data-clinical-pilot-unavailable]')return failed?{dataset:{clinicalPilotUnavailable:failed.id}}:null;
     return null;
   }};
-  const sent=[],probes=[],window={REGULATION_AI_CONFIG:{endpoint:'https://local.invalid/__mock-ai'},setTimeout,clearTimeout},context=vm.createContext({window,document,URL,AbortController,setTimeout,clearTimeout,fetch:async(url,options)=>{if(String(url).endsWith('/__mock-ai')){const payload=JSON.parse(options.body);if(payload.clinicalConditionProbe){probes.push(payload);const records=payload.clinicalConditionProbe.map(id=>clinicalPilotRecord(id));if(probeMode==='different')records[0].rules.pop();return{ok:true,json:async()=>probeMode==='legacy'?{answer:'Formato antigo'}:{clinicalConditionProbe:true,records}};}sent.push(payload);return{ok:true,json:async()=>({answer:'Provedor estritamente simulado.',provider:'Simulação'})};}return{ok:true,json:async()=>JSON.parse(read(new URL(url,'https://local.invalid').pathname.slice(1)))};}});
+  const sent=[],probes=[],window={REGULATION_AI_CONFIG:{endpoint:'https://local.invalid/__mock-ai'},setTimeout,clearTimeout},context=vm.createContext({window,document,URL,AbortController,setTimeout,clearTimeout,fetch:async(url,options)=>{if(String(url).endsWith('/__mock-ai')){const payload=JSON.parse(options.body);if(payload.clinicalConditionProbe){probes.push(payload);if(probeMode.startsWith('http-'))return{ok:false,status:Number(probeMode.slice(5)),json:async()=>({error:'Falha simulada de sondagem.',code:'PROBE_HTTP_FAILURE'})};const records=payload.clinicalConditionProbe.map(id=>clinicalPilotRecord(id));if(probeMode==='different')records[0].rules.pop();return{ok:true,json:async()=>probeMode==='legacy'?{answer:'Formato antigo'}:{clinicalConditionProbe:true,records}};}sent.push(payload);return{ok:true,json:async()=>({answer:'Provedor estritamente simulado.',provider:'Simulação'})};}const loaded=JSON.parse(read(new URL(url,'https://local.invalid').pathname.slice(1)));return{ok:loaded.id!==missingId,status:503,json:async()=>loaded};}});
   vm.runInContext(read('js/clinical-condition-pilot.js'),context);await window.ClinicalConditionPilot.ready;
-  context.state={protocols:[{id:'ortopedia',nome:'Ortopedia Adulto',sistemas:{digsus:true,sisreg:true},examesObrigatorios:['Lista geral não deve entrar no piloto sem sistema.']}],selected:null};
-  vm.runInContext(read('js/ai-assistant.js').replace(/\}\)\(\);\s*$/,'window.reviewRequestContext=requestContext;window.reviewAskAssistant=askAssistant;})();'),context);
-  return{api:window.ClinicalConditionPilot,select:(record,age=null)=>{selected=record?{record,age}:null;},pending:family=>{pending=family;},requestContext:window.reviewRequestContext,askAssistant:window.reviewAskAssistant,sent,probes};
+  context.state={protocols:[{id:'endocrinologia',nome:'Endocrinologia Adulto',resumo:'Diabetes sem melhora após tratamento na APS.',tags:['diabetes'],sistemas:{sisreg:true}},{id:'neuropediatria',nome:'Neuropediatria',tags:['autismo','tea','tdah','paralisia cerebral'],sistemas:{digsus:true}},{id:'cardiologia',nome:'Cardiologia Adulto',tags:['hipertensao'],sistemas:{sisreg:true}},{id:'ortopedia',nome:'Ortopedia Adulto',sistemas:{digsus:true,sisreg:true},examesObrigatorios:['Lista geral não deve entrar no piloto sem sistema.']}],selected:null};
+  vm.runInContext(read('js/ai-assistant.js').replace(/\}\)\(\);\s*$/,'window.reviewRequestContext=requestContext;window.reviewAskAssistant=askAssistant;window.reviewFriendlyFailure=friendlyAiFailure;window.reviewPause=shouldPauseRemoteAi;})();'),context);
+  return{api:window.ClinicalConditionPilot,select:(record,age=null)=>{selected=record?{record,age}:null;},pending:family=>{pending=family;},requestContext:window.reviewRequestContext,askAssistant:window.reviewAskAssistant,sent,probes,fail:record=>{selected=null;failed=record;},friendly:window.reviewFriendlyFailure,pause:window.reviewPause};
 }
 test('confronto dos 42 itens com os qualificadores e páginas da matriz recebida',()=>{
   // Expectations transcribed from the supplied matrix, independently of JSON rendering.
@@ -160,4 +161,26 @@ test('ponte conserva a sondagem técnica sem transformá-la em pergunta clínica
   let captured;const endpoint='https://local.invalid/api/ia',window={REGULATION_AI_CONFIG:{endpoint},fetch:async(input,init)=>{captured=JSON.parse(init.body);return{ok:true};}};
   const context=vm.createContext({window,URL,TextEncoder});vm.runInContext(read('js/pre-regulation-bridge.js'),context);
   await window.fetch(endpoint,{method:'POST',body:JSON.stringify({clinicalConditionProbe:[OM.id]})});assert.deepEqual(captured,{clinicalConditionProbe:[OM.id]});
+});
+
+
+test('outros motivos explícitos saem do piloto e continuam no catálogo normal',async()=>{
+  const c=await client();assert.equal(c.api.questionDecision('Quais exames para diabetes?'),null);assert.equal(c.api.legacyTopicTerms().length,0);c.select(NP);assert.equal(c.api.questionDecision('E se não houver melhora?').contexts[0].record.id,NP.id);assert.equal(c.api.questionDecision('Para adulto?').kind,'source_limit');assert.equal(c.api.questionDecision('Quais exames para diabetes?'),null);assert.equal(c.api.localAnswer('Quais exames para diabetes?'),null);
+  const context=clone(c.requestContext('Quais exames para diabetes?'));assert.ok(context.protocols.some(p=>p.id==='endocrinologia'));assert.ok(context.protocols.every(p=>!p.clinicalConditionRecord));
+  assert.equal(c.api.questionDecision('E quais documentos?'),null);assert.ok(c.api.legacyTopicTerms().includes('diabetes'));assert.ok(clone(c.requestContext('E quais documentos?')).protocols.some(p=>p.id==='endocrinologia'));assert.equal(context.selectedProtocolId,null);
+  assert.equal(c.api.questionDecision('Convulsão infantil no DigSaúde: quais exames?').contexts[0].record.id,NP.id);
+  const shoulder=await client();shoulder.select(OM);assert.equal(shoulder.api.questionDecision('Como encaminhar para cardiologia?'),null);
+});
+test('especialidade genérica e idade isolada não escolhem convulsão',async()=>{
+  const c=await client();for(const question of ['Quais requisitos de Neuropediatria no DigSaúde para autismo?','17 anos']){assert.equal(c.api.questionDecision(question),null);assert.equal(c.api.matches(question),false);}
+  const selected=await client();selected.select(NP);assert.equal(selected.api.questionDecision('17 anos').contexts[0].age.years,17);
+  assert.equal(selected.api.questionDecision('Neuropediatria no DigSaúde para autismo?'),null);
+});
+test('registro indisponível não bloqueia assunto fora do piloto',async()=>{
+  const c=await client('compatible',NP.id);c.fail(NP);assert.equal(c.api.unavailable(),true);assert.equal(c.api.unavailable('Quais exames para diabetes?'),false);assert.equal(c.api.localOnlyQuestion('Quais exames para diabetes?'),false);assert.equal(c.api.localAnswer('Quais exames para diabetes?'),null);
+  assert.ok(clone(c.requestContext('Quais exames para diabetes?')).protocols.every(p=>!p.clinicalConditionRecord));
+  assert.equal(c.api.unavailable('Convulsão infantil no DigSaúde: quais exames?'),true);assert.match(c.api.localAnswer('Convulsão infantil no DigSaúde: quais exames?'),/registro integral/);
+});
+test('sondagem conserva 403, 429 e 503 e a política de sessão/cooldown',async()=>{
+  for(const status of [403,429,503]){const c=await client('http-'+status),context=clone(c.requestContext('Quais exames para ombro DigSaúde?'));let failure;try{await c.askAssistant('Quais exames?',context);}catch(error){failure=error;}assert.equal(failure.status,status);assert.equal(failure.code,'PROBE_HTTP_FAILURE');assert.equal(c.sent.length,0);assert.equal(c.pause(failure),status!==403);if(status===403)assert.match(c.friendly(failure),/sessão/);else assert.doesNotMatch(c.friendly(failure),/não corresponde/);}
 });

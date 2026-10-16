@@ -122,8 +122,9 @@
   }
 
   function rankProtocols(question) {
-    const terms = termsFor(question);
-    const selectedId = typeof state !== 'undefined' ? state.selected?.id : null;
+    const outsidePilot = window.ClinicalConditionPilot?.legacyTopicTerms?.() || [];
+    const terms = outsidePilot.length ? outsidePilot : termsFor(question);
+    const selectedId = outsidePilot.length ? null : typeof state !== 'undefined' ? state.selected?.id : null;
     return protocols().map((protocol) => {
       const name = normalizeText(protocol.nome);
       const category = normalizeText(protocol.categoria);
@@ -209,7 +210,7 @@
       return { protocols: clinical, catalog: [], resolvedQuestion: clinicalDecision?.contexts?.[0]?.query || question, selectedProtocolId: clinical[0]?.id || null, selectedProtocolName: clinical[0]?.nome || null, practiceKnowledgeVersion: null, operationalFacts: [] };
     }
     const ranked = rankProtocols(question);
-    const current = typeof state !== 'undefined' ? state.selected : null;
+    const current = window.ClinicalConditionPilot?.legacyTopicTerms?.().length ? null : typeof state !== 'undefined' ? state.selected : null;
     let selected = ranked.filter((item) => item.score > 0).slice(0, 4).map((item) => item.protocol);
     if (isAutismTelehealthQuestion(question)) {
       const psychology = protocols().find(isPsychologyProtocol);
@@ -380,7 +381,10 @@
           body: JSON.stringify({ clinicalConditionProbe: clinical.map(protocol => protocol.clinicalConditionId) })
         });
         const manifest = await probe.json().catch(() => ({}));
-        if (!probe.ok || manifest.clinicalConditionProbe !== true || JSON.stringify(manifest.records) !== JSON.stringify(clinical.map(protocol => protocol.clinicalConditionRecord))) {
+        if (!probe.ok) {
+          throw Object.assign(new Error(manifest.error || `Falha na conferência clínica (${probe.status}).`), { status: probe.status, code: manifest.code || '' });
+        }
+        if (manifest.clinicalConditionProbe !== true || JSON.stringify(manifest.records) !== JSON.stringify(clinical.map(protocol => protocol.clinicalConditionRecord))) {
           throw Object.assign(new Error('A base clínica da IA não corresponde à versão do guia.'), { status: 409, code: 'CLINICAL_WORKER_INCOMPATIBLE' });
         }
       }
@@ -436,7 +440,7 @@
     addMessage('user', cleanQuestion);
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
-    const remoteConfigured = Boolean(CONFIG.endpoint) && !window.ClinicalConditionPilot?.unavailable() && !window.ClinicalConditionPilot?.localOnlyQuestion(cleanQuestion);
+    const remoteConfigured = Boolean(CONFIG.endpoint) && !window.ClinicalConditionPilot?.unavailable(cleanQuestion) && !window.ClinicalConditionPilot?.localOnlyQuestion(cleanQuestion);
     const remoteAiReadyForAttempt = remoteConfigured && Date.now() >= remoteAiUnavailableUntil;
     const loading = addMessage('assistant', remoteAiReadyForAttempt ? 'Fazendo a pré-análise regulatória com IA...' : 'Consultando os protocolos locais...', 'loading');
     try {

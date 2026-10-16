@@ -125,6 +125,13 @@ try{
     const {page,context}=await pageFor('/recepcao/',{failRecord:'dor-no-ombro-20261016.json'});await page.locator('#receptionSearch').fill('dor no ombro');await page.locator('[data-pilot-system="'+shoulder.id+'"]').click();await page.locator('[data-clinical-pilot-unavailable]').waitFor();assert.equal(await page.locator('[data-clinical-rule]').count(),0);
     await page.locator('[data-pilot-system="'+related.id+'"]').click();assert.equal(await page.locator('[data-clinical-rule]').count(),11);report.scenarios.push({name:'record-failure-no-general-fallback',otherSystemStillAvailable:true});await context.close();
   }
+  if(!process.argv.includes('--failure-only')){
+    const {page,context}=await pageFor('/medico/');await choose(page,'/medico/',np,'convulsão infantil');
+    const answer=await chat(page,'Quais exames para diabetes?');assert.doesNotMatch(answer,/Convulsão \/ Epilepsia/);assert.ok(report.payloads.at(-1).protocols.every(p=>!p.clinicalConditionRecord));assert.ok(report.payloads.at(-1).protocols.some(p=>p.id==='endocrinologia'));
+    report.scenarios.push({name:'explicit-other-condition-after-pilot',legacyRankingRestored:true,noPilotRecord:true});await context.close();
+    const failed=await pageFor('/medico/',{failRecord:'convulsao-epilepsia-20261016.json'});await failed.page.locator('#sideSearchInput').fill('convulsão infantil');await failed.page.locator('[data-pilot-system="'+np.id+'"]').click();await failed.page.locator('[data-clinical-pilot-unavailable]').waitFor();
+    const unrelated=await chat(failed.page,'Quais exames para diabetes?');assert.doesNotMatch(unrelated,/registro integral.*indisponível/);assert.ok(report.payloads.at(-1).protocols.every(p=>!p.clinicalConditionRecord));report.scenarios.push({name:'unavailable-pilot-does-not-block-other-condition',legacyRankingRestored:true});await failed.context.close();
+  }
   assert.deepEqual(report.errors,[]);report.passed=true;
 }catch(error){report.passed=false;report.failure={message:error.message,stack:error.stack};const page=browser.contexts().at(-1)?.pages().at(-1);if(page)await page.screenshot({path:path.join(output,'failure.png'),fullPage:true}).catch(()=>{});throw error;}
 finally{report.payloads=report.payloads.map(payload=>({originalQuestion:payload.originalQuestion,contextCompression:payload.contextCompression,records:payload.protocols.map(p=>({id:p.id,revision:p.clinicalConditionRecord?.revision,ruleIds:p.clinicalConditionRecord?.rules.map(r=>r.id)}))}));fs.writeFileSync(path.join(output,'browser-verification.json'),JSON.stringify(report,null,2));await browser.close();await new Promise(resolve=>server.close(resolve));console.log(JSON.stringify({passed:report.passed,scenarios:report.scenarios.length,errors:report.errors,output}));}
