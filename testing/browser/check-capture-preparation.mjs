@@ -36,12 +36,23 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
     // context routes/init scripts are installed; the baseline Page is new.
     const page=await context.newPage();
     const network=await installAuditFixture(context,{theme:spec.theme});
+    let mutation;
     const prepare=async target=>{
       if(negative&&target===page){
-        // Change visible SVG paint, keeping its dimensions and DOM intact.
-        // Stroke is deliberately absent from the computed-snapshot projection:
+        // Fill the visible search glyph, keeping its dimensions and DOM intact.
+        // Fill is deliberately absent from the computed-snapshot projection:
         // this verifies the PIXEL gate independently of layout/style assertions.
-        await target.locator('.brand-mark svg path').evaluate(node=>node.style.stroke='rgb(230, 0, 0)');
+        const glyph=target.locator('.search-icon svg circle');
+        assert.equal(await glyph.isVisible(),true,'Negative control must alter a visible glyph');
+        mutation=await glyph.evaluate(node=>{
+          const before=getComputedStyle(node).fill;
+          node.style.fill='rgb(230, 0, 0)';
+          const after=getComputedStyle(node).fill;
+          const {x,y,width,height}=node.getBoundingClientRect();
+          return {selector:'.search-icon svg circle',property:'fill',before,after,rect:{x,y,width,height}};
+        });
+        assert.notEqual(mutation.before,mutation.after,'Negative control must change effective paint');
+        assert.equal(mutation.after,'rgb(230, 0, 0)');
       }
     };
     const report=await compareAgainstBase({page,context,info,...spec,base,prepare});
@@ -63,7 +74,7 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
     const result={phase,case:spec.name,iteration,baseCommit:report.baseCommit,
       hashCurrent:report.hashCurrent,hashBase:report.hashBase,
       pixelComparison:report.pixelComparison,servedCurrentFiles:report.servedCurrentFiles,
-      servedBaseFiles:report.servedBaseFiles,negative,passed:true};
+      servedBaseFiles:report.servedBaseFiles,negative,mutation,passed:true};
     evidence.push(result);console.log(JSON.stringify(result));
   }catch(error){
     const result={phase,case:spec.name,iteration,negative,passed:false,error:error.message};
