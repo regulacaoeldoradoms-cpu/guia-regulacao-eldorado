@@ -70,6 +70,9 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     const errors=[];
     const captureError=error=>errors.push(error.message);
     targetPage.on('pageerror',captureError);
+    // Prepare both tabs as foreground documents. A fresh baseline tab and the
+    // fixture's existing candidate tab must not use different compositor states.
+    await targetPage.bringToFront();
     // Reset before BOTH navigations. Open real controls on screen first: print
     // intentionally hides their launchers, but an already-open view can print.
     await targetPage.emulateMedia({media:'screen'});
@@ -136,6 +139,18 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     };
     await resetRestingState();
     await targetPage.waitForTimeout(350);
+    // Prime the real viewport before capturing outside it. Full-page capture
+    // alone can cache two different blur rasters for identical source/geometry.
+    // This is a fixed, source-independent preparation step: no CSS/viewport
+    // changes, masks or matching against the other source's pixels are involved.
+    const viewportWarmup=await targetPage.screenshot({fullPage:false,animations:'disabled',caret:'hide'});
+    await resetRestingState();
+    const preparation=await targetPage.evaluate(()=>({
+      visibility:document.visibilityState,focused:document.hasFocus(),
+      viewport:{width:innerWidth,height:innerHeight,deviceScaleFactor:devicePixelRatio}
+    }));
+    preparation.viewportWarmupSha256=createHash('sha256').update(viewportWarmup).digest('hex');
+    if(preparation.visibility!=='visible')throw new Error('Capture preparation requires a visible foreground document');
     // Full-page capture itself can settle native font metrics/compositor layers.
     // The Linux artifact proved identical admin PNGs with different pre-capture
     // monospace metrics. Require independent stability inside EACH source phase,
@@ -175,7 +190,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     if(nativeCouncilPrint)await targetPage.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
     targetPage.off('pageerror',captureError);
     if(report.theme!==theme||report.media!==media)throw new Error(`Capture mode changed: expected ${theme}/${media}, got ${report.theme}/${report.media}`);
-    const captureStability={theme:report.theme,media:report.media,captures,snapshotStable,rasterStable,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
+    const captureStability={theme:report.theme,media:report.media,preparation,captures,snapshotStable,rasterStable,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
     return {report,screenshot,errors,captureStability,hash:createHash('sha256').update(screenshot).digest('hex')};
   };
   const pattern='http://127.0.0.1:4176/**';

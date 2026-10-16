@@ -32,8 +32,10 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
       :writeFile(path.join(destination,name),options.body)
   };
   try {
-    const network=await installAuditFixture(context,{theme:spec.theme});
+    // Match the real Playwright fixture order: its initial Page exists before
+    // context routes/init scripts are installed; the baseline Page is new.
     const page=await context.newPage();
+    const network=await installAuditFixture(context,{theme:spec.theme});
     const prepare=async target=>{
       if(negative&&target===page){
         // Change visible SVG paint, keeping its dimensions and DOM intact.
