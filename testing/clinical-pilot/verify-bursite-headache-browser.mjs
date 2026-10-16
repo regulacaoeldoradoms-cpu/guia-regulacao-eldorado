@@ -10,6 +10,7 @@ const { chromium } = require(process.env.CLINICAL_PILOT_PLAYWRIGHT || 'playwrigh
 const output = path.resolve(process.argv[2] || path.join(root, '.local/clinical-pilots-v2')); fs.mkdirSync(output, { recursive: true });
 const sourceStyleFocus = process.argv.includes('--source-style');
 const multipleOnly = process.argv.includes('--multiple-only');
+const legacyDeepLinkOnly = process.argv.includes('--legacy-deep-link-only'), deepLinkOnly = process.argv.includes('--deep-link-only') || legacyDeepLinkOnly, detailChoiceOnly = process.argv.includes('--detail-choice-only'), navigationOnly = deepLinkOnly || detailChoiceOnly || process.argv.includes('--navigation-only');
 const finalFocus = process.argv.includes('--final-focus') || sourceStyleFocus;
 const names = ['convulsao-epilepsia-20261016','dor-no-ombro-20261016','ombro-referencias-sisreg-cg-20261016'];
 const records = names.map(name => JSON.parse(fs.readFileSync(path.join(root, 'data/clinical-conditions/' + name + '.json'), 'utf8')));
@@ -79,6 +80,30 @@ const newer=['bursite-tendinite-20261016','cefaleia-neuropediatria-20261016'].ma
 report.priorIntactChecks='PR664 regressions run separately; all five records use the same renderer and canonical API projection.';
 report.transcripts=[];
 try{
+ if(navigationOnly){
+  if(!detailChoiceOnly)for(const route of ['/protocolo/','/medico/'])for(const record of legacyDeepLinkOnly?records:newer){
+   const query=record.searchKind==='headache'?'cefaleia':record.searchKind==='tendon'?'bursite no ombro':record.searchKind==='seizure'?'convulsão':'dor no ombro';
+   const {page,context}=await pageFor(route);await choose(page,route,record,query);const shared=page.url();
+   await page.reload({waitUntil:'networkidle'});await page.locator('[data-clinical-condition-id="'+record.id+'"]').waitFor({timeout:2000});
+   assert.deepEqual(await page.evaluate(()=>window.ClinicalConditionPilot.protocolContext().clinicalConditionRecord),record);
+   await context.close();const fresh=await pageFor(shared.slice(origin.length));await fresh.page.locator('[data-clinical-condition-id="'+record.id+'"]').waitFor({timeout:2000});
+   assert.deepEqual(await fresh.page.evaluate(()=>window.ClinicalConditionPilot.protocolContext().clinicalConditionRecord),record);
+   report.scenarios.push({name:'condition-deep-link-reload-and-share',route,record:record.id,integralRecordRestored:true});await fresh.context.close();
+  }
+  if(!deepLinkOnly)for(const route of ['/medico/','/protocolo/','/recepcao/'])for(const record of newer){
+   const {page,context}=await pageFor(route),list=route==='/recepcao/'?'#receptionProtocolList':'#protocolList';
+   await page.locator(list+' [data-id="'+record.parentProtocolId+'"]').click();await page.locator('[data-condition="'+record.id+'"]').waitFor();
+   const hasChat=await page.locator('#aiLauncher').count()>0;
+   const mixed=hasChat?await chat(page,'Bursite e cefaleia no DigSaúde: exames?'):await page.evaluate(()=>window.ClinicalConditionPilot.localAnswer('Bursite e cefaleia no DigSaúde: exames?'));
+   assert.match(mixed,/condição por vez/);const before=report.payloads.length;
+   await page.locator('[data-condition="'+record.id+'"]').click();await page.locator('[data-clinical-condition-id="'+record.id+'"]').waitFor();
+   const answer=hasChat?await chat(page,'Quais exames?'):await page.evaluate(()=>window.ClinicalConditionPilot.localAnswer('Quais exames?'));assert.doesNotMatch(answer,/condição por vez/);
+   if(hasChat){assert.equal(report.payloads.length,before+1);assert.deepEqual(report.payloads.at(-1).protocols.map(p=>p.clinicalConditionRecord),[record]);}
+   else assert.deepEqual(await page.evaluate(()=>window.ClinicalConditionPilot.questionContexts('Quais exames?').map(p=>p.clinicalConditionRecord)),[record]);
+   report.scenarios.push({name:'detail-condition-choice-clears-mixed-pending-state',route,record:record.id,pendingStateVia:hasChat?'visible chat':'shared local API; route has no chat launcher',integralRecordAfterButton:true});await context.close();
+  }
+ }
+ if(!navigationOnly){
  for(const route of ['/medico/','/protocolo/','/recepcao/']){
   const {page,context}=await pageFor(route);await choose(page,route,newer[0],'bursite no ombro');
   await page.locator(field(route)).fill('Bursite e cefaleia no DigSaúde');await page.locator('[data-clinical-condition-choice]').waitFor();
@@ -133,6 +158,7 @@ try{
   report.scenarios.push({name:'unrelated-topic-after-new-pilot',condition:record.id,legacyRankingRestored:true});await context.close();}
  for(const record of newer){const file=record.searchKind==='headache'?'cefaleia-neuropediatria':'bursite-tendinite';const {page,context}=await pageFor('/medico/',{failRecord:file+'-20261016.json'});await page.locator('#sideSearchInput').fill(record.searchKind==='headache'?'cefaleia':'bursite');await page.locator('[data-pilot-system="'+record.id+'"]').click();await page.locator('[data-clinical-pilot-unavailable]').waitFor();assert.equal(await page.locator('[data-clinical-rule]').count(),0);
   await chat(page,'Quais exames para diabetes?');assert.ok(report.payloads.at(-1).protocols.every(p=>!p.clinicalConditionRecord));report.scenarios.push({name:'failed-new-pilot-isolated',condition:record.id,legacyStillAvailable:true});await context.close();}
+ }
  }
  assert.deepEqual(report.errors,[]);report.passed=true;
 }catch(error){report.passed=false;report.failure={message:error.message,stack:error.stack};const page=browser.contexts().at(-1)?.pages().at(-1);if(page)await page.screenshot({path:path.join(output,'failure.png'),fullPage:true}).catch(()=>{});throw error;}

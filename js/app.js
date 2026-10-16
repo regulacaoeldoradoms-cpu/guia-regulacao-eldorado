@@ -440,7 +440,7 @@ async function initialize() {
     const conditionId = new URL(window.location.href).searchParams.get('condicao');
     renderList();
     const pilot = window.ClinicalConditionPilot;
-    const parentId = conditionId === pilot?.ID ? 'neuropediatria' : [pilot?.SHOULDER, pilot?.RELATED].includes(conditionId) ? 'ortopedia' : null;
+    const parentId = pilot?.parentProtocolId?.(conditionId);
     const requested = parentId && state.protocols.find(protocol => protocol.id === parentId);
     if (requested) renderProtocol(requested, { conditionId });
   } catch (error) {

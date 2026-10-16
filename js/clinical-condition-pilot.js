@@ -11,6 +11,7 @@
   ];
   const families={seizure:[ID],shoulder:[SHOULDER,RELATED],tendon:[TENDON],headache:[HEADACHE]},familyLabels={seizure:'Convulsão/Epilepsia',shoulder:'Dor no Ombro',tendon:'Bursite/Tendinite',headache:'Cefaleia pediátrica'};
   const familyFor=id=>Object.keys(families).find(family=>families[family].includes(id)),parentFor=id=>[ID,HEADACHE].includes(id)?'neuropediatria':'ortopedia';
+  const parentProtocolId=id=>descriptors.some(descriptor=>descriptor.id===id)?parentFor(id):null;
   const labelFor=id=>id===ID?'Convulsão / Epilepsia':id===SHOULDER?'Dor no Ombro':id===RELATED?'Ombro - seções relacionadas':id===TENDON?'Bursite / Tendinite':'Cefaleia';
   function unsupportedNewScope(query,family,system){const q=norm(query);return ['tendon','headache'].includes(family)&&(system==='sisreg'||comparisonRequested(query)||family==='headache'&&/\badult[oa]/.test(q)||family==='tendon'&&/\binfantil|\bpediatr|\bcrianc/.test(q));}
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -132,7 +133,7 @@
     const descriptor=descriptors.find(d=>d.id===options.conditionId),r=descriptor&&recordFor(descriptor.id),parent=r?.parentProtocolId||(descriptor?parentFor(descriptor.id):'');
     if(!descriptor||protocol?.id!==parent){document.body?.classList.remove('clinical-pilot-active');return false;}
     const panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');if(!panel)return false;document.body?.classList.add('clinical-pilot-active');
-    conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];
+    conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];pendingFamilies=[];
     if(!r){panel.innerHTML=`<div class="clinical-pilot" data-clinical-pilot-unavailable="${descriptor.id}"><p class="cp-alert">Não foi possível carregar o registro integral do piloto (${esc(errors.get(descriptor.id)||'carregando')}). Nenhuma lista geral foi usada como substituta.</p></div>`;return true;}
     const query=options.query??document.getElementById(channel==='reception'?'receptionSearch':'sideSearchInput')?.value??'',age=options.age||ageFromText(query);
     panel.innerHTML=`<article class="clinical-pilot" data-clinical-condition-id="${r.id}" data-clinical-channel="${channel}" data-clinical-query="${esc(query)}">${contentMarkup(r,age,channel,query)}</article>`;
@@ -192,5 +193,5 @@
     return '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(r.condition)+' - em revisão</title><style>body{font:18px/1.45 Arial,sans-serif;color:#17343d;margin:0}p{margin:0 0 12px}h2{margin:12px 0 18px}h3{margin:0 0 12px}.cp-label{break-after:avoid}ul,ol{margin:12px 0;padding-left:26px}.clinical-pilot{max-width:900px;margin:auto}.cp-status,.cp-label{font-weight:bold}.cp-grid{display:block}.cp-grid>section{margin:24px 0}.cp-grid li{margin:10px 0}.cp-alert,.cp-exclusion{border-left:3px solid #94671f;background:#fff5df;padding:12px}.cp-requirement,.cp-pending,.cp-reference{border-top:1px solid #b5c5ba;margin-top:20px;padding-top:18px}h2,h3{break-after:avoid}li,.cp-requirement,.cp-pending{break-inside:avoid}@page{size:A4;margin:18mm}'+pagination+'</style><article class="clinical-pilot">'+contentMarkup(r,context.age,'print',context.query)+'</article></html>';
   }
   function printActive(){const html=printDocument();if(!html)return;const popup=window.open('','_blank');if(!popup){window.alert('Permita abrir a orientação de impressão deste piloto.');return;}popup.document.open();popup.document.write(html);popup.document.close();popup.focus();popup.print();}
-  window.ClinicalConditionPilot={legacyTopicTerms:()=>bypassPilotContext?[...legacyTerms]:[],ID,SHOULDER,RELATED,TENDON,HEADACHE,REVISION:descriptors[0].revision,VERSION,SOURCE:sourceFor(descriptors[0]),ready,matches,clearConditionUrl,ageFromText,ageNotice,active,unavailable,awaitingSystemChoice,localOnlyQuestion,questionDecision,acceptsQuestion,protocolContext,questionContexts,render,addSearchChoice,addDetailChoice,localAnswer,printDocument,record:(id=ID)=>recordFor(id)?clone(recordFor(id)):null};
+  window.ClinicalConditionPilot={legacyTopicTerms:()=>bypassPilotContext?[...legacyTerms]:[],ID,SHOULDER,RELATED,TENDON,HEADACHE,REVISION:descriptors[0].revision,VERSION,SOURCE:sourceFor(descriptors[0]),ready,matches,parentProtocolId,clearConditionUrl,ageFromText,ageNotice,active,unavailable,awaitingSystemChoice,localOnlyQuestion,questionDecision,acceptsQuestion,protocolContext,questionContexts,render,addSearchChoice,addDetailChoice,localAnswer,printDocument,record:(id=ID)=>recordFor(id)?clone(recordFor(id)):null};
 })();
