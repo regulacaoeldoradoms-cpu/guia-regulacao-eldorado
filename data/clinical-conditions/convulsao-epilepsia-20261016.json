@@ -1,0 +1,430 @@
+{
+  "id": "digsaude.neuropediatria.convulsao-epilepsia",
+  "revision": "piloto-convulsao-20261016-3",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Neuropediatria",
+  "condition": "Convulsão / Epilepsia",
+  "aliases": [
+    "convulsão infantil",
+    "convulsão",
+    "epilepsia",
+    "crise convulsiva",
+    "neuropediatria"
+  ],
+  "provenance": "Matriz documental e conferência visual comunicadas pela frente documental em 16/10/2026. Esta frente técnica não acessou os PDFs originais. O hash de S2 identifica os bytes conferidos por aquela frente; não comprova origem institucional nem vigência.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "physical": "36–38",
+        "printed": "30–32",
+        "documentTotal": 72
+      },
+      "verification": "Matriz e conferência visual comunicadas pela frente documental. Origem provável relatada pelo setor: grupo WhatsApp DigSaúde do qual participa; mensagem original não verificada. A busca complementar no Gmail não confirmou atualização clínica posterior dos dois pilotos. Isso não certifica origem institucional nem vigência.",
+      "fileHash": "96445fc56ecf27e3b81a47389c923a0a4c837372eeab5e31c7fba054ad139315",
+      "pending": "Origem institucional, vigência atual e aplicabilidade municipal a confirmar.",
+      "documentId": "S2",
+      "bytes": 710424,
+      "hashVerification": "Hash confirmado pela frente documental após materialização e inspeção visual; comunicado em 16/10/2026."
+    },
+    {
+      "id": "MAN1",
+      "title": "Manual Operacional Oficial - Auxiliar de Teleconsulta e Regulação",
+      "version": "V1",
+      "pages": {
+        "printed": "4"
+      },
+      "verification": "Texto integral comunicado pela frente documental; avaliação profissional na p. 4.",
+      "fileHash": null,
+      "date": "31/07/2026",
+      "documentId": "S1"
+    },
+    {
+      "id": "BRIEF",
+      "title": "Orientações aprovadas para a proposta do piloto",
+      "verification": "Limites editoriais desta demonstração; não constitui norma clínica"
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      },
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ]
+    },
+    {
+      "id": "CRISE",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Um ou mais episódios sugestivos de crise convulsiva.",
+      "exceptionRefs": [
+        "FEBRIL"
+      ],
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "MONO",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Epilepsia prévia com controle inadequado apesar de monoterapia otimizada em dose plena, descartada má adesão.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ]
+    },
+    {
+      "id": "EFEITOS",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Epilepsia prévia com efeitos adversos intoleráveis da medicação.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ]
+    },
+    {
+      "id": "DIFICIL",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Epilepsia prévia com controle inadequado apesar de duas ou mais medicações anticrise em dose plena, descartada má adesão (difícil controle).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ]
+    },
+    {
+      "id": "FEBRIL",
+      "group": "exclusion",
+      "requirement": "exclusao",
+      "text": "Este critério exclui convulsão febril simples.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "QUADRO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever o quadro clínico atual que sustenta o enquadramento.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ]
+    },
+    {
+      "id": "TRATAMENTO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever o tratamento que sustenta o enquadramento no critério pertinente.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ],
+      "editorialBasis": "Organização editorial baseada nos critérios de tratamento da página física 38/impressa 32; não acrescenta documento, medicação ou posologia universal."
+    },
+    {
+      "id": "NEURO",
+      "group": "clinicalAssessment",
+      "requirement": "obrigatorio",
+      "text": "Exame neurológico realizado e registrado por profissional habilitado.",
+      "sourceRefs": [
+        "TEL2",
+        "MAN1"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        },
+        {
+          "source": "MAN1",
+          "physical": "4",
+          "printed": "4"
+        }
+      ]
+    },
+    {
+      "id": "EEG",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "availability": "se_houver",
+      "text": "Eletroencefalograma (EEG), se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ]
+    },
+    {
+      "id": "TC",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "availability": "se_houver",
+      "text": "Tomografia de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ]
+    },
+    {
+      "id": "RM",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "availability": "se_houver",
+      "text": "Ressonância magnética de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "38",
+          "printed": "32"
+        }
+      ]
+    },
+    {
+      "id": "APRESENTACAO",
+      "group": "documentPresentation",
+      "requirement": "condicional",
+      "alternatives": [
+        "anexados",
+        "descritos"
+      ],
+      "text": "Os documentos podem ser anexados ou descritos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "text": "É necessária a presença de familiar ou responsável no teleatendimento.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ]
+    },
+    {
+      "id": "INDICACAO",
+      "group": "editorialSafeguard",
+      "requirement": "ressalva",
+      "text": "EEG, TC e RM não são pré-requisitos documentais obrigatórios deste teleatendimento. Isso não dispensa exames clinicamente indicados pelo profissional.",
+      "sourceRefs": [
+        "BRIEF"
+      ],
+      "sourceLocations": [
+        {
+          "source": "BRIEF",
+          "section": "Ressalva editorial da matriz NP-08"
+        }
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta atual",
+      "text": "A oferta operacional atual de Neuropediatria no DigSaúde MS não foi confirmada nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "ORIGEM",
+      "title": "Origem do PDF",
+      "text": "A origem provável foi relatada como o grupo WhatsApp DigSaúde do setor, sem mensagem original verificada. O hash identifica os bytes; origem institucional e vigência atual seguem sem confirmação.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "MUNICIPIO",
+      "title": "Aplicabilidade municipal",
+      "text": "A aplicabilidade deste recorte ao fluxo de Eldorado/MS não foi confirmada nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "DEZESSETE",
+      "title": "Faixa de 17 anos",
+      "text": "O recorte não explicita a rota de 17 anos. As faixas do SISREG não preenchem automaticamente esse intervalo do DigSaúde.",
+      "kind": "flow_gap"
+    }
+  ],
+  "contextualAlerts": [
+    {
+      "id": "IDADE17",
+      "trigger": {
+        "ageYears": 17
+      },
+      "title": "17 anos: faixa não explicitada neste recorte",
+      "text": "O limite descrito para Neuropediatria é 16 anos, 11 meses e 29 dias; Neurologia Adulto no DigSaúde começa aos 18 anos. Confirme o fluxo com a Regulação. Esta proposta não define outra rota nem transfere o caso para o SISREG."
+    }
+  ],
+  "correspondence": {
+    "notes": "O Gmail identificou recorte de 2024 enviado em 27/01/2025 e resumo DOCX municipal de 10/02/2025. Esses registros de envio e resumo não foram tratados como nova norma.",
+    "source": "Síntese comunicada pela frente Gmail"
+  },
+  "projections": {
+    "guide": "Usa as mesmas regras integrais, com ordenação para consulta rápida.",
+    "ai": "Recebe todas as regras, exceções, fontes, incertezas e alertas aplicáveis; não usa apenas o resumo visível e não corta listas.",
+    "print": "Preserva as mesmas regras e o alerta contextual; somente a apresentação muda."
+  },
+  "nextGate": "Implementação local autorizada e em revisão. Resolver ou registrar as pendências documentais e operacionais; publicação depende de autorização própria.",
+  "integration": {
+    "codeBase": "380a40b1a5e58c309151b066fef0b79ec9313489",
+    "derivedFromPrototype": "proposta-visual-20261016-2",
+    "scope": "Somente DigSaúde MS / Neuropediatria / Convulsão-Epilepsia"
+  },
+  "parentProtocolId": "neuropediatria",
+  "category": "Pediatria",
+  "systemKind": "digsaude",
+  "searchKind": "seizure",
+  "sections": [
+    {
+      "label": "Obrigatório no encaminhamento",
+      "title": "O que descrever",
+      "ruleIds": [
+        "QUADRO",
+        "TRATAMENTO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Avaliação clínica obrigatória",
+      "title": "Exame neurológico",
+      "ruleIds": [
+        "NEURO"
+      ],
+      "receptionCheck": true,
+      "note": "Início, evolução, frequência e medicação/dose/adesão/resposta podem ser coletados como relato. Exame, interpretação, hipótese, tratamento e risco exigem profissional habilitado; não converter relato em diagnóstico ou exame."
+    },
+    {
+      "label": "Se houver - opcionais para instrução documental",
+      "title": "Exames e documentos",
+      "ruleIds": [
+        "EEG",
+        "TC",
+        "RM",
+        "APRESENTACAO",
+        "INDICACAO"
+      ]
+    },
+    {
+      "label": "Condição de atendimento - necessário",
+      "title": "Familiar ou responsável",
+      "ruleIds": [
+        "RESPONSAVEL"
+      ]
+    }
+  ],
+  "reference": "Telessaúde MS 2.0 - 06/10/2025 - físicas 36-38 / impressas 30-32. Avaliação clínica: Manual Operacional V1, 31/07/2026, p. 4.",
+  "professionalBoundary": {
+    "text": "Início, evolução, frequência e medicação/dose/adesão/resposta podem ser coletados como relato. Exame, interpretação, hipótese, tratamento e risco exigem profissional habilitado; não converter relato em diagnóstico ou exame.",
+    "sourceLocations": [
+      {
+        "source": "MAN1",
+        "physical": "4,6-7",
+        "printed": "4,6-7"
+      }
+    ]
+  },
+  "sourceLimits": {
+    "text": "Nesta seção não foram localizados prazo máximo de espera, validade de EEG/TC/RM, CRM/especialidade obrigatória do solicitante, canal alternativo para ausência de exame ou roteiro específico de urgência convulsiva. Isso não significa dispensa clínica nem inexistência de regra em outra fonte.",
+    "sourceLocations": [
+      {
+        "source": "TEL2",
+        "physical": "36-38",
+        "printed": "30-32"
+      }
+    ]
+  },
+  "sourceNotesPolicy": "Notas institucionais, lacunas e limites de escopo não são critérios clínicos nem documentos obrigatórios adicionais. Ausência de definição na fonte não cria dispensa nem obrigação de obter decisão agora."
+}

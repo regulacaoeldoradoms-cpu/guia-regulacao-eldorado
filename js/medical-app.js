@@ -309,6 +309,8 @@ function updateProtocolUrl(protocol) {
 
 function renderProtocol(protocol, options = {}) {
   state.selected = protocol;
+  if (window.ClinicalConditionPilot?.render(protocol, options)) return;
+  window.ClinicalConditionPilot?.clearConditionUrl();
   document.querySelectorAll('.protocol-card').forEach((card) => card.classList.toggle('active', card.dataset.id === protocol.id));
   if (!options.preserveUrl) updateProtocolUrl(protocol);
 
@@ -383,10 +385,12 @@ function renderProtocol(protocol, options = {}) {
   $('copyChecklistButton')?.addEventListener('click', () => copyText(checklistText(protocol), 'Checklist clínico copiado.'));
   $('printGuidanceButton')?.addEventListener('click', () => printProtocol(protocol));
   $('clearChecklistButton')?.addEventListener('click', () => document.querySelectorAll('.medical-checklist input').forEach((input) => { input.checked = false; }));
+  window.ClinicalConditionPilot?.addDetailChoice(protocol, renderProtocol);
 }
 
 function renderGeneralRules() {
   state.selected = null;
+  window.ClinicalConditionPilot?.clearConditionUrl();
   document.querySelectorAll('.protocol-card').forEach((card) => card.classList.remove('active'));
   const url = new URL(window.location.href);
   url.searchParams.delete('protocolo');
@@ -428,9 +432,10 @@ function renderList(options = {}) {
 
   const requestedId = options.requestedId || new URL(window.location.href).searchParams.get('protocolo');
   const requested = requestedId ? filtered.find((protocol) => protocol.id === requestedId) : null;
-  if (requested) renderProtocol(requested, { preserveUrl: true });
+  if (requested) renderProtocol(requested, { preserveUrl: true, conditionId: new URL(window.location.href).searchParams.get('condicao') });
   else if (filtered.length && (!state.selected || !filtered.some((protocol) => protocol.id === state.selected.id))) renderProtocol(filtered[0], { preserveUrl: Boolean(options.preserveUrl) });
   if (!filtered.length) $('detailPanel').innerHTML = '<div class="loading">Ajuste a pesquisa ou os filtros para consultar outro protocolo.</div>';
+  window.ClinicalConditionPilot?.addSearchChoice(state.protocols, renderProtocol);
 }
 
 function populateCategories() {
@@ -439,12 +444,24 @@ function populateCategories() {
 }
 
 function bindControls() {
-  $('sideSearchInput')?.addEventListener('input', () => renderList());
+  $('sideSearchInput')?.addEventListener('input', () => {
+    if (window.ClinicalConditionPilot?.awaitingSystemChoice() || (window.ClinicalConditionPilot?.active() && !window.ClinicalConditionPilot.matches($('sideSearchInput').value, window.ClinicalConditionPilot.active().record.id))) {
+      window.ClinicalConditionPilot.clearConditionUrl();
+      state.selected = null;
+    }
+    renderList();
+  });
   $('categoryFilter')?.addEventListener('change', () => renderList());
   $('generalBtn')?.addEventListener('click', renderGeneralRules);
   document.querySelectorAll('[data-filter]').forEach((button) => {
     button.addEventListener('click', () => {
       state.topFilter = button.dataset.filter;
+      const clinical = window.ClinicalConditionPilot?.active();
+      const allowed = clinical?.record.systemKind === 'sisreg_reference' ? ['todos', 'sisreg', 'ambos'] : ['todos', 'digsus', 'ambos'];
+      if (clinical && !allowed.includes(state.topFilter)) {
+        window.ClinicalConditionPilot.clearConditionUrl();
+        state.selected = null;
+      }
       document.querySelectorAll('[data-filter]').forEach((candidate) => candidate.classList.toggle('active', candidate === button));
       renderList();
     });
@@ -503,6 +520,7 @@ function printProtocol(protocol) {
 async function initialize() {
   bindControls();
   try {
+    await window.ClinicalConditionPilot?.ready;
     state.protocols = await loadProtocols();
     populateCategories();
     const requestedId = new URL(window.location.href).searchParams.get('protocolo');

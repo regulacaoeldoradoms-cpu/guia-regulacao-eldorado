@@ -140,6 +140,7 @@
   }
 
   function compactProtocol(protocol) {
+    if (protocol?.clinicalConditionRecord) return JSON.parse(JSON.stringify(protocol));
     const practice = compactPractice(protocol?.praticaRegulatoria);
     const officialSource = Array.isArray(protocol?.subprotocolos)
       ? protocol.subprotocolos.filter((item) => !isEmbeddedPractice(item))
@@ -221,7 +222,8 @@
   function fitPayload(payload) {
     if (byteSize(payload) <= MAX_REQUEST_BYTES) return payload;
 
-    payload.protocols = payload.protocols.slice(0, 1);
+    const integralPilot = payload.protocols.some(protocol => protocol.clinicalConditionRecord);
+    if (!integralPilot) payload.protocols = payload.protocols.slice(0, 1);
     payload.history = payload.history.slice(-4);
     if (byteSize(payload) <= MAX_REQUEST_BYTES) return payload;
 
@@ -229,6 +231,11 @@
     if (byteSize(payload) <= MAX_REQUEST_BYTES) return payload;
 
     payload.catalog = payload.catalog.slice(0, 60);
+    if (integralPilot) {
+      payload.history = [];
+      payload.catalog = [];
+      return payload;
+    }
     if (payload.protocols[0]) {
       payload.protocols[0].subprotocolos = payload.protocols[0].subprotocolos.slice(0, 8);
       payload.protocols[0].criteriosParaEncaminhar = payload.protocols[0].criteriosParaEncaminhar.slice(0, 6);
@@ -249,7 +256,8 @@
     payload.protocols = protocolsForWorker(payload.protocols);
     payload.catalog = compactCatalog(payload.catalog);
     payload.assistantMode = 'pre_regulation_simulator';
-    payload.contextCompression = 'pre_regulation_compact_v3';
+    payload.contextCompression = payload.protocols.some((protocol) => protocol.clinicalConditionRecord)
+      ? 'clinical_condition_integral_v1' : 'pre_regulation_compact_v3';
     return fitPayload(payload);
   }
 

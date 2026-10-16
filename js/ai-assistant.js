@@ -203,6 +203,11 @@
   }
 
   function requestContext(question) {
+    const clinicalDecision = window.ClinicalConditionPilot?.questionDecision(question);
+    const clinical = window.ClinicalConditionPilot?.questionContexts(question);
+    if (Array.isArray(clinical)) {
+      return { protocols: clinical, catalog: [], resolvedQuestion: clinicalDecision?.contexts?.[0]?.query || question, selectedProtocolId: clinical[0]?.id || null, selectedProtocolName: clinical[0]?.nome || null, practiceKnowledgeVersion: null, operationalFacts: [] };
+    }
     const ranked = rankProtocols(question);
     const current = typeof state !== 'undefined' ? state.selected : null;
     let selected = ranked.filter((item) => item.score > 0).slice(0, 4).map((item) => item.protocol);
@@ -247,6 +252,8 @@
   }
 
   function localAnswer(question, connectionMissing = !CONFIG.endpoint) {
+    const clinical = window.ClinicalConditionPilot?.localAnswer(question);
+    if (clinical) return clinical;
     if (isAutismTelehealthQuestion(question)) {
       let answer = [
         'Psicologia no DigSaúde e TEA/autismo',
@@ -370,8 +377,8 @@
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
-          question: regulatorQuestion(question, context),
-          originalQuestion: question,
+          question: regulatorQuestion(context.resolvedQuestion || question, context),
+          originalQuestion: context.resolvedQuestion || question,
           assistantMode: CONFIG.mode || 'pre_regulation_simulator',
           protocols: context.protocols,
           catalog: context.catalog,
@@ -417,11 +424,12 @@
     addMessage('user', cleanQuestion);
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
-    const remoteAiReadyForAttempt = Boolean(CONFIG.endpoint) && Date.now() >= remoteAiUnavailableUntil;
+    const remoteConfigured = Boolean(CONFIG.endpoint) && !window.ClinicalConditionPilot?.unavailable() && !window.ClinicalConditionPilot?.localOnlyQuestion(cleanQuestion);
+    const remoteAiReadyForAttempt = remoteConfigured && Date.now() >= remoteAiUnavailableUntil;
     const loading = addMessage('assistant', remoteAiReadyForAttempt ? 'Fazendo a pré-análise regulatória com IA...' : 'Consultando os protocolos locais...', 'loading');
     try {
       const context = requestContext(cleanQuestion);
-      if (CONFIG.endpoint && !remoteAiReadyForAttempt) {
+      if (remoteConfigured && !remoteAiReadyForAttempt) {
         const answer = localAnswer(cleanQuestion, false);
         loading?.remove();
         addMessage('assistant', `${answer}\n\nModo de contingência local: os provedores de IA serão testados novamente automaticamente em alguns minutos.`, 'contingency');
@@ -431,15 +439,15 @@
         return;
       }
 
-      if (CONFIG.endpoint) setProviderStatus('checking', 'Consultando IA');
-      const result = CONFIG.endpoint
+      if (remoteConfigured) setProviderStatus('checking', 'Consultando IA');
+      const result = remoteConfigured
         ? await askAssistant(cleanQuestion, context)
         : { answer: localAnswer(cleanQuestion, true), provider: 'Local', model: '' };
       loading?.remove();
       addMessage('assistant', result.answer);
       history.push({ role: 'assistant', text: result.answer.slice(0, 7000) });
       window.PortalInteractions?.notify?.('task-complete', 'Pré-análise concluída.', document.getElementById('aiMessages'));
-      if (CONFIG.endpoint) {
+      if (remoteConfigured) {
         remoteAiUnavailableUntil = 0;
         if (result.provider === 'Cloudflare Workers AI') {
           setProviderStatus('connected', 'IA de contingência conectada');

@@ -267,8 +267,10 @@ function subprotocolHtml(protocol) {
     </details>`).join('')}</div>`;
 }
 
-function renderProtocol(protocol) {
+function renderProtocol(protocol, options = {}) {
   state.selected = protocol;
+  if (window.ClinicalConditionPilot?.render(protocol, options)) return;
+  window.ClinicalConditionPilot?.clearConditionUrl();
   document.querySelectorAll('.protocol-card').forEach((card) => card.classList.toggle('active', card.dataset.id === protocol.id));
 
   const actions = PAGE_MODE === 'guide' ? `
@@ -310,10 +312,12 @@ function renderProtocol(protocol) {
 
   $('copyModelButton')?.addEventListener('click', () => copyText(protocol.modelo || '', 'Modelo interno copiado.'));
   $('printGuidanceButton')?.addEventListener('click', () => printGuidance(protocol));
+  window.ClinicalConditionPilot?.addDetailChoice(protocol, renderProtocol);
 }
 
 function renderGeneralRules() {
   state.selected = null;
+  window.ClinicalConditionPilot?.clearConditionUrl();
   document.querySelectorAll('.protocol-card').forEach((card) => card.classList.remove('active'));
   $('detailPanel').innerHTML = `
     <article>
@@ -348,6 +352,7 @@ function renderList() {
 
   if (filtered.length && (!state.selected || !filtered.some((protocol) => protocol.id === state.selected.id))) renderProtocol(filtered[0]);
   if (!filtered.length) $('detailPanel').innerHTML = '<div class="loading">Ajuste os termos da pesquisa ou os filtros para consultar outro protocolo.</div>';
+  window.ClinicalConditionPilot?.addSearchChoice(state.protocols, renderProtocol);
 }
 
 function populateCategories() {
@@ -356,12 +361,24 @@ function populateCategories() {
 }
 
 function bindControls() {
-  $('sideSearchInput')?.addEventListener('input', renderList);
+  $('sideSearchInput')?.addEventListener('input', () => {
+    if (window.ClinicalConditionPilot?.awaitingSystemChoice() || (window.ClinicalConditionPilot?.active() && !window.ClinicalConditionPilot.matches($('sideSearchInput').value, window.ClinicalConditionPilot.active().record.id))) {
+      window.ClinicalConditionPilot.clearConditionUrl();
+      state.selected = null;
+    }
+    renderList();
+  });
   $('categoryFilter')?.addEventListener('change', renderList);
   $('generalBtn')?.addEventListener('click', renderGeneralRules);
   document.querySelectorAll('[data-filter]').forEach((button) => {
     button.addEventListener('click', () => {
       state.topFilter = button.dataset.filter;
+      const clinical = window.ClinicalConditionPilot?.active();
+      const allowed = clinical?.record.systemKind === 'sisreg_reference' ? ['todos', 'sisreg', 'ambos'] : ['todos', 'digsus', 'ambos'];
+      if (clinical && !allowed.includes(state.topFilter)) {
+        window.ClinicalConditionPilot.clearConditionUrl();
+        state.selected = null;
+      }
       document.querySelectorAll('[data-filter]').forEach((candidate) => candidate.classList.toggle('active', candidate === button));
       renderList();
     });
@@ -417,9 +434,15 @@ function printGuidance(protocol) {
 async function initialize() {
   bindControls();
   try {
+    await window.ClinicalConditionPilot?.ready;
     state.protocols = await loadProtocols();
     populateCategories();
+    const conditionId = new URL(window.location.href).searchParams.get('condicao');
     renderList();
+    const pilot = window.ClinicalConditionPilot;
+    const parentId = conditionId === pilot?.ID ? 'neuropediatria' : [pilot?.SHOULDER, pilot?.RELATED].includes(conditionId) ? 'ortopedia' : null;
+    const requested = parentId && state.protocols.find(protocol => protocol.id === parentId);
+    if (requested) renderProtocol(requested, { conditionId });
   } catch (error) {
     $('resultCount').textContent = 'Falha no carregamento';
     $('protocolList').innerHTML = '';
