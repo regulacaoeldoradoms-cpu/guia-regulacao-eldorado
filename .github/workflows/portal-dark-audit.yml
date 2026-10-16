@@ -58,6 +58,18 @@ jobs:
       - name: Validar contrato das APIs sintéticas
         run: node --test testing/browser/dark-audit-fixture-contract.test.mjs
 
+      - name: Validar repetibilidade, versões e alteração visual proposital
+        working-directory: testing/browser
+        run: |
+          node serve-dark-audit.mjs > /tmp/capture-preparation-server.log 2>&1 &
+          capture_server_pid=$!
+          trap 'kill "$capture_server_pid" 2>/dev/null || true; wait "$capture_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 100); do
+            if curl --fail --silent http://127.0.0.1:4176/login/ > /dev/null; then break; fi
+            sleep 0.1
+          done
+          node check-capture-preparation.mjs
+
       - name: Executar toda a auditoria sintética
         working-directory: testing/browser
         run: npx playwright test --config playwright-dark-audit.config.mjs
@@ -84,6 +96,15 @@ jobs:
           if [ -f test-results-dark-audit/results.json ]; then
             node summarize-dark-audit.mjs test-results-dark-audit/results.json
           fi
+
+      - name: Publicar controles da preparação de captura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capture-preparation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: testing/browser/test-results-capture-preparation/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Publicar resumo da auditoria
         if: always()
