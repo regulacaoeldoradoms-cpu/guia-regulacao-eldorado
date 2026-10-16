@@ -53,6 +53,10 @@ async function pageFor(route, { before = false, width = 1365, theme = 'light', f
     const request = requestRoute.request(), url = new URL(request.url());
     if (['/js/auth-config.js', '/js/auth-client.js', '/js/auth-fetch-bridge.js', '/js/portal-global-chat.js', '/js/pets-bootstrap.js', '/js/portal-performance.js', '/js/portal-observability.js', '/js/portal-pwa.js'].includes(url.pathname)) return requestRoute.fulfill({ contentType: 'text/javascript', body: '' });
     if (url.pathname === '/js/ai-config.js') return requestRoute.fulfill({ contentType: 'text/javascript', body: 'window.REGULATION_AI_CONFIG={endpoint:location.origin+"/__mock-ai",maxQuestionLength:3000};' });
+    if (url.pathname === '/__mock-ai' && request.postDataJSON()?.clinicalConditionProbe) {
+      const ids=request.postDataJSON().clinicalConditionProbe,registry=fs.readdirSync(path.join(root,'data/clinical-conditions')).filter(name=>name.endsWith('.json')).map(name=>JSON.parse(fs.readFileSync(path.join(root,'data/clinical-conditions',name),'utf8')));
+      (report.compatibilityProbes ||= []).push(ids);return requestRoute.fulfill({contentType:'application/json',body:JSON.stringify({clinicalConditionProbe:true,records:ids.map(id=>registry.find(record=>record.id===id))})});
+    }
     if (url.pathname === '/__mock-ai') {
       const payload = request.postDataJSON(); report.interceptedAiPayloads.push(payload);
       return requestRoute.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Indisponibilidade simulada localmente' }) });

@@ -352,6 +352,7 @@
   function friendlyAiFailure(error) {
     const status = Number(error?.status) || 0;
     const message = String(error?.message || '');
+    if (error?.code === 'CLINICAL_WORKER_INCOMPATIBLE') return 'A base clínica da IA ainda não corresponde à versão do guia. Os protocolos locais continuam disponíveis.';
     if (['AbortError', 'TimeoutError'].includes(error?.name) || /abort|timeout|signal/i.test(message)) {
       return 'Os provedores de IA demoraram além do limite de segurança. Os protocolos locais continuam disponíveis.';
     }
@@ -372,6 +373,17 @@
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), REMOTE_AI_REQUEST_TIMEOUT_MS);
     try {
+      const clinical = context.protocols.filter(protocol => protocol.clinicalConditionRecord);
+      if (clinical.length) {
+        const probe = await fetch(CONFIG.endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+          body: JSON.stringify({ clinicalConditionProbe: clinical.map(protocol => protocol.clinicalConditionId) })
+        });
+        const manifest = await probe.json().catch(() => ({}));
+        if (!probe.ok || manifest.clinicalConditionProbe !== true || JSON.stringify(manifest.records) !== JSON.stringify(clinical.map(protocol => protocol.clinicalConditionRecord))) {
+          throw Object.assign(new Error('A base clínica da IA não corresponde à versão do guia.'), { status: 409, code: 'CLINICAL_WORKER_INCOMPATIBLE' });
+        }
+      }
       const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

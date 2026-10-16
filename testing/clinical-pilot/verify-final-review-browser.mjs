@@ -37,6 +37,10 @@ async function pageFor(route,{width=1365,theme='light',failRecord}={}) {
     const request = route.request(), url = new URL(request.url());
     if (['/js/auth-config.js','/js/auth-client.js','/js/auth-fetch-bridge.js','/js/portal-global-chat.js','/js/pets-bootstrap.js','/js/portal-performance.js','/js/portal-observability.js','/js/portal-pwa.js'].includes(url.pathname)) return route.fulfill({contentType:'text/javascript',body:''});
     if (url.pathname === '/js/ai-config.js') return route.fulfill({contentType:'text/javascript',body:'window.REGULATION_AI_CONFIG={endpoint:location.origin+"/__mock-ai",maxQuestionLength:3000};'});
+    if (url.pathname === '/__mock-ai' && request.postDataJSON()?.clinicalConditionProbe) {
+      const ids=request.postDataJSON().clinicalConditionProbe,registry=fs.readdirSync(path.join(root,'data/clinical-conditions')).filter(name=>name.endsWith('.json')).map(name=>JSON.parse(fs.readFileSync(path.join(root,'data/clinical-conditions',name),'utf8')));
+      (report.compatibilityProbes ||= []).push(ids);return route.fulfill({contentType:'application/json',body:JSON.stringify({clinicalConditionProbe:true,records:ids.map(id=>registry.find(record=>record.id===id))})});
+    }
     if (url.pathname === '/__mock-ai') { report.payloads.push(request.postDataJSON()); return route.fulfill({status:503,contentType:'application/json',body:'{"error":"Indisponibilidade estritamente simulada"}'}); }
     if (failRecord && url.pathname.includes(failRecord)) return route.fulfill({status:503,contentType:'application/json',body:'{}'});
     if (url.hostname === 'raw.githubusercontent.com') return route.fulfill({contentType:'text/html',body:source});

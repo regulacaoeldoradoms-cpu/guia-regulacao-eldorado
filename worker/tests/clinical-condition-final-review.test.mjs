@@ -6,18 +6,18 @@ import worker from '../gemini-assistant.js';
 import { clinicalPilotRecord } from '../clinical-condition-pilot.js';
 const root=new URL('../../',import.meta.url),read=p=>fs.readFileSync(new URL(p,root),'utf8'),clone=v=>JSON.parse(JSON.stringify(v));
 const NP=clinicalPilotRecord(),OM=clinicalPilotRecord('digsaude.ortopedia.dor-no-ombro'),SG=clinicalPilotRecord('sisreg-campo-grande.ortopedia.referencias-ombro');
-async function client(){
+async function client(probeMode='compatible'){
   let selected=null,pending=null;
   const document={readyState:'loading',addEventListener(){},querySelector(selector){
     if(selector.startsWith('#detailPanel >'))return selected?{dataset:{clinicalConditionId:selected.record.id,clinicalQuery:'',clinicalChannel:'guide'},querySelector:()=>({value:selected.age?selected.age.years+' anos':''})}:null;
     if(selector==='[data-clinical-system-choice]')return pending?{dataset:{clinicalSystemChoice:pending}}:null;
     return null;
   }};
-  const sent=[],window={REGULATION_AI_CONFIG:{endpoint:'https://local.invalid/__mock-ai'},setTimeout,clearTimeout},context=vm.createContext({window,document,URL,AbortController,setTimeout,clearTimeout,fetch:async(url,options)=>{if(String(url).endsWith('/__mock-ai')){sent.push(JSON.parse(options.body));return{ok:true,json:async()=>({answer:'Provedor estritamente simulado.',provider:'Simulação'})};}return{ok:true,json:async()=>JSON.parse(read(new URL(url,'https://local.invalid').pathname.slice(1)))};}});
+  const sent=[],probes=[],window={REGULATION_AI_CONFIG:{endpoint:'https://local.invalid/__mock-ai'},setTimeout,clearTimeout},context=vm.createContext({window,document,URL,AbortController,setTimeout,clearTimeout,fetch:async(url,options)=>{if(String(url).endsWith('/__mock-ai')){const payload=JSON.parse(options.body);if(payload.clinicalConditionProbe){probes.push(payload);const records=payload.clinicalConditionProbe.map(id=>clinicalPilotRecord(id));if(probeMode==='different')records[0].rules.pop();return{ok:true,json:async()=>probeMode==='legacy'?{answer:'Formato antigo'}:{clinicalConditionProbe:true,records}};}sent.push(payload);return{ok:true,json:async()=>({answer:'Provedor estritamente simulado.',provider:'Simulação'})};}return{ok:true,json:async()=>JSON.parse(read(new URL(url,'https://local.invalid').pathname.slice(1)))};}});
   vm.runInContext(read('js/clinical-condition-pilot.js'),context);await window.ClinicalConditionPilot.ready;
   context.state={protocols:[{id:'ortopedia',nome:'Ortopedia Adulto',sistemas:{digsus:true,sisreg:true},examesObrigatorios:['Lista geral não deve entrar no piloto sem sistema.']}],selected:null};
   vm.runInContext(read('js/ai-assistant.js').replace(/\}\)\(\);\s*$/,'window.reviewRequestContext=requestContext;window.reviewAskAssistant=askAssistant;})();'),context);
-  return{api:window.ClinicalConditionPilot,select:(record,age=null)=>{selected=record?{record,age}:null;},pending:family=>{pending=family;},requestContext:window.reviewRequestContext,askAssistant:window.reviewAskAssistant,sent};
+  return{api:window.ClinicalConditionPilot,select:(record,age=null)=>{selected=record?{record,age}:null;},pending:family=>{pending=family;},requestContext:window.reviewRequestContext,askAssistant:window.reviewAskAssistant,sent,probes};
 }
 test('confronto dos 42 itens com os qualificadores e páginas da matriz recebida',()=>{
   // Expectations transcribed from the supplied matrix, independently of JSON rendering.
@@ -142,4 +142,22 @@ test('Worker recusa juntar dois sistemas em pergunta genérica sem chamar proved
   await worker.fetch(request('Quais exames para ombro no SISREG?'),env);assert.equal(calls,1);
   const scoped=JSON.parse(prompt.split('PROTOCOLOS MAIS RELEVANTES:\n')[1].split('\n\nCATÁLOGO OPERACIONAL RESUMIDO:')[0]);assert.deepEqual(scoped.map(p=>p.id),[SG.id]);
   assert.match(prompt,/não cria obrigação de obter confirmação, autorização ou decisão agora/);
+});
+
+
+test('Worker confere versão integral sem provedor e mantém autenticação e validação',async()=>{
+  let calls=0;const env={AI_PROVIDER:'cloudflare',AI:{run:async()=>{calls++;throw Error('Provider must not run');}}};
+  const request=ids=>new Request('https://local.invalid/api/ia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clinicalConditionProbe:ids})});
+  const result=await worker.fetch(request([OM.id,SG.id]),env);assert.equal(result.status,200);assert.deepEqual((await result.json()).records,[OM,SG]);assert.equal(calls,0);
+  for(const ids of [[],[OM.id,OM.id],['unknown']])assert.equal((await worker.fetch(request(ids),env)).status,400);
+  assert.equal((await worker.fetch(request([OM.id]),{...env,AUTH_ENFORCE_AI:'true'})).status,403);assert.equal(calls,0);
+});
+test('cliente não chama provedor quando o Worker é antigo ou tem registro diferente',async()=>{
+  for(const mode of ['legacy','different']){const c=await client(mode),context=clone(c.requestContext('Quais exames para ombro DigSaúde?'));await assert.rejects(()=>c.askAssistant('Quais exames?',context),e=>e.code==='CLINICAL_WORKER_INCOMPATIBLE');assert.equal(c.probes.length,1);assert.equal(c.sent.length,0);}
+  const c=await client(),context=clone(c.requestContext('Quais exames para ombro DigSaúde?'));await c.askAssistant('Quais exames?',context);assert.equal(c.probes.length,1);assert.equal(c.sent.length,1);
+});
+test('ponte conserva a sondagem técnica sem transformá-la em pergunta clínica',async()=>{
+  let captured;const endpoint='https://local.invalid/api/ia',window={REGULATION_AI_CONFIG:{endpoint},fetch:async(input,init)=>{captured=JSON.parse(init.body);return{ok:true};}};
+  const context=vm.createContext({window,URL,TextEncoder});vm.runInContext(read('js/pre-regulation-bridge.js'),context);
+  await window.fetch(endpoint,{method:'POST',body:JSON.stringify({clinicalConditionProbe:[OM.id]})});assert.deepEqual(captured,{clinicalConditionProbe:[OM.id]});
 });

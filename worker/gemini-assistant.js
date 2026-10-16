@@ -1,6 +1,6 @@
 'use strict';
 
-import { hydrateClinicalPilot } from './clinical-condition-pilot.js';
+import { hydrateClinicalPilot, clinicalPilotRecord } from './clinical-condition-pilot.js';
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://regulacaoeldoradoms.com.br',
@@ -531,6 +531,13 @@ export default {
 
     try {
       const body = await request.json();
+      if (Object.hasOwn(body, 'clinicalConditionProbe')) {
+        const ids = body.clinicalConditionProbe;
+        if (!Array.isArray(ids) || !ids.length || ids.length > 3 || new Set(ids).size !== ids.length || ids.some(id => typeof id !== 'string' || !clinicalPilotRecord(id))) {
+          return jsonResponse({ error: 'Condições da conferência de versão inválidas.' }, 400, origin, true);
+        }
+        return jsonResponse({ clinicalConditionProbe: true, records: ids.map(id => clinicalPilotRecord(id)) }, 200, origin, true);
+      }
       const question = boundedString(body.originalQuestion || body.question, 3000);
       if (!question) return jsonResponse({ error: 'Informe uma pergunta.' }, 400, origin, true);
       if (hasSensitiveData(question) || hasSensitiveData(JSON.stringify(body.history || []))) {

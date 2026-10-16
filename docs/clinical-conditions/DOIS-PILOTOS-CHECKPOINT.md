@@ -2,7 +2,7 @@
 
 Revisão técnica focada concluída frente à matriz documental recebida. O usuário autorizou criar PR, integrar e publicar este primeiro lote após todos os checks, mantendo as lacunas sinalizadas. A preparação da publicação está em andamento; nenhuma expansão foi iniciada.
 
-Branch: feat/piloto-convulsao-epilepsia-20261016. Base Git: 380a40b1a5e58c309151b066fef0b79ec9313489. Sem commit do candidato, sua identidade é o conjunto de hashes e patches no MANIFESTO-REVISAO-FINAL-20261016.json, externo ao checkout.
+Branch: feat/piloto-convulsao-epilepsia-20261016. Base original: 380a40b1a5e58c309151b066fef0b79ec9313489. Main b5a0bbfc5cf01b0fb964ad9c76e0ee47222923a3 incorporada pelo merge 0139ec1a7f78369b4486259fb56954078f9017d0, preservando PR663. O manifesto da revisão local foi preservado; os commits, a árvore final e os resultados da publicação são registrados no manifesto externo de publicação.
 
 São duas condições editoriais e três registros: Convulsão/Epilepsia DigSaúde, Dor no Ombro DigSaúde e um quadro separado de seções relacionadas SISREG/Campo Grande. O terceiro não constitui protocolo específico de Dor no Ombro nem fonte CORE. A frente técnica conferiu fidelidade à matriz comunicada; não abriu os PDFs originais nem presume acesso a anexos de outras conversas.
 
@@ -94,7 +94,7 @@ A busca genérica podia abrir a especialidade geral antes da escolha do recorte.
 
 ## Contexto integral da IA e locais principais
 
-Os três JSONs são a base canônica do piloto, independentemente da síntese visível. O cliente envia o registro integral; a ponte o preserva e reduz primeiro histórico/catálogo. O Worker reconstrói a versão canônica pelo identificador/revisão, sem aceitar omissão ou adulteração de regras no cliente. Revisão incompatível produz 409; idade inválida, 400. Prompt integral acima do limite produz 413, sem corte silencioso.
+Os três JSONs são a base canônica do piloto, independentemente da síntese visível. Antes de chamar o provedor, o cliente faz uma sondagem técnica no mesmo POST autenticado e compara os registros integrais retornados pelo Worker. Worker antigo ou registro diferente mantém a resposta local, sem chamada ao provedor. A sondagem não altera permissões e não é transformada em pergunta clínica pela ponte. O cliente envia o registro integral; a ponte o preserva e reduz primeiro histórico/catálogo. O Worker reconstrói a versão canônica pelo identificador/revisão, sem aceitar omissão ou adulteração de regras no cliente. Revisão incompatível produz 409; idade inválida, 400. Prompt integral acima do limite produz 413, sem corte silencioso.
 
 | Local | Responsabilidade |
 | --- | --- |
@@ -108,13 +108,13 @@ Os três JSONs são a base canônica do piloto, independentemente da síntese vi
 | worker/tests/clinical-condition-final-review.test.mjs | Confronto dos 42 itens, lacunas, escopo, pergunta curta e transporte integral. |
 | testing/clinical-pilot/verify-final-review-browser.mjs | Percursos reais no Chromium, com rede externa bloqueada e provedor simulado. |
 
-O espelho histórico e seu workflow foram preservados. Os outros motivos mantêm os caminhos anteriores; não se afirma auditoria integral dos consumidores administrativos. O candidato continua baseado em 380a40b1; a frente /cidadao/ não foi alterada ou integrada por consequência desta revisão.
+O espelho histórico e seu workflow foram preservados. Os outros motivos mantêm os caminhos anteriores; não se afirma auditoria integral dos consumidores administrativos. O diff clínico é comparado à main b5a0bbfc incorporada. A frente separada de integração mobile do Canal não foi tocada.
 
 ## Verificações finais e evidências
 
-- 24 testes focados passaram, incluindo os 42 itens, classificações, alternativas, fontes/páginas, limites etários, carregamento, impressão, contingência, ponte e API simulada.
-- 15 contratos adicionais passaram: subprotocolos, Psicologia/autismo e timeout da IA. O workflow local inclui agora a revisão final.
-- Oito cenários do Chromium foram concluídos, sem erro JavaScript nem HTTP externo: escolha nas três áreas, conversa com escolha curta, Convulsão aos 17, comparação, CORE e falha isolada de fonte. A última fixture inicialmente esperava artigo carregado no caso de falha induzida; corrigida a espera para indisponibilidade, somente esse caso foi repetido. Os sete cenários concluídos foram preservados.
+- Preparação de publicação: 1066/1066 testes do Worker e sintaxe passaram após incorporar a main. Inclui 27 testes clínicos focados, os 42 itens da matriz e a conferência de compatibilidade sem provedor.
+- Os contratos de ordem de scripts/cache foram atualizados para as URLs versionadas do lote, mantendo as asserções. A fixture SQL local foi normalizada para LF para executar o teste de rollout no Windows; nenhum conteúdo de migração mudou no Git e nenhuma migração foi aplicada.
+- Oito cenários do Chromium passaram em um lote completo após a atualização de proveniência e a sondagem de compatibilidade, sem erro JavaScript ou HTTP externo. Três sondagens conferiram os registros antes das chamadas estritamente simuladas.
 - Mobile de 390/320 px, temas claro/escuro e texto clínico ampliado foram conferidos sem transbordamento horizontal do conteúdo. Isso não certifica toda a navegação global do portal.
 - Três impressões A4, três páginas cada, renderizadas com Poppler e inspecionadas. Todos os textos de regra foram encontrados; rótulos e grupos permaneceram juntos. A nota NP-12 foi acrescentada à impressão e o documento afetado foi rechecado.
 - Build offline com esbuild 0.28.1/Wrangler 4.135.0 passou. Os três JSONs entraram nos bundles; o módulo empacotado da IA foi exercitado com provedor estritamente simulado e registro canônico completo. Sem instalação, credenciais, rede, produção ou escrita em outra worktree.

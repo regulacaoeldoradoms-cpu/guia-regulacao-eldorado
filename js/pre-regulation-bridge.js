@@ -248,6 +248,7 @@
 
   function transformBody(body) {
     const payload = { ...body };
+    if (Array.isArray(payload.clinicalConditionProbe)) return payload;
     const question = originalQuestion(payload);
     payload.originalQuestion = question;
     const shortQuestion = text(question, 560);
