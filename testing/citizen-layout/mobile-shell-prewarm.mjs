@@ -12,7 +12,7 @@ const results = [];
 let releaseFriends, friendRequestStarted;
 const warm = page => page.waitForFunction(() => {
   const state = window.PortalCitizenShell?.diagnostics();
-  return state && !state.prewarming && ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'].every(path => state.ready.includes(path));
+  return state && !state.prewarming && ['/', '/amigos/', '/perfil/', '/mascotes/', '/notificacoes/', '/cidadao/'].every(path => state.ready.includes(path));
 });
 async function run(id, start, setup, exercise) {
   if (process.env.WARM_CASES && !process.env.WARM_CASES.split(',').includes(id)) return;
@@ -45,11 +45,12 @@ try {
       new MutationObserver(() => { if (!document.querySelector('.citizen-route-notice').hidden) window.__loadingShown = true; }).observe(document.querySelector('.citizen-route-notice'), { attributes:true });
     });
     const before = requests.length;
-    for (const path of ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/', '/']) {
+    for (const path of ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/', '/cidadao/', '/']) {
       await page.evaluate(path => window.PortalCitizenShell.navigate(new URL(path, location.href)), path);
-      check(path + ' keeps internal route and canonical mobile address', await page.evaluate(path => window.PortalCitizenShell.active().url.pathname === path && location.pathname === (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(path) ? '/' : path), path));
+      check(path + ' keeps internal route and canonical mobile address', await page.evaluate(path => window.PortalCitizenShell.active().url.pathname === path && location.pathname === (['/', '/amigos/', '/perfil/', '/mascotes/', '/cidadao/'].includes(path) ? '/' : path), path));
       if (path === '/amigos/') check('friend content prepared without skeleton', await page.locator('#relationshipList .social-skeleton').count() === 0);
       if (path === '/perfil/') check('own profile already visible', await page.locator('#socialProfile').isVisible());
+      if (path === '/cidadao/') check('Citizen controller and data already prepared', await page.locator('#newManifestationModal').getAttribute('data-compose-runtime') === 'current' && !/Carregando/.test(await page.locator('#manifestationList').textContent()));
     }
     const later = requests.slice(before);
     await fs.writeFile(path.join(output, 'activation-requests.json'), JSON.stringify(later, null, 2));
@@ -57,13 +58,14 @@ try {
     check('no HTML or script fetch on first prepared activation: '+JSON.stringify(unexpectedLoads), unexpectedLoads.length === 0);
     check('no first-activation profile identity/feed fetch', !later.some(request => /^\/api\/(citizen\/identity|social\/me$|social\/profiles\/[^/]+\/posts)/.test(request.url)));
     check('no first-activation friendship list fetch', !later.some(request => request.url === '/api/social/relationships'));
+    check('no first-activation Citizen initial data fetch', !later.some(request => ['/api/council/my', '/api/council/notifications'].includes(request.url)));
     check('no loading notice after preparation', await page.evaluate(() => !window.__loadingShown));
     check('single document and shared owners retained', audit.documents.length === 1 && await page.evaluate(() => {
       const saved = window.__preparedOwners;
       return document === saved.document && saved.nav === document.querySelector('.social-mobile-nav') && saved.chat === document.getElementById('portalChatRoot') && saved.pet === window.PortalPets.runtime;
     }));
     check('no professional or arbitrary profile preloading', !requests.some(request => /^\/(medico|recepcao|coordenacao|telemedicina)\//.test(request.url) || /^\/api\/social\/profiles\/[^/]+$/.test(request.url)));
-    check('bounded core cache', await page.evaluate(() => window.PortalCitizenShell.diagnostics().routes === 5));
+    check('six prepared core areas within the unchanged memory bound', await page.evaluate(() => window.PortalCitizenShell.diagnostics().routes === 6));
   });
   await run('slow-first-tap', '/', async page => {
     await page.route('**/amigos/', async route => { await new Promise(resolve => setTimeout(resolve, 1500)); await route.fallback(); });

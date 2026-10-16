@@ -877,7 +877,8 @@
   function findRule(target, eventType) {
     if (!(target instanceof Element)) return null;
     const rules = [];
-    const route = ROUTE_RULES.find((candidate) => candidate.path.test(location.pathname));
+    const path = window.PortalCitizenShell?.active()?.url.pathname || location.pathname;
+    const route = ROUTE_RULES.find((candidate) => candidate.path.test(path));
     if (route?.[eventType]) rules.push(...route[eventType]);
     rules.push(...customRules[eventType]);
     if (eventType === 'click') rules.push(...GLOBAL_CLICK_RULES);

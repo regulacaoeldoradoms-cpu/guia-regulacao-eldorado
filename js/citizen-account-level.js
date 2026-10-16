@@ -9,6 +9,8 @@ const initializeCitizenArea = (context) => {
   if (!auth || !levels) return;
   const compact = globalThis.matchMedia('screen and (max-width: 900px)').matches;
   let pendingRender = false;
+  let lastRender = 0;
+  const token = auth.getToken();
 
   const roleLabels = {
     medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
@@ -40,11 +42,12 @@ const initializeCitizenArea = (context) => {
   }
 
   async function render() {
-    if (compact && pendingRender) return;
+    if (context?.disposed || auth.getToken() !== token || compact && (pendingRender || Date.now() - lastRender < 30000)) return;
     pendingRender = true;
     try {
       const user = await resolvedUser();
-      if (!user) return;
+      if (!user || context?.disposed || auth.getToken() !== token) return;
+      lastRender = Date.now();
 
       const badge = document.getElementById('accountLevelBadge');
       const notice = document.getElementById('accountEvolutionNotice');
@@ -77,7 +80,7 @@ const initializeCitizenArea = (context) => {
     } finally { pendingRender = false; }
   }
 
-  render();
+  const initialRender = render();
   if (!compact) {
     window.setTimeout(render, 0);
     window.setTimeout(render, 500);
@@ -87,6 +90,7 @@ const initializeCitizenArea = (context) => {
     window.addEventListener('portal:citizen-route', render);
   }
   window.addEventListener('pageshow', render);
+  return initialRender;
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-account-level', initializeCitizenArea);
 else initializeCitizenArea();
