@@ -7,20 +7,21 @@
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <link rel="preload" href="/js/auth-client.js?v=20261015-account-private-4" as="script">
 <meta name="theme-color" content="#0d3157">
-  <title>Criar conta | Portal da Regulação</title>
-  <link rel="icon" href="/assets/canal-cidadao-icon.png?v=20260817-1" type="image/png">
+  <title>Criar conta | Portal da Regulação de Saúde</title>
+  <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
+  <link rel="preload" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" as="image" fetchpriority="high">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/portal-regulacao-header_180x180.png?v=20260911-1">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <script src="/js/portal-theme.js?v=20261013-theme-immediate-1"></script>
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
-  <link rel="stylesheet" href="/css/signup-private-data.css?v=20261015-account-private-4">
+  <link rel="stylesheet" href="/css/signup-private-data.css?v=20261015-signup-portal-brand-1">
 </head>
 <body class="portal-page signup-page">
   <main class="login-layout">
-    <section class="login-visual" aria-label="Canal do cidadão">
-      <div class="portal-brand">
-        <img src="/assets/canal-cidadao-icon.png?v=20260817-1" alt="Símbolo do Canal do Cidadão">
-        <div><h1>Canal do Cidadão</h1><p>Conselho Municipal de Saúde · Eldorado/MS</p></div>
+    <section class="login-visual" aria-label="Portal da Regulação de Saúde">
+      <div class="portal-brand signup-portal-brand">
+        <img src="/assets/portal-regulacao-header_512x512.png?v=20260911-1" alt="Símbolo do Portal da Regulação de Saúde" width="66" height="66" fetchpriority="high">
+        <div><h1>Portal da Regulação de Saúde</h1><p>Cadastro de conta · Eldorado/MS</p></div>
       </div>
       <div class="login-message">
         <span class="portal-eyebrow">Sua conta começa aqui</span>
@@ -40,14 +41,10 @@
         <h2>Criar conta de cidadão</h2>
         <p>Você começa com uma Conta Bronze. Pode confirmar um e-mail depois.</p>
 
-        <div class="portal-note info" style="margin-bottom:16px">
-          <strong>Preserve sua identidade:</strong> não use seu nome completo, CPF, telefone, e-mail ou data de nascimento no usuário.
-        </div>
-
         <div class="portal-field">
           <label for="signupUsername">Nome de usuário</label>
-          <input id="signupUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Ex.: ipelima23">
-          <small>3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado.</small>
+          <input id="signupUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Ex.: ipelima23" aria-describedby="signupUsernameHelp">
+          <small id="signupUsernameHelp">3 a 40 caracteres: letras, números, ponto, hífen ou sublinhado. Pode aparecer para outras pessoas no perfil e no chat.</small>
         </div>
         <div class="portal-field">
           <label for="signupPassword">Senha</label>

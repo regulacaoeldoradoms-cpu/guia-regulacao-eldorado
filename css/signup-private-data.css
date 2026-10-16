@@ -25,3 +25,7 @@
   #signupForm { padding:22px 20px; }
   #signupForm > p { margin-bottom:16px; }
 }
+
+/* Use the existing Portal identity without cropping its transparent symbol. */
+.signup-page .login-visual .signup-portal-brand img { object-fit:contain; border-radius:0; box-shadow:none; flex-shrink:0; }
+.signup-page .signup-portal-brand > div { min-width:0; }
