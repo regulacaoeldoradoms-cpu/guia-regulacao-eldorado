@@ -19,10 +19,8 @@ export default defineConfig({
     // A requestAnimationFrame plus repeated PNGs can retain an intermediate
     // blur raster indefinitely. These Chromium testing switches retain every
     // real CSS effect and all pixels, without changing the source or viewport.
-    // Fix the display color profile and commit paint without PaintHolding.
-    // The same real effects and complete pixels remain part of both sources.
     // https://github.com/GoogleChrome/chrome-launcher/blob/main/docs/chrome-flags-for-tools.md
-    launchOptions: { args: ['--disable-gpu', '--disable-skia-runtime-opts', '--disable-lcd-text', '--font-render-hinting=none', '--disable-font-subpixel-positioning', '--run-all-compositor-stages-before-draw', '--disable-partial-raster', '--force-color-profile=srgb', '--disable-features=PaintHolding', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost'] }
+    launchOptions: { args: ['--disable-gpu', '--disable-skia-runtime-opts', '--disable-lcd-text', '--font-render-hinting=none', '--disable-font-subpixel-positioning', '--run-all-compositor-stages-before-draw', '--disable-partial-raster', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost'] }
   },
   projects: [
     { name:'dark-desktop', use:{ ...devices['Desktop Chrome'], ...browserChannel, viewport:{ width:1440, height:1000 } } },
