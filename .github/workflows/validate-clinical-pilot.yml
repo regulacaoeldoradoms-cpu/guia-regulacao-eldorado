@@ -1,4 +1,4 @@
-name: Validar pilotos de Convulsão e Ombro
+name: Validar recortes clínicos por condição
 
 on:
   pull_request:
@@ -17,6 +17,7 @@ on:
       - 'worker/tests/clinical-condition-pilot.test.mjs'
       - 'worker/tests/clinical-condition-shoulder.test.mjs'
       - 'worker/tests/clinical-condition-final-review.test.mjs'
+      - 'worker/tests/clinical-condition-bursite-headache.test.mjs'
       - 'worker/tests/psychology-autism-rule.test.mjs'
       - 'worker/tests/gemini-timeout.test.mjs'
       - 'testing/clinical-pilot/**'
@@ -41,4 +42,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test worker/tests/clinical-condition-pilot.test.mjs worker/tests/clinical-condition-shoulder.test.mjs worker/tests/clinical-condition-final-review.test.mjs worker/tests/subprotocol-requirements.test.mjs worker/tests/psychology-autism-rule.test.mjs worker/tests/gemini-timeout.test.mjs
+      - run: node --test worker/tests/clinical-condition-pilot.test.mjs worker/tests/clinical-condition-shoulder.test.mjs worker/tests/clinical-condition-final-review.test.mjs worker/tests/clinical-condition-bursite-headache.test.mjs worker/tests/subprotocol-requirements.test.mjs worker/tests/psychology-autism-rule.test.mjs worker/tests/gemini-timeout.test.mjs

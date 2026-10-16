@@ -2,8 +2,11 @@ import pilot from '../data/clinical-conditions/convulsao-epilepsia-20261016.json
 import shoulder from '../data/clinical-conditions/dor-no-ombro-20261016.json' with { type: 'json' };
 import related from '../data/clinical-conditions/ombro-referencias-sisreg-cg-20261016.json' with { type: 'json' };
 
+import tendon from '../data/clinical-conditions/bursite-tendinite-20261016.json' with { type: 'json' };
+import headache from '../data/clinical-conditions/cefaleia-neuropediatria-20261016.json' with { type: 'json' };
+
 const copy = value => JSON.parse(JSON.stringify(value));
-const records = new Map([pilot, shoulder, related].map(record => [record.id, record]));
+const records = new Map([pilot, shoulder, related, tendon, headache].map(record => [record.id, record]));
 function failure(message, status) { return Object.assign(new Error(message), { status }); }
 
 export function hydrateClinicalPilot(protocol) {
@@ -28,11 +31,11 @@ export function hydrateClinicalPilot(protocol) {
     situacaoTeleconsulta: 'Piloto em revisão; oferta, vigência e aplicabilidade municipal não confirmadas.',
     resumo: record.condition, fluxoLocal: texts('appointment').concat(texts('documentPresentation'), texts('scope')).join(' '),
     criteriosParaEncaminhar: texts('referral'), informacoesClinicasObrigatorias: texts('description').concat(record.rules.filter(rule => rule.group === 'clinicalAssessment' && rule.requirement === 'obrigatorio').map(rule => rule.text)),
-    examesObrigatorios: docs('obrigatorio'), examesCondicionais: docs('condicional_se_houver'), recomendadosQuandoDisponiveis: docs('opcional_documental'),
+    ...(texts('clinicalRecord').length ? { registrosObrigatorios: texts('clinicalRecord') } : {}), examesObrigatorios: docs('obrigatorio'), examesCondicionais: docs('condicional_se_houver'), recomendadosQuandoDisponiveis: docs('opcional_documental'),
     elementosPriorizacao: [], alertas: texts('exclusion').concat(texts('editorialSafeguard'), texts('alert'), record.systemBoundary ? [record.systemBoundary] : [], notice ? [notice.text] : []),
     subprotocolos: [], praticaRegulatoria: null,
     fontes: record.sources.map(source => source.title + (source.version ? ' ' + source.version : '')),
-    ultimaConferencia: 'Matriz e conferência visual comunicadas pela frente documental em 16/10/2026; confirmação institucional pendente.',
+    ultimaConferencia: ['tendon', 'headache'].includes(record.searchKind) ? 'PDF e páginas conferidos diretamente em 16/10/2026; confirmação institucional pendente.' : 'Matriz e conferência visual comunicadas pela frente documental em 16/10/2026; confirmação institucional pendente.',
     clinicalConditionId: record.id, clinicalConditionRecord: copy(record), clinicalAge: age ? copy(age) : null,
     clinicalContextualAlerts: notice ? [notice] : []
   };

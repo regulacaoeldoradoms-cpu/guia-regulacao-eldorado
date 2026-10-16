@@ -183,6 +183,8 @@ function buildPrompt(question, protocols, catalog, operationalFacts, history, mo
     question,
     '',
     ...(integralPilot ? ['PILOTO CLÍNICO EM REVISÃO: use todas as regras do clinicalConditionRecord, incluindo exceções, alternativas e alertas. Não importar exigências de TEA ou outros motivos. Não afirmar vigência, oferta ou aplicabilidade confirmadas. Na faixa de 17 anos, informar a lacuna sem inventar destino ou transportar para SISREG. Ombro: os 6 meses não se aplicam à alternativa de importante prejuízo às atividades de vida diária na osteoartrite; TC requer a condição clínica descrita E disponibilidade. Manter registros por sistema separados. As referências relacionadas SISREG/Campo Grande não são protocolo específico de Dor no Ombro, não provam pactuação e não são regras CORE. O hash identifica bytes, não certifica origem institucional nem vigência. Notas institucionais, lacunas e limites de fonte não são exigências adicionais. A ausência de definição de tratamento otimizado ou dispensa de RX/USG não cria obrigação de obter confirmação, autorização ou decisão agora; não inferir dispensa nem bloqueio automático. Fonte institucional e validação protocolar permanecem pendentes.', ''] : []),
+    ...(protocols.some(protocol => protocol.clinicalConditionRecord?.searchKind === 'tendon') ? ['Bursite/Tendinite: o critério exige ausência de resposta satisfatória ao tratamento NÃO farmacológico (exercícios, acompanhamento fisioterápico) otimizado por 6 meses; RX AP/perfil e USG obrigatórios; não importar RM da seção anterior. Não aplicar requisitos de outra condição.'] : []),
+    ...(protocols.some(protocol => protocol.clinicalConditionRecord?.searchKind === 'headache') ? ['Cefaleia pediátrica: os 2 meses pertencem ao critério de profilaxia na APS, não a todos os critérios nem ao diário. Preservar os dois critérios parcialmente repetidos de investigação por RM/TC e a ambiguidade de fonte, sem escolher interpretação ou criar elegibilidade automática. Exame físico neurológico é avaliação clínica obrigatória; diário é registro obrigatório; TC/RM se houver; EEG não é exame obrigatório desta condição. Sinais de alerta não definem urgência ou destino automático neste recorte. Não aplicar requisitos de outra condição.'] : []),
     'PROTOCOLOS MAIS RELEVANTES:',
     JSON.stringify(protocols, null, 2),
     '',
@@ -206,6 +208,14 @@ function ambiguousPilotSystems(question, protocols) {
   const both = /dig\s*saude|digsus|telessaude|teleatendimento/.test(text) && /\bsisreg|campo grande/.test(text);
   const comparison = /outro sistema/.test(text) || /compar|diferen/.test(text) && (/sistemas|fluxos/.test(text) || both);
   return systems.size > 1 && !comparison;
+}
+
+function unsupportedNewPilotScope(question, protocols) {
+  const records = protocols.map(protocol => protocol.clinicalConditionRecord).filter(record => ['tendon', 'headache'].includes(record?.searchKind));
+  if (!records.length) return false;
+  const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const unsupportedComparison = /outro sistema/.test(text) || /compar|diferen/.test(text) && /sistemas|fluxos/.test(text);
+  return /\bcore\b|\bsisreg|campo grande/.test(text) || unsupportedComparison || records.some(record => record.searchKind === 'headache' && /\badult[oa]/.test(text) || record.searchKind === 'tendon' && /\binfantil|\bpediatr|\bcrianc/.test(text));
 }
 
 function scopePilotSystems(question, protocols) {
@@ -546,6 +556,9 @@ export default {
 
       const protocols = scopePilotSystems(question, cleanProtocols(body.protocols));
       const catalog = cleanCatalog(body.catalog);
+      if (unsupportedNewPilotScope(question, protocols)) {
+        return jsonResponse({ answer: 'Os recortes de Bursite/Tendinite adulto e Cefaleia pediátrica deste lote contêm somente DigSaúde MS. Não definem exigências de outra faixa ou sistema nem usam SISREG/CORE como substituto.', provider: 'Consulta local de escopo', assistantMode: 'pre_regulation_simulator', groundedInProtocols: true }, 200, origin, true);
+      }
       if (ambiguousPilotSystems(question, protocols)) {
         return jsonResponse({ answer: 'Escolha DigSaúde MS ou SISREG/Campo Grande antes de consultar as exigências de Dor no Ombro, ou peça uma comparação explícita entre os sistemas. As listas não foram combinadas.', provider: 'Consulta local de escopo', assistantMode: 'pre_regulation_simulator', groundedInProtocols: true }, 200, origin, true);
       }

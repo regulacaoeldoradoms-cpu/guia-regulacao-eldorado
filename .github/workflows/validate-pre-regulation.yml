@@ -59,7 +59,7 @@ jobs:
           grep -q 'pre_regulation_compact_v3' js/pre-regulation-bridge.js
           grep -q 'CASO ATUAL' js/pre-regulation-bridge.js
           grep -q 'no máximo 3 perguntas objetivas' js/pre-regulation-bridge.js
-          grep -q 'pre-regulation-bridge.js?v=20261016-pilot-3' medico/index.html
+          grep -q 'pre-regulation-bridge.js?v=20261016-pilot-4' medico/index.html
           python - <<'PY'
           from pathlib import Path
           html = Path('medico/index.html').read_text(encoding='utf-8')
@@ -120,9 +120,9 @@ jobs:
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
           grep -q 'Protocolo oficial + pré-regulação conversacional com IA' medico/index.html
           grep -q 'ai-config.js?v=20260825-2' medico/index.html
-          grep -q 'referral-workbench.js?v=20261016-pilot-3' medico/index.html
-          grep -q 'pre-regulation-bridge.js?v=20261016-pilot-3' medico/index.html
-          grep -q 'ai-assistant.js?v=20261016-pilot-3' medico/index.html
+          grep -q 'referral-workbench.js?v=20261016-pilot-4' medico/index.html
+          grep -q 'pre-regulation-bridge.js?v=20261016-pilot-4' medico/index.html
+          grep -q 'ai-assistant.js?v=20261016-pilot-4' medico/index.html
           grep -q 'ai-gemini-theme.js?v=20260904-2' medico/index.html
           grep -q 'ai-assistant.css?v=20260904-2' medico/index.html
           grep -q 'ai-gemini-theme.css?v=20260904-2' medico/index.html

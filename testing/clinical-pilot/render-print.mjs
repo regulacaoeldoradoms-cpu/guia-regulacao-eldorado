@@ -12,7 +12,7 @@ const context=vm.createContext({window:{},document:{querySelector:()=>null},URL,
 vm.runInContext(fs.readFileSync(path.join(root,'js/clinical-condition-pilot.js'),'utf8'),context);const api=context.window.ClinicalConditionPilot;await api.ready;
 const browser=await chromium.launch({headless:true}),report=[],selectedId=process.argv.find(arg=>arg.startsWith('--record='))?.slice(9);
 try{
-  for(const [id,name,years] of [[api.ID,'convulsao',17],[api.SHOULDER,'ombro-dig',52],[api.RELATED,'ombro-sisreg',18]].filter(([id])=>!selectedId||id===selectedId)){
+  for(const [id,name,years] of [[api.ID,'convulsao',17],[api.SHOULDER,'ombro-dig',52],[api.RELATED,'ombro-sisreg',18],[api.TENDON,'bursite-tendinite',52],[api.HEADACHE,'cefaleia',17]].filter(([id])=>!selectedId||id===selectedId)){
     const record=api.record(id),html=api.printDocument({record,age:{years,months:0,days:0},query:''});
     assert.equal([...html.matchAll(/data-clinical-rule=/g)].length,record.rules.length);
     const page=await browser.newPage();await page.route('**/*',route=>route.abort());await page.setContent(html);await page.evaluate(()=>document.fonts.ready);
