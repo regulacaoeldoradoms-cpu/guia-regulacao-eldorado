@@ -31,8 +31,9 @@ async function panelGeometry(page,{compact=false,scale=1}={}){
  return geometry;
 }
 try{
- for(const width of (process.env.ENTRY_WIDTHS||'320,360,390,412,1280').split(',').map(Number))for(const theme of (process.env.ENTRY_THEMES||'light,dark').split(','))for(const scale of (process.env.ENTRY_SCALES||'1,2').split(',').map(Number)){
-  const result={width,theme,scale,errors:[]},{page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
+ for(const width of (process.env.ENTRY_WIDTHS||'320,360,390,412,1280').split(',').map(Number))for(const theme of (process.env.ENTRY_THEMES||'light,dark').split(','))for(const scale of (process.env.ENTRY_SCALES||'1,2').split(',').map(Number))for(const fontFamily of width===320&&scale===2?['','monospace']:['']){
+  const label=`${width}-${theme}-${scale}${fontFamily?'-metrics':''}`;
+  const result={width,theme,scale,fontFamily,errors:[]},{page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
   try{
    await context.addInitScript(()=>{
     window.__helpPaints=[];
@@ -43,6 +44,8 @@ try{
     };requestAnimationFrame(sample);
    });
    await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await ready(page,'/cidadao/');await page.locator('[data-tutorial-start]').waitFor({state:'attached'});assert.equal(await page.locator('[data-tutorial-options]').textContent().then(x=>x.trim()),'Ajuda');
+   // Exercise wider native glyphs too: font fallback differs across Chromium builds.
+   if(fontFamily)await page.locator('.portal-hero h2').evaluate((n,font)=>n.style.setProperty('font-family',font,'important'),fontFamily);
    process.env.TEXT_SCALE=scale===2?'2':'';await applyTextScale(page);
    const geometry=await page.evaluate(()=>{
     const entry=document.querySelector('[data-citizen-tutorial-entry]'),summary=entry.querySelector('summary'),rects=[...summary.children].flatMap(n=>{const range=document.createRange();range.selectNodeContents(n);return [n.getBoundingClientRect(),...range.getClientRects()];});
@@ -53,7 +56,7 @@ try{
     return {before,after,hits,helpRects:rects.map(r=>({left:r.left,right:r.right,top:r.top,bottom:r.bottom})),target:{width:summary.getBoundingClientRect().width,height:summary.getBoundingClientRect().height}};
    });
    assert.deepEqual(geometry.before,geometry.after);assert.deepEqual(geometry.hits,[],'Help must not cover native text: '+JSON.stringify(geometry));assert(geometry.target.width>=44&&geometry.target.height>=44);
-   await page.screenshot({timeout:30000,path:path.join(output,`${width}-${theme}-${scale}-entry.png`)});
+   await page.screenshot({timeout:30000,path:path.join(output,`${label}-entry.png`)});
    await page.locator('[data-tutorial-options]').focus();await page.keyboard.press('Enter');await page.locator('[data-tutorial-start]').waitFor();
    assert.equal(await page.locator('[data-tutorial-start]').textContent(),'Iniciar tutorial');
    const nativeBefore=await page.locator('.portal-hero,.citizen-actions,.citizen-grid').evaluateAll(nodes=>nodes.map(n=>({x:n.offsetLeft,y:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight})));
@@ -62,7 +65,7 @@ try{
    await page.keyboard.press('Tab');assert(await page.locator('[data-tutorial-start]').evaluate(n=>n===document.activeElement));
    assert.notEqual(await page.locator('[data-tutorial-start]').evaluate(n=>getComputedStyle(n).outlineStyle),'none');
    await page.keyboard.press('Tab');assert(await page.locator('[data-tutorial-close-options]').evaluate(n=>n===document.activeElement));
-   await page.screenshot({timeout:30000,path:path.join(output,`${width}-${theme}-${scale}-options.png`)});
+   await page.screenshot({timeout:30000,path:path.join(output,`${label}-options.png`)});
    await page.locator('[data-tutorial-close-options]').click();assert.equal(await page.locator('[data-citizen-tutorial-entry]').evaluate(n=>n.open),false);assert(await page.locator('[data-tutorial-options]').evaluate(n=>n===document.activeElement));
    await page.keyboard.press('Enter');await page.keyboard.press('Escape');assert.equal(await page.locator('[data-citizen-tutorial-entry]').evaluate(n=>n.open),false);
    assert.deepEqual(await page.locator('.portal-hero,.citizen-actions,.citizen-grid').evaluateAll(nodes=>nodes.map(n=>({x:n.offsetLeft,y:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight}))),nativeBefore);
@@ -77,12 +80,12 @@ try{
    assert(await page.locator('[data-tutorial-start]').evaluate(n=>n===document.activeElement),'Tutorial exit must return focus immediately');
    await panelGeometry(page);
    await page.setViewportSize({width:320,height:300});await page.waitForTimeout(100);await panelGeometry(page);
-   await page.screenshot({timeout:30000,path:path.join(output,`${width}-${theme}-${scale}-short-viewport.png`)});
+   await page.screenshot({timeout:30000,path:path.join(output,`${label}-short-viewport.png`)});
    await page.evaluate(()=>window.scrollTo(0,120));await page.waitForTimeout(100);await panelGeometry(page);
    result.paints=await page.evaluate(()=>__helpPaints);
    assert(result.paints.length>0);assert(result.paints.some(p=>p.visible));
    assert(result.paints.every(p=>p.icon&&(!p.visible||p.open&&p.ready&&p.width<=232.1&&p.position==='fixed')),'Invalid first paint: '+JSON.stringify(result.paints));
-   assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);result.passed=true;result.geometry=geometry;results.push(result);console.log(`${width}/${theme}/${scale}: help entry passed`);
-  }catch(error){await page.screenshot({timeout:30000,path:path.join(output,`${width}-${theme}-${scale}-entry-failure.png`)});throw error;}finally{await context.close();await fs.writeFile(path.join(output,'entry.json'),JSON.stringify(results,null,2));}
+   assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);result.passed=true;result.geometry=geometry;results.push(result);console.log(`${label}: help entry passed`);
+  }catch(error){await page.screenshot({timeout:30000,path:path.join(output,`${label}-entry-failure.png`)});throw error;}finally{await context.close();await fs.writeFile(path.join(output,'entry.json'),JSON.stringify(results,null,2));}
  }
 }finally{await browser.close();await new Promise(r=>server.server.close(r));}

@@ -3,7 +3,7 @@
 .citizen-tutorial-entry>summary{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-end;gap:4px;width:44px;height:52px;min-height:44px;padding:0;list-style:none;cursor:pointer}
 .citizen-tutorial-entry>summary::-webkit-details-marker{display:none}
 .citizen-tutorial-entry>summary>span:not(.tutorial-help-label){display:grid;place-items:center;width:28px;height:28px;border:1px solid currentColor;border-radius:50%;line-height:1;background:var(--portal-theme-surface,#fff)}
-.citizen-tutorial-entry .tutorial-help-label{font-size:14px;line-height:20px;white-space:nowrap;font-weight:700}
+.citizen-tutorial-entry .tutorial-help-label{font-size:14px;line-height:20px;white-space:nowrap;font-weight:700;transition:none!important}
 .citizen-tutorial-entry svg{display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .citizen-tutorial-entry>summary:focus-visible{outline:3px solid currentColor;outline-offset:-3px}
 .citizen-tutorial-entry .tutorial-entry-panel{position:fixed;top:var(--tutorial-panel-top,8px);left:var(--tutorial-panel-left,8px);visibility:hidden;display:none;grid-template-columns:minmax(0,1fr) 44px;align-items:start;gap:6px;width:232px;max-width:calc(var(--tutorial-panel-viewport-width,100vw) - 16px);max-height:var(--tutorial-panel-max-height,calc(var(--tutorial-panel-viewport-height,100dvh) - 16px));overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:8px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);border:1px solid var(--portal-theme-border,#b8cdd9);border-radius:14px;box-shadow:0 6px 20px #0002;z-index:15000}

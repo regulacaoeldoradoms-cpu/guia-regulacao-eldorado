@@ -1,6 +1,6 @@
 # Menu compacto de ajuda do Canal do Cidadão
 
-Candidata local de 16/10/2026 na branch `feat/citizen-help-compact-20261016`, baseada na `origin/main` `380a40b1a5e58c309151b066fef0b79ec9313489`. A base e os PRs recentes foram conferidos antes do isolamento; a main foi reconferida ao finalizar. Sem push, PR, merge ou publicação.
+Candidata local de 16/10/2026 na branch `feat/citizen-help-compact-20261016`, baseada na `origin/main` `380a40b1a5e58c309151b066fef0b79ec9313489`. A base e os PRs recentes foram conferidos antes do isolamento. Em 16/10 o usuário autorizou criar PR, integrar e publicar após todos os gates; a main remota foi reconferida inalterada. [PR #663](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/663) aberto; integração/publicação aguardam os checks do head corrigido.
 
 ## Resultado e escopo
 
@@ -26,6 +26,7 @@ Testes atualizados: `testing/browser/citizen-tutorial-preservation.mjs`, `testin
 | --- | --- |
 | Gate Node direcionado do workflow de tutorial | 89/89 |
 | Menu: 320/360/390/412/1280, claro/escuro, texto 100/200% | 20/20; repetidos após o ajuste de posição dos estados expandidos |
+| Regressão de fonte mais larga, 320 px/200%, claro/escuro, incluindo fonte normal | 4/4; a variante larga falhava antes da correção |
 | Refinamento final de espaçamento: 320, texto 200%, claro/escuro | 2/2 adicionais |
 | Contas existentes, rota interna, leituras pendentes, falha/repetição do módulo e módulo anterior v4 | 10/10 |
 | Tutorial completo, pausa/retomada, rascunho/anexo preservados, conquista somente após 16 etapas, 320/1280 nos dois temas | 4/4 |
@@ -40,6 +41,14 @@ Testes atualizados: `testing/browser/citizen-tutorial-preservation.mjs`, `testin
 Capturas reais do Chromium foram inspecionadas, incluindo antes/depois, cinco larguras, claro/escuro, foco, texto 200%, viewport curta, retomada, conclusão e carga alternativa. A amostragem de pinturas rejeita painel visível fechado, antes de posicionado, acima da largura contratada ou sem ícone. Os testes geométricos verificam limites da viewport, clipping do cabeçalho, alvos por hit-test, foco e ausência de sobreposição com ações na apresentação inicial e nos estados expandidos quando há espaço para uma linha de controle.
 
 A correção de rasterização do PR #662 permanece intacta em `dark-audit-base-comparison.mjs`, `check-capture-preparation.mjs` e `playwright-dark-audit.config.mjs`. As quatro comparações acima usaram esse mecanismo. Seus controles independentes e a auditoria global já aprovados na main não foram repetidos; não se declara uma nova execução dos 246 casos globais. O exercício de progressão automática inalterado também não foi repetido: quatro percursos completos cobriram as 16 etapas nesta alteração.
+
+## Correção encontrada pelo CI
+
+O primeiro gate do tutorial de #663 encontrou sobreposição de “Ajuda” com o título em 320 px/200% no Chromium 140. A regra global de movimento reduzido cria uma transição de 1 ms também no `margin-top` do rótulo. O cálculo zerava essa margem e media uma posição intermediária: com glyphs mais largos, o resultado podia conservar altura do alvo sem a margem necessária. No Chromium 151 instalado, a fonte padrão não colidia; uma variante sintética com título monoespaçado reproduziu a mesma falha sem mudar a asserção. Antes da correção, margem final 0 px e título sobreposto; depois, margem 41 px estável e zero interseções.
+
+`transition:none!important` somente em `.tutorial-help-label` torna essa medição síncrona. A matriz passa a incluir os dois casos de fonte larga, totalizando 22, mantendo todos os contratos de geometria/foco/pixels. Os quatro casos dirigidos 320 px/200%, normal/larga e claro/escuro passaram localmente. O download local do Chromium 140 foi bloqueado pelo proxy (403); a validação da versão exata ocorre no CI obrigatório.
+
+A auditoria global inicial também parou em seu primeiro controle `/medico/` de código idêntico: um par divergente, os cinco seguintes idênticos. Esse gate não foi relaxado nem alterado; sua execução integral continua obrigatória no novo head. O artefato foi preservado no [run inicial](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/38910758289). O proxy impediu baixar o ZIP no executor; a inspeção disponível aqui é dos logs, não dos pixels desse artefato.
 
 ## Evidências e reprodução
 
@@ -73,4 +82,4 @@ A comparação estrita foi executada em `testing/browser` com `DARK_AUDIT_ROUTES
 
 Todos os usuários, textos, arquivos e respostas de API são sintéticos/interceptados. Sem SQL em banco, alteração de permissões, manifestação real ou upload de anexo ao servidor. Sem credenciais produtivas. A imagem da Library não foi necessária: a descrição fornecida foi reproduzida na main local.
 
-Validação em Chromium Linux; não substitui aparelho físico nem validação de Safari/Firefox. Não há bloqueio técnico conhecido. O próximo passo é apresentar a candidata para aprovação humana; PR, integração e publicação dependem da próxima autorização.
+Validação em Chromium Linux; não substitui aparelho físico nem validação de Safari/Firefox. A autorização de integração/publicação está registrada no PR #663. Próximo passo: exigir todos os checks do head corrigido, integrar pelo fluxo normal e confirmar os recibos e recursos públicos. O acesso HTTP direto ao domínio produtivo foi bloqueado pelo proxy do executor (CONNECT 403); registrar esse limite se persistir após a implantação.
