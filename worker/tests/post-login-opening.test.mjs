@@ -12,6 +12,43 @@ const loginIndex = read('login/index.html');
 const login = read('js/login.js');
 const opening = read('js/login-opening.js');
 
+async function publicationHarness({staleHelp=false}={}) {
+  const requests=[],messages=[];
+  // Replace only the process exit with the equivalent async-function return.
+  // Keep the real fetch/hash/status assertions and bounded retry loop intact.
+  const source=read('scripts/verify-login-publication.mjs')
+    .replace(/^import .*;\r?\n/gm,'').replace('process.exit(0);','return true;');
+  const run=vm.runInNewContext(`(async()=>{${source}\n})()`,{
+    assert,createHash:crypto.createHash,Buffer,AbortSignal,
+    readFile:async file=>fs.readFileSync(path.join(root,file)),
+    fetch:async(url,options)=>{
+      const u=new URL(url);requests.push({url:u,options});
+      assert.equal(u.origin,'https://regulacaoeldoradoms.com.br');
+      assert(!u.pathname.startsWith('/api/'));assert.equal(options.credentials,'omit');assert.equal(options.cache,'no-store');
+      const file=u.pathname.endsWith('/')?u.pathname+'index.html':u.pathname;
+      const body=staleHelp&&file==='/css/citizen-tutorial.css'?'/* Previous wide help */':fs.readFileSync(path.join(root,file.slice(1)));
+      return new Response(body,{status:200});
+    },
+    setTimeout:resolve=>{queueMicrotask(resolve);return 0;},
+    console:{log:message=>messages.push(message)}
+  });
+  return {run,requests,messages};
+}
+
+test('publicação confirma HTML e todos os recursos versionados da ajuda sem autenticar',async()=>{
+  const {run,requests,messages}=await publicationHarness();assert.equal(await run,true);
+  for(const file of ['cidadao/index.html','css/citizen-tutorial.css','js/citizen.js','js/citizen-tutorial.js','js/citizen-mobile-shell.js']){
+    assert(requests.some(({url})=>url.pathname==='/'+file&&url.searchParams.get('v')==='20261016-help-compact-1'),file);
+  }
+  assert(messages.some(message=>message.startsWith('PUBLICATION_OK:')));
+});
+
+test('publicação rejeita CSS antigo da ajuda mesmo com login e demais recursos corretos',async()=>{
+  const {run,messages}=await publicationHarness({staleHelp:true});
+  await assert.rejects(run,/publicacao_nao_confirmada:public_hash:css\/citizen-tutorial\.css/);
+  assert(!messages.some(message=>message.startsWith('PUBLICATION_OK:')));
+});
+
 function loginHarness({ loginResult = { role: 'admin' }, mediaPromise = Promise.resolve(), rejectLogin = false } = {}) {
   const elements = new Map();
   let handler;

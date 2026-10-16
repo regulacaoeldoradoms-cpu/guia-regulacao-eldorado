@@ -700,7 +700,7 @@ const initializeCitizenArea = async (context) => {
     helpEntry.className = 'citizen-tutorial-entry';
     helpEntry.dataset.citizenTutorialEntry = '';
     helpEntry.dataset.tutorialBootstrap = 'true';
-    helpEntry.innerHTML = '<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-load>Carregar tutorial</button><button type="button" class="portal-button secondary" data-tutorial-bootstrap-close>Fechar ajuda</button><p role="status" data-tutorial-load-status>Carregando ajuda…</p></div>';
+    helpEntry.innerHTML = '<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="tutorial-entry-primary" data-tutorial-load>Carregar tutorial</button><button type="button" class="tutorial-entry-close" data-tutorial-bootstrap-close aria-label="Fechar ajuda" title="Fechar ajuda"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button><p role="status" data-tutorial-load-status>Carregando ajuda…</p></div>';
     helpHost.append(helpEntry);
     helpEntry.addEventListener('click', event => {
       if (event.target.closest('[data-tutorial-load]')) loadTutorial();
@@ -713,6 +713,9 @@ const initializeCitizenArea = async (context) => {
       event.preventDefault(); helpEntry.open = false;
       helpEntry.querySelector('summary').focus({preventScroll:true});
     }, {signal:helpAbort.signal});
+    globalThis.document.addEventListener('click', event => {
+      if (helpEntry.open && !helpEntry.contains(event.target)) helpEntry.open = false;
+    }, {capture:true,signal:helpAbort.signal});
     context?.addController?.({dispose:()=>helpAbort.abort()});
   }
   // Font metrics differ between browsers. Position only the absolute help label
@@ -741,17 +744,54 @@ const initializeCitizenArea = async (context) => {
     }
     label.style.marginTop=offset+'px';
     summary.style.height=Math.max(52,rect.bottom+offset-summary.getBoundingClientRect().top+4)+'px';
+    positionHelpPanel();
+  }
+  // Keep the compact panel next to the help glyph, clamped to the visible
+  // viewport for zoom, scroll, short screens and changing progress messages.
+  function positionHelpPanel() {
+    const panel=helpEntry?.querySelector('.tutorial-entry-panel');
+    if (!helpEntry?.open || !panel) {panel?.removeAttribute('data-tutorial-positioned');return;}
+    const viewport=globalThis.visualViewport;
+    const left=viewport?.offsetLeft||0, top=viewport?.offsetTop||0;
+    const width=viewport?.width||globalThis.document.documentElement.clientWidth;
+    const height=viewport?.height||innerHeight;
+    helpEntry.style.setProperty('--tutorial-panel-viewport-width',width+'px');
+    helpEntry.style.setProperty('--tutorial-panel-viewport-height',height+'px');
+    const action=document.getElementById('openNewManifestation')?.getBoundingClientRect();
+    // Keep native actions reachable as progress/recovery text grows. When the
+    // action is visible and a full control row fits above it, scroll this panel.
+    const ceiling=action&&action.top>=top+78&&action.top<top+height?action.top-8:top+height-8;
+    helpEntry.style.setProperty('--tutorial-panel-max-height',(ceiling-top-8)+'px');
+    const anchor=helpEntry.getBoundingClientRect(),box=panel.getBoundingClientRect();
+    const x=Math.max(left+8,Math.min(anchor.left-8-box.width,left+width-8-box.width));
+    const y=Math.max(top+8,Math.min(anchor.top,ceiling-box.height));
+    helpEntry.style.setProperty('--tutorial-panel-left',x+'px');
+    helpEntry.style.setProperty('--tutorial-panel-top',y+'px');
+    panel.dataset.tutorialPositioned='';
   }
   function scheduleHelp(){cancelAnimationFrame(helpFrame);helpFrame=requestAnimationFrame(positionHelp);}
   if(helpHost) {
     const layoutAbort=new AbortController(),copy=helpHost.querySelector('.portal-hero-copy');
     const resize=typeof ResizeObserver==='function'?new ResizeObserver(scheduleHelp):null;
     if(copy)resize?.observe(copy);
-    const mutation=new MutationObserver(scheduleHelp);mutation.observe(helpEntry,{childList:true,subtree:true,characterData:true});
+    resize?.observe(helpEntry);
+    const panelResize=typeof ResizeObserver==='function'?new ResizeObserver(positionHelpPanel):null;
+    panelResize?.observe(helpEntry.querySelector('.tutorial-entry-panel'));
+    // Native toggle is queued. Position synchronously so a quick Enter/Tab
+    // can focus the newly opened controls before the next task or paint.
+    helpEntry.addEventListener('click',event=>{
+      if(!event.target.closest('[data-tutorial-options]'))return;
+      event.preventDefault();helpEntry.open=!helpEntry.open;positionHelpPanel();
+    },{signal:layoutAbort.signal});
+    helpEntry.addEventListener('toggle',positionHelpPanel,{signal:layoutAbort.signal});
+    const mutation=new MutationObserver(()=>{panelResize?.observe(helpEntry.querySelector('.tutorial-entry-panel'));scheduleHelp();});mutation.observe(helpEntry,{childList:true,subtree:true,characterData:true});
     if(copy)mutation.observe(copy,{childList:true,subtree:true,characterData:true});
     globalThis.addEventListener('resize',scheduleHelp,{signal:layoutAbort.signal});
+    globalThis.document.addEventListener('scroll',positionHelpPanel,{capture:true,passive:true,signal:layoutAbort.signal});
+    globalThis.visualViewport?.addEventListener('resize',scheduleHelp,{signal:layoutAbort.signal});
+    globalThis.visualViewport?.addEventListener('scroll',positionHelpPanel,{signal:layoutAbort.signal});
     globalThis.document.fonts?.addEventListener('loadingdone',scheduleHelp,{signal:layoutAbort.signal});
-    context?.addController?.({dispose(){layoutAbort.abort();resize?.disconnect();mutation.disconnect();cancelAnimationFrame(helpFrame);}});
+    context?.addController?.({dispose(){layoutAbort.abort();resize?.disconnect();panelResize?.disconnect();mutation.disconnect();cancelAnimationFrame(helpFrame);}});
     positionHelp();
   }
   async function loadTutorial() {
@@ -763,12 +803,12 @@ const initializeCitizenArea = async (context) => {
     if (loadButton) loadButton.disabled = true;
     if (loadStatus) loadStatus.textContent = 'Carregando ajuda…';
     try {
-      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 4) await new Promise((resolve, reject) => {
+      if (globalThis.PortalCitizenTutorial?.launcherVersion !== 5) await new Promise((resolve, reject) => {
         const script=globalThis.document.createElement('script');
-        script.src='/js/citizen-tutorial.js?v=20261015-citizen-tutorial-1';
+        script.src='/js/citizen-tutorial.js?v=20261016-help-compact-1';
         const finish=error=>{clearTimeout(timer);script.onload=script.onerror=null;if(error){script.remove();reject(error);}else resolve();};
         const timer=setTimeout(()=>finish(new Error('Tutorial indisponível')),8000);
-        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===4?null:new Error('Tutorial indisponível'));
+        script.onload=()=>finish(globalThis.PortalCitizenTutorial?.launcherVersion===5?null:new Error('Tutorial indisponível'));
         script.onerror=()=>finish(new Error('Tutorial indisponível'));
         globalThis.document.head.append(script);
       });
@@ -778,7 +818,7 @@ const initializeCitizenArea = async (context) => {
       const open = helpEntry?.open;
       tutorial=globalThis.PortalCitizenTutorial.mount({document,window,context,user:{...user,get emailVerified(){return state.security?.emailVerified===true;}},
         isBusy:()=>!securityReady || sendingManifestation || liveRequests>0,
-        initialize:initializeCitizenArea});
+        initialize:initializeCitizenArea,onHelpOpen:positionHelpPanel});
       if (!tutorial) throw new Error('Entrada de ajuda indisponível');
       helpAbort.abort();
       positionHelp();

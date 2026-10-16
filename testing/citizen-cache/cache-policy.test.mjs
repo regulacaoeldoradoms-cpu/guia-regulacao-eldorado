@@ -15,12 +15,14 @@ test('shared entries use one released citizen loader and matching dependency URL
   assert.ok(version);
   for(const route of shared){
     const html=read(route==='/'?'index.html':route.slice(1)+'index.html');
-    for(const name of ['citizen-layout','citizen-mobile-shell','account-section-shell','home']){
+    for(const name of ['citizen-layout','account-section-shell','home']){
       for(const url of html.matchAll(new RegExp('/js/'+name+'\\.js\\?v=([^"\']+)','g'))){
         assert.equal(url[1],version,`${route}: ${name} must not reuse an obsolete cached owner`);
       }
     }
+    assert.ok(html.includes('/js/citizen-mobile-shell.js?v=20261016-help-compact-1'),`${route}: released shell must load the compact help owner`);
   }
+  assert.ok(citizen.includes('/js/citizen.js?v=20261016-help-compact-1'));
   for(const path of ['js/home.js','js/account-section-shell.js'])assert.ok(read(path).includes(`/js/citizen-layout.js?v=${version}`));
   const layout=read('js/citizen-layout.js'),shell=read('js/citizen-mobile-shell.js');
   assert.ok(!citizen.includes('<script src="/js/citizen-compose-attachments.js'),'Optional previews must not block HTML parsing');
@@ -31,7 +33,8 @@ test('shared entries use one released citizen loader and matching dependency URL
   assert.ok(layout.includes(`/js/citizen-mobile-presentation.js?v=${version}`));
   assert.ok(layout.includes(`path === '/css/citizen-mobile-presentation.css' ? '${version}'`));
   assert.ok(shell.includes(`/js/account-section-shell.js?v=${version}`));
-  for(const entry of ['citizen-mobile-app','home','citizen'])assert.ok(shell.includes(`entry === '${entry}' ? '${version}'`));
+  assert.ok(shell.includes("entry === 'citizen' ? '20261016-help-compact-1'"));
+  for(const entry of ['citizen-mobile-app','home'])assert.ok(shell.includes(`entry === '${entry}' ? '${version}'`));
 });
 
 function fixture(network) {
@@ -164,14 +167,14 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261015-2">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261016-1">';
 test('published Citizen HTML and service worker agree on the current release marker',()=>{
   assert.ok(source.includes(`CITIZEN_HTML_MARKER = '${citizenMarker}'`));
   assert.ok(fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8').includes(citizenMarker));
 });
 test('previous tutorial shell gets the new example CSS without replacing caches or the old asset',async()=>{
   const previousCss='/css/citizen-tutorial.css?v=20261015-citizen-tutorial-1';
-  const currentCss='/css/citizen-tutorial.css?v=20261015-example-pulse-1';
+  const currentCss='/css/citizen-tutorial.css?v=20261016-help-compact-1';
   const currentHtml=fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8');
   assert.ok(currentHtml.includes(`href="${currentCss}"`));
   const f=fixture(async request=>new Response(new URL(request.url).pathname==='/cidadao/'?currentHtml:'EXAMPLE-CSS-NEW'));
@@ -184,6 +187,23 @@ test('previous tutorial shell gets the new example CSS without replacing caches 
   const asset=f.dispatch(currentCss,{method:'GET'});
   assert.equal(await(await asset.response).text(),'EXAMPLE-CSS-NEW');await Promise.all(asset.waits);
   assert.equal(await(await assets.match(origin+previousCss)).text(),'EXAMPLE-CSS-OLD');
+  assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/perfil/')).text(),'PROFILE-UNCHANGED');
+  assert.deepEqual([...f.stores.keys()],[namespace,'portal-static-20261009-pets-combined-8']);
+});
+test('published wide-help shell upgrades the complete compact help asset set without evicting prior entries',async()=>{
+  const currentHtml=fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8');
+  const paths=['/css/citizen-tutorial.css','/js/citizen.js','/js/citizen-mobile-shell.js','/js/citizen-tutorial.js'];
+  const f=fixture(async request=>new Response(new URL(request.url).pathname==='/cidadao/'?currentHtml:'COMPACT-HELP-ASSET'));
+  await f.seed('/cidadao/','<meta name="portal-citizen-first-paint" content="20261015-2">');
+  await f.seed('/perfil/','PROFILE-UNCHANGED');
+  const assets=await f.caches.open('portal-static-20261009-pets-combined-8');
+  for(const asset of paths)await assets.put(origin+asset+'?v='+(asset.endsWith('.css')?'20261015-example-pulse-1':'20261015-citizen-tutorial-1'),new Response('PREVIOUS-HELP-ASSET'));
+  const navigation=f.dispatch('/cidadao/');assert.equal(await(await navigation.response).text(),currentHtml);await Promise.all(navigation.waits);
+  for(const asset of paths){
+    const request=f.dispatch(asset+'?v=20261016-help-compact-1',{method:'GET'});
+    assert.equal(await(await request.response).text(),'COMPACT-HELP-ASSET');await Promise.all(request.waits);
+    assert.equal(await(await assets.match(origin+asset+'?v='+(asset.endsWith('.css')?'20261015-example-pulse-1':'20261015-citizen-tutorial-1'))).text(),'PREVIOUS-HELP-ASSET');
+  }
   assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/perfil/')).text(),'PROFILE-UNCHANGED');
   assert.deepEqual([...f.stores.keys()],[namespace,'portal-static-20261009-pets-combined-8']);
 });

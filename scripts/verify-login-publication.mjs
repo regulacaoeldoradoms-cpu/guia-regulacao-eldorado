@@ -5,7 +5,8 @@ import { readFile } from 'node:fs/promises';
 
 const origin = 'https://regulacaoeldoradoms.com.br';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const files = ['login/index.html', 'js/login-opening-mobile.js', 'assets/portal-opening-mobile-v1.webp', 'js/login-home-transition.js', 'js/home.js', 'index.html', 'js/login.js', 'js/login-opening.js', 'portal-sw.js', 'assets/portal-opening-v1.mp4'];
+const citizenFiles = ['cidadao/index.html', 'css/citizen-tutorial.css', 'js/citizen.js', 'js/citizen-tutorial.js', 'js/citizen-mobile-shell.js'];
+const files = ['login/index.html', 'js/login-opening-mobile.js', 'assets/portal-opening-mobile-v1.webp', 'js/login-home-transition.js', 'js/home.js', 'index.html', 'js/login.js', 'js/login-opening.js', 'portal-sw.js', 'assets/portal-opening-v1.mp4', ...citizenFiles];
 const expected = new Map(await Promise.all(files.map(async (file) => [file, hash(await readFile(file))])));
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let lastError;
@@ -22,13 +23,14 @@ for (let attempt = 1; attempt <= 20; attempt++) {
     assert.match(html, /login-opening\.js\?v=20261015-mobile-opening-1/, 'opening_controller_version');
     assert.match(html, /login\.js\?v=20261010-login-compact-1/, 'login_controller_version');
     for (const file of files) {
-      const response = await fetch(`${origin}/${file}?v=20261015-mobile-opening-1`, {
+      const version = citizenFiles.includes(file) ? '20261016-help-compact-1' : '20261015-mobile-opening-1';
+      const response = await fetch(`${origin}/${file}?v=${version}`, {
         cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(15000)
       });
       assert.equal(response.status, 200, `public_status:${file}`);
       assert.equal(hash(Buffer.from(await response.arrayBuffer())), expected.get(file), `public_hash:${file}`);
     }
-    console.log('PUBLICATION_OK: login habilitado; login.js, aberturas mobile/desktop, Service Worker e imagens públicos iguais ao commit.');
+    console.log('PUBLICATION_OK: login habilitado; login.js, aberturas mobile/desktop, Service Worker, imagens e menu de ajuda do Canal do Cidadão públicos iguais ao commit.');
     process.exit(0);
   } catch (error) {
     lastError = String(error?.message || 'publication_pending').split('\n')[0];

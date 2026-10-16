@@ -1,7 +1,7 @@
 // No user text, files, tokens or API responses enter tutorial persistence.
 (() => {
 'use strict';
-if (globalThis.PortalCitizenTutorial?.launcherVersion === 4) return;
+if (globalThis.PortalCitizenTutorial?.launcherVersion === 5) return;
 const VERSION=1;
 const STEPS=Object.freeze(['open','sugestao','reclamacao','elogio','denuncia','report','details','files','preview','remove','identified','protected','send','track','reply','notice']);
 const EXAMPLE={subject:'Exemplo fictício: mural com informações a apurar',description:'Exemplo inteiramente fictício: um mural da Unidade Modelo teria exposto dados pessoais inventados de usuários do serviço. Relato essa possível irregularidade para apuração, sem reproduzir esses dados. Não descreve pessoa ou atendimento real.'};
@@ -116,20 +116,20 @@ function cloneWorkspace(document){
  for(const id of ['portalUserName','portalUserRole','professionalHomeLink','citizenContextNotice','privacyChip','firebaseNotice']){const n=globalThis.document.createElement('span');n.id='demo-'+id;n.hidden=true;root.append(n);}
  return root;
 }
-function mount({document,window,context,user,isBusy,initialize}){
+function mount({document,window,context,user,isBusy,initialize,onHelpOpen=()=>{}}){
  const host=document.querySelector('.portal-hero');if(!host)return;
  const existing=host.querySelector('[data-citizen-tutorial-entry]');if(existing&&!existing.hasAttribute('data-tutorial-bootstrap'))return;
  const token=window.RegulationAuth.getToken(),owner=identity(user),entry=existing||globalThis.document.createElement('details');entry.dataset.citizenTutorialEntry='';entry.className='citizen-tutorial-entry';
- entry.innerHTML='<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="portal-button secondary" data-tutorial-start>Aprender usando o Canal</button><button type="button" class="portal-button secondary" data-tutorial-restart hidden>Refazer tutorial</button><button type="button" class="portal-button secondary" data-tutorial-close-options>Fechar ajuda</button><p role="status" data-tutorial-status></p></div>';
+ entry.innerHTML='<summary data-tutorial-options aria-label="Ajuda: tutorial do Canal do Cidadão" title="Ajuda do Canal"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="M8 8a4 4 0 0 1 8 0c0 3-4 3-4 6"/><circle cx="12" cy="18" r="1"/></svg></span><span class="tutorial-help-label">Ajuda</span></summary><div class="tutorial-entry-panel"><button type="button" class="tutorial-entry-primary" data-tutorial-start>Iniciar tutorial</button><button type="button" class="tutorial-entry-close" data-tutorial-close-options aria-label="Fechar ajuda" title="Fechar ajuda"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></button><button type="button" class="tutorial-entry-restart" data-tutorial-restart hidden>Refazer tutorial</button><p role="status" data-tutorial-status></p></div>';
  entry.removeAttribute('data-tutorial-bootstrap');host.append(entry);
  let completed=readProgress(window.localStorage,user),session=null,disposed=false,starting=false,awarding=false,logoutInProgress=false;
  const status=entry.querySelector('[data-tutorial-status]'),start=entry.querySelector('[data-tutorial-start]'),restart=entry.querySelector('[data-tutorial-restart]');
  const current=()=>!disposed&&!context?.disposed&&window.RegulationAuth.getToken()===token&&identity(window.RegulationAuth.getCachedUser())===owner;
- function entryLabel(){start.textContent=completed.length===STEPS.length?'Registrar conclusão do tutorial':completed.length?'Retomar tutorial':'Aprender usando o Canal';restart.hidden=!completed.length;}
+ function entryLabel(){start.textContent=completed.length===STEPS.length?'Registrar conclusão do tutorial':completed.length?'Retomar tutorial':'Iniciar tutorial';restart.hidden=!completed.length;}
  function persist(){try{window.localStorage.setItem(keyFor(user),JSON.stringify({version:VERSION,steps:completed}));}catch(_){status.textContent='Progresso disponível nesta aba; armazenamento local indisponível.';}entryLabel();}
  function stop({save=true,focus=true}={}){
   const s=session;if(!s)return;session=null;starting=false;s.valid=false;s.abort.abort();cancelAnimationFrame(s.advanceFrame);s.timers?.forEach(id=>clearTimeout(id));s.controllers.forEach(c=>c.dispose?.());s.dialog?.close();s.dialog?.remove();s.savedNodes?.forEach(([node,marker])=>marker.replaceWith(node));s.unlock?.();
-  if(save&&current()){persist();if(status.textContent.startsWith('Preparando a demonstração'))status.textContent='Tutorial pausado. Você pode retomar.';}if(focus&&current()&&start.isConnected){entry.open=true;start.focus({preventScroll:true});}
+  if(save&&current()){persist();if(status.textContent.startsWith('Preparando a demonstração'))status.textContent='Tutorial pausado. Você pode retomar.';}if(focus&&current()&&start.isConnected){entry.open=true;onHelpOpen();start.focus({preventScroll:true});}
  }
  async function award(){
   if(awarding||!current()||session||completed.length!==STEPS.length)return;
@@ -323,5 +323,5 @@ function mount({document,window,context,user,isBusy,initialize}){
  entryLabel();
  return {get active(){return Boolean(session)||starting;},beforeNavigate(){stop({focus:false});},deactivate(){stop({focus:false});},dispose(){disposed=true;stop({save:false,focus:false});abort.abort();entry.remove();}};
 }
-globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION,launcherVersion:4});
+globalThis.PortalCitizenTutorial=Object.freeze({mount,steps:STEPS,version:VERSION,launcherVersion:5});
 })();
