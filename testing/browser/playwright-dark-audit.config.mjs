@@ -15,7 +15,12 @@ export default defineConfig({
     // Repeated identical source/DOM produced different blur pixels with GPU and
     // optimized Skia paths. Software rasterization retains real CSS/filters and
     // exact comparisons; independent capture stability is still required.
-    launchOptions: { args: ['--disable-gpu', '--disable-skia-runtime-opts', '--disable-lcd-text', '--font-render-hinting=none', '--disable-font-subpixel-positioning', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost'] }
+    // Wait for the complete compositor pipeline and rasterize complete tiles.
+    // A requestAnimationFrame plus repeated PNGs can retain an intermediate
+    // blur raster indefinitely. These Chromium testing switches retain every
+    // real CSS effect and all pixels, without changing the source or viewport.
+    // https://github.com/GoogleChrome/chrome-launcher/blob/main/docs/chrome-flags-for-tools.md
+    launchOptions: { args: ['--disable-gpu', '--disable-skia-runtime-opts', '--disable-lcd-text', '--font-render-hinting=none', '--disable-font-subpixel-positioning', '--run-all-compositor-stages-before-draw', '--disable-partial-raster', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost'] }
   },
   projects: [
     { name:'dark-desktop', use:{ ...devices['Desktop Chrome'], ...browserChannel, viewport:{ width:1440, height:1000 } } },
