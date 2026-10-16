@@ -139,6 +139,10 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     };
     await resetRestingState();
     await targetPage.waitForTimeout(350);
+    // inspectSurfaces also installs the existing synthetic narrative text.
+    // Finish that DOM preparation before priming the actual captured pixels.
+    const firstReport=await inspectSurfaces(targetPage);
+    await resetRestingState();
     // Prime the real viewport before capturing outside it. Full-page capture
     // alone can cache two different blur rasters for identical source/geometry.
     // This is a fixed, source-independent preparation step: no CSS/viewport
@@ -155,7 +159,6 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // The Linux artifact proved identical admin PNGs with different pre-capture
     // monospace metrics. Require independent stability inside EACH source phase,
     // never choose a frame based on whether it resembles the other source.
-    const firstReport=await inspectSurfaces(targetPage);
     const captures=[];
     let report=firstReport,screenshot,previousScreenshot,previousSnapshot;
     let snapshotStable=false,rasterStable=false;
