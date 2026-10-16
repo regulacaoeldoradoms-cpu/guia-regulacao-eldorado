@@ -40,7 +40,7 @@ for (const name of ['index', 'gemini-assistant']) {
   const result = await esbuild.build({ absWorkingDir: root, entryPoints: ['worker/' + name + '.js'], outfile: output, bundle: true, write: false, metafile: true, platform: 'browser', format: 'esm', target: 'es2022', external: ['cloudflare:*', 'node:*'], plugins: [graph], tsconfigRaw: {}, logLevel: 'silent' });
   fs.writeFileSync(output, result.outputFiles[0].contents);
   const records = Object.keys(result.metafile.inputs).filter(p => p.replaceAll('\\', '/').includes('/data/clinical-conditions/'));
-  assert.equal(records.length, 3);
+  assert.equal(records.length, 5);
   report.builds.push({ entry: 'worker/' + name + '.js', bytes: result.outputFiles[0].contents.length, sha256: sha(result.outputFiles[0].contents), records, imports: Object.values(result.metafile.outputs).flatMap(value => value.imports) });
 }
 const { default: bundledAi } = await import(pathToFileURL(path.join(dir, 'gemini-assistant.mjs')).href);
@@ -53,8 +53,11 @@ const hydrated = JSON.parse(prompt.split('PROTOCOLOS MAIS RELEVANTES:\n')[1].spl
 assert.deepEqual(hydrated[0].clinicalConditionRecord, record);
 report.bundledApiSimulation = { status: 200, mockCalls: calls, completeCanonicalRecord: true };
 const canonical = fs.readdirSync(path.join(root, 'data/clinical-conditions')).filter(name => name.endsWith('.json')).map(name => JSON.parse(fs.readFileSync(path.join(root, 'data/clinical-conditions', name), 'utf8')));
-const probe = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinicalConditionProbe: canonical.map(record => record.id) }) }), {});
-assert.equal(probe.status, 200); assert.deepEqual((await probe.json()).records, canonical); assert.equal(calls, 1);
+for (let start = 0; start < canonical.length; start += 3) {
+  const batch = canonical.slice(start, start + 3);
+  const probe = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinicalConditionProbe: batch.map(record => record.id) }) }), {});
+  assert.equal(probe.status, 200); assert.deepEqual((await probe.json()).records, batch); assert.equal(calls, 1);
+}
 report.bundledCompatibilityProbe = { status: 200, records: canonical.length, providerCalls: 0, allCanonicalRecordsEqual: true };
 const related = canonical.find(item => item.systemKind === 'sisreg_reference');
 const aliasResponse = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Compare Teleatendimento e SISREG para dor no ombro', protocols: [record, related].map(item => ({ id: item.id, clinicalConditionId: item.id, clinicalConditionRecord: { revision: item.revision }, clinicalAge: null })) }) }), { AI_PROVIDER: 'cloudflare', CLOUDFLARE_AI_FALLBACK_ENABLED: 'true', AI: { run: async (model, input) => { calls++; prompt = input.messages[1].content; return { response: 'Comparação estritamente simulada.' }; } } });
@@ -62,6 +65,18 @@ assert.equal(aliasResponse.status, 200); assert.equal(calls, 2);
 const aliasRecords = JSON.parse(prompt.split('PROTOCOLOS MAIS RELEVANTES:\n')[1].split('\n\nCATÁLOGO OPERACIONAL RESUMIDO:')[0]);
 assert.deepEqual(aliasRecords.map(protocol => protocol.clinicalConditionRecord), [record, related]);
 report.bundledAliasComparison = { status: 200, mockCalls: 1, bothCanonicalRecordsComplete: true };
+report.newBundledRecords = [];
+for (const record of canonical.filter(record => ['tendon', 'headache'].includes(record.searchKind))) {
+  const response = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: record.condition + ' no DigSaúde: quais requisitos?', protocols: [{ id: record.id, clinicalConditionId: record.id, clinicalConditionRecord: { revision: record.revision } }] }) }), { AI_PROVIDER: 'cloudflare', CLOUDFLARE_AI_FALLBACK_ENABLED: 'true', AI: { run: async (_model, input) => { calls++; prompt = input.messages[1].content; return { response: 'Simulação local.' }; } } });
+  assert.equal(response.status, 200);
+  const projected = JSON.parse(prompt.split('PROTOCOLOS MAIS RELEVANTES:\n')[1].split('\n\nCATÁLOGO OPERACIONAL RESUMIDO:')[0]);
+  assert.deepEqual(projected[0].clinicalConditionRecord, record);
+  report.newBundledRecords.push({ id: record.id, rules: record.rules.length, completeCanonicalRecord: true });
+}
+assert.equal(calls, 4);
+const mixedResponse = await bundledAi.fetch(new Request('https://local.invalid/api/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Quais exames para bursite e cefaleia no DigSaúde?', protocols: [{ id: 'digsaude.ortopedia.bursite-tendinite', clinicalConditionId: 'digsaude.ortopedia.bursite-tendinite' }] }) }), { AI_PROVIDER: 'cloudflare', CLOUDFLARE_AI_FALLBACK_ENABLED: 'true', AI: { run: async () => { calls++; throw new Error('A pergunta mista deve ficar local.'); } } });
+assert.equal(mixedResponse.status, 200); assert.match((await mixedResponse.json()).answer, /condição por vez/); assert.equal(calls, 4);
+report.bundledMultipleConditions = { status: 200, asksOneCondition: true, providerCalls: 0, incompleteClientListIgnored: true };
 report.passed = true;
 const destination = path.resolve(process.argv[2] || path.join(dir, 'build-verification.json'));
 fs.mkdirSync(path.dirname(destination), { recursive: true }); fs.writeFileSync(destination, JSON.stringify(report, null, 2));
