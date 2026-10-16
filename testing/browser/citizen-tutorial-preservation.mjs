@@ -6,6 +6,7 @@ let baseTutorial='';
 try{baseTutorial=execFileSync('git',['show',`${base}:js/citizen-tutorial.js`],{encoding:'utf8',stdio:['ignore','pipe','pipe']});}catch{}
 const baseHasTutorial=baseTutorial.includes('data-citizen-tutorial-entry');
 const baseHasHelpLabel=baseTutorial.includes('class="tutorial-help-label"');
+const baseHasCompactHelp=baseTutorial.includes('class="tutorial-entry-primary" data-tutorial-start');
 // Preserve the whole prior portal. Project only the exact additions explicitly
 // requested by this PR, after checking their contract and recording evidence.
 // No pixel/style tolerance, permissions check or comparison is bypassed.
@@ -18,12 +19,13 @@ export async function projectTutorialAdditions(page,info,route,current){
   else expect(await entry.locator('.tutorial-help-label').count()).toBe(0);
   await expect(entry.locator('summary')).toHaveAttribute('aria-label',current||baseHasHelpLabel?'Ajuda: tutorial do Canal do Cidadão':'Tutorial do Canal');
   expect(await entry.evaluate(n=>({tag:n.tagName,open:n.open}))).toEqual({tag:'DETAILS',open:false});
-  await expect(entry.locator('[data-tutorial-start]')).toHaveText('Aprender usando o Canal');
+  await expect(entry.locator('[data-tutorial-start]')).toHaveText(current||baseHasCompactHelp?'Iniciar tutorial':'Aprender usando o Canal');
   await expect(entry.locator('[data-tutorial-start]')).toHaveAttribute('type','button');
   await expect(entry.locator('[data-tutorial-restart]')).toHaveText('Refazer tutorial');
   await expect(entry.locator('[data-tutorial-restart]')).toBeHidden();
   await expect(entry.locator('[data-tutorial-status]')).toHaveText('');
-  await expect(entry.locator('[data-tutorial-close-options]')).toHaveText('Fechar ajuda');
+  if(current||baseHasCompactHelp)await expect(entry.locator('[data-tutorial-close-options]')).toHaveAttribute('aria-label','Fechar ajuda');
+  else await expect(entry.locator('[data-tutorial-close-options]')).toHaveText('Fechar ajuda');
   await expect(entry.locator('[data-tutorial-close-options]')).toHaveAttribute('type','button');
   expect(await entry.locator('button').count()).toBe(3);
   expect(await page.locator('dialog.citizen-tutorial').count()).toBe(0);

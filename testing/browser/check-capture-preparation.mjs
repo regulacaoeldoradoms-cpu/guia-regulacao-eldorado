@@ -2,12 +2,12 @@
 // Run identical-code controls BEFORE trusting a comparison between versions.
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { mkdir, writeFile, copyFile } from 'node:fs/promises';
+import { mkdir, writeFile, copyFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import config from './playwright-dark-audit.config.mjs';
 import { installAuditFixture } from './dark-audit-fixture.mjs';
-import { compareAgainstBase } from './dark-audit-base-comparison.mjs';
+import { compareAgainstBase, rasterDiagnosticCrops } from './dark-audit-base-comparison.mjs';
 
 const directory=path.dirname(fileURLToPath(import.meta.url));
 const output=path.resolve(directory,'test-results-capture-preparation');
@@ -31,6 +31,7 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
       ?copyFile(options.path,path.join(destination,name))
       :writeFile(path.join(destination,name),options.body)
   };
+  let comparison;
   try {
     // Match the real Playwright fixture order: its initial Page exists before
     // context routes/init scripts are installed; the baseline Page is new.
@@ -56,6 +57,7 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
       }
     };
     const report=await compareAgainstBase({page,context,info,...spec,base,prepare});
+    comparison=report;
     assert.deepEqual(network.unexpected,[],'Unknown APIs invalidate this control');
     assert.deepEqual(report.newErrors,[],'New JavaScript errors invalidate this control');
     assert.deepEqual(report.differences,[],'Computed/layout snapshots must be exact');
@@ -71,13 +73,25 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
       assert.equal(report.pixelComparison.accepted,true,'Unchanged routes must satisfy the original two-pixel/one-channel tolerance');
       assert.equal(report.pixelComparison.gateAccepted,true);
     }
-    const result={phase,case:spec.name,iteration,baseCommit:report.baseCommit,
+    const result={phase,case:spec.name,iteration,browser:browser.version(),baseCommit:report.baseCommit,
       hashCurrent:report.hashCurrent,hashBase:report.hashBase,
       pixelComparison:report.pixelComparison,servedCurrentFiles:report.servedCurrentFiles,
       servedBaseFiles:report.servedBaseFiles,negative,mutation,passed:true};
     evidence.push(result);console.log(JSON.stringify(result));
   }catch(error){
-    const result={phase,case:spec.name,iteration,negative,passed:false,error:error.message};
+    // Keep a small exact source crop in the log when artifact downloads are
+    // unavailable. All full PNGs, comparisons and acceptance checks stay intact.
+    let rasterDiagnostics;
+    if(comparison?.pixelComparison?.bounds){
+      const {left,top,right,bottom}=comparison.pixelComparison.bounds;
+      const prefix=path.join(destination,`${spec.theme}-${spec.media}-base-comparison`);
+      rasterDiagnostics=rasterDiagnosticCrops(await readFile(prefix+'-current.png'),await readFile(prefix+'-base.png'),{
+        ...comparison.pixelComparison,bounds:{left,top,right:Math.min(right,left+47),bottom:Math.min(bottom,top+47)}
+      });
+    }
+    const result={phase,case:spec.name,iteration,browser:browser.version(),negative,passed:false,error:error.message,
+      pixelComparison:comparison?.pixelComparison,differenceCount:comparison?.differences.length,
+      captureStability:comparison?.captureStability,rasterDiagnostics};
     evidence.push(result);console.error(JSON.stringify(result));
   }finally{
     await context.close();await browser.close();

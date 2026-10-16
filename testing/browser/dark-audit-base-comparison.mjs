@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { inspectSurfaces } from './dark-audit-surfaces.mjs';
 import { waitForAuditRoute } from './dark-audit-route-ready.mjs';
 import { aliasDestinations } from './dark-audit-routes.mjs';
+import { installCaptureTransitionReset, waitForCaptureTransitionReset, AUDIT_TRANSITION_RESET_PATH, AUDIT_TRANSITION_RESET_CSS } from './dark-audit-capture-reset.mjs';
 import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -73,12 +74,14 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Prepare both tabs as foreground documents. A fresh baseline tab and the
     // fixture's existing candidate tab must not use different compositor states.
     await targetPage.bringToFront();
+    await installCaptureTransitionReset(targetPage);
     // Reset before BOTH navigations. Open real controls on screen first: print
     // intentionally hides their launchers, but an already-open view can print.
     await targetPage.emulateMedia({media:'screen'});
     await targetPage.mouse.move(-100,-100);
     await targetPage.goto(route,{waitUntil:'load'});
     await waitForAuditRoute(targetPage,aliasDestinations[route]||route);
+    await waitForCaptureTransitionReset(targetPage);
     await targetPage.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
     await prepare(targetPage);
     // Auth hydration during preparation may reapply the synthetic account's
@@ -151,6 +154,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     await resetRestingState();
     const preparation=await targetPage.evaluate(()=>({
       visibility:document.visibilityState,focused:document.hasFocus(),
+      reset:window.__captureResetTiming,
       viewport:{width:innerWidth,height:innerHeight,deviceScaleFactor:devicePixelRatio}
     }));
     preparation.viewportWarmupSha256=createHash('sha256').update(viewportWarmup).digest('hex');
@@ -201,6 +205,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   const fulfilledCurrent=new Set(),fulfilledBase=new Set();
   const handler=async request=>{
     const pathname=decodeURIComponent(new URL(request.request().url()).pathname);
+    if(pathname===AUDIT_TRANSITION_RESET_PATH)return request.fulfill({contentType:'text/css',body:AUDIT_TRANSITION_RESET_CSS});
     if(pathname===AUDIT_RESET_PATH)return request.fulfill({contentType:'text/css',body:AUDIT_RESET_CSS});
     const name=pathname==='/'?'index.html':pathname.replace(/^\//,'').replace(/\/$/,'/index.html');
     if(!assets.has(name))return request.fallback();

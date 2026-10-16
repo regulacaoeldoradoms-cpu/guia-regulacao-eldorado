@@ -3,12 +3,24 @@
 .citizen-tutorial-entry>summary{display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-end;gap:4px;width:44px;height:52px;min-height:44px;padding:0;list-style:none;cursor:pointer}
 .citizen-tutorial-entry>summary::-webkit-details-marker{display:none}
 .citizen-tutorial-entry>summary>span:not(.tutorial-help-label){display:grid;place-items:center;width:28px;height:28px;border:1px solid currentColor;border-radius:50%;line-height:1;background:var(--portal-theme-surface,#fff)}
-.citizen-tutorial-entry .tutorial-help-label{font-size:14px;line-height:20px;white-space:nowrap;font-weight:700}
+.citizen-tutorial-entry .tutorial-help-label{font-size:14px;line-height:20px;white-space:nowrap;font-weight:700;transition:none!important}
 .citizen-tutorial-entry svg{display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .citizen-tutorial-entry>summary:focus-visible{outline:3px solid currentColor;outline-offset:-3px}
-.citizen-tutorial-entry .tutorial-entry-panel{position:fixed;right:12px;top:96px;display:flex;flex-wrap:wrap;gap:8px;width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 120px);overflow:auto;box-sizing:border-box;padding:12px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);border:1px solid var(--portal-theme-border,#426982);border-radius:12px;box-shadow:0 8px 24px #0003;z-index:15000}
-.citizen-tutorial-entry .tutorial-entry-panel button{min-height:44px;white-space:normal}
-.citizen-tutorial-entry p{flex-basis:100%;margin:0;line-height:1.5;overflow-wrap:anywhere}
+.citizen-tutorial-entry .tutorial-entry-panel{position:fixed;top:var(--tutorial-panel-top,8px);left:var(--tutorial-panel-left,8px);visibility:hidden;display:none;grid-template-columns:minmax(0,1fr) 44px;align-items:start;gap:6px;width:232px;max-width:calc(var(--tutorial-panel-viewport-width,100vw) - 16px);max-height:var(--tutorial-panel-max-height,calc(var(--tutorial-panel-viewport-height,100dvh) - 16px));overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:8px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);border:1px solid var(--portal-theme-border,#b8cdd9);border-radius:14px;box-shadow:0 6px 20px #0002;z-index:15000}
+.citizen-tutorial-entry[open]>.tutorial-entry-panel{display:grid}
+.citizen-tutorial-entry[open]>.tutorial-entry-panel[data-tutorial-positioned]{visibility:visible}
+/* Global reduced-motion transitions must not delay visibility or keyboard focus. */
+.citizen-tutorial-entry .tutorial-entry-panel,.citizen-tutorial-entry .tutorial-entry-panel *{transition:none!important}
+.citizen-tutorial-entry .tutorial-entry-panel button{box-sizing:border-box;min-width:0;min-height:44px;margin:0;padding:10px 10px;border:1px solid transparent;border-radius:9px;font:inherit;font-size:14px;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.citizen-tutorial-entry .tutorial-entry-panel [hidden]{display:none}
+.citizen-tutorial-entry .tutorial-entry-primary{grid-column:1;background:var(--portal-theme-text,#173b5d);color:var(--portal-theme-surface,#fff)}
+.citizen-tutorial-entry .tutorial-entry-close{grid-column:2;grid-row:1;display:grid;place-items:center;width:44px;padding:10px;background:transparent;color:inherit}
+.citizen-tutorial-entry .tutorial-entry-restart{grid-column:1 / -1;background:var(--portal-theme-surface-2,#edf3f7);color:inherit}
+.citizen-tutorial-entry .tutorial-entry-panel button:hover{filter:brightness(.94)}
+.citizen-tutorial-entry .tutorial-entry-close:hover{background:var(--portal-theme-surface-2,#edf3f7)}
+.citizen-tutorial-entry .tutorial-entry-panel button:focus-visible{outline:3px solid var(--portal-theme-accent,#126cb5);outline-offset:2px}
+.citizen-tutorial-entry .tutorial-entry-panel button:disabled{cursor:wait;opacity:.7}
+.citizen-tutorial-entry p{grid-column:1 / -1;margin:0;padding:2px 4px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
 .citizen-tutorial-entry p:empty{display:none}
 @media(max-width:900px){.citizen-tutorial-entry{top:0;right:0}}
 dialog.citizen-tutorial{box-sizing:border-box;padding:0;width:min(1080px,calc(100% - 16px));height:min(900px,calc(var(--tutorial-height,100dvh) - 16px));max-width:calc(100% - 16px);max-height:calc(var(--tutorial-height,100dvh) - 16px);border:2px solid var(--portal-theme-border,#426982);border-radius:12px;background:var(--portal-theme-surface,#fff);color:var(--portal-theme-text,#173b5d);overflow:hidden}
