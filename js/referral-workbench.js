@@ -255,7 +255,7 @@
   function enhance() {
     const panel = document.getElementById(PANEL_ID);
     const article = panel?.querySelector('article');
-    if (!panel || !article) return;
+    if (!panel || !article || article.dataset.clinicalConditionId || article.dataset.clinicalSystemChoice) return;
 
     enrichAll();
 

@@ -1,0 +1,209 @@
+{
+  "provenance": "Conteúdo comunicado pela frente documental. Os anexos originais não foram acessados nesta proposta visual.",
+  "sourceStage": "Matriz do protótipo aprovado; não certifica vigência ou origem institucional.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "physical": "36–38",
+        "printed": "30–32",
+        "documentTotal": 72
+      },
+      "verification": "Trecho conferido visualmente pela frente documental",
+      "fileHash": null,
+      "pending": "Origem institucional do arquivo de 72 páginas e aplicabilidade municipal a confirmar."
+    },
+    {
+      "id": "MAN1",
+      "title": "Manual Operacional",
+      "version": "V1",
+      "pages": {
+        "printed": "4"
+      },
+      "verification": "Referência de avaliação clínica comunicada pela frente documental",
+      "fileHash": null
+    },
+    {
+      "id": "BRIEF",
+      "title": "Orientações aprovadas para a proposta do piloto",
+      "verification": "Limites editoriais desta demonstração; não constitui norma clínica"
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      },
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "CRISE",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Um ou mais episódios sugestivos de crise convulsiva.",
+      "exceptionRefs": [
+        "FEBRIL"
+      ],
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "MONO",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Epilepsia prévia sem controle apesar de monoterapia otimizada em dose plena, descartada má adesão.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "EFEITOS",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Efeitos adversos intoleráveis.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "DIFICIL",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Difícil controle apesar de tratamento otimizado com duas ou mais medicações anticrise em dose plena, descartada má adesão.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "FEBRIL",
+      "group": "exclusion",
+      "requirement": "exclusao",
+      "text": "Este critério exclui convulsão febril simples.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "QUADRO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever o quadro clínico atual que sustenta o enquadramento.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "TRATAMENTO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever o tratamento que sustenta o enquadramento no critério pertinente.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "NEURO",
+      "group": "clinicalAssessment",
+      "requirement": "obrigatorio",
+      "text": "Exame neurológico realizado e registrado por profissional habilitado.",
+      "sourceRefs": [
+        "MAN1"
+      ]
+    },
+    {
+      "id": "EEG",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "availability": "se_houver",
+      "text": "Eletroencefalograma (EEG), se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "TC",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "availability": "se_houver",
+      "text": "Tomografia de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "RM",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "availability": "se_houver",
+      "text": "Ressonância magnética de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "APRESENTACAO",
+      "group": "documentPresentation",
+      "requirement": "condicional",
+      "alternatives": [
+        "anexados",
+        "descritos"
+      ],
+      "text": "Os documentos podem ser anexados ou descritos.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "text": "É necessária a presença de familiar ou responsável no teleatendimento.",
+      "sourceRefs": [
+        "TEL2"
+      ]
+    },
+    {
+      "id": "INDICACAO",
+      "group": "editorialSafeguard",
+      "requirement": "ressalva",
+      "text": "EEG, TC e RM não são pré-requisitos documentais obrigatórios deste teleatendimento. Isso não dispensa exames clinicamente indicados pelo profissional.",
+      "sourceRefs": [
+        "BRIEF"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta atual",
+      "text": "Confirmar a oferta operacional atual de Neuropediatria no DigSaúde MS."
+    },
+    {
+      "id": "ORIGEM",
+      "title": "Origem do PDF",
+      "text": "Confirmar a origem institucional do arquivo de 72 páginas e sua cadeia documental."
+    },
+    {
+      "id": "MUNICIPIO",
+      "title": "Aplicabilidade municipal",
+      "text": "Confirmar a aplicabilidade deste recorte ao fluxo de Eldorado/MS."
+    },
+    {
+      "id": "DEZESSETE",
+      "title": "Faixa de 17 anos",
+      "text": "A faixa de 17 anos não está explicitada neste recorte. Confirmar o fluxo com a Regulação; o piloto não define outra especialidade, sistema ou destino."
+    }
+  ]
+}

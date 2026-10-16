@@ -1,0 +1,332 @@
+{
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "parentProtocolId": "ortopedia",
+  "category": "Cirúrgica/Clínica",
+  "searchKind": "shoulder",
+  "provenance": "Matriz de seções relacionadas de Campo Grande comunicada pela frente documental em 16/10/2026. Os trechos pertinentes de S3 foram lidos por aquela frente, sem auditoria integral das 386 páginas. O hash de S3 identifica os bytes conferidos; não comprova vigência ou pactuação. Esta frente técnica não acessou o PDF original.",
+  "integration": {
+    "codeBase": "380a40b1a5e58c309151b066fef0b79ec9313489",
+    "scope": "Ortopedia / Ombro, com recortes por sistema separados"
+  },
+  "contextualAlerts": [
+    {
+      "id": "FRONTEIRA18",
+      "trigger": {
+        "ageYears": 18
+      },
+      "title": "18 anos: sobreposição nas faixas do SISREG",
+      "text": "O texto de Campo Grande traz adulto 18-130 e pediatria 0-18. Confirmar o enquadramento de fronteira; esta referência não escolhe a especialidade por conta própria."
+    }
+  ],
+  "correspondence": {
+    "notes": "O resumo municipal S5 não é revisão normativa externa. Este quadro mantém as regras de Campo Grande identificadas por seção; o recorte DigSaúde é consultado separadamente."
+  },
+  "projections": {
+    "guide": "Usa as mesmas regras integrais, com ordenação para consulta rápida.",
+    "ai": "Recebe todas as regras, exceções, fontes, incertezas e alertas aplicáveis; não usa apenas o resumo visível e não corta listas.",
+    "print": "Preserva as mesmas regras e o alerta contextual; somente a apresentação muda."
+  },
+  "nextGate": "Implementação local autorizada e em revisão. Resolver ou registrar as pendências documentais e operacionais; publicação depende de autorização própria.",
+  "id": "sisreg-campo-grande.ortopedia.referencias-ombro",
+  "revision": "referencias-ombro-cg-20261016-2",
+  "system": "SISREG / Campo Grande",
+  "systemKind": "sisreg_reference",
+  "specialty": "Ortopedia Adulto",
+  "condition": "Ombro: seções relacionadas",
+  "recordType": "related_sections_not_dedicated_shoulder_protocol",
+  "sources": [
+    {
+      "id": "CG2024",
+      "documentId": "S3",
+      "title": "Protocolo de Acesso para consultas, exames e procedimentos ambulatoriais especializados - Campo Grande",
+      "version": "2023/Revisão, aprovada em 2024",
+      "date": "22/02/2024",
+      "approval": "Resolução SESAU 785; DIOGRANDE 7.397, Suplemento I, 23/02/2024.",
+      "pages": {
+        "physical": "14-15,19-20,219-225",
+        "printed": "14-15,19-20,219-225",
+        "documentTotal": 386
+      },
+      "fileHash": "e55027e9c928148dedf022584e164ea8ad6059e6a5698970c87e36b69c60673c",
+      "verification": "Seções pertinentes lidas pela frente documental; página 185 também inspecionada visualmente. Não foram auditadas integralmente as 386 páginas.",
+      "hashVerification": "Hash dos bytes renderizados comunicado pela frente documental; não certifica vigência nem pactuação."
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Ortopedia adulto: 18 a 130 anos, no texto de Campo Grande.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "219",
+          "printed": "219",
+          "section": "Ortopedia Adulto"
+        }
+      ],
+      "ageMinimum": {
+        "years": 18,
+        "months": 0,
+        "days": 0
+      },
+      "ageMaximumYears": 130
+    },
+    {
+      "id": "GERAL",
+      "group": "relatedSection",
+      "requirement": "informar",
+      "text": "Informar história, tempo de evolução, exames, tratamentos e medicações. Solicitações incompletas são devolvidas.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "219",
+          "printed": "219",
+          "section": "Ortopedia Adulto"
+        }
+      ]
+    },
+    {
+      "id": "APS",
+      "group": "relatedSection",
+      "requirement": "criterio_da_secao_relacionada",
+      "text": "Dor articular/tendinite: queixa frequente ou persistente sem melhora após abordagem inicial obrigatória na APS. Esta é uma seção relacionada, não uma condição intitulada Dor no Ombro.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "220",
+          "printed": "220",
+          "section": "3.78.3"
+        }
+      ]
+    },
+    {
+      "id": "IMAGEM_APS",
+      "group": "relatedImaging",
+      "requirement": "deverao_ser_informados",
+      "text": "Na seção Dor articular/tendinite deverão ser informados RX AP/perfil e USG da área. Não transportar as três incidências do DigSaúde para esta seção.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "220",
+          "printed": "220",
+          "section": "3.78.3"
+        }
+      ]
+    },
+    {
+      "id": "ESPECIALISTA",
+      "group": "professional",
+      "requirement": "condicional_cirurgia",
+      "text": "Avaliações de indicação cirúrgica devem ser encaminhadas por especialista em ortopedia geral.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "221",
+          "printed": "221",
+          "section": "3.78.5"
+        }
+      ]
+    },
+    {
+      "id": "IMAGEM_CIRURGIA",
+      "group": "relatedImaging",
+      "requirement": "informar",
+      "text": "Na avaliação de indicação cirúrgica, informar imagem da área; a seção de Cirurgia do ombro não fornece um pacote próprio de exames.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "221",
+          "printed": "221",
+          "section": "3.78.5"
+        },
+        {
+          "source": "CG2024",
+          "physical": "223",
+          "printed": "223",
+          "section": "3.78.5.8"
+        }
+      ]
+    },
+    {
+      "id": "CIRURGIA_OMBRO",
+      "group": "professional",
+      "requirement": "lista_da_secao",
+      "text": "A seção Cirurgia do ombro lista manguito/síndrome do impacto, labrum, processos degenerativos do cotovelo/ombro e túnel cubital. Os itens de cotovelo foram preservados como aparecem na fonte; não foram corrigidos nem generalizados para todo caso de dor no ombro.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "223",
+          "printed": "223",
+          "section": "3.78.5.8"
+        }
+      ]
+    },
+    {
+      "id": "AGUDOS",
+      "group": "alert",
+      "requirement": "urgencia_na_fonte",
+      "text": "Fratura, luxação e trauma agudos, assim como osteomielite aguda, seguem urgência/emergência nesta fonte. O critério eletivo de 6 meses do DigSaúde não se aplica como regra de espera para trauma agudo.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "220",
+          "printed": "220",
+          "section": "Ortopedia / urgência"
+        }
+      ]
+    },
+    {
+      "id": "GUIA",
+      "group": "administrative",
+      "requirement": "regra_do_fluxo_sisreg",
+      "text": "O campo observação deve conter informação suficiente; carimbo e assinatura do solicitante são obrigatórios neste fluxo. Espelho e guia manuscrita têm regras conforme a identidade entre operador e profissional; conferir a seção original. Não transportar exigência de papel ao DigSaúde.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "14",
+          "printed": "14",
+          "section": "Encaminhamento / guia"
+        }
+      ]
+    },
+    {
+      "id": "POS_TELE",
+      "group": "administrative",
+      "requirement": "condicional_pos_telemedicina",
+      "text": "Após atendimento remoto, o encaminhamento SISREG cabe ao médico assistente da APS, com contato com a Regulação quando a unidade não tem acesso.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "15",
+          "printed": "15",
+          "section": "Telemedicina"
+        }
+      ]
+    },
+    {
+      "id": "PACTUACAO",
+      "group": "scope",
+      "requirement": "limite_de_aplicabilidade",
+      "text": "Fonte municipal de Campo Grande, incluindo municípios pactuados. A pactuação concreta de Eldorado por procedimento e destino não foi comprovada.",
+      "sourceRefs": [
+        "CG2024"
+      ],
+      "sourceLocations": [
+        {
+          "source": "CG2024",
+          "physical": "1,19-20",
+          "printed": "1,19-20"
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "label": "Seções relacionadas - alcance a confirmar",
+      "title": "Avaliação geral e APS",
+      "ruleIds": [
+        "GERAL",
+        "APS"
+      ]
+    },
+    {
+      "label": "O que a seção manda informar",
+      "title": "Imagem por seção",
+      "ruleIds": [
+        "IMAGEM_APS",
+        "IMAGEM_CIRURGIA"
+      ]
+    },
+    {
+      "label": "Avaliação de indicação cirúrgica",
+      "title": "Solicitante e escopo da seção",
+      "ruleIds": [
+        "ESPECIALISTA",
+        "CIRURGIA_OMBRO"
+      ]
+    },
+    {
+      "label": "Alerta desta fonte",
+      "title": "Situações agudas",
+      "ruleIds": [
+        "AGUDOS"
+      ]
+    },
+    {
+      "label": "Regras deste fluxo SISREG",
+      "title": "Guia e pós-telemedicina",
+      "ruleIds": [
+        "GUIA",
+        "POS_TELE"
+      ]
+    },
+    {
+      "label": "Aplicabilidade",
+      "title": "Pactuação",
+      "ruleIds": [
+        "PACTUACAO"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "VIGENCIA",
+      "title": "Vigência e pactuação",
+      "text": "A revisão vigente e a pactuação concreta de Eldorado por procedimento e destino não foram confirmadas nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "FRONTEIRA",
+      "title": "Faixa de 18 anos",
+      "text": "O texto apresenta sobreposição adulto/pediatria aos 18 anos; este registro não resolve o enquadramento nem escolhe outra rota.",
+      "kind": "flow_gap"
+    },
+    {
+      "id": "COTOVELO",
+      "title": "Escopo da seção cirúrgica",
+      "text": "A seção intitulada Cirurgia do ombro também lista itens de cotovelo. A redação foi preservada, sem deduzir uma mudança de escopo.",
+      "kind": "source_scope_note"
+    },
+    {
+      "id": "FORMULARIO",
+      "title": "Forma da guia",
+      "text": "A condição exata de espelho versus guia manuscrita não foi transcrita integralmente na matriz. O registro não generaliza o tipo de guia nem cria uma exigência adicional de papel.",
+      "kind": "source_gap"
+    }
+  ],
+  "systemBoundary": "Referências relacionadas do SISREG/Campo Grande, com pactuação pendente. Não constituem protocolo específico de Dor no Ombro nem fonte clínica CORE. Não importar critérios ou pacote de exames do DigSaúde.",
+  "reference": "Campo Grande: versão 2023/Revisão, Resolução SESAU 785/2024. Físicas/impressas 14-15, 19-20 e 219-225; seções 3.78.3, 3.78.5 e 3.78.5.8.",
+  "sourceNotesPolicy": "Notas institucionais, lacunas e limites de escopo não são critérios clínicos nem documentos obrigatórios adicionais. Ausência de definição na fonte não cria dispensa nem obrigação de obter decisão agora."
+}

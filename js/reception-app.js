@@ -133,9 +133,10 @@
       </section>`;
   }
 
-  function renderDetail() {
+  function renderDetail(options = {}) {
     const protocol = selectedProtocol;
     if (!protocol) return;
+    if (window.ClinicalConditionPilot?.render(protocol, options, 'reception')) return;
     const subprotocols = arr(protocol.subprotocolos);
     const subprotocol = selectedSubprotocolIndex >= 0 ? subprotocols[selectedSubprotocolIndex] : null;
     const groups = materialChecklist(protocol, subprotocol);
@@ -193,6 +194,7 @@
     document.getElementById('clearReceptionChecklistBottom')?.addEventListener('click', clear);
     document.getElementById('printMissingItems')?.addEventListener('click', printMissing);
     updateSummary();
+    window.ClinicalConditionPilot?.addDetailChoice(protocol, (item, choice) => renderDetail(choice), 'reception');
   }
 
   function currentRows() {
@@ -266,6 +268,7 @@
         renderDetail();
       });
     });
+    window.ClinicalConditionPilot?.addSearchChoice(protocols, (protocol, choice) => { selectedProtocol = protocol; selectedSubprotocolIndex = -1; renderList(filtered); renderDetail(choice); }, 'reception');
   }
 
   searchInput?.addEventListener('input', () => {
@@ -275,6 +278,7 @@
   });
 
   try {
+    await window.ClinicalConditionPilot?.ready;
     const response = await fetch(`${DATA_SOURCE}?reception-guide=1.0`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Falha ao carregar protocolos (${response.status}).`);
     const source = await response.text();

@@ -19,6 +19,8 @@ const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
 const MAX_WARM_ROUTES = 18;
 const MAX_ASSETS_PER_PAGE = 90;
 const inFlight = new Map();
+const CLINICAL_PILOT_HTML_PATHS = new Set(['/medico/', '/protocolo/', '/recepcao/']);
+const CLINICAL_PILOT_HTML_MARKER = '<meta name="clinical-condition-pilot" content="20261016-3">';
 const DOCUMENT_STREAM_PREFIX = '/__portal_document_pdf/';
 const DOCUMENT_STREAM_TTL_MS = 20000;
 const DOCUMENT_WORKER_ORIGINS = new Set([
@@ -717,6 +719,11 @@ async function handlePage(event) {
   if (!key) return fetch(event.request);
   const cache = await caches.open(PAGE_CACHE);
   const cached = await cache.match(key);
+  if (cached && CLINICAL_PILOT_HTML_PATHS.has(new URL(key.url).pathname)) {
+    const html = await cached.clone().text().catch(() => '');
+    // Upgrade only an obsolete clinical shell. Keep all other route/cache policy.
+    if (!html.includes(CLINICAL_PILOT_HTML_MARKER)) return revalidateSharedPage(event, key, cache, cached);
+  }
   if (SHARED_HTML_PATHS.has(new URL(key.url).pathname))
     return revalidateSharedPage(event, key, cache, cached);
   const update = fetchPage(event.request, key, event);
