@@ -143,6 +143,13 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Finish that DOM preparation before priming the actual captured pixels.
     const firstReport=await inspectSurfaces(targetPage);
     await resetRestingState();
+    // A fixed backdrop-filter can retain the first page's cached backdrop even
+    // across repeated screenshots. Repaint it after a real scroll, then return
+    // to the same resting position on both sources before the existing warmup.
+    await targetPage.evaluate(()=>window.scrollTo(0,1));
+    await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await targetPage.screenshot({fullPage:false,animations:'disabled',caret:'hide'});
+    await resetRestingState();
     // Prime the real viewport before capturing outside it. Full-page capture
     // alone can cache two different blur rasters for identical source/geometry.
     // This is a fixed, source-independent preparation step: no CSS/viewport
