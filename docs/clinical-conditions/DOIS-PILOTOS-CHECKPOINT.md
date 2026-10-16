@@ -129,3 +129,5 @@ A revisão técnica está fechada no escopo da matriz recebida. Origem instituci
 As lacunas de 17/18 anos, definição de tratamento otimizado, validade/espera e ausência de dispensa de exames permanecem literais, sem criar novo fluxo ou exigência. Não são decisões adicionais obrigatórias para encerrar esta revisão.
 
 Próximo passo autorizado: incorporar a main atual preservando PR663 e alterações posteriores, abrir PR, exigir os checks e confirmar a publicação do cliente e do Worker canônico. Sem pacientes, chamadas pagas, novas chaves, SQL, migrações ou mudanças de permissão. O resultado de CI e produção deve ser registrado com PR/SHA; autorização não equivale a publicação concluída.
+
+CI do primeiro envio: 1066 testes passaram. Dois contratos adicionais exigiam URLs anteriores e HTML clínico obsoleto na fixture de stale-first. As URLs exigidas foram atualizadas, e a política stale-first passou a ser testada com HTML clínico atual nas três rotas e com Telemedicina inalterada; as verificações de renovação do shell antigo e fallback offline permanecem. Nenhuma asserção, tolerância ou gate foi removido.

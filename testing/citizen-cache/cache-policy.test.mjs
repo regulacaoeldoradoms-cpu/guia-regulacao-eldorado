@@ -142,14 +142,16 @@ test('canonical redirects remain redirects rather than cached fallback', async (
   assert.equal(await (await (await f.caches.open(namespace)).match(origin + '/cidadao/')).text(), 'OLD');
 });
 
-test('professional HTML retains stale-first navigation preload behavior', async () => {
+for (const path of ['/medico/','/protocolo/','/recepcao/','/telemedicina/']) test('current professional HTML retains stale-first navigation preload behavior: '+path, async () => {
   const f = fixture(async () => { throw Error('not used: preload remains valid'); });
-  await f.seed('/medico/', 'PROFESSIONAL-OLD');
-  const event = f.dispatch('/medico/');
-  assert.equal(await (await event.response).text(), 'PROFESSIONAL-OLD');
+  const marker = path === '/telemedicina/' ? '' : '<meta name="clinical-condition-pilot" content="20261016-3">';
+  const cached = 'PROFESSIONAL-OLD'+marker;
+  await f.seed(path, cached);
+  const event = f.dispatch(path);
+  assert.equal(await (await event.response).text(), cached);
   await Promise.all(event.waits);
   assert.equal(f.calls.length, 0);
-  assert.equal(await (await (await f.caches.open(namespace)).match(origin + '/medico/')).text(), 'PRELOAD-OLD');
+  assert.equal(await (await (await f.caches.open(namespace)).match(origin + path)).text(), 'PRELOAD-OLD');
 });
 
 test('APIs, authorized navigation and non-GET requests are not intercepted', () => {
