@@ -73,7 +73,7 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
       assert.equal(report.pixelComparison.accepted,true,'Unchanged routes must satisfy the original two-pixel/one-channel tolerance');
       assert.equal(report.pixelComparison.gateAccepted,true);
     }
-    const result={phase,case:spec.name,iteration,baseCommit:report.baseCommit,
+    const result={phase,case:spec.name,iteration,browser:browser.version(),baseCommit:report.baseCommit,
       hashCurrent:report.hashCurrent,hashBase:report.hashBase,
       pixelComparison:report.pixelComparison,servedCurrentFiles:report.servedCurrentFiles,
       servedBaseFiles:report.servedBaseFiles,negative,mutation,passed:true};
@@ -89,7 +89,7 @@ async function capture(spec,phase,iteration,base,{negative=false}={}) {
         ...comparison.pixelComparison,bounds:{left,top,right:Math.min(right,left+47),bottom:Math.min(bottom,top+47)}
       });
     }
-    const result={phase,case:spec.name,iteration,negative,passed:false,error:error.message,
+    const result={phase,case:spec.name,iteration,browser:browser.version(),negative,passed:false,error:error.message,
       pixelComparison:comparison?.pixelComparison,differenceCount:comparison?.differences.length,
       captureStability:comparison?.captureStability,rasterDiagnostics};
     evidence.push(result);console.error(JSON.stringify(result));

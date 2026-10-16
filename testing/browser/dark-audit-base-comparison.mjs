@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { inspectSurfaces } from './dark-audit-surfaces.mjs';
 import { waitForAuditRoute } from './dark-audit-route-ready.mjs';
 import { aliasDestinations } from './dark-audit-routes.mjs';
+import { installCaptureReset } from './dark-audit-capture-reset.mjs';
 import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -73,6 +74,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Prepare both tabs as foreground documents. A fresh baseline tab and the
     // fixture's existing candidate tab must not use different compositor states.
     await targetPage.bringToFront();
+    await installCaptureReset(targetPage,AUDIT_RESET_PATH);
     // Reset before BOTH navigations. Open real controls on screen first: print
     // intentionally hides their launchers, but an already-open view can print.
     await targetPage.emulateMedia({media:'screen'});
@@ -110,20 +112,18 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // residue and live CSS motion that are unrelated to the source comparison.
     // Strict CSP pages must stay strict during the audit. Playwright's
     // addStyleTag({url}) materializes a <style> element and is therefore blocked
-    // by style-src 'self'. Insert a real same-origin stylesheet link instead.
-    await targetPage.evaluate(async resetPath=>{
-      let link=document.querySelector('link[data-dark-audit-reset]');
-      if(link)return;
-      link=document.createElement('link');
-      link.rel='stylesheet';
-      link.href=resetPath;
-      link.dataset.darkAuditReset='1';
+    // by style-src 'self'. The early reset uses a real same-origin link; await
+    // its load and fail explicitly if initialization or the request failed.
+    await targetPage.evaluate(async()=>{
+      const link=document.querySelector('link[data-dark-audit-reset]');
+      if(!link)throw new Error('CSS sintético da auditoria não foi instalado antes da navegação.');
+      if(link.dataset.darkAuditResetState==='error')throw new Error('Falha ao carregar CSS sintético da auditoria.');
+      if(link.sheet)return;
       await new Promise((resolve,reject)=>{
         link.addEventListener('load',resolve,{once:true});
         link.addEventListener('error',()=>reject(new Error('Falha ao carregar CSS sintético da auditoria.')),{once:true});
-        document.head.appendChild(link);
       });
-    },AUDIT_RESET_PATH);
+    });
     const resetRestingState=async()=>{
       await targetPage.evaluate(async()=>{
         if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
@@ -151,6 +151,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     await resetRestingState();
     const preparation=await targetPage.evaluate(()=>({
       visibility:document.visibilityState,focused:document.hasFocus(),
+      reset:window.__captureResetTiming,
       viewport:{width:innerWidth,height:innerHeight,deviceScaleFactor:devicePixelRatio}
     }));
     preparation.viewportWarmupSha256=createHash('sha256').update(viewportWarmup).digest('hex');
