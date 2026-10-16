@@ -16,6 +16,8 @@ Arquivos de produto:
 - `js/citizen-mobile-shell.js`: somente a URL versionada do controlador cidadão.
 - `cidadao/index.html`: URLs dos recursos afetados e marcador exclusivo da rota.
 - `portal-sw.js`: somente esse marcador de HTML; namespaces, política, fallback e demais rotas preservados.
+- `scripts/verify-login-publication.mjs`: o smoke público existente compara também HTML, CSS e três controladores da ajuda, nas URLs versionadas desta entrega. Mantém todos os checks antigos e não usa APIs nem sessão.
+- `worker/tests/post-login-opening.test.mjs`: dois testes sintéticos do smoke público, incluindo rejeição de CSS anterior; sem rede real.
 - `index.html`, `amigos/index.html`, `configuracoes/index.html`, `conquistas/index.html`, `ferramentas/index.html`, `mascotes/index.html`, `notificacoes/index.html`, `perfil/index.html`, `seguranca/index.html`: apenas URL do shell, para navegação interna carregar o controlador novo.
 
 Testes atualizados: `testing/browser/citizen-tutorial-preservation.mjs`, `testing/citizen-cache/cache-policy.test.mjs`, `testing/citizen-layout/citizen-help-existing-account.mjs`, `citizen-html-first-paint.mjs`, `citizen-tutorial-entry.mjs`, `citizen-tutorial-lifecycle.mjs`. Os contratos passam a exigir os novos rótulos/versões exatos. Nenhuma tolerância, máscara, comparação ou asserção de segurança foi relaxada.
@@ -25,6 +27,7 @@ Testes atualizados: `testing/browser/citizen-tutorial-preservation.mjs`, `testin
 | Verificação | Resultado |
 | --- | --- |
 | Gate Node direcionado do workflow de tutorial | 89/89 |
+| Smoke público ampliado, sucesso e rejeição de CSS antigo, com respostas locais sintéticas | 2/2 |
 | Menu: 320/360/390/412/1280, claro/escuro, texto 100/200% | 20/20; repetidos após o ajuste de posição dos estados expandidos |
 | Regressão de fonte mais larga, 320 px/200%, claro/escuro, incluindo fonte normal | 4/4; a variante larga falhava antes da correção |
 | Refinamento final de espaçamento: 320, texto 200%, claro/escuro | 2/2 adicionais |
@@ -49,6 +52,8 @@ O primeiro gate do tutorial de #663 encontrou sobreposição de “Ajuda” com 
 `transition:none!important` somente em `.tutorial-help-label` torna essa medição síncrona. A matriz passa a incluir os dois casos de fonte larga, totalizando 22, mantendo todos os contratos de geometria/foco/pixels. Os quatro casos dirigidos 320 px/200%, normal/larga e claro/escuro passaram localmente. O download local do Chromium 140 foi bloqueado pelo proxy (403); a validação da versão exata ocorre no CI obrigatório.
 
 A auditoria global inicial também parou em seu primeiro controle `/medico/` de código idêntico: um par divergente, os cinco seguintes idênticos. Esse gate não foi relaxado nem alterado; sua execução integral continua obrigatória no novo head. O artefato foi preservado no [run inicial](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/38910758289). O proxy impediu baixar o ZIP no executor; a inspeção disponível aqui é dos logs, não dos pixels desse artefato.
+
+Como o mesmo proxy bloqueia o domínio público, o verificador de publicação já existente foi ampliado para exigir os cinco recursos críticos da ajuda, com hashes exatos e sem sessão. O workflow existente o executa somente no push da main, após o merge; nenhuma permissão/configuração de publicação mudou. As duas regressões sintéticas confirmam sucesso e recusa de CSS antigo. O recibo `PUBLICATION_OK` do head integrado será necessário antes de declarar os recursos entregues.
 
 ## Evidências e reprodução
 
