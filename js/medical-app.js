@@ -125,6 +125,10 @@ function applyOperationalOverrides(protocol) {
     updated.faixaEtaria = 'Até 16 anos, 11 meses e 29 dias.';
     updated.sistemas.digsus = true;
     updated.sistemas.digsusStatus = 'disponivel';
+    // A fonte histórica contém um alerta de indisponibilidade já superado pela comunicação operacional do setor.
+    // Remover somente avisos de oferta; preservar alertas clínicos e de urgência.
+    updated.alertas = arr(updated.alertas).filter((alerta) => !/n[aã]o solicitar pelo teleconsulta|n[aã]o solicitar pela teleconsulta|especialidade (?:temporariamente )?indispon[ií]vel|neuropediatria (?:n[aã]o est[aá]|est[aá] indispon[ií]vel)|oferta (?:suspensa|indispon[ií]vel)/i.test(String(alerta)));
+
     updated.sistemas.local = true;
     updated.resumo = 'Especialidade disponível no DigSaúde MS para avaliação de condições neurológicas pediátricas previstas no protocolo.';
     updated.fluxoLocal = 'Solicitar pelo DigSaúde MS. Registrar o quadro clínico atual, anexar ou descrever os documentos exigidos e orientar a presença de familiar ou responsável no atendimento.';
