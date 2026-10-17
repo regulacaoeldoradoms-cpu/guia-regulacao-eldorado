@@ -257,7 +257,9 @@ const initializeCitizenArea = (context) => {
 
   setupDetailAttachmentMobile();
 
+  let citizenMounted = false;
   const waitForCitizen = () => {
+    if (citizenMounted || context?.disposed) return;
     const role = document.getElementById('portalUserRole');
     const homeLink = document.getElementById('professionalHomeLink');
     const manifestationsCard = document.getElementById('manifestationsCard');
@@ -279,6 +281,7 @@ const initializeCitizenArea = (context) => {
     }
 
     const isPrimaryCitizen = /^Cidadão(?:\b|\s|·)/i.test(role.textContent.trim()) && (!homeLink || homeLink.hidden);
+    citizenMounted = true;
     document.body.classList.add('citizen-mobile-app');
     if (isPrimaryCitizen) document.body.classList.add('citizen-primary-mobile');
     document.body.dataset.citizenTab = 'manifestations';
@@ -355,6 +358,7 @@ const initializeCitizenArea = (context) => {
     }
   };
 
+  context?.addController?.({activate:waitForCitizen});
   waitForCitizen();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-mobile-app', initializeCitizenArea);

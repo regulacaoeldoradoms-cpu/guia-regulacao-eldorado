@@ -50,6 +50,8 @@ jobs:
         run: node testing/citizen-layout/citizen-retained-cache-update.mjs
       - name: Superseded reads cannot overwrite confirmed synthetic mutations
         run: node testing/citizen-layout/citizen-retained-read-races.mjs
+      - name: Direct Citizen startup resumes once after leaving during its first load
+        run: node testing/citizen-layout/citizen-retained-startup.mjs
       - name: Preserve native geometry, desktop and print against PR663
         env:
           PRESERVE_WIDTHS: '360,390,1440'
@@ -63,4 +65,5 @@ jobs:
             .local/citizen-retained-panel/
             .local/citizen-retained-cache-update/
             .local/citizen-retained-read-races/
+            .local/citizen-retained-startup/
             .local/citizen-retained-preservation/
