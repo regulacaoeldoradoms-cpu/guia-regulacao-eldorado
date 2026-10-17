@@ -224,6 +224,17 @@ rascunho. As pré-condições de preparo completo incluem o Canal. Os três scri
 integralmente após o ajuste; os limites de memória, polling e coalescência do
 produto não mudaram.
 
+Os dois P2 de concorrência foram corrigidos com ownership das leituras de
+manifestações, avisos e detalhe. Respostas e erros superados não podem renderizar;
+a revalidação acompanha o resultado da leitura mais recente. O upload mobile
+usa o mesmo owner do detalhe, incluindo anexos, mensagens e histórico, sem
+reconstruir o formulário. O dispose elimina os owners e referências associados.
+Oito cenários sintéticos controlam uma resposta anterior retida durante envio,
+leitura de aviso, resposta e anexo; cobrem sucesso e erro atrasados. Todos passaram,
+assim como os 17 cenários retidos e os 86 testes Node afetados. O caso de aviso
+reproduziu a regressão contra `b9fe86f` antes de passar na correção. Nenhum método
+ou endpoint de mutação mudou; os testes exigem exatamente a ação sintética prevista.
+
 O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
 as seis comparações históricas em um job separado. Os gates anteriores e seus
 limites permanecem intactos. Logs, capturas e recibos desta rodada estão na

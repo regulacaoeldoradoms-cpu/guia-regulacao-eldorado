@@ -234,9 +234,15 @@ const initializeCitizenArea = (context) => {
         await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}/attachments?as=citizen`, { method: 'POST', body: payload, signal:context?.abort?.signal });
         if (!current()) return;
 
-        const detail = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET', signal:context?.abort?.signal });
+        const refreshDetail = document.getElementById('manifestationDetailModal')?.refreshCitizenDetail;
+        if (typeof refreshDetail === 'function') {
+          if (!await refreshDetail(protocol)) throw new Error('Anexo enviado, mas não foi possível atualizar o acompanhamento. Atualize o protocolo para conferir.');
+        } else {
+          const detail = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET', signal:context?.abort?.signal });
+          if (!current()) return;
+          renderAttachments(detail?.attachments || []);
+        }
         if (!current()) return;
-        renderAttachments(detail?.attachments || []);
         resetSelection();
         showStatus('Anexo enviado com sucesso.', 'success');
       } catch (error) {

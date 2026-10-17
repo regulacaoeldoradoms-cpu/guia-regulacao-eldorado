@@ -60,6 +60,19 @@ const initializeCitizenArea = async (context) => {
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
+  const readRuns = new Map();
+  function latestRead(key, read) {
+    const run = {};
+    readRuns.set(key, run);
+    const current = () => readRuns.get(key) === run;
+    run.promise = (async () => {
+      const result = await read(current);
+      // A superseded refresh must also wait for the newer read's outcome;
+      // it cannot declare stale data fresh while a mutation reload is pending.
+      return current() ? result : readRuns.get(key)?.promise || false;
+    })();
+    return run.promise;
+  }
   const statusLabels = {
     recebida: 'Recebida', em_analise: 'Em análise', aguardando_cidadao: 'Aguardando sua resposta',
     encaminhada: 'Encaminhada', aguardando_retorno: 'Aguardando retorno', respondida: 'Respondida',
@@ -232,16 +245,18 @@ const initializeCitizenArea = async (context) => {
 
   async function loadManifestations({ preserve = false } = {}) {
     if (!demonstration && !liveAllowed()) return;
+    return latestRead('manifestations', async current => {
     const list = document.getElementById('manifestationList');
     if (!preserve) list.innerHTML = '<div class="portal-note info">Carregando manifestações...</div>';
     try {
       const payload = await auth.api('/api/council/my', { method: 'GET' });
+      if (!current()) return false;
       state.manifestations = Array.isArray(payload?.manifestations) ? payload.manifestations : [];
       renderManifestations();
       document.getElementById('firebaseNotice').hidden = true;
       return true;
     } catch (error) {
-      if (!liveAllowed()) return false;
+      if (!current() || !liveAllowed()) return false;
       if (error.code === 'FIREBASE_PENDING' || error.status === 503) {
         const notice = document.getElementById('firebaseNotice');
         notice.textContent = 'O Canal do Conselho está instalado, mas o armazenamento Firebase ainda não está disponível.';
@@ -250,6 +265,7 @@ const initializeCitizenArea = async (context) => {
       if (!preserve || error.status === 403) list.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar as manifestações.')}</div>`;
       return false;
     }
+    });
   }
 
   function renderNotifications() {
@@ -269,16 +285,19 @@ const initializeCitizenArea = async (context) => {
 
   async function loadNotifications() {
     if (!demonstration && !liveAllowed()) return;
+    return latestRead('notifications', async current => {
     try {
       const payload = await auth.api('/api/council/notifications', { method: 'GET' });
+      if (!current()) return false;
       state.notifications = Array.isArray(payload?.notifications) ? payload.notifications : [];
       renderNotifications();
       return true;
     } catch (error) {
-      if (!liveAllowed()) return false;
+      if (!current() || !liveAllowed()) return false;
       if (!state.notifications.length || error.status === 403) document.getElementById('notificationList').innerHTML = '<div class="portal-note warning">Não foi possível carregar as notificações.</div>';
       return false;
     }
+    });
   }
 
   function renderThread(messages) {
@@ -321,6 +340,7 @@ const initializeCitizenArea = async (context) => {
 
   async function openDetail(protocol, { preserve = false } = {}) {
     if (!demonstration && !liveAllowed()) return;
+    return latestRead('detail', async current => {
     state.selectedProtocol = protocol;
     if (!preserve) openModal('manifestationDetailModal');
     if (!preserve) {
@@ -330,7 +350,7 @@ const initializeCitizenArea = async (context) => {
     try {
       const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(protocol)}`);
       const payload = await auth.api(path, { method: 'GET' });
-      if (state.selectedProtocol !== protocol) return true;
+      if (!current() || state.selectedProtocol !== protocol) return false;
       const item = payload.manifestation;
       document.getElementById('detailProtocol').textContent = item.protocol;
       document.getElementById('detailMeta').textContent = `${typeLabels[item.type] || item.type} · ${formatDate(item.createdAt)}`;
@@ -349,12 +369,13 @@ const initializeCitizenArea = async (context) => {
       document.getElementById('detailContent').hidden = false;
       return true;
     } catch (error) {
-      if (!liveAllowed()) return false;
+      if (!current() || !liveAllowed()) return false;
       document.getElementById('detailLoading').textContent = error.message || 'Não foi possível abrir a manifestação.';
       document.getElementById('detailLoading').hidden = false;
       if (error.status === 403) document.getElementById('detailContent').hidden = true;
       return false;
     }
+    });
   }
 
   function buildDescription() {
@@ -860,6 +881,8 @@ const initializeCitizenArea = async (context) => {
   if (helpHost) void loadTutorial();
   // Retained mobile areas refresh reads without rebuilding the draft, local
   // files, selected tab or tutorial. No mutation is part of preparation.
+  const refreshCitizenDetail = protocol => state.selectedProtocol === protocol ? openDetail(protocol, {preserve:true}) : Promise.resolve(true);
+  detailModal.refreshCitizenDetail = refreshCitizenDetail;
   let lastRefresh = 0, refreshing = null, disposed = false;
   const freshness = context && !demonstration ? document.createElement('div') : null;
   if (freshness) {
@@ -883,7 +906,7 @@ const initializeCitizenArea = async (context) => {
     })().finally(() => { refreshing = null; });
     return refreshing;
   }
-  context?.addController?.({activate:revalidate,revalidate,dispose(){disposed=true;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
+  context?.addController?.({activate:revalidate,revalidate,dispose(){disposed=true;readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
   const securityPending = loadSecurity().finally(()=>{securityReady=true;});
   let initialResults;
   if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {

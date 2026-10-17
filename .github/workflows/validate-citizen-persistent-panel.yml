@@ -48,6 +48,8 @@ jobs:
         run: node testing/citizen-layout/citizen-retained-panel.mjs
       - name: First direct visit upgrades cached PR663 markup and modules
         run: node testing/citizen-layout/citizen-retained-cache-update.mjs
+      - name: Superseded reads cannot overwrite confirmed synthetic mutations
+        run: node testing/citizen-layout/citizen-retained-read-races.mjs
       - name: Preserve native geometry, desktop and print against PR663
         env:
           PRESERVE_WIDTHS: '360,390,1440'
@@ -60,4 +62,5 @@ jobs:
           path: |
             .local/citizen-retained-panel/
             .local/citizen-retained-cache-update/
+            .local/citizen-retained-read-races/
             .local/citizen-retained-preservation/
