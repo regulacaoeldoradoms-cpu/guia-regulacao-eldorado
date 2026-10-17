@@ -5,7 +5,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium}=await import('./mobile-profile-refinement.mjs');
-const root=path.resolve(import.meta.dirname,'../..'),out=path.join(root,'.local/citizen-retained-read-races');
+const root=path.resolve(import.meta.dirname,'../..'),out=process.env.READ_RACE_OUTPUT||path.join(root,'.local/citizen-retained-read-races');
 await fs.mkdir(out,{recursive:true});
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']});
 const protocol='CMS-2026-000001',createdAt='2026-10-16T10:00:00Z';
@@ -16,6 +16,7 @@ try{
  for(const kind of ['notifications','manifestations','reply','attachment'])for(const outcome of ['success','error']){
   const id=kind+'-'+outcome;if(process.env.RACE_CASES&&!process.env.RACE_CASES.split(',').includes(id))continue;
   const result={id,errors:[],writes:[]},{page,context,audit}=await newPage(browser,{width:390,theme:'light',seedOnce:true},server.origin,result);
+  if(process.env.MISSING_ABORT_METHODS)await context.addInitScript(methods=>{for(const method of methods)Object.defineProperty(AbortSignal,method,{configurable:true,value:undefined});},process.env.MISSING_ABORT_METHODS.split(','));
   let stage=1,armed=false,release,reached;
   const held=new Promise(r=>{release=r;}),started=new Promise(r=>{reached=r;});
   if(process.env.RACE_BASELINE==='1')for(const file of ['citizen.js','citizen-mobile-app.js']){

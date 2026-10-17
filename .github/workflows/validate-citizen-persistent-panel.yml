@@ -54,6 +54,16 @@ jobs:
         run: node testing/citizen-layout/citizen-retained-security-race.mjs
       - name: Direct Citizen startup resumes once after leaving during its first load
         run: node testing/citizen-layout/citizen-retained-startup.mjs
+      - name: Read deadlines without AbortSignal static helpers
+        run: node testing/citizen-layout/citizen-retained-abort-compat.mjs
+      - name: Legacy AbortSignal support preserves mutations and session disposal
+        env:
+          MISSING_ABORT_METHODS: 'any,timeout'
+          RETAINED_OUTPUT: '.local/citizen-retained-panel-abort-fallback'
+          READ_RACE_OUTPUT: '.local/citizen-retained-read-races-abort-fallback'
+        run: |
+          node testing/citizen-layout/citizen-retained-read-races.mjs
+          RETAINED_CASES=logout-during-first-data-load,session-logout,session-replace node testing/citizen-layout/citizen-retained-panel.mjs
       - name: Preserve native geometry, desktop and print against PR663
         env:
           PRESERVE_WIDTHS: '360,390,1440'
@@ -69,4 +79,7 @@ jobs:
             .local/citizen-retained-read-races/
             .local/citizen-retained-security-race/
             .local/citizen-retained-startup/
+            .local/citizen-retained-abort-compat/
+            .local/citizen-retained-panel-abort-fallback/
+            .local/citizen-retained-read-races-abort-fallback/
             .local/citizen-retained-preservation/

@@ -33,12 +33,32 @@ const initializeCitizenArea = async (context) => {
   const auth = demonstration ? baseAuth : { ...baseAuth, async api(...args) {
     if (!liveAllowed()) throw new DOMException('Ação indisponível durante o tutorial ou após encerrar a sessão.', 'AbortError');
     liveRequests++;
+    let releaseAbort = () => {};
     try {
-      const signal = context?.abort ? AbortSignal.any([context.abort.signal, ...(!args[1]?.method || args[1].method === 'GET' ? [AbortSignal.timeout(15000)] : []), ...(args[1]?.signal ? [args[1].signal] : [])]) : args[1]?.signal;
+      let signal = args[1]?.signal;
+      if (context?.abort) {
+        const sources = [context.abort.signal, ...(signal ? [signal] : [])];
+        const read = !args[1]?.method || args[1].method === 'GET';
+        const nativeSignal = globalThis.AbortSignal;
+        if (typeof nativeSignal?.any === 'function' && typeof nativeSignal?.timeout === 'function') {
+          signal = nativeSignal.any([...sources, ...(read ? [nativeSignal.timeout(15000)] : [])]);
+        } else {
+          const controller = new AbortController(), listeners = [];
+          let timer;
+          signal = controller.signal;
+          releaseAbort = () => { globalThis.clearTimeout(timer); listeners.forEach(([source, handler]) => source.removeEventListener('abort', handler)); };
+          for (const source of sources) {
+            const abort = () => controller.abort(source.reason);
+            if (source.aborted) abort();
+            else { source.addEventListener('abort', abort, {once:true}); listeners.push([source, abort]); }
+          }
+          if (read) timer = globalThis.setTimeout(() => controller.abort(new DOMException('Tempo de leitura excedido.', 'TimeoutError')), 15000);
+        }
+      }
       const payload = await baseAuth.api(args[0], { ...args[1], ...(signal ? {signal} : {}) });
       if (!liveAllowed()) throw new DOMException('Sessão encerrada', 'AbortError');
       return payload;
-    } finally { liveRequests--; }
+    } finally { releaseAbort(); liveRequests--; }
   }, async getSecurity() { return (await this.api('/api/auth/security', {method:'GET'}))?.security || {}; } };
   const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;

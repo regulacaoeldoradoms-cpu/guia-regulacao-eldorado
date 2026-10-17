@@ -6,7 +6,7 @@ import path from 'node:path';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium,user}=await import('./mobile-profile-refinement.mjs');
 const root=path.resolve(import.meta.dirname,'../..');
-const output=path.join(root,'.local/citizen-retained-panel');
+const output=process.env.RETAINED_OUTPUT||path.join(root,'.local/citizen-retained-panel');
 await fs.mkdir(output,{recursive:true});
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']});
 const results=[];
@@ -17,6 +17,7 @@ async function run(id,options,exercise){
  if(process.env.RETAINED_CASES&&!process.env.RETAINED_CASES.split(',').includes(id))return;
  const result={id,errors:[],checks:[]};
  const {page,context,audit}=await newPage(browser,{width:390,theme:'light',seedOnce:true,...options},server.origin,result);
+ if(process.env.MISSING_ABORT_METHODS)await context.addInitScript(methods=>{for(const method of methods)Object.defineProperty(AbortSignal,method,{configurable:true,value:undefined});},process.env.MISSING_ABORT_METHODS.split(','));
  if(process.env.RETAINED_MOTION)await page.emulateMedia({reducedMotion:process.env.RETAINED_MOTION});
  const reads=[],writes=[];let revision=1,failReads=false;
  await context.route('**/api/council/**',async route=>{

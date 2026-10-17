@@ -285,6 +285,18 @@ os quatro casos corrigidos, 17 percursos retidos (incluindo logout/troca) e 86
 testes Node passaram. Os elementos opcionais de texto da ação não existem no
 HTML atual; nenhum novo bloco visual foi introduzido para atender a revisão.
 
+As chamadas do Canal detectam `AbortSignal.any` e `AbortSignal.timeout` antes
+de usá-los. Sem um desses métodos, um AbortController combina sessão/sinal do
+chamador, preserva o prazo real de 15 s para GET e remove listeners/timer no
+fim da chamada; mutações continuam sem esse prazo de leitura. A versão anterior
+`b33eb58` reproduziu a falha sem os métodos. Três combinações de ausência
+passaram; no caso pendente o fetch foi efetivamente rejeitado com TimeoutError
+após 15,1 s, mantendo aviso de dados desatualizados e sem abortar leitura já
+concluída. Os oito cenários de corrida/mutação e os três de cancelamento/logout/
+troca também passaram sem os dois métodos. Fixtures e artefatos desses casos
+ficam separados dos resultados normais. Nenhum método global é alterado no
+produto, nenhuma dependência ou regra de autorização foi acrescentada.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
