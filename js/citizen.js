@@ -471,7 +471,13 @@ const initializeCitizenArea = async (context) => {
     denuncia: ['Relate a possível irregularidade','Descreva os fatos que conhece e o que precisa ser apurado. Evite dados pessoais desnecessários.','Conte os fatos e o que você sabe sobre a situação.','Data do fato']
   };
   const detailIds = ['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'];
-  let currentComposeKind = '', sendingManifestation = false, composeOpener = null;
+  let currentComposeKind = '', sendingManifestation = false, composeOpener = null, submittedProtocol = '';
+  function revealSubmittedProtocol() {
+    if (!submittedProtocol || sendingManifestation || context?.active === false || !demonstration && !liveAllowed()) return;
+    const protocol = submittedProtocol; submittedProtocol = '';
+    closeModal('newManifestationModal', {restoreFocus:false});
+    void openDetail(protocol);
+  }
   function resizeComposeReport() {
     const input = document.getElementById('manifestationDescription');
     if (!input || document.getElementById('composeReport')?.hidden) return;
@@ -654,7 +660,8 @@ const initializeCitizenArea = async (context) => {
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
       showStatus(status, `Manifestação enviada. Protocolo: ${protocol}.${attachmentMessage}`, failedUploads ? 'error' : 'success');
       await Promise.all([loadManifestations(), loadNotifications()]);
-      window.setTimeout(() => { closeModal('newManifestationModal',{restoreFocus:false}); openDetail(protocol); }, failedUploads ? 1800 : 700);
+      submittedProtocol = protocol;
+      window.setTimeout(revealSubmittedProtocol, failedUploads ? 1800 : 700);
     } catch (error) {
       let message = error.message || 'Não foi possível enviar.';
       if (error.status === 429 && error.retryAfterSeconds) message += ` Tente novamente em aproximadamente ${Math.ceil(error.retryAfterSeconds / 60)} minuto(s).`;
@@ -942,6 +949,9 @@ const initializeCitizenArea = async (context) => {
     return run;
   }
   const activateCitizen = () => {
+    // A context timer may expire while this area is detached. Retain the
+    // confirmed protocol until activation can finish its normal transition.
+    revealSubmittedProtocol();
     if (securityAccountState() !== lastSecurityAccountState) securityRefreshNeeded = true;
     if (securityRefreshNeeded && !disposed && liveAllowed()) {
       securityRefreshNeeded = false;
@@ -951,7 +961,7 @@ const initializeCitizenArea = async (context) => {
   };
   context?.addController?.({activate:activateCitizen,revalidate,deactivate(){
     if (securityReads || refreshing) { securityRefreshNeeded = true; readRuns.delete('security'); }
-  },dispose(){disposed=true;readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
+  },dispose(){disposed=true;submittedProtocol='';readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
   const securityPending = loadSecurity().finally(()=>{securityReady=true;});
   let initialResults;
   if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {

@@ -326,6 +326,16 @@ inalterado e só então libera a resposta sintética de estado do mascote nas du
 fontes. Não modifica posição, canvas, controlador ou propriedades do mascote.
 Os gates Linux completos continuam obrigatórios para o novo SHA.
 
+Um envio confirmado agora mantém o protocolo pendente até poder concluir sua
+transição na área ativa. Se Voltar desativa o Canal e descarta o timer de
+fechamento, a ativação seguinte fecha o formulário já enviado e abre o mesmo
+protocolo; a conclusão em segundo plano não tira o usuário da Home. O descarte
+da sessão limpa esse protocolo pendente. Cinco cenários novos usam Voltar do
+histórico durante POST, upload, recarga, atraso de fechamento e falha de envio.
+Todos passaram; o código `d7ddfc4` reproduziu o formulário enviado ainda aberto.
+Cada cenário exige exatamente o envio sintético planejado e, quando previsto,
+um upload sintético. O caso com erro exige rascunho e formulário preservados.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
