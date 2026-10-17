@@ -151,6 +151,11 @@ export function reminderMetaFor(followup, today) {
   };
 }
 
+function isNonDischargeClosureResolution(value) {
+  const resolution = normalizeText(value);
+  return /\bDESISTIU\b|\bDESISTENCIA\b|ABANDONO DO TRATAMENTO|ABANDONO DE ACOMPANHAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
+}
+
 export function isDischargeAchievement(followup) {
   const mode = clean(followup?.followupMode, 20).toLowerCase();
   const resolution = normalizeText(followup?.resolution);
@@ -158,6 +163,10 @@ export function isDischargeAchievement(followup) {
   const notes = String(followup?.notes || '');
   const legacyTrophy = source === 'legacy' && notes.includes('🏆');
   const legacyPlainYes = source === 'legacy' && (resolution === 'SIM' || resolution === 'SIMM');
+  // A documented non-discharge closure is authoritative. Old V25 records can
+  // still carry discharge-shaped compatibility flags, but they must never turn
+  // withdrawal/abandonment/in-person referral into an Alta.
+  if (isNonDischargeClosureResolution(resolution)) return false;
   return followup?.discharged === true
     || mode === 'discharge'
     || /\bALTA\b/.test(resolution)

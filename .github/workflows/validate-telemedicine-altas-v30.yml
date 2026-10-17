@@ -42,7 +42,7 @@ jobs:
           grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
           grep -q '<option value="CONCLUÍDO">Altas</option>' telemedicina/index.html
           grep -q 'data-discharge-queue="v33"' telemedicina/index.html
-          grep -q 'telemedicina-altas-v30.js?v=20260909-3' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260924-1' telemedicina/index.html
           grep -q 'telemedicina-altas-v30.css?v=20260909-2' telemedicina/index.html
           grep -q 'stopImmediatePropagation' js/telemedicina-altas-v30.js
           grep -q "filter.value = activating ? COMPLETED_STATUS : ''" js/telemedicina-altas-v30.js
