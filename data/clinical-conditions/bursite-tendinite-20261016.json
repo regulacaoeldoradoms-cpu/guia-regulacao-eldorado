@@ -1,0 +1,311 @@
+{
+  "id": "digsaude.ortopedia.bursite-tendinite",
+  "revision": "piloto-bursite-20261016-1",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Ortopedia Adulto",
+  "condition": "Bursite / Tendinite",
+  "aliases": [
+    "bursite",
+    "tendinite"
+  ],
+  "provenance": "PDF S2 localizado neste computador, SHA-256 conferido e páginas físicas 46-47 / impressas 40-41 renderizadas e inspecionadas nesta etapa. O hash identifica os bytes, sem certificar origem institucional ou vigência.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "physical": "46-47",
+        "printed": "40-41",
+        "documentTotal": 72
+      },
+      "verification": "Bytes e páginas deste recorte conferidos diretamente. Origem provável relatada anteriormente: grupo WhatsApp DigSaúde do setor, sem mensagem original verificada. Pesquisa complementar dirigida comunicada pela frente Gmail: três consultas, 14 mensagens únicas, sem atualização clínica nova confirmada para estes motivos DigSaúde. Não corresponde a pesquisa exaustiva da caixa nem certifica vigência externa. Esclarecimento etário SISREG/Campo Grande, demandas judiciais, agendamentos e devoluções individuais não estabelecem regras deste recorte.",
+      "fileHash": "96445fc56ecf27e3b81a47389c923a0a4c837372eeab5e31c7fba054ad139315",
+      "pending": "Origem institucional, vigência atual e aplicabilidade municipal a confirmar.",
+      "documentId": "S2",
+      "bytes": 710424,
+      "hashVerification": "SHA-256 medido neste executor e igual ao informado pela revisão documental anterior."
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "text": "A partir de 18 anos.",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "46",
+          "printed": "40"
+        }
+      ],
+      "ageMinimum": {
+        "years": 18,
+        "months": 0,
+        "days": 0
+      }
+    },
+    {
+      "id": "REFRATARIA6",
+      "text": "Bursite ou tendinite sem resposta satisfatória ao tratamento não farmacológico (exercícios, acompanhamento fisioterápico) otimizado por um período de 6 meses.",
+      "group": "referral",
+      "requirement": "criterio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ],
+      "optimizedTreatmentMonths": 6,
+      "treatmentType": "nao_farmacologico",
+      "examples": [
+        "exercícios",
+        "acompanhamento fisioterápico"
+      ]
+    },
+    {
+      "id": "DOR",
+      "text": "Descrever a característica da dor.",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ]
+    },
+    {
+      "id": "EVOLUCAO",
+      "text": "Descrever tempo de evolução.",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ]
+    },
+    {
+      "id": "FATORES",
+      "text": "Descrever fatores desencadeantes e fatores de alívio.",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ]
+    },
+    {
+      "id": "FUNCAO",
+      "text": "Há restrição de movimento ou prejuízo funcional?",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ],
+      "anyOf": [
+        "restricao_de_movimento",
+        "prejuizo_funcional"
+      ]
+    },
+    {
+      "id": "TRAUMA",
+      "text": "Há histórico de trauma prévio no local?",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ]
+    },
+    {
+      "id": "RX",
+      "text": "Raio X da área afetada em AP e perfil (obrigatório).",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ],
+      "views": [
+        "AP",
+        "perfil"
+      ]
+    },
+    {
+      "id": "USG",
+      "text": "Ultrassonografia da área afetada (obrigatório).",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta e aplicabilidade",
+      "text": "Oferta atual, vigência e aplicabilidade municipal ao fluxo de Eldorado/MS não foram certificadas nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "ORIGEM",
+      "title": "Origem do PDF",
+      "text": "Origem provável relatada como grupo WhatsApp DigSaúde do setor; mensagem original não verificada. O hash não certifica origem institucional nem vigência.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "GMAIL",
+      "title": "Pesquisa complementar dirigida",
+      "text": "Pesquisa complementar dirigida comunicada pela frente Gmail: três consultas, 14 mensagens únicas, sem atualização clínica nova confirmada para estes motivos DigSaúde. Não corresponde a pesquisa exaustiva da caixa nem certifica vigência externa. Esclarecimento etário SISREG/Campo Grande, demandas judiciais, agendamentos e devoluções individuais não estabelecem regras deste recorte.",
+      "kind": "source_scope_note"
+    },
+    {
+      "id": "OTIMIZADO",
+      "title": "Detalhamento do tratamento não farmacológico",
+      "kind": "source_gap",
+      "text": "A seção cita exercícios e acompanhamento fisioterápico otimizado por 6 meses; não estabelece quantidade de sessões, regime específico ou relatório fisioterápico obrigatório."
+    },
+    {
+      "id": "LIMITES",
+      "title": "Limites do recorte",
+      "kind": "source_scope_note",
+      "text": "A RM que precede o título pertence à seção Cervicalgia e Lombalgia. Ela não integra os exames de Bursite/Tendinite. Dor no Joelho, na seção seguinte, permanece fora deste lote."
+    }
+  ],
+  "contextualAlerts": [],
+  "correspondence": {
+    "notes": "Pesquisa complementar dirigida comunicada pela frente Gmail: três consultas, 14 mensagens únicas, sem atualização clínica nova confirmada para estes motivos DigSaúde. Não corresponde a pesquisa exaustiva da caixa nem certifica vigência externa. Esclarecimento etário SISREG/Campo Grande, demandas judiciais, agendamentos e devoluções individuais não estabelecem regras deste recorte.",
+    "source": "Síntese comunicada pela frente Gmail nesta etapa"
+  },
+  "projections": {
+    "guide": "Usa as mesmas regras integrais, com ordenação para consulta rápida.",
+    "ai": "Recebe todas as regras, exceções, fontes, incertezas e alertas aplicáveis; não usa apenas o resumo visível e não corta listas.",
+    "print": "Preserva as mesmas regras e o alerta contextual; somente a apresentação muda."
+  },
+  "nextGate": "Lote somente local, sem push, PR ou publicação. Revisão documental e validação institucional continuam sinalizadas.",
+  "integration": {
+    "codeBase": "bc7b92692119df1aaa80db1f93c81b1eb0a6e83b",
+    "scope": "DigSaúde MS / Ortopedia Adulto / Bursite-Tendinite"
+  },
+  "parentProtocolId": "ortopedia",
+  "category": "Ortopedia",
+  "systemKind": "digsaude",
+  "searchKind": "tendon",
+  "sections": [
+    {
+      "label": "Obrigatório no encaminhamento",
+      "title": "O que descrever",
+      "ruleIds": [
+        "DOR",
+        "EVOLUCAO",
+        "FATORES",
+        "FUNCAO",
+        "TRAUMA"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Exames obrigatórios",
+      "title": "RX e ultrassonografia da área afetada",
+      "ruleIds": [
+        "RX",
+        "USG"
+      ],
+      "receptionCheck": true,
+      "note": "Os dois exames são obrigatórios no recorte. A seção não define validade nem dispensa formal por indisponibilidade; isso não cria bloqueio automático ou nova obrigação de obter uma decisão agora."
+    }
+  ],
+  "reference": "Telessaúde MS 2.0 - 06/10/2025 - físicas 46-47 / impressas 40-41.",
+  "sourceNotesPolicy": "Notas institucionais, lacunas e limites de escopo não são critérios clínicos nem documentos obrigatórios adicionais. Ausência de definição na fonte não cria dispensa nem obrigação de obter decisão agora.",
+  "sourceLimits": {
+    "text": "A seção não estabelece validade dos exames, número de sessões, relatório fisioterápico obrigatório ou rota de urgência. Essas ausências não criam dispensa, bloqueio automático ou nova obrigação de obter uma decisão agora.",
+    "sourceLocations": [
+      {
+        "source": "TEL2",
+        "physical": "47",
+        "printed": "41"
+      }
+    ]
+  },
+  "sourceMatrixUnitCount": 7,
+  "editorialBreakdown": [
+    {
+      "kind": "desdobramento_de_item_sem_novo_requisito",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "47",
+          "printed": "41"
+        }
+      ],
+      "sourceExcerpt": "Descrever a característica da dor, tempo de evolução, fatores desencadeantes e fatores de alívio.",
+      "ruleIds": [
+        "DOR",
+        "EVOLUCAO",
+        "FATORES"
+      ],
+      "additionalStructuredIds": [
+        "EVOLUCAO",
+        "FATORES"
+      ],
+      "explanation": "Um único item da fonte foi separado para consulta e projeções. Não acrescenta exigência, exame, documento ou critério."
+    }
+  ]
+}

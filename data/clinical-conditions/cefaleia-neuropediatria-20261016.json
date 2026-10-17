@@ -1,0 +1,502 @@
+{
+  "id": "digsaude.neuropediatria.cefaleia",
+  "revision": "piloto-cefaleia-20261016-1",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Neuropediatria",
+  "condition": "Cefaleia",
+  "aliases": [
+    "cefaleia infantil",
+    "cefaleia pediátrica",
+    "dor de cabeça"
+  ],
+  "provenance": "PDF S2 localizado neste computador, SHA-256 conferido e páginas físicas 36-37 / impressas 30-31 renderizadas e inspecionadas nesta etapa. O hash identifica os bytes, sem certificar origem institucional ou vigência.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "physical": "36-37",
+        "printed": "30-31",
+        "documentTotal": 72
+      },
+      "verification": "Bytes e páginas deste recorte conferidos diretamente. Origem provável relatada anteriormente: grupo WhatsApp DigSaúde do setor, sem mensagem original verificada. Pesquisa complementar dirigida comunicada pela frente Gmail: três consultas, 14 mensagens únicas, sem atualização clínica nova confirmada para estes motivos DigSaúde. Não corresponde a pesquisa exaustiva da caixa nem certifica vigência externa. Esclarecimento etário SISREG/Campo Grande, demandas judiciais, agendamentos e devoluções individuais não estabelecem regras deste recorte.",
+      "fileHash": "96445fc56ecf27e3b81a47389c923a0a4c837372eeab5e31c7fba054ad139315",
+      "pending": "Origem institucional, vigência atual e aplicabilidade municipal a confirmar.",
+      "documentId": "S2",
+      "bytes": 710424,
+      "hashVerification": "SHA-256 medido neste executor e igual ao informado pela revisão documental anterior."
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ],
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      }
+    },
+    {
+      "id": "APS2",
+      "text": "Cefaleia refratária ao manejo profilático na APS por um período mínimo de 2 meses.",
+      "group": "referral",
+      "requirement": "criterio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ],
+      "minimumProphylaxisMonths": 2
+    },
+    {
+      "id": "INVESTIGACAO",
+      "text": "Cefaleia com necessidade de investigação com exame de imagem (ressonância magnética nuclear (RM) ou tomografia computadorizada de crânio (TC).",
+      "group": "referral",
+      "requirement": "criterio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "EXAME_ALTERADO",
+      "text": "Cefaleia com exame de imagem (RMN ou TC de crânio ou Eletroencefalograma) alterado.",
+      "group": "referral",
+      "requirement": "criterio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "INDISPONIVEL_APS",
+      "text": "Cefaleias com necessidade de investigação com exame de imagem (RM ou TC), quando o exame não for disponível na APS.",
+      "group": "referral",
+      "requirement": "criterio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "ALERTAS",
+      "text": "Cefaleia com sinais de alerta.",
+      "group": "referral",
+      "requirement": "criterio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ],
+      "alertRefs": [
+        "PADRAO",
+        "PROGRESSAO",
+        "SONO",
+        "ATIVIDADES",
+        "ESFORCO"
+      ]
+    },
+    {
+      "id": "PADRAO",
+      "text": "Padrão novo ou mudança recente no padrão da cefaleia.",
+      "group": "alert",
+      "requirement": "sinal_de_alerta",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "PROGRESSAO",
+      "text": "Evolução insidiosa e progressiva, com ápice em poucas semanas ou meses.",
+      "group": "alert",
+      "requirement": "sinal_de_alerta",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "SONO",
+      "text": "Dor que acorda durante o sono.",
+      "group": "alert",
+      "requirement": "sinal_de_alerta",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "ATIVIDADES",
+      "text": "Dor que limita as atividades escolares, atividades físicas ou brincadeiras.",
+      "group": "alert",
+      "requirement": "sinal_de_alerta",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "ESFORCO",
+      "text": "Dor desencadeada pelo esforço, tosse, atividade física ou manobra de Valsalva.",
+      "group": "alert",
+      "requirement": "sinal_de_alerta",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "QUADRO",
+      "text": "Todas as solicitações devem conter informações do quadro clínico atual.",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ]
+    },
+    {
+      "id": "NEURO",
+      "text": "Exame físico neurológico (obrigatório).",
+      "group": "clinicalAssessment",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "DIARIO",
+      "text": "Diário de cefaleia (dor) - (obrigatório).",
+      "group": "clinicalRecord",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ]
+    },
+    {
+      "id": "TC",
+      "text": "Tomografia Computadorizada de Crânio (se houver).",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "RM",
+      "text": "Ressonância Magnética Nuclear de Crânio (se houver).",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "37",
+          "printed": "31"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "APRESENTACAO",
+      "text": "Documentos anexados ou descritos.",
+      "group": "documentPresentation",
+      "requirement": "condicional",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ],
+      "alternatives": [
+        "anexados",
+        "descritos"
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "text": "Necessária a presença de familiar/responsável no dia do teleatendimento.",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta e aplicabilidade",
+      "text": "Oferta atual, vigência e aplicabilidade municipal ao fluxo de Eldorado/MS não foram certificadas nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "ORIGEM",
+      "title": "Origem do PDF",
+      "text": "Origem provável relatada como grupo WhatsApp DigSaúde do setor; mensagem original não verificada. O hash não certifica origem institucional nem vigência.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "GMAIL",
+      "title": "Pesquisa complementar dirigida",
+      "text": "Pesquisa complementar dirigida comunicada pela frente Gmail: três consultas, 14 mensagens únicas, sem atualização clínica nova confirmada para estes motivos DigSaúde. Não corresponde a pesquisa exaustiva da caixa nem certifica vigência externa. Esclarecimento etário SISREG/Campo Grande, demandas judiciais, agendamentos e devoluções individuais não estabelecem regras deste recorte.",
+      "kind": "source_scope_note"
+    },
+    {
+      "id": "IMAGEM_DUPLICADA",
+      "title": "Critérios de investigação por imagem",
+      "kind": "source_scope_note",
+      "text": "A fonte apresenta um critério de necessidade de investigação por RM/TC e outro parcialmente repetido, acrescido de indisponibilidade na APS. Ambos foram preservados; a relação entre eles não foi resolvida e não gera elegibilidade automática."
+    },
+    {
+      "id": "EEG_CRITERIO",
+      "title": "EEG no critério de exame alterado",
+      "kind": "source_scope_note",
+      "text": "EEG aparece no critério de exame alterado, mas não é listado no bloco de exames da cefaleia. Não foi convertido em exame obrigatório nem importado da seção seguinte de Convulsão/Epilepsia."
+    },
+    {
+      "id": "DEZESSETE",
+      "title": "Faixa de 17 anos",
+      "text": "O recorte não explicita a rota de 17 anos. As faixas do SISREG não preenchem automaticamente esse intervalo do DigSaúde.",
+      "kind": "flow_gap"
+    }
+  ],
+  "contextualAlerts": [
+    {
+      "id": "IDADE17",
+      "trigger": {
+        "ageYears": 17
+      },
+      "title": "17 anos: faixa não explicitada neste recorte",
+      "text": "O limite descrito para Neuropediatria é 16 anos, 11 meses e 29 dias; Neurologia Adulto no DigSaúde começa aos 18 anos. Confirme o fluxo com a Regulação. Esta proposta não define outra rota nem transfere o caso para o SISREG."
+    }
+  ],
+  "correspondence": {
+    "notes": "Pesquisa complementar dirigida comunicada pela frente Gmail: três consultas, 14 mensagens únicas, sem atualização clínica nova confirmada para estes motivos DigSaúde. Não corresponde a pesquisa exaustiva da caixa nem certifica vigência externa. Esclarecimento etário SISREG/Campo Grande, demandas judiciais, agendamentos e devoluções individuais não estabelecem regras deste recorte.",
+    "source": "Síntese comunicada pela frente Gmail nesta etapa"
+  },
+  "projections": {
+    "guide": "Usa as mesmas regras integrais, com ordenação para consulta rápida.",
+    "ai": "Recebe todas as regras, exceções, fontes, incertezas e alertas aplicáveis; não usa apenas o resumo visível e não corta listas.",
+    "print": "Preserva as mesmas regras e o alerta contextual; somente a apresentação muda."
+  },
+  "nextGate": "Lote somente local, sem push, PR ou publicação. Revisão documental e validação institucional continuam sinalizadas.",
+  "integration": {
+    "codeBase": "bc7b92692119df1aaa80db1f93c81b1eb0a6e83b",
+    "scope": "DigSaúde MS / Neuropediatria / Cefaleia"
+  },
+  "parentProtocolId": "neuropediatria",
+  "category": "Pediatria",
+  "systemKind": "digsaude",
+  "searchKind": "headache",
+  "sections": [
+    {
+      "label": "Obrigatório no encaminhamento",
+      "title": "O que descrever",
+      "ruleIds": [
+        "QUADRO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Avaliação clínica obrigatória",
+      "title": "Exame físico neurológico",
+      "ruleIds": [
+        "NEURO"
+      ],
+      "receptionCheck": true,
+      "note": "Avaliação clínica e registro por profissional habilitado; a recepção confere somente se consta no encaminhamento."
+    },
+    {
+      "label": "Registro obrigatório",
+      "title": "Diário de cefaleia (dor)",
+      "ruleIds": [
+        "DIARIO"
+      ],
+      "receptionCheck": true,
+      "note": "A seção não define duração nem formato do diário. O mínimo de 2 meses pertence ao critério de manejo profilático na APS."
+    },
+    {
+      "label": "Se houver - opcionais para instrução documental",
+      "title": "Exames e apresentação dos documentos",
+      "ruleIds": [
+        "TC",
+        "RM",
+        "APRESENTACAO"
+      ],
+      "note": "TC e RM se houver não dispensam avaliação ou exames clinicamente indicados. EEG não integra a lista de exames obrigatórios desta condição."
+    },
+    {
+      "label": "Sinais de alerta descritos na fonte",
+      "title": "Alertas da cefaleia",
+      "ruleIds": [
+        "PADRAO",
+        "PROGRESSAO",
+        "SONO",
+        "ATIVIDADES",
+        "ESFORCO"
+      ],
+      "note": "A fonte os inclui nos critérios de encaminhamento. Este recorte não cria destino ou urgência automática."
+    },
+    {
+      "label": "Condição de atendimento - necessário",
+      "title": "Familiar ou responsável",
+      "ruleIds": [
+        "RESPONSAVEL"
+      ]
+    }
+  ],
+  "reference": "Telessaúde MS 2.0 - 06/10/2025 - físicas 36-37 / impressas 30-31.",
+  "sourceNotesPolicy": "Notas institucionais, lacunas e limites de escopo não são critérios clínicos nem documentos obrigatórios adicionais. Ausência de definição na fonte não cria dispensa nem obrigação de obter decisão agora.",
+  "sourceLimits": {
+    "text": "Nesta seção não foram definidos regime de profilaxia, duração ou formato do diário, validade da imagem ou rota específica de urgência. A faixa de 17 anos não é explicitada. Essas ausências não criam dispensa, novas exigências nem urgência ou destino automático.",
+    "sourceLocations": [
+      {
+        "source": "TEL2",
+        "physical": "36-37",
+        "printed": "30-31"
+      }
+    ]
+  },
+  "sourceMatrixUnitCount": 17,
+  "editorialBreakdown": [
+    {
+      "kind": "desdobramento_de_item_sem_novo_requisito",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "36",
+          "printed": "30"
+        }
+      ],
+      "sourceExcerpt": "Todas as solicitações devem conter informações do quadro clínico atual, documentos anexados ou descritos.",
+      "ruleIds": [
+        "QUADRO",
+        "APRESENTACAO"
+      ],
+      "additionalStructuredIds": [
+        "APRESENTACAO"
+      ],
+      "explanation": "Um único item da fonte foi separado para consulta e projeções. Não acrescenta exigência, exame, documento ou critério."
+    }
+  ]
+}

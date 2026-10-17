@@ -1,0 +1,438 @@
+{
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "parentProtocolId": "ortopedia",
+  "category": "Cirúrgica/Clínica",
+  "searchKind": "shoulder",
+  "provenance": "Matriz documental e conferência visual comunicadas pela frente documental em 16/10/2026. Esta frente técnica não acessou os PDFs originais. O hash de S2 identifica os bytes conferidos por aquela frente; não comprova origem institucional nem vigência.",
+  "integration": {
+    "codeBase": "380a40b1a5e58c309151b066fef0b79ec9313489",
+    "scope": "Ortopedia / Ombro, com recortes por sistema separados"
+  },
+  "contextualAlerts": [],
+  "correspondence": {
+    "notes": "O recorte histórico DigSaúde de 2024 (S4), enviado em 27/01/2025 segundo a frente Gmail, lista apenas imagem dos ombros. Não substitui automaticamente os rótulos específicos de S2/V2.0. O DOCX S5 foi identificado como resumo municipal, sem revisão normativa comprovada."
+  },
+  "projections": {
+    "guide": "Usa as mesmas regras integrais, com ordenação para consulta rápida.",
+    "ai": "Recebe todas as regras, exceções, fontes, incertezas e alertas aplicáveis; não usa apenas o resumo visível e não corta listas.",
+    "print": "Preserva as mesmas regras e o alerta contextual; somente a apresentação muda."
+  },
+  "nextGate": "Implementação local autorizada e em revisão. Resolver ou registrar as pendências documentais e operacionais; publicação depende de autorização própria.",
+  "id": "digsaude.ortopedia.dor-no-ombro",
+  "revision": "piloto-ombro-20261016-2",
+  "system": "DigSaúde MS",
+  "systemKind": "digsaude",
+  "specialty": "Ortopedia Adulto",
+  "condition": "Dor no Ombro",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "physical": "46,48-49",
+        "printed": "40,42-43",
+        "documentTotal": 72
+      },
+      "verification": "Matriz e conferência visual comunicadas pela frente documental. Origem provável relatada pelo setor: grupo WhatsApp DigSaúde do qual participa; mensagem original não verificada. A busca complementar no Gmail não confirmou atualização clínica posterior dos dois pilotos. Isso não certifica origem institucional nem vigência.",
+      "fileHash": "96445fc56ecf27e3b81a47389c923a0a4c837372eeab5e31c7fba054ad139315",
+      "pending": "Origem institucional, vigência atual e aplicabilidade municipal a confirmar.",
+      "documentId": "S2",
+      "bytes": 710424,
+      "hashVerification": "Hash confirmado pela frente documental após materialização e inspeção visual; comunicado em 16/10/2026."
+    },
+    {
+      "id": "MAN1",
+      "title": "Manual Operacional Oficial - Auxiliar de Teleconsulta e Regulação",
+      "version": "V1",
+      "pages": {
+        "printed": "4,6",
+        "physical": "4,6",
+        "documentTotal": 10
+      },
+      "verification": "Texto integral comunicado pela frente documental; avaliação profissional na p. 4.",
+      "fileHash": null,
+      "date": "31/07/2026",
+      "documentId": "S1"
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "A partir de 18 anos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "46",
+          "printed": "40"
+        }
+      ],
+      "ageMinimum": {
+        "years": 18,
+        "months": 0,
+        "days": 0
+      }
+    },
+    {
+      "id": "TOTAL",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Ruptura total de tendão do manguito rotador evidenciada em imagem.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "48",
+          "printed": "42"
+        }
+      ]
+    },
+    {
+      "id": "PARCIAL",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Ruptura parcial do manguito rotador em progressão ou com dor refratária ao tratamento clínico otimizado.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "48",
+          "printed": "42"
+        }
+      ],
+      "anyOf": [
+        "progressao",
+        "dor_refrataria_ao_tratamento_clinico_otimizado"
+      ]
+    },
+    {
+      "id": "DOR6",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Dor no ombro refratária ao tratamento clínico otimizado por 6 meses.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "48",
+          "printed": "42"
+        }
+      ],
+      "optimizedTreatmentMonths": 6
+    },
+    {
+      "id": "OA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Osteoartrite com potencial indicação cirúrgica: dor refratária ao tratamento otimizado por 6 meses ou importante prejuízo às atividades de vida diária.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "48",
+          "printed": "42"
+        }
+      ],
+      "anyOf": [
+        {
+          "optimizedTreatmentMonths": 6,
+          "symptom": "dor_refrataria"
+        },
+        {
+          "functionalImpact": "importante_prejuizo_as_atividades_de_vida_diaria"
+        }
+      ]
+    },
+    {
+      "id": "LUXACAO",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Luxação recorrente após avaliação em serviço de emergência.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "48",
+          "printed": "42"
+        }
+      ],
+      "prerequisite": "avaliacao_em_servico_de_emergencia"
+    },
+    {
+      "id": "MOVIMENTO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever restrição de movimento/prejuízo funcional.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ]
+    },
+    {
+      "id": "PRESENCA_LUXACAO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever a presença de luxação.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ]
+    },
+    {
+      "id": "TRAUMA_PREVIO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever trauma prévio.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ]
+    },
+    {
+      "id": "TRATAMENTOS",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever o tratamento atual e os tratamentos prévios da dor.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ]
+    },
+    {
+      "id": "RX",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "text": "RX de ombro nas incidências AP + P + axilar: obrigatório.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ],
+      "views": [
+        "AP",
+        "P",
+        "axilar"
+      ]
+    },
+    {
+      "id": "USG",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "text": "USG de ombro: obrigatório.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ]
+    },
+    {
+      "id": "RM",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "RM do ombro, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "TC",
+      "group": "documents",
+      "requirement": "condicional_se_houver",
+      "text": "TC do ombro apenas se houver história de instabilidade ou luxação recidivante, e se houver o exame.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "physical": "49",
+          "printed": "43"
+        }
+      ],
+      "applicability": {
+        "anyOf": [
+          "historia_de_instabilidade",
+          "luxacao_recidivante"
+        ]
+      },
+      "availability": "se_houver"
+    },
+    {
+      "id": "AVALIACAO",
+      "group": "clinicalAssessment",
+      "requirement": "ato_profissional",
+      "text": "Exame físico, indicação cirúrgica, hipótese e interpretação de imagem exigem profissional habilitado. Histórico de sintomas e tratamentos pode ser coletado como relato, sem convertê-lo em diagnóstico ou exame.",
+      "sourceRefs": [
+        "MAN1"
+      ],
+      "sourceLocations": [
+        {
+          "source": "MAN1",
+          "physical": "4",
+          "printed": "4"
+        }
+      ]
+    },
+    {
+      "id": "CIRURGIA",
+      "group": "history",
+      "requirement": "condicional",
+      "text": "Se houver cirurgia prévia, confirmar local, data aproximada, alta, seguimento e urgência. Registrar a incerteza quando a data for desconhecida.",
+      "sourceRefs": [
+        "MAN1"
+      ],
+      "sourceLocations": [
+        {
+          "source": "MAN1",
+          "physical": "6",
+          "printed": "6"
+        }
+      ],
+      "applicability": "cirurgia_previa"
+    }
+  ],
+  "sections": [
+    {
+      "label": "Obrigatório no encaminhamento",
+      "title": "O que descrever",
+      "ruleIds": [
+        "MOVIMENTO",
+        "PRESENCA_LUXACAO",
+        "TRAUMA_PREVIO",
+        "TRATAMENTOS"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Obrigatórios neste recorte DigSaúde",
+      "title": "Exames complementares",
+      "ruleIds": [
+        "RX",
+        "USG"
+      ],
+      "receptionCheck": true,
+      "availabilityNote": "Lacuna da fonte: a seção não descreve dispensa de RX/USG quando indisponíveis. Nenhuma nova exigência foi acrescentada a partir dessa ausência."
+    },
+    {
+      "label": "Conforme o caso e se houver",
+      "title": "TC do ombro",
+      "ruleIds": [
+        "TC"
+      ]
+    },
+    {
+      "label": "Se houver - opcional documental",
+      "title": "RM do ombro",
+      "ruleIds": [
+        "RM"
+      ]
+    },
+    {
+      "label": "Avaliação profissional",
+      "title": "Separar relato de avaliação clínica",
+      "ruleIds": [
+        "AVALIACAO"
+      ]
+    },
+    {
+      "label": "Se houver cirurgia prévia",
+      "title": "Histórico e seguimento",
+      "ruleIds": [
+        "CIRURGIA"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta atual",
+      "text": "A oferta operacional atual de Ortopedia no DigSaúde MS não foi confirmada nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "ORIGEM",
+      "title": "Origem e vigência de S2",
+      "text": "A origem provável foi relatada como o grupo WhatsApp DigSaúde do setor, sem mensagem original verificada. O hash identifica os bytes; origem institucional e vigência atual seguem sem confirmação.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "MUNICIPIO",
+      "title": "Aplicabilidade municipal",
+      "text": "A aplicabilidade deste recorte ao fluxo de Eldorado/MS não foi confirmada nesta curadoria.",
+      "kind": "institutional_confirmation"
+    },
+    {
+      "id": "INDISPONIVEIS",
+      "title": "Exames indisponíveis",
+      "text": "A seção não informa dispensa formal de RX/USG quando indisponíveis. Essa ausência não cria dispensa, bloqueio automático ou nova obrigação de obter uma decisão agora.",
+      "kind": "source_gap"
+    },
+    {
+      "id": "DEFINICOES",
+      "title": "Detalhes não definidos nesta seção",
+      "text": "A seção não especifica validade dos exames, prazo máximo de espera, regime/dose que define tratamento otimizado ou documentos administrativos específicos. Essas ausências não criam requisitos adicionais.",
+      "kind": "source_gap"
+    }
+  ],
+  "systemBoundary": "Este recorte é DigSaúde MS. As seções relacionadas do SISREG/Campo Grande têm requisitos e alcance próprios; a pactuação por destino ainda precisa ser confirmada. Não aplicar este pacote de exames ao CORE.",
+  "reference": "Telessaúde MS 2.0 - 06/10/2025 - físicas 46 e 48-49 / impressas 40 e 42-43. Manual Operacional V1, 31/07/2026, p. 4 e 6.",
+  "sourceNotesPolicy": "Notas institucionais, lacunas e limites de escopo não são critérios clínicos nem documentos obrigatórios adicionais. Ausência de definição na fonte não cria dispensa nem obrigação de obter decisão agora."
+}

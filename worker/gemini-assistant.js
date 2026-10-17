@@ -1,5 +1,7 @@
 'use strict';
 
+import { hydrateClinicalPilot, clinicalPilotRecord } from './clinical-condition-pilot.js';
+
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://regulacaoeldoradoms.com.br',
   'https://www.regulacaoeldoradoms.com.br',
@@ -116,7 +118,7 @@ function cleanJsonValue(value, maximumLength = 12000) {
 
 function cleanProtocols(value) {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 4).map((protocol) => ({
+  return value.slice(0, 4).map((protocol) => hydrateClinicalPilot(protocol) || ({
     id: boundedString(protocol.id, 100),
     nome: boundedString(protocol.nome, 180),
     categoria: boundedString(protocol.categoria, 120),
@@ -173,12 +175,16 @@ function cleanHistory(value) {
 }
 
 function buildPrompt(question, protocols, catalog, operationalFacts, history, mode) {
-  return [
+  const integralPilot = protocols.some((protocol) => protocol.clinicalConditionRecord);
+  const prompt = [
     `MODO SOLICITADO: ${boundedString(mode || 'pre_regulation_simulator', 80)}`,
     '',
     'MENSAGEM ATUAL DO PROFISSIONAL:',
     question,
     '',
+    ...(integralPilot ? ['PILOTO CLÍNICO EM REVISÃO: use todas as regras do clinicalConditionRecord, incluindo exceções, alternativas e alertas. Não importar exigências de TEA ou outros motivos. Não afirmar vigência, oferta ou aplicabilidade confirmadas. Na faixa de 17 anos, informar a lacuna sem inventar destino ou transportar para SISREG. Ombro: os 6 meses não se aplicam à alternativa de importante prejuízo às atividades de vida diária na osteoartrite; TC requer a condição clínica descrita E disponibilidade. Manter registros por sistema separados. As referências relacionadas SISREG/Campo Grande não são protocolo específico de Dor no Ombro, não provam pactuação e não são regras CORE. O hash identifica bytes, não certifica origem institucional nem vigência. Notas institucionais, lacunas e limites de fonte não são exigências adicionais. A ausência de definição de tratamento otimizado ou dispensa de RX/USG não cria obrigação de obter confirmação, autorização ou decisão agora; não inferir dispensa nem bloqueio automático. Fonte institucional e validação protocolar permanecem pendentes.', ''] : []),
+    ...(protocols.some(protocol => protocol.clinicalConditionRecord?.searchKind === 'tendon') ? ['Bursite/Tendinite: o critério exige ausência de resposta satisfatória ao tratamento NÃO farmacológico (exercícios, acompanhamento fisioterápico) otimizado por 6 meses; RX AP/perfil e USG obrigatórios; não importar RM da seção anterior. Não aplicar requisitos de outra condição.'] : []),
+    ...(protocols.some(protocol => protocol.clinicalConditionRecord?.searchKind === 'headache') ? ['Cefaleia pediátrica: os 2 meses pertencem ao critério de profilaxia na APS, não a todos os critérios nem ao diário. Preservar os dois critérios parcialmente repetidos de investigação por RM/TC e a ambiguidade de fonte, sem escolher interpretação ou criar elegibilidade automática. Exame físico neurológico é avaliação clínica obrigatória; diário é registro obrigatório; TC/RM se houver; EEG não é exame obrigatório desta condição. Sinais de alerta não definem urgência ou destino automático neste recorte. Não aplicar requisitos de outra condição.'] : []),
     'PROTOCOLOS MAIS RELEVANTES:',
     JSON.stringify(protocols, null, 2),
     '',
@@ -190,7 +196,40 @@ function buildPrompt(question, protocols, catalog, operationalFacts, history, mo
     '',
     'HISTÓRICO RECENTE DA CONVERSA:',
     JSON.stringify(cleanHistory(history), null, 2)
-  ].join('\n').slice(0, 80000);
+  ].join('\n');
+  if (integralPilot && prompt.length > 80000) throw Object.assign(new Error('Contexto do piloto excede o limite; nenhuma regra foi cortada. Reduza o histórico e tente novamente.'), { status: 413 });
+  return integralPilot ? prompt : prompt.slice(0, 80000);
+}
+
+function ambiguousPilotSystems(question, protocols) {
+  const records = protocols.map(protocol => protocol.clinicalConditionRecord).filter(Boolean);
+  const systems = new Set(records.filter(record => record.searchKind === 'shoulder').map(record => record.systemKind));
+  const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const both = /dig\s*saude|digsus|telessaude|teleatendimento/.test(text) && /\bsisreg|campo grande/.test(text);
+  const comparison = /outro sistema/.test(text) || /compar|diferen/.test(text) && (/sistemas|fluxos/.test(text) || both);
+  return systems.size > 1 && !comparison;
+}
+
+function unsupportedNewPilotScope(question, protocols) {
+  const records = protocols.map(protocol => protocol.clinicalConditionRecord).filter(record => ['tendon', 'headache'].includes(record?.searchKind));
+  if (!records.length) return false;
+  const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const unsupportedComparison = /outro sistema/.test(text) || /compar|diferen/.test(text) && /sistemas|fluxos/.test(text);
+  return /\bcore\b|\bsisreg|campo grande/.test(text) || unsupportedComparison || records.some(record => record.searchKind === 'headache' && /\badult[oa]/.test(text) || record.searchKind === 'tendon' && /\binfantil|\bpediatr|\bcrianc/.test(text));
+}
+
+function multiplePilotFamilies(question) {
+  const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const tendon = /bursite|tendinite/.test(text);
+  return [tendon, /cefaleia|dor de cabeca/.test(text), /ombro|manguito/.test(text) && (!tendon || /dor (?:no|do|em) ombro|manguito/.test(text)), /convuls|epilep/.test(text)].filter(Boolean).length > 1;
+}
+
+function scopePilotSystems(question, protocols) {
+  const text = String(question || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const dig = /dig\s*saude|digsus|telessaude|teleatendimento/.test(text), sisreg = /\bsisreg|campo grande/.test(text);
+  if (dig === sisreg || /outro sistema/.test(text) || /compar|diferen/.test(text) && /sistemas|fluxos/.test(text)) return protocols;
+  const kind = dig ? 'digsaude' : 'sisreg_reference';
+  return protocols.filter(protocol => protocol.clinicalConditionRecord?.searchKind !== 'shoulder' || protocol.clinicalConditionRecord.systemKind === kind);
 }
 
 function normalizeUsername(value) {
@@ -508,14 +547,30 @@ export default {
 
     try {
       const body = await request.json();
+      if (Object.hasOwn(body, 'clinicalConditionProbe')) {
+        const ids = body.clinicalConditionProbe;
+        if (!Array.isArray(ids) || !ids.length || ids.length > 3 || new Set(ids).size !== ids.length || ids.some(id => typeof id !== 'string' || !clinicalPilotRecord(id))) {
+          return jsonResponse({ error: 'Condições da conferência de versão inválidas.' }, 400, origin, true);
+        }
+        return jsonResponse({ clinicalConditionProbe: true, records: ids.map(id => clinicalPilotRecord(id)) }, 200, origin, true);
+      }
       const question = boundedString(body.originalQuestion || body.question, 3000);
       if (!question) return jsonResponse({ error: 'Informe uma pergunta.' }, 400, origin, true);
       if (hasSensitiveData(question) || hasSensitiveData(JSON.stringify(body.history || []))) {
         return jsonResponse({ error: 'Não envie dados pessoais identificáveis. Reformule a pergunta de forma anônima.' }, 400, origin, true);
       }
 
-      const protocols = cleanProtocols(body.protocols);
+      if (multiplePilotFamilies(question)) {
+        return jsonResponse({ answer: 'A pergunta menciona mais de um motivo. Envie uma condição por vez e informe o sistema; nenhum dos motivos foi escolhido automaticamente.', provider: 'Consulta local de escopo', assistantMode: 'pre_regulation_simulator', groundedInProtocols: true }, 200, origin, true);
+      }
+      const protocols = scopePilotSystems(question, cleanProtocols(body.protocols));
       const catalog = cleanCatalog(body.catalog);
+      if (unsupportedNewPilotScope(question, protocols)) {
+        return jsonResponse({ answer: 'Os recortes de Bursite/Tendinite adulto e Cefaleia pediátrica deste lote contêm somente DigSaúde MS. Não definem exigências de outra faixa ou sistema nem usam SISREG/CORE como substituto.', provider: 'Consulta local de escopo', assistantMode: 'pre_regulation_simulator', groundedInProtocols: true }, 200, origin, true);
+      }
+      if (ambiguousPilotSystems(question, protocols)) {
+        return jsonResponse({ answer: 'Escolha DigSaúde MS ou SISREG/Campo Grande antes de consultar as exigências de Dor no Ombro, ou peça uma comparação explícita entre os sistemas. As listas não foram combinadas.', provider: 'Consulta local de escopo', assistantMode: 'pre_regulation_simulator', groundedInProtocols: true }, 200, origin, true);
+      }
       if (!protocols.length && !catalog.length) {
         return jsonResponse({ error: 'Nenhum protocolo foi enviado para fundamentar a resposta.' }, 400, origin, true);
       }

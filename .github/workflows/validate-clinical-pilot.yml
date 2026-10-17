@@ -1,0 +1,45 @@
+name: Validar recortes clínicos por condição
+
+on:
+  pull_request:
+    paths:
+      - 'data/clinical-conditions/**'
+      - 'js/clinical-condition-pilot.js'
+      - 'css/clinical-condition-pilot.css'
+      - 'js/medical-app.js'
+      - 'js/app.js'
+      - 'js/reception-app.js'
+      - 'js/ai-assistant.js'
+      - 'js/pre-regulation-bridge.js'
+      - 'js/referral-workbench.js'
+      - 'worker/clinical-condition-pilot.js'
+      - 'worker/gemini-assistant.js'
+      - 'worker/tests/clinical-condition-pilot.test.mjs'
+      - 'worker/tests/clinical-condition-shoulder.test.mjs'
+      - 'worker/tests/clinical-condition-final-review.test.mjs'
+      - 'worker/tests/clinical-condition-bursite-headache.test.mjs'
+      - 'worker/tests/psychology-autism-rule.test.mjs'
+      - 'worker/tests/gemini-timeout.test.mjs'
+      - 'testing/clinical-pilot/**'
+      - 'worker/tests/fixtures/convulsao-epilepsia-matriz-documental.json'
+      - 'medico/index.html'
+      - 'protocolo/index.html'
+      - 'recepcao/index.html'
+      - 'portal-sw.js'
+      - '.github/workflows/validate-clinical-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clinical-pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test worker/tests/clinical-condition-pilot.test.mjs worker/tests/clinical-condition-shoulder.test.mjs worker/tests/clinical-condition-final-review.test.mjs worker/tests/clinical-condition-bursite-headache.test.mjs worker/tests/subprotocol-requirements.test.mjs worker/tests/psychology-autism-rule.test.mjs worker/tests/gemini-timeout.test.mjs

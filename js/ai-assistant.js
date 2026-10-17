@@ -122,8 +122,9 @@
   }
 
   function rankProtocols(question) {
-    const terms = termsFor(question);
-    const selectedId = typeof state !== 'undefined' ? state.selected?.id : null;
+    const outsidePilot = window.ClinicalConditionPilot?.legacyTopicTerms?.() || [];
+    const terms = outsidePilot.length ? outsidePilot : termsFor(question);
+    const selectedId = outsidePilot.length ? null : typeof state !== 'undefined' ? state.selected?.id : null;
     return protocols().map((protocol) => {
       const name = normalizeText(protocol.nome);
       const category = normalizeText(protocol.categoria);
@@ -203,8 +204,13 @@
   }
 
   function requestContext(question) {
+    const clinicalDecision = window.ClinicalConditionPilot?.questionDecision(question);
+    const clinical = window.ClinicalConditionPilot?.questionContexts(question);
+    if (Array.isArray(clinical)) {
+      return { protocols: clinical, catalog: [], resolvedQuestion: clinicalDecision?.contexts?.[0]?.query || question, selectedProtocolId: clinical[0]?.id || null, selectedProtocolName: clinical[0]?.nome || null, practiceKnowledgeVersion: null, operationalFacts: [] };
+    }
     const ranked = rankProtocols(question);
-    const current = typeof state !== 'undefined' ? state.selected : null;
+    const current = window.ClinicalConditionPilot?.legacyTopicTerms?.().length ? null : typeof state !== 'undefined' ? state.selected : null;
     let selected = ranked.filter((item) => item.score > 0).slice(0, 4).map((item) => item.protocol);
     if (isAutismTelehealthQuestion(question)) {
       const psychology = protocols().find(isPsychologyProtocol);
@@ -247,6 +253,8 @@
   }
 
   function localAnswer(question, connectionMissing = !CONFIG.endpoint) {
+    const clinical = window.ClinicalConditionPilot?.localAnswer(question);
+    if (clinical) return clinical;
     if (isAutismTelehealthQuestion(question)) {
       let answer = [
         'Psicologia no DigSaúde e TEA/autismo',
@@ -345,6 +353,7 @@
   function friendlyAiFailure(error) {
     const status = Number(error?.status) || 0;
     const message = String(error?.message || '');
+    if (error?.code === 'CLINICAL_WORKER_INCOMPATIBLE') return 'A base clínica da IA ainda não corresponde à versão do guia. Os protocolos locais continuam disponíveis.';
     if (['AbortError', 'TimeoutError'].includes(error?.name) || /abort|timeout|signal/i.test(message)) {
       return 'Os provedores de IA demoraram além do limite de segurança. Os protocolos locais continuam disponíveis.';
     }
@@ -365,13 +374,27 @@
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), REMOTE_AI_REQUEST_TIMEOUT_MS);
     try {
+      const clinical = context.protocols.filter(protocol => protocol.clinicalConditionRecord);
+      if (clinical.length) {
+        const probe = await fetch(CONFIG.endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+          body: JSON.stringify({ clinicalConditionProbe: clinical.map(protocol => protocol.clinicalConditionId) })
+        });
+        const manifest = await probe.json().catch(() => ({}));
+        if (!probe.ok) {
+          throw Object.assign(new Error(manifest.error || `Falha na conferência clínica (${probe.status}).`), { status: probe.status, code: manifest.code || '' });
+        }
+        if (manifest.clinicalConditionProbe !== true || JSON.stringify(manifest.records) !== JSON.stringify(clinical.map(protocol => protocol.clinicalConditionRecord))) {
+          throw Object.assign(new Error('A base clínica da IA não corresponde à versão do guia.'), { status: 409, code: 'CLINICAL_WORKER_INCOMPATIBLE' });
+        }
+      }
       const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
-          question: regulatorQuestion(question, context),
-          originalQuestion: question,
+          question: regulatorQuestion(context.resolvedQuestion || question, context),
+          originalQuestion: context.resolvedQuestion || question,
           assistantMode: CONFIG.mode || 'pre_regulation_simulator',
           protocols: context.protocols,
           catalog: context.catalog,
@@ -417,11 +440,12 @@
     addMessage('user', cleanQuestion);
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
-    const remoteAiReadyForAttempt = Boolean(CONFIG.endpoint) && Date.now() >= remoteAiUnavailableUntil;
+    const remoteConfigured = Boolean(CONFIG.endpoint) && !window.ClinicalConditionPilot?.unavailable(cleanQuestion) && !window.ClinicalConditionPilot?.localOnlyQuestion(cleanQuestion);
+    const remoteAiReadyForAttempt = remoteConfigured && Date.now() >= remoteAiUnavailableUntil;
     const loading = addMessage('assistant', remoteAiReadyForAttempt ? 'Fazendo a pré-análise regulatória com IA...' : 'Consultando os protocolos locais...', 'loading');
     try {
       const context = requestContext(cleanQuestion);
-      if (CONFIG.endpoint && !remoteAiReadyForAttempt) {
+      if (remoteConfigured && !remoteAiReadyForAttempt) {
         const answer = localAnswer(cleanQuestion, false);
         loading?.remove();
         addMessage('assistant', `${answer}\n\nModo de contingência local: os provedores de IA serão testados novamente automaticamente em alguns minutos.`, 'contingency');
@@ -431,15 +455,15 @@
         return;
       }
 
-      if (CONFIG.endpoint) setProviderStatus('checking', 'Consultando IA');
-      const result = CONFIG.endpoint
+      if (remoteConfigured) setProviderStatus('checking', 'Consultando IA');
+      const result = remoteConfigured
         ? await askAssistant(cleanQuestion, context)
         : { answer: localAnswer(cleanQuestion, true), provider: 'Local', model: '' };
       loading?.remove();
       addMessage('assistant', result.answer);
       history.push({ role: 'assistant', text: result.answer.slice(0, 7000) });
       window.PortalInteractions?.notify?.('task-complete', 'Pré-análise concluída.', document.getElementById('aiMessages'));
-      if (CONFIG.endpoint) {
+      if (remoteConfigured) {
         remoteAiUnavailableUntil = 0;
         if (result.provider === 'Cloudflare Workers AI') {
           setProviderStatus('connected', 'IA de contingência conectada');
