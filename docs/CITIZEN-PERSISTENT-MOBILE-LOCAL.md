@@ -237,12 +237,16 @@ ou endpoint de mutação mudou; os testes exigem exatamente a ação sintética 
 
 A inicialização mobile pendente agora retoma na ativação da área, com uma guarda
 que impede montar abas/listeners novamente. O teste de entrada direta mantém o
-rótulo sintético de identidade pendente e segura o helper opcional; sai para a
+rótulo sintético de identidade pendente e segura a primeira leitura GET; sai para a
 Home antes de concluir a carga, deixa a tentativa de 50 ms expirar fora da área
 e retorna após liberar a carga. Contra `e7cf38e`, esse percurso reproduziu zero
 abas no retorno. Na correção, passou com uma única montagem, mesma área retida
 e aba Notificações preservada após duas alternâncias. O controle do rótulo é
 restrito à fixture; não altera autenticação, temporizadores ou código produtivo.
+Uma primeira fixture que segurava o script opcional ficou pendente no CI Linux.
+O cenário foi isolado do carregamento de scripts: pausa somente a leitura GET
+sintética e limita as esperas do próprio teste, mantendo todas as asserções.
+Essa fixture também reproduziu a falha no código anterior e passou na correção.
 
 O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
 as seis comparações históricas em um job separado. Os gates anteriores e seus

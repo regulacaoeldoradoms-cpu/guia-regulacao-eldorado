@@ -1,4 +1,4 @@
-// Direct entry, unfinished optional helper, retained exit and return. Synthetic only.
+// Direct entry, pending identity/data, retained exit and return. Synthetic only.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -27,26 +27,33 @@ await context.addInitScript(()=>{
  };
 });
 let release,reached;const held=new Promise(r=>{release=r;}),started=new Promise(r=>{reached=r;});
+const within=async(label,pending)=>{
+ result.stage=label;let timer;
+ try{return await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Startup fixture timed out: '+label)),15000);})]);}
+ finally{clearTimeout(timer);}
+};
 if(process.env.STARTUP_BASELINE==='1'){
  const body=execFileSync('git',['show','e7cf38e:js/citizen-mobile-app.js'],{cwd:root,encoding:'utf8'});
  await context.route('**/js/citizen-mobile-app.js*',r=>r.fulfill({contentType:'text/javascript',body}));
 }
-await context.route('**/js/citizen-compose-attachments.js*',async route=>{reached();await held;await route.fallback();});
+// Pause an asynchronous data read, not a script that can also hold document
+// load and shared presentation readiness on a different Chromium revision.
+await context.route('**/api/council/my',async route=>{assert.equal(route.request().method(),'GET');reached();await held;await route.fallback();});
 try{
- await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await started;
+ await page.goto(server.origin+'/cidadao/',{waitUntil:'domcontentloaded'});await within('initial data read',started);
  await page.waitForFunction(()=>document.getElementById('attachmentForm')?.dataset.mobileAttachmentReady==='true');
  assert.equal(await page.locator('.citizen-mobile-tabs').count(),0);
  await page.evaluate(()=>{window.__startupCitizen=PortalCitizenShell.active();});
  assert(!await page.evaluate(()=>__startupCitizen.loaded));
- await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href)));await ready(page,'/');
+ await within('leave pending Citizen',page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href))));await within('Home ready',ready(page,'/'));
  await page.waitForTimeout(100); // Let the original 50ms retry be discarded while inactive.
  await page.evaluate(()=>__releaseStartupRole());release();await page.waitForFunction(()=>__startupCitizen.loaded);
- await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href)));
+ await within('return to Citizen',page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href))));
  assert.equal(await page.locator('.citizen-mobile-tabs').count(),1,'Pending direct-entry setup must resume on activation');
  await page.locator('.citizen-mobile-tab[data-tab=notifications]').click();
  for(let cycle=0;cycle<2;cycle++){
-  await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href)));
-  await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href)));
+  await within('repeat Home '+cycle,page.evaluate(()=>PortalCitizenShell.navigate(new URL('/',location.href))));
+  await within('repeat Citizen '+cycle,page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href))));
   assert.equal(await page.locator('.citizen-mobile-tabs').count(),1,'Resume cannot duplicate tabs/listeners');
   assert.equal(await page.locator('body').getAttribute('data-citizen-tab'),'notifications','Resume preserves the selected tab');
  }
@@ -55,4 +62,4 @@ try{
  assert(!audit.apiCalls.some(x=>/^(POST|PATCH|PUT|DELETE) \/api\/council\//.test(x)));
  result.passed=true;
 }catch(error){result.failure=error.stack;throw error;}
-finally{release();await context.close();await browser.close();await new Promise(r=>server.server.close(r));console.log(JSON.stringify(result));await fs.writeFile(path.join(out,process.env.STARTUP_BASELINE==='1'?'baseline.json':'results.json'),JSON.stringify(result,null,2));}
+finally{release();await context.close();await browser.close();await new Promise(r=>{server.server.close(r);server.server.closeAllConnections();});console.log(JSON.stringify(result));await fs.writeFile(path.join(out,process.env.STARTUP_BASELINE==='1'?'baseline.json':'results.json'),JSON.stringify(result,null,2));}
