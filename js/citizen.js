@@ -33,8 +33,33 @@ const initializeCitizenArea = async (context) => {
   const auth = demonstration ? baseAuth : { ...baseAuth, async api(...args) {
     if (!liveAllowed()) throw new DOMException('Ação indisponível durante o tutorial ou após encerrar a sessão.', 'AbortError');
     liveRequests++;
-    try { return await baseAuth.api(...args); } finally { liveRequests--; }
-  } };
+    let releaseAbort = () => {};
+    try {
+      let signal = args[1]?.signal;
+      if (context?.abort) {
+        const sources = [context.abort.signal, ...(signal ? [signal] : [])];
+        const read = !args[1]?.method || args[1].method === 'GET';
+        const nativeSignal = globalThis.AbortSignal;
+        if (typeof nativeSignal?.any === 'function' && typeof nativeSignal?.timeout === 'function') {
+          signal = nativeSignal.any([...sources, ...(read ? [nativeSignal.timeout(15000)] : [])]);
+        } else {
+          const controller = new AbortController(), listeners = [];
+          let timer;
+          signal = controller.signal;
+          releaseAbort = () => { globalThis.clearTimeout(timer); listeners.forEach(([source, handler]) => source.removeEventListener('abort', handler)); };
+          for (const source of sources) {
+            const abort = () => controller.abort(source.reason);
+            if (source.aborted) abort();
+            else { source.addEventListener('abort', abort, {once:true}); listeners.push([source, abort]); }
+          }
+          if (read) timer = globalThis.setTimeout(() => controller.abort(new DOMException('Tempo de leitura excedido.', 'TimeoutError')), 15000);
+        }
+      }
+      const payload = await baseAuth.api(args[0], { ...args[1], ...(signal ? {signal} : {}) });
+      if (!liveAllowed()) throw new DOMException('Sessão encerrada', 'AbortError');
+      return payload;
+    } finally { releaseAbort(); liveRequests--; }
+  }, async getSecurity() { return (await this.api('/api/auth/security', {method:'GET'}))?.security || {}; } };
   const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;
   ownerIdentity=identity(user);
@@ -55,6 +80,32 @@ const initializeCitizenArea = async (context) => {
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
+  const openedAttachmentUrls = new Map();
+  function releaseAttachmentUrl(url) {
+    if (!openedAttachmentUrls.has(url)) return;
+    globalThis.clearTimeout(openedAttachmentUrls.get(url));
+    openedAttachmentUrls.delete(url); URL.revokeObjectURL(url);
+  }
+  let securityReads = 0;
+  const securityAccountState = () => {
+    if (demonstration) return '';
+    const account = auth.getCachedUser();
+    return JSON.stringify([account?.id,account?.username,Boolean(account?.emailVerified),Boolean(account?.emailConfigured),Boolean(account?.emailVerificationRequired),account?.privacyMode || 'anonima']);
+  };
+  let lastSecurityAccountState = securityAccountState();
+  const readRuns = new Map();
+  function latestRead(key, read) {
+    const run = {};
+    readRuns.set(key, run);
+    const current = () => readRuns.get(key) === run;
+    run.promise = (async () => {
+      const result = await read(current);
+      // A superseded refresh must also wait for the newer read's outcome;
+      // it cannot declare stale data fresh while a mutation reload is pending.
+      return current() ? result : readRuns.get(key)?.promise || false;
+    })();
+    return run.promise;
+  }
   const statusLabels = {
     recebida: 'Recebida', em_analise: 'Em análise', aguardando_cidadao: 'Aguardando sua resposta',
     encaminhada: 'Encaminhada', aguardando_retorno: 'Aguardando retorno', respondida: 'Respondida',
@@ -168,7 +219,15 @@ const initializeCitizenArea = async (context) => {
   }
 
   async function loadSecurity() {
-    state.security = await auth.getSecurity().catch(() => ({ emailVerified: user.emailVerified, privacyMode: user.privacyMode || 'anonima' }));
+    if (!demonstration && !liveAllowed()) return false;
+    securityReads++;
+    try { return await latestRead('security', async current => {
+    const accountStateAtRead = securityAccountState();
+    let fresh = true;
+    const security = await auth.getSecurity().catch(() => { fresh = false; return state.security || { emailVerified: user.emailVerified, privacyMode: user.privacyMode || 'anonima' }; });
+    if (!current() || !demonstration && !liveAllowed()) return false;
+    state.security = security;
+    if (fresh) lastSecurityAccountState = accountStateAtRead;
     const privacyChip = document.getElementById('privacyChip');
     const verifiedOptions = document.getElementById('verifiedPrivacyOptions');
     const verified = state.security?.emailVerified === true;
@@ -207,6 +266,8 @@ const initializeCitizenArea = async (context) => {
     }
 
     renderPrivacyNotice();
+    return fresh;
+    }); } finally { securityReads--; }
   }
 
   function renderManifestations() {
@@ -221,23 +282,29 @@ const initializeCitizenArea = async (context) => {
     </button>`).join('');
   }
 
-  async function loadManifestations() {
+  async function loadManifestations({ preserve = false } = {}) {
     if (!demonstration && !liveAllowed()) return;
+    return latestRead('manifestations', async current => {
     const list = document.getElementById('manifestationList');
-    list.innerHTML = '<div class="portal-note info">Carregando manifestações...</div>';
+    if (!preserve) list.innerHTML = '<div class="portal-note info">Carregando manifestações...</div>';
     try {
       const payload = await auth.api('/api/council/my', { method: 'GET' });
+      if (!current()) return false;
       state.manifestations = Array.isArray(payload?.manifestations) ? payload.manifestations : [];
       renderManifestations();
       document.getElementById('firebaseNotice').hidden = true;
+      return true;
     } catch (error) {
+      if (!current() || !liveAllowed()) return false;
       if (error.code === 'FIREBASE_PENDING' || error.status === 503) {
         const notice = document.getElementById('firebaseNotice');
         notice.textContent = 'O Canal do Conselho está instalado, mas o armazenamento Firebase ainda não está disponível.';
         notice.hidden = false;
       }
-      list.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar as manifestações.')}</div>`;
+      if (!preserve || error.status === 403) list.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar as manifestações.')}</div>`;
+      return false;
     }
+    });
   }
 
   function renderNotifications() {
@@ -257,13 +324,19 @@ const initializeCitizenArea = async (context) => {
 
   async function loadNotifications() {
     if (!demonstration && !liveAllowed()) return;
+    return latestRead('notifications', async current => {
     try {
       const payload = await auth.api('/api/council/notifications', { method: 'GET' });
+      if (!current()) return false;
       state.notifications = Array.isArray(payload?.notifications) ? payload.notifications : [];
       renderNotifications();
-    } catch (_) {
-      document.getElementById('notificationList').innerHTML = '<div class="portal-note warning">Não foi possível carregar as notificações.</div>';
+      return true;
+    } catch (error) {
+      if (!current() || !liveAllowed()) return false;
+      if (!state.notifications.length || error.status === 403) document.getElementById('notificationList').innerHTML = '<div class="portal-note warning">Não foi possível carregar as notificações.</div>';
+      return false;
     }
+    });
   }
 
   function renderThread(messages) {
@@ -304,15 +377,19 @@ const initializeCitizenArea = async (context) => {
     list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">${attachmentIcon()}${escapeHtml(item.displayName || 'Anexo')}</button>`).join('');
   }
 
-  async function openDetail(protocol) {
+  async function openDetail(protocol, { preserve = false } = {}) {
     if (!demonstration && !liveAllowed()) return;
+    return latestRead('detail', async current => {
     state.selectedProtocol = protocol;
-    openModal('manifestationDetailModal');
-    document.getElementById('detailLoading').hidden = false;
-    document.getElementById('detailContent').hidden = true;
+    if (!preserve) openModal('manifestationDetailModal');
+    if (!preserve) {
+      document.getElementById('detailLoading').hidden = false;
+      document.getElementById('detailContent').hidden = true;
+    }
     try {
       const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(protocol)}`);
       const payload = await auth.api(path, { method: 'GET' });
+      if (!current() || state.selectedProtocol !== protocol) return false;
       const item = payload.manifestation;
       document.getElementById('detailProtocol').textContent = item.protocol;
       document.getElementById('detailMeta').textContent = `${typeLabels[item.type] || item.type} · ${formatDate(item.createdAt)}`;
@@ -329,9 +406,15 @@ const initializeCitizenArea = async (context) => {
       renderAttachments(payload.attachments || []);
       document.getElementById('detailLoading').hidden = true;
       document.getElementById('detailContent').hidden = false;
+      return true;
     } catch (error) {
+      if (!current() || !liveAllowed()) return false;
       document.getElementById('detailLoading').textContent = error.message || 'Não foi possível abrir a manifestação.';
+      document.getElementById('detailLoading').hidden = false;
+      if (error.status === 403) document.getElementById('detailContent').hidden = true;
+      return false;
     }
+    });
   }
 
   function buildDescription() {
@@ -394,7 +477,13 @@ const initializeCitizenArea = async (context) => {
     denuncia: ['Relate a possível irregularidade','Descreva os fatos que conhece e o que precisa ser apurado. Evite dados pessoais desnecessários.','Conte os fatos e o que você sabe sobre a situação.','Data do fato']
   };
   const detailIds = ['manifestationDate','manifestationService','manifestationLocation','manifestationDesiredOutcome'];
-  let currentComposeKind = '', sendingManifestation = false, composeOpener = null;
+  let currentComposeKind = '', sendingManifestation = false, composeOpener = null, submittedProtocol = '';
+  function revealSubmittedProtocol() {
+    if (!submittedProtocol || sendingManifestation || context?.active === false || !demonstration && !liveAllowed()) return;
+    const protocol = submittedProtocol; submittedProtocol = '';
+    closeModal('newManifestationModal', {restoreFocus:false});
+    void openDetail(protocol);
+  }
   function resizeComposeReport() {
     const input = document.getElementById('manifestationDescription');
     if (!input || document.getElementById('composeReport')?.hidden) return;
@@ -577,7 +666,8 @@ const initializeCitizenArea = async (context) => {
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
       showStatus(status, `Manifestação enviada. Protocolo: ${protocol}.${attachmentMessage}`, failedUploads ? 'error' : 'success');
       await Promise.all([loadManifestations(), loadNotifications()]);
-      window.setTimeout(() => { closeModal('newManifestationModal',{restoreFocus:false}); openDetail(protocol); }, failedUploads ? 1800 : 700);
+      submittedProtocol = protocol;
+      window.setTimeout(revealSubmittedProtocol, failedUploads ? 1800 : 700);
     } catch (error) {
       let message = error.message || 'Não foi possível enviar.';
       if (error.status === 429 && error.retryAfterSeconds) message += ` Tente novamente em aproximadamente ${Math.ceil(error.retryAfterSeconds / 60)} minuto(s).`;
@@ -668,16 +758,18 @@ const initializeCitizenArea = async (context) => {
     button.disabled = true;
     try {
       const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments/${encodeURIComponent(button.dataset.attachment)}`);
-      const response = await fetch(`${endpoint}${path}`, { headers: auth.authorizationHeader(), cache: 'no-store' });
+      const response = await fetch(`${endpoint}${path}`, { headers: auth.authorizationHeader(), cache: 'no-store', signal: context?.abort?.signal });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload.error || 'Não foi possível abrir o anexo.');
       }
       const blob = await response.blob();
+      if (!liveAllowed()) return;
       const url = URL.createObjectURL(blob);
+      openedAttachmentUrls.set(url, globalThis.setTimeout(() => releaseAttachmentUrl(url), 60000));
       window.open(url, '_blank', 'noopener');
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) {
+      if (!liveAllowed()) return;
       window.alert(error.message || 'Não foi possível abrir o anexo.');
     } finally {
       button.disabled = false;
@@ -791,7 +883,7 @@ const initializeCitizenArea = async (context) => {
     globalThis.visualViewport?.addEventListener('resize',scheduleHelp,{signal:layoutAbort.signal});
     globalThis.visualViewport?.addEventListener('scroll',positionHelpPanel,{signal:layoutAbort.signal});
     globalThis.document.fonts?.addEventListener('loadingdone',scheduleHelp,{signal:layoutAbort.signal});
-    context?.addController?.({dispose(){layoutAbort.abort();resize?.disconnect();panelResize?.disconnect();mutation.disconnect();cancelAnimationFrame(helpFrame);}});
+    context?.addController?.({activate:scheduleHelp,dispose(){layoutAbort.abort();resize?.disconnect();panelResize?.disconnect();mutation.disconnect();cancelAnimationFrame(helpFrame);}});
     positionHelp();
   }
   async function loadTutorial() {
@@ -833,13 +925,58 @@ const initializeCitizenArea = async (context) => {
     }
   }
   if (helpHost) void loadTutorial();
+  // Retained mobile areas refresh reads without rebuilding the draft, local
+  // files, selected tab or tutorial. No mutation is part of preparation.
+  const refreshCitizenDetail = protocol => state.selectedProtocol === protocol ? openDetail(protocol, {preserve:true}) : Promise.resolve(true);
+  detailModal.refreshCitizenDetail = refreshCitizenDetail;
+  let lastRefresh = 0, refreshing = null, disposed = false, securityRefreshNeeded = false;
+  const freshness = context && !demonstration ? document.createElement('div') : null;
+  if (freshness) {
+    freshness.className = 'portal-note info'; freshness.hidden = true;
+    freshness.setAttribute('role', 'status'); freshness.id = 'citizenDataStatus';
+    document.getElementById('citizenContextNotice').after(freshness);
+  }
+  function revalidate({force = false, replace = false} = {}) {
+    if (!freshness || disposed || !liveAllowed() || context?.active === false || refreshing && !replace || !force && Date.now() - lastRefresh < 30000) return refreshing;
+    freshness.hidden = false; freshness.textContent = 'Atualizando seus dados…';
+    let run;
+    run = (async () => {
+      const results = await Promise.all([loadSecurity(), loadManifestations({preserve:true}), loadNotifications(),
+        detailModal.classList.contains('open') && state.selectedProtocol ? openDetail(state.selectedProtocol, {preserve:true}) : true]);
+      if (disposed || !liveAllowed() || refreshing !== run) return;
+      if (results.every(Boolean)) { lastRefresh = Date.now(); freshness.hidden = true; }
+      else {
+        freshness.textContent = 'Não foi possível atualizar todos os dados. Confira a conexão e tente novamente. Os dados anteriores podem estar desatualizados. ';
+        const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'portal-button secondary'; retry.textContent = 'Tentar novamente';
+        retry.addEventListener('click', () => revalidate({force:true})); freshness.append(retry);
+      }
+    })().finally(() => { if (refreshing === run) refreshing = null; });
+    refreshing = run;
+    return run;
+  }
+  const activateCitizen = () => {
+    // A context timer may expire while this area is detached. Retain the
+    // confirmed protocol until activation can finish its normal transition.
+    revealSubmittedProtocol();
+    if (securityAccountState() !== lastSecurityAccountState) securityRefreshNeeded = true;
+    if (securityRefreshNeeded && !disposed && liveAllowed()) {
+      securityRefreshNeeded = false;
+      return revalidate({force:true,replace:true});
+    }
+    return revalidate();
+  };
+  context?.addController?.({activate:activateCitizen,revalidate,deactivate(){
+    if (securityReads || refreshing) { securityRefreshNeeded = true; readRuns.delete('security'); }
+  },dispose(){disposed=true;submittedProtocol='';for(const url of openedAttachmentUrls.keys())releaseAttachmentUrl(url);readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
   const securityPending = loadSecurity().finally(()=>{securityReady=true;});
+  let initialResults;
   if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {
-    await Promise.all([securityPending, loadManifestations(), loadNotifications()]);
+    initialResults = await Promise.all([securityPending, loadManifestations(), loadNotifications()]);
   } else {
     await securityPending;
-    await Promise.all([loadManifestations(), loadNotifications()]);
+    initialResults = await Promise.all([loadManifestations(), loadNotifications()]);
   }
+  if (initialResults.every(Boolean)) lastRefresh = Date.now();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen', initializeCitizenArea);
 else initializeCitizenArea();

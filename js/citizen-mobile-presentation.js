@@ -10,8 +10,8 @@ export function prepareCitizenMobilePresentation(root){
     ['#openNewManifestation > span:not(.icon) > span','Sugestão, reclamação, elogio ou denúncia.']
   ]){const node=root.querySelector(selector);if(node){if(!originals.has(node))originals.set(node,node.dataset.citizenNativeText ? [document.createTextNode(node.dataset.citizenNativeText)] : [...node.childNodes]);node.textContent=text;}}
 }
-export function mountCitizenMobilePresentation(){
-  const area=window.PortalCitizenShell?.active();
+export function mountCitizenMobilePresentation(preparedArea){
+  const area=preparedArea || window.PortalCitizenShell?.active();
   const root=area?.root || document;
   if(window[INSTANCE]){
     if(window[INSTANCE].root===root){window[INSTANCE].sync();return window[INSTANCE];}
@@ -57,15 +57,19 @@ export function mountCitizenMobilePresentation(){
     }
     bound=true;return true;
   }
-  function sync(){
+  function sync(preparing=false){
     if(disposed)return;
     queued=false;
-    const eligible=path()==='/cidadao/' && media.matches && !printing && !print.matches;
+    // A retained background panel owns its detached DOM/body. Prepare it once
+    // and leave it intact between taps; never restyle the visible Home here.
+    if(area && !area.active && preparing!==true)return;
+    const body=area && !area.active ? area.presentationBody : document.body;
+    const eligible=(preparing===true ? area?.url.pathname : path())==='/cidadao/' && media.matches && !printing && !print.matches;
     const active=eligible && bind();
-    const early=eligible && document.body.classList.contains('citizen-first-paint');
-    document.body.classList.toggle('citizen-mobile-presentation',Boolean(active || early));
+    const early=eligible && body.classList.contains('citizen-first-paint');
+    body.classList.toggle('citizen-mobile-presentation',Boolean(active || early));
     if(active){
-      if(document.body.classList.contains('shared-mobile-header'))document.body.classList.remove('citizen-first-paint');
+      if(body.classList.contains('shared-mobile-header'))body.classList.remove('citizen-first-paint');
       for(const [node,{text}] of copies)if(node.textContent!==text)node.textContent=text;
       if(help){
         if(!help.isConnected)root.querySelector('.citizen-grid').after(help);
@@ -97,7 +101,7 @@ export function mountCitizenMobilePresentation(){
   const beforePrint=()=>{printing=true;sync();},afterPrint=()=>{printing=false;sync();};
   window.addEventListener('beforeprint',beforePrint);window.addEventListener('afterprint',afterPrint);
   window.addEventListener('portal:citizen-route',sync);
-  const controller=Object.freeze({root,sync,dispose(){
+  const controller=Object.freeze({root,sync,activate:sync,dispose(){
     if(disposed)return;disposed=true;observer.disconnect();
     media.removeEventListener('change',sync);print.removeEventListener('change',sync);
     window.visualViewport?.removeEventListener('resize',viewportChanged);window.visualViewport?.removeEventListener('scroll',viewportChanged);
@@ -108,5 +112,5 @@ export function mountCitizenMobilePresentation(){
     syncNotificationStates(false);
     if(window[INSTANCE]===controller)delete window[INSTANCE];
   }});
-  area?.addController?.(controller);window[INSTANCE]=controller;sync();return controller;
+  area?.addController?.(controller);window[INSTANCE]=controller;sync(Boolean(preparedArea));return controller;
 }

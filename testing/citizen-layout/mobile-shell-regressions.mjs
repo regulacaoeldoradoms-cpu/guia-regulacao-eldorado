@@ -76,7 +76,7 @@ try{
   // before counting the updater's requests; its synthetic clock has not moved.
   await page.waitForFunction(()=>{
    const state=window.PortalCitizenShell.diagnostics();
-   return !state.prewarming&&['/amigos/','/perfil/','/mascotes/','/notificacoes/'].every(path=>state.ready.includes(path));
+   return !state.prewarming&&['/amigos/','/perfil/','/mascotes/','/notificacoes/','/cidadao/'].every(path=>state.ready.includes(path));
   });
   await page.waitForLoadState('networkidle');
   let calls=0,fail=false,hold=false,release;

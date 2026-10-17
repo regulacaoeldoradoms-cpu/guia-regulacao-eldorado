@@ -9,7 +9,7 @@
   // existing mobile media query matches. Desktop computers keep native startup.
   const compactTouch = navigator.maxTouchPoints > 1 && Math.min(window.screen.width, window.screen.height) <= 700;
   const homeAliases = new Set(['/home/', '/index.html']);
-  const primaryViews = new Set(['/', '/amigos/', '/perfil/', '/mascotes/']);
+  const primaryViews = new Set(['/', '/amigos/', '/perfil/', '/mascotes/', '/cidadao/']);
   const auth = window.RegulationAuth;
   if (!auth || (!screen.matches && !compactTouch)) return;
   if (!auth.getCachedUser?.()) {
@@ -48,12 +48,12 @@
   const factories = new Map(), areas = new Map(), resources = new Map(), preparations = new Map();
   const styleMedia = new WeakMap();
   const preparationAbort = new AbortController();
-  const primaryRoutes = ['/', '/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'];
-  const backgroundControllers = new Set(['/amigos/', '/perfil/', '/notificacoes/', '/mascotes/']);
+  const primaryRoutes = ['/', '/amigos/', '/perfil/', '/mascotes/', '/notificacoes/', '/cidadao/'];
+  const backgroundControllers = new Set(['/amigos/', '/perfil/', '/notificacoes/', '/mascotes/', '/cidadao/']);
   let prewarming = false, prewarmTimer = 0;
   const sessionToken = window.RegulationAuth.getToken();
   const sessionIdentity = String(user.id || user.username || '');
-  let active, ended = false, navigating = false, navigationKey = null, wanted = null;
+  let active, ended = false, navigating = false, navigationKey = null, wanted = null, cancelNavigation = null;
   const valid = () => !ended && window.RegulationAuth?.getToken?.() === sessionToken;
   const enabled = () => valid() && screen.matches && !print.matches;
   const routeKey = url => url.pathname + url.search;
@@ -62,10 +62,10 @@
   // The login transition can mount the Home document at either legacy alias.
   // Normalize the internal entry before selecting its controllers and History.
   if (homeAliases.has(initialUrl.pathname)) initialUrl.pathname = '/';
-  // Direct Mascotes now starts in its own document; prepare the Home factory
-  // in the background so its first retained tap has the same readiness contract.
-  if(initialUrl.pathname==='/mascotes/')backgroundControllers.add('/');
-  if (screen.matches && primaryViews.has(initialUrl.pathname) && !['/','/mascotes/'].includes(initialUrl.pathname)) {
+  // Direct Mascotes/Canal own their first-paint documents; prepare the Home
+  // factory in the background for the same retained readiness contract.
+  if(['/mascotes/','/cidadao/'].includes(initialUrl.pathname))backgroundControllers.add('/');
+  if (screen.matches && primaryViews.has(initialUrl.pathname) && !['/','/mascotes/','/cidadao/'].includes(initialUrl.pathname)) {
     // Mascotes already has first-frame mobile styles and can own its initial
     // area directly. History still exposes '/' without painting an intervening Home.
     // Legacy links enter the same Home document before any area controller
@@ -101,6 +101,10 @@
 
   function context(url, root) {
     const state = { url, root, active: true, disposed: false, listeners: [], timers: new Set(), frames: new Set(), controllers: [], ready: Promise.resolve(), scroll: [0, 0], styles: [], requests: new Set(), abort: new AbortController() };
+    // The Citizen controllers prepare their real DOM while detached. Their
+    // body attributes and identity labels must not mutate the visible Home.
+    state.presentationBody = document.createElement('body');
+    const identityNodes = new Map();
     const eventAPI = target => ({
       addEventListener(type, handler, options) {
         const wrapped = event => {
@@ -121,8 +125,16 @@
     const docEvents = eventAPI(document), winEvents = eventAPI(window);
     state.document = new Proxy(document, { get(target, key) {
       if (key in docEvents) return docEvents[key];
-      if (key === 'getElementById') return id => root.querySelector(`#${CSS.escape(id)}`)
-        || (/^(portalUserName|portalUserRole|portalLogout|homeAccountMenu|homeAccountPanel|socialShortcutLimit|socialShortcutLimitControl)$/.test(id) ? target.getElementById(id) : null);
+      if (key === 'body' && url.pathname === '/cidadao/' && !state.active) return state.presentationBody;
+      if (key === 'getElementById') return id => {
+        const local = root.querySelector(`#${CSS.escape(id)}`);
+        if (local) return local;
+        if (url.pathname === '/cidadao/' && !state.active && /^portalUser(Name|Role)$/.test(id)) {
+          if (!identityNodes.has(id)) identityNodes.set(id, target.getElementById(id)?.cloneNode(true));
+          return identityNodes.get(id) || null;
+        }
+        return /^(portalUserName|portalUserRole|portalLogout|homeAccountMenu|homeAccountPanel|socialShortcutLimit|socialShortcutLimitControl)$/.test(id) ? target.getElementById(id) : null;
+      };
       if (key === 'querySelector') return selector => root.querySelector(selector) || (chrome(selector) ? target.querySelector(selector) : null);
       if (key === 'querySelectorAll') return selector => chrome(selector) ? target.querySelectorAll(selector) : root.querySelectorAll(selector);
       const value = Reflect.get(target, key, target);
@@ -170,6 +182,8 @@
       state.frames.forEach(cancelAnimationFrame);
       state.controllers.forEach(controller => controller.dispose?.());
       root.remove();
+      const copies = window[Symbol.for('portal.citizenMobileEarlyCopies')];
+      for (const node of copies?.keys() || []) if (root.contains(node)) copies.delete(node);
       root.querySelectorAll('input, textarea').forEach(node => { node.value = ''; });
       Promise.allSettled([state.ready, ...state.requests]).then(() => root.replaceChildren());
     };
@@ -297,9 +311,11 @@
     area.desktopBrand = desktopBrand(doc.querySelector('.portal-topbar .portal-brand'));
     root.addEventListener('input', () => { area.dirty = true; });
     area.attributes = [...doc.body.attributes].filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]);
+    for (const [key, value] of area.attributes) area.presentationBody.setAttribute(key, value);
+    if (url.pathname === '/cidadao/' && screen.matches) area.presentationBody.classList.add('mobile-citizen-mode');
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261015-citizen-tutorial-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261015-citizen-tutorial-1&panel=20261016-1'];
       // Preview assets are optional and owned by the citizen controller. A
       // failed image helper must not discard an otherwise usable Citizen area.
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
@@ -309,7 +325,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261016-help-compact-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : entry === 'security' ? '20261015-account-private-4' : entry === 'pets-page' ? '20261015-account-private-4' : entry === 'pets-achievements' ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261016-help-compact-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : entry === 'security' ? '20261015-account-private-4' : entry === 'pets-page' ? '20261015-account-private-4' : entry === 'pets-achievements' ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}${['citizen', 'citizen-declaration', 'citizen-mobile-app', 'citizen-account-level', 'home'].includes(entry) ? '&panel=20261016-1' : ''}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
@@ -344,6 +360,17 @@
         if (entry === 'home') window.PortalHomeReady = Promise.resolve(pending);
         await pending;
       }
+      if (area.url.pathname === '/cidadao/' && !area.active) {
+        const panel = await window.PortalCitizenLayout?.prepareRoute?.('/cidadao/');
+        panel?.prepareCitizenMobilePresentation(area.root);
+        // Use the revised presenter even when an installed Home still has a
+        // cached layout loader. Its shared singleton remains the only owner.
+        const presentation = await import('/js/citizen-mobile-presentation.js?v=20261015-citizen-tutorial-1&panel=20261016-1');
+        if (!valid() || area.disposed) throw new DOMException('Sessão encerrada', 'AbortError');
+        presentation.mountCitizenMobilePresentation(area);
+        area.attributes = [...area.presentationBody.attributes].map(attr => [attr.name, attr.value]);
+        area.citizenFirstPaint = true;
+      }
       area.loaded = true;
     })().catch(error => { area.failed = true; throw error; });
     return area.ready;
@@ -370,6 +397,10 @@
         if (!enabled() || document.hidden || !navigator.onLine || navigating) break;
         let area;
         try {
+          if (path === '/cidadao/') {
+            const fresh = await window.RegulationAuth.me({allowCached:false});
+            if (!valid() || !fresh || fresh.mustChangePassword || fresh.role === 'cidadao' && ['presidente', 'membro'].includes(fresh.councilRole)) continue;
+          }
           area = await prepare(new URL(path, location.origin));
           await window.PortalCitizenLayout?.prepareRoute?.(path);
           if (area !== active && backgroundControllers.has(path)) await initialize(area);
@@ -390,6 +421,14 @@
   function schedulePrewarm() {
     if (!valid() || document.readyState !== 'complete' || prewarmTimer || prewarming) return;
     prewarmTimer = setTimeout(prewarm, 250);
+  }
+
+  function attachPet(area) {
+    const runtime = window.PortalPets?.runtime;
+    const habitat = area.root.querySelector('#petHabitat');
+    // Reattaching the same global mascot forces layout and resets placement.
+    // The native runtime only needs a handoff when its actual parent changes.
+    if (runtime?.root && runtime.root.parentNode !== (habitat || document.body)) runtime.attachHabitat?.(habitat);
   }
 
   function activate(area) {
@@ -413,7 +452,7 @@
       area.citizenFirstPaint = false;
     }
     area.active = true; marker.after(area.root);
-    window.PortalPets?.runtime?.attachHabitat?.(area.root.querySelector('#petHabitat'));
+    attachPet(area);
     area.dialogs?.forEach(dialog => { if (dialog.isConnected && !dialog.open) dialog.showModal(); });
     area.controllers.forEach(controller => controller.activate?.());
     updateNavigation();
@@ -422,13 +461,19 @@
   function deactivate(area) {
     area.scroll = [scrollX, scrollY];
     area.focus = area.root.contains(document.activeElement) ? document.activeElement : null;
-    area.controllers.forEach(controller => controller.deactivate?.());
-    area.attributes = bodyState();
     area.dialogs = [...area.root.querySelectorAll('dialog[open]')];
     area.dialogs.forEach(dialog => dialog.close());
+    // Restore native positions in the retained, detached tree. Moving a
+    // focused Home shortcut repeatedly while connected forces style/layout
+    // and focus restoration before the requested panel can paint.
+    area.root.remove();
+    area.controllers.forEach(controller => controller.deactivate?.());
+    area.attributes = bodyState();
+    for (const attr of [...area.presentationBody.attributes]) area.presentationBody.removeAttribute(attr.name);
+    for (const [key, value] of area.attributes) area.presentationBody.setAttribute(key, value);
     if (area.root.contains(window.PortalPets?.runtime?.root)) window.PortalPets.runtime.attachHabitat(null);
     window.PortalSocialFeed?.suspend?.(area.root.querySelector('#socialFeedMore, #profilePostsMore'));
-    area.active = false; area.root.remove();
+    area.active = false;
     // Keep parsed stylesheets resident: disabling a link can refetch it on
     // return and reflow after scroll restoration, especially with no-store.
     area.styles.forEach(link => { link.media = 'not all'; });
@@ -456,26 +501,27 @@
     // authorized area starts preparing requests.
     active.controllers.forEach(controller => controller.beforeNavigate?.());
     if (!options.restoring) restoreTarget = null;
-    if (navigating) { wanted = { url, pop }; return true; }
+    if (navigating) { wanted = { url, pop }; cancelNavigation?.(); return true; }
     navigating = true; navigationKey = routeKey(url);
     const retained = areas.get(routeKey(url));
     notice.hidden = Boolean(retained?.loaded && !retained.failed); notice.textContent = 'Carregando…';
     notice.setAttribute('aria-busy', 'true');
     const previous = active;
+    const superseded = new Promise(resolve => { cancelNavigation = resolve; });
     let previousHistory;
     try {
-      await previous.ready;
+      if (previous.url.pathname !== '/cidadao/') await Promise.race([previous.ready, superseded]);
+      if (wanted || !valid()) return true;
       if (!(await gate(url))) return true;
       const direct = window[Symbol.for('portal.homeMobileDirect')];
       if (!options.restoring && document.getElementById('portalChatRoot')?.classList.contains('open')) await direct?.closeToPage?.();
       previousHistory = { ...history.state, [KEY]:routeKey(previous.url), [ACCOUNT]:sessionIdentity, ...(!options.restoring ? { __portalHomeDirect:undefined } : {}) };
-      const area = await prepare(url);
-      // Only this requested citizen surface is prepared before exposure. The
-      // native gate above still owns authorization and fresh account checks.
-      if (url.pathname === '/cidadao/' && screen.matches && window.RegulationAuth.getCachedUser()?.role === 'cidadao' && !area.initialized) {
-        const panel = await window.PortalCitizenLayout?.prepareRoute?.('/cidadao/');
-        panel?.prepareCitizenMobilePresentation(area.root);
-        area.citizenFirstPaint = true;
+      const area = await Promise.race([prepare(url), superseded]);
+      if (wanted || !valid()) return true;
+      if (url.pathname === '/cidadao/' && !area.loaded) {
+        // Keep the current usable view while its first data load finishes.
+        // Another tap can leave this wait immediately; preparation continues.
+        await Promise.race([initialize(area), superseded]);
       }
       if (!valid()) return true;
       if (wanted) return true;
@@ -494,7 +540,7 @@
         history.pushState(destinationState, '', publicAddress(destination));
       }
       window.PortalSocialFeed?.resume?.(area.root.querySelector('#socialFeedMore, #profilePostsMore'));
-      window.PortalPets?.runtime?.attachHabitat?.(area.root.querySelector('#petHabitat'));
+      attachPet(area);
       await new Promise(requestAnimationFrame);
       window.scrollTo(...area.scroll);
       const focus = area.focus?.isConnected ? area.focus : area.root.querySelector('h1, h2');
@@ -503,6 +549,8 @@
       startUpdates();
     } catch (error) {
       if (!valid()) return true;
+      const target = areas.get(routeKey(url));
+      if (target?.failed && target !== active) { areas.delete(routeKey(url)); target.dispose(); }
       if (active !== previous) {
         const failed = active;
         deactivate(failed);
@@ -516,8 +564,10 @@
       const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Tentar novamente';
       retry.addEventListener('click', () => navigate(url, pop), { once: true }); notice.append(retry);
     } finally {
-      notice.setAttribute('aria-busy', 'false'); navigating = false; navigationKey = null;
-      const next = wanted; wanted = null; if (next && valid()) void navigate(next.url, next.pop);
+      notice.setAttribute('aria-busy', 'false'); navigating = false; navigationKey = null; cancelNavigation = null;
+      const next = wanted; wanted = null;
+      if (next && valid() && routeKey(next.url) === routeKey(active.url)) notice.hidden = true;
+      if (next && valid() && routeKey(next.url) !== routeKey(active.url)) void navigate(next.url, next.pop);
       else schedulePrewarm();
     }
     return true;
@@ -530,7 +580,7 @@
       || !link || link.hasAttribute('download') || link.target && link.target !== '_self') return;
     const url = new URL(link.href);
     if (url.origin !== location.origin || !entries[url.pathname] || url.hash && routeKey(url) === routeKey(active.url)) return;
-    event.preventDefault(); if (routeKey(url) !== routeKey(active.url)) void navigate(url);
+    event.preventDefault(); if (navigating || routeKey(url) !== routeKey(active.url)) void navigate(url);
   });
   window.addEventListener('popstate', event => {
     if (!valid()) return;
@@ -565,7 +615,7 @@
   window.addEventListener('beforeprint', () => document.body.classList.remove('citizen-mobile-shell'));
   window.addEventListener('afterprint', syncMedia);
   function dispose() {
-    if (ended) return; ended = true; wanted = null;
+    if (ended) return; ended = true; wanted = null; cancelNavigation?.();
     history.scrollRestoration = nativeScrollRestoration;
     clearTimeout(prewarmTimer); preparationAbort.abort();
     areas.forEach(area => area.dispose()); areas.clear(); notice.remove();
@@ -592,7 +642,7 @@
   });
   window.PortalCitizenShell = Object.freeze({
     ownsElement: element => valid() && [...areas.values()].some(area => !area.disposed && area.root.contains(element)),
-    version:'20261011-citizen-entry-1', enabled, active: () => active, updateNavigation, navigate,
+    version:'20261016-citizen-retained-1', enabled, active: () => active, updateNavigation, navigate,
     canonicalize(path, area = active) {
       const url = new URL(path, location.href);
       if (!entries[url.pathname] || url.origin !== location.origin) return;
@@ -633,6 +683,7 @@
     if (!enabled() || document.hidden || !navigator.onLine || updateRunning) return;
     updateRunning = true; updateController = new AbortController();
     try {
+      active.controllers.forEach(controller => controller.revalidate?.());
       const config = await window.PortalSocial.api('/api/social/config', { signal: updateController.signal });
       if (!valid()) return;
       if (config.available) {

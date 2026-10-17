@@ -7,6 +7,8 @@ const initializeCitizenArea = (context) => {
   const MutationObserver = context?.MutationObserver || globalThis.MutationObserver;
   const auth = window.RegulationAuth;
   if (!auth) return;
+  const sessionToken = auth.getToken?.();
+  const current = () => !context?.disposed && auth.getToken?.() === sessionToken;
 
   const typeLabels = {
     sugestao: 'Sugestão',
@@ -222,6 +224,7 @@ const initializeCitizenArea = (context) => {
   }
 
   async function issueDeclaration(button) {
+    if (!current()) return;
     const protocol = currentProtocol();
     if (!protocol) return;
 
@@ -236,7 +239,8 @@ const initializeCitizenArea = (context) => {
     button.disabled = true;
     button.innerHTML = declarationButtonHtml('Gerando declaração...');
     try {
-      const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET' });
+      const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET', signal:context?.abort?.signal });
+      if (!current()) throw new DOMException('Sessão encerrada', 'AbortError');
       if (!payload?.manifestation) throw new Error('Manifestação não encontrada.');
       writeDocument(target, declarationHtml(payload.manifestation));
       target.focus();

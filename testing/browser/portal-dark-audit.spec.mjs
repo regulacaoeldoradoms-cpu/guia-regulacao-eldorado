@@ -15,6 +15,36 @@ test('canonical Home URL cannot cover the wrong internal route',async({page})=>{
   await waitForAuditRoute(page,'/perfil/');
 });
 
+test('Citizen canonical address requires its loaded controller; native and historical entries stay exact',async({page})=>{
+  await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><p>Synthetic Citizen</p>'}));
+  await page.goto('/');
+  page.setDefaultTimeout(300);
+  await page.evaluate(()=>{
+    window.__routeFixture={path:'/',loaded:true,navigating:false,enabled:true,version:'20261016-citizen-retained-1'};
+    window.PortalCitizenShell={get version(){return __routeFixture.version;},enabled:()=>__routeFixture.enabled,
+      active:()=>({url:new URL(__routeFixture.path,location.href),loaded:__routeFixture.loaded}),diagnostics:()=>({navigating:__routeFixture.navigating})};
+  });
+  await expect(waitForAuditRoute(page,'/cidadao/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>{__routeFixture.path='/cidadao/';__routeFixture.loaded=false;});
+  await expect(waitForAuditRoute(page,'/cidadao/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>{__routeFixture.loaded=true;__routeFixture.navigating=true;});
+  await expect(waitForAuditRoute(page,'/cidadao/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>{__routeFixture.navigating=false;});
+  await waitForAuditRoute(page,'/cidadao/');
+  await page.evaluate(()=>history.replaceState(null,'','/cidadao/'));
+  await expect(waitForAuditRoute(page,'/cidadao/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>{__routeFixture.version='20261011-citizen-entry-1';});
+  await waitForAuditRoute(page,'/cidadao/');
+  await page.evaluate(()=>history.replaceState(null,'','/'));
+  await expect(waitForAuditRoute(page,'/cidadao/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>{__routeFixture.version='20261016-citizen-retained-1';__routeFixture.enabled=false;history.replaceState(null,'','/cidadao/');});
+  await waitForAuditRoute(page,'/cidadao/');
+  await page.evaluate(()=>{delete window.PortalCitizenShell;window.PortalCitizenShellReady=new Promise(()=>{});});
+  await expect(waitForAuditRoute(page,'/cidadao/')).rejects.toThrow(/Timeout/);
+  await page.evaluate(()=>{delete window.PortalCitizenShellReady;});
+  await waitForAuditRoute(page,'/cidadao/');
+});
+
 test('snapshot identity ignores class insertion order while retaining style regressions',async({page})=>{
   await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<html data-portal-theme="light"><body class="has-social-navigation portal-chat-present"><main><p>Conteúdo sintético</p></main></body></html>'}));
   await page.goto('/');

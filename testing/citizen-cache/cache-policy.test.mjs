@@ -11,28 +11,30 @@ const source = fs.readFileSync(new URL('../../portal-sw.js', import.meta.url), '
 test('shared entries use one released citizen loader and matching dependency URLs',()=>{
   const read=path=>fs.readFileSync(new URL('../../'+path,import.meta.url),'utf8');
   const citizen=read('cidadao/index.html');
-  const version=citizen.match(/\/js\/citizen-layout\.js\?v=([^"']+)/)?.[1];
-  assert.ok(version);
+  const loaderVersion=citizen.match(/\/js\/citizen-layout\.js\?v=([^"']+)/)?.[1];
+  assert.ok(loaderVersion);
+  const version=new URL('https://fixture.invalid/?v='+loaderVersion).searchParams.get('v');
+  assert.equal(loaderVersion,version+'&panel=20261016-1','The changed loader must have its own cache key');
   for(const route of shared){
     const html=read(route==='/'?'index.html':route.slice(1)+'index.html');
     for(const name of ['citizen-layout','account-section-shell','home']){
       for(const url of html.matchAll(new RegExp('/js/'+name+'\\.js\\?v=([^"\']+)','g'))){
-        assert.equal(url[1],version,`${route}: ${name} must not reuse an obsolete cached owner`);
+        assert.equal(url[1],loaderVersion,`${route}: ${name} must not reuse an obsolete cached owner`);
       }
     }
     assert.ok(html.includes('/js/citizen-mobile-shell.js?v=20261016-help-compact-1'),`${route}: released shell must load the compact help owner`);
   }
   assert.ok(citizen.includes('/js/citizen.js?v=20261016-help-compact-1'));
-  for(const path of ['js/home.js','js/account-section-shell.js'])assert.ok(read(path).includes(`/js/citizen-layout.js?v=${version}`));
+  for(const path of ['js/home.js','js/account-section-shell.js'])assert.ok(read(path).includes(`/js/citizen-layout.js?v=${loaderVersion}`));
   const layout=read('js/citizen-layout.js'),shell=read('js/citizen-mobile-shell.js');
   assert.ok(!citizen.includes('<script src="/js/citizen-compose-attachments.js'),'Optional previews must not block HTML parsing');
   assert.ok(citizen.includes(`/css/citizen-compose-refinement.css?v=${version}`));
   assert.ok(layout.includes(`'${version}'`));
   assert.ok(read('js/citizen.js').includes(`/js/citizen-compose-attachments.js?v=${version}`));
   assert.ok(!shell.includes('citizen-compose-attachments.js'),'Optional previews must not become a mandatory route dependency');
-  assert.ok(layout.includes(`/js/citizen-mobile-presentation.js?v=${version}`));
+  assert.ok(layout.includes(`/js/citizen-mobile-presentation.js?v=${loaderVersion}`));
   assert.ok(layout.includes(`path === '/css/citizen-mobile-presentation.css' ? '${version}'`));
-  assert.ok(shell.includes(`/js/account-section-shell.js?v=${version}`));
+  assert.ok(shell.includes(`/js/account-section-shell.js?v=${loaderVersion}`));
   assert.ok(shell.includes("entry === 'citizen' ? '20261016-help-compact-1'"));
   for(const entry of ['citizen-mobile-app','home'])assert.ok(shell.includes(`entry === '${entry}' ? '${version}'`));
 });
@@ -169,10 +171,25 @@ test('versioned asset caching retains its previous behavior', async () => {
   assert.equal(await (await event.response).text(), 'ASSET-OLD');
 });
 
-const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261016-1">';
+const citizenMarker = '<meta name="portal-citizen-first-paint" content="20261017-1">';
 test('published Citizen HTML and service worker agree on the current release marker',()=>{
   assert.ok(source.includes(`CITIZEN_HTML_MARKER = '${citizenMarker}'`));
   assert.ok(fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8').includes(citizenMarker));
+});
+test('PR663 cached Citizen upgrades its retained-panel URLs on the first good-network navigation',async()=>{
+  const currentHtml=fs.readFileSync(new URL('../../cidadao/index.html',import.meta.url),'utf8');
+  const previous='<meta name="portal-citizen-first-paint" content="20261016-1"><script src="/js/citizen-mobile-shell.js?v=20261016-help-compact-1"></script>';
+  let resolve;const f=fixture(()=>new Promise(r=>{resolve=r;}));
+  await f.seed('/cidadao/',previous);await f.seed('/perfil/','PROFILE-UNCHANGED');
+  const navigation=f.dispatch('/cidadao/');await until(()=>!!resolve);
+  resolve(new Response(currentHtml));
+  assert.equal(await(await navigation.response).text(),currentHtml,'First response must upgrade PR663 HTML instead of serving it as current');
+  await Promise.all(navigation.waits);
+  assert.ok(currentHtml.includes('/js/citizen-mobile-shell.js?v=20261016-help-compact-1&panel=20261016-1'));
+  assert.ok(currentHtml.includes('/js/citizen-layout.js?v=20261015-citizen-tutorial-1&panel=20261016-1'));
+  assert.ok(fs.readFileSync(new URL('../../js/citizen-layout.js',import.meta.url),'utf8').includes('/js/citizen-mobile-presentation.js?v=20261015-citizen-tutorial-1&panel=20261016-1'));
+  assert.equal(await(await(await f.caches.open(namespace)).match(origin+'/perfil/')).text(),'PROFILE-UNCHANGED');
+  assert.deepEqual([...f.stores.keys()],[namespace]);
 });
 test('previous tutorial shell gets the new example CSS without replacing caches or the old asset',async()=>{
   const previousCss='/css/citizen-tutorial.css?v=20261015-citizen-tutorial-1';

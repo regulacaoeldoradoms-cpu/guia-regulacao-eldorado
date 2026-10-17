@@ -129,6 +129,8 @@ const initializeCitizenArea = (context) => {
     uploadButton.disabled = true;
 
     let selectedFile = null;
+    const sessionToken = window.RegulationAuth?.getToken?.();
+    const current = () => !context?.disposed && window.RegulationAuth?.getToken?.() === sessionToken;
 
     const showStatus = (message, type = 'error') => {
       status.textContent = message;
@@ -156,8 +158,10 @@ const initializeCitizenArea = (context) => {
       uploadButton.hidden = true;
       uploadButton.disabled = true;
     };
+    context?.addController?.({dispose:resetSelection});
 
     const selectFile = (file, sourceLabel) => {
+      if (!current()) return;
       clearStatus();
       const error = validateFile(file);
       if (error) {
@@ -208,6 +212,7 @@ const initializeCitizenArea = (context) => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
+      if (!current()) return;
       clearStatus();
 
       const protocol = String(document.getElementById('detailProtocol')?.textContent || '').trim();
@@ -226,10 +231,18 @@ const initializeCitizenArea = (context) => {
       try {
         const payload = new FormData();
         payload.append('file', selectedFile);
-        await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}/attachments?as=citizen`, { method: 'POST', body: payload });
+        await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}/attachments?as=citizen`, { method: 'POST', body: payload, signal:context?.abort?.signal });
+        if (!current()) return;
 
-        const detail = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET' });
-        renderAttachments(detail?.attachments || []);
+        const refreshDetail = document.getElementById('manifestationDetailModal')?.refreshCitizenDetail;
+        if (typeof refreshDetail === 'function') {
+          if (!await refreshDetail(protocol)) throw new Error('Anexo enviado, mas não foi possível atualizar o acompanhamento. Atualize o protocolo para conferir.');
+        } else {
+          const detail = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET', signal:context?.abort?.signal });
+          if (!current()) return;
+          renderAttachments(detail?.attachments || []);
+        }
+        if (!current()) return;
         resetSelection();
         showStatus('Anexo enviado com sucesso.', 'success');
       } catch (error) {
@@ -244,7 +257,9 @@ const initializeCitizenArea = (context) => {
 
   setupDetailAttachmentMobile();
 
+  let citizenMounted = false;
   const waitForCitizen = () => {
+    if (citizenMounted || context?.disposed) return;
     const role = document.getElementById('portalUserRole');
     const homeLink = document.getElementById('professionalHomeLink');
     const manifestationsCard = document.getElementById('manifestationsCard');
@@ -266,6 +281,7 @@ const initializeCitizenArea = (context) => {
     }
 
     const isPrimaryCitizen = /^Cidadão(?:\b|\s|·)/i.test(role.textContent.trim()) && (!homeLink || homeLink.hidden);
+    citizenMounted = true;
     document.body.classList.add('citizen-mobile-app');
     if (isPrimaryCitizen) document.body.classList.add('citizen-primary-mobile');
     document.body.dataset.citizenTab = 'manifestations';
@@ -324,6 +340,7 @@ const initializeCitizenArea = (context) => {
     observer.observe(manifestationList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     observer.observe(notificationList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     updateCounts();
+    context?.addController?.({activate:updateCounts});
 
     /* O texto original é correto, mas muito comprido para um chip no telefone. */
     if (privacyChip) {
@@ -341,6 +358,7 @@ const initializeCitizenArea = (context) => {
     }
   };
 
+  context?.addController?.({activate:waitForCitizen});
   waitForCitizen();
 };
 if (window.PortalCitizenShell) window.PortalCitizenShell.register('citizen-mobile-app', initializeCitizenArea);

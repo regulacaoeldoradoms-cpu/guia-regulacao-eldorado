@@ -18,15 +18,32 @@ try {
  await page.keyboard.press('Tab');assert(await page.evaluate(()=>document.getElementById('newManifestationModal').contains(document.activeElement)),JSON.stringify(await page.evaluate(()=>({active:document.activeElement.id,open:document.getElementById('newManifestationModal').className,visible:getComputedStyle(document.getElementById('newManifestationModal')).visibility,closeVisible:getComputedStyle(document.querySelector('#newManifestationModal .citizen-modal-close')).visibility}))));
  await page.keyboard.press('Escape');await page.locator('#newManifestationModal').waitFor({state:'hidden'});assert.equal(await page.evaluate(()=>document.activeElement.id),'openNewManifestation');
  const owner=await page.evaluateHandle(()=>document.getElementById('newManifestationForm'));
+ await page.evaluate(()=>{
+   window.__originalComposeResize=[...__composeViewportHandlers][0];
+   window.__originalComposePresentation=[...__composePresentationHandlers][0];
+   // Isolate disposal from a later authorized prewarm of the same route.
+   // The intercepted GET fixtures remain available for explicit navigation.
+   Object.defineProperty(navigator,'onLine',{configurable:true,value:false});
+ });
+ await page.waitForFunction(()=>!PortalCitizenShell.diagnostics().prewarming);
  for(let i=0;i<18;i++) {
    const route=`/perfil/?compose-eviction=${i}`;
    await page.evaluate(path=>PortalCitizenShell.navigate(new URL(path,location.href)),route);
    await page.waitForFunction(path=>PortalCitizenShell.diagnostics().active===path,route);
  }
  assert.equal(await owner.evaluate(n=>n.isConnected),false);assert.equal(await page.evaluate(()=>__composeViewportHandlers.size),0);assert.equal(await page.evaluate(()=>__composePresentationHandlers.size),0);
+ await page.evaluate(()=>{delete navigator.onLine;});
+ // The new retained contract may recreate Citizen before the user returns.
+ // Exercise that path explicitly instead of racing its 250ms admission timer.
+ await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/perfil/?compose-eviction=17',location.href)));
+ await page.waitForFunction(()=>PortalCitizenShell.diagnostics().ready.includes('/cidadao/')&&!PortalCitizenShell.diagnostics().prewarming);
+ assert.equal(await page.evaluate(()=>__composeViewportHandlers.size),1);assert.equal(await page.evaluate(()=>__composePresentationHandlers.size),1);
+ assert(await page.evaluate(()=>!__composeViewportHandlers.has(__originalComposeResize)&&!__composePresentationHandlers.has(__originalComposePresentation)),'Disposed owners cannot return during prewarm');
+ await page.evaluate(()=>{window.__preparedComposeResize=[...__composeViewportHandlers][0];window.__preparedComposePresentation=[...__composePresentationHandlers][0];});
  await page.evaluate(()=>PortalCitizenShell.navigate(new URL('/cidadao/',location.href)));await page.waitForFunction(()=>PortalCitizenShell.diagnostics().active==='/cidadao/'&&!PortalCitizenShell.diagnostics().navigating).catch(async error=>{console.log(await page.evaluate(()=>({diagnostics:PortalCitizenShell.diagnostics(),notice:document.querySelector('.citizen-route-notice')?.textContent,handlers:__composeViewportHandlers.size})));console.log(result.errors);throw error;});await page.evaluate(()=>PortalCitizenShell.active().ready);await ready(page,'/cidadao/');
  assert.equal(await page.evaluate(()=>__composeViewportHandlers.size),1);assert.equal(await page.evaluate(()=>__composePresentationHandlers.size),1);
+ assert(await page.evaluate(()=>__composeViewportHandlers.has(__preparedComposeResize)&&__composePresentationHandlers.has(__preparedComposePresentation)),'Activation must reuse the prepared owners');
  await page.locator('#openNewManifestation').focus();await page.keyboard.press('Enter');assert(await page.evaluate(()=>document.getElementById('newManifestationModal').contains(document.activeElement)),JSON.stringify(await page.evaluate(()=>({active:document.activeElement.id,open:document.getElementById('newManifestationModal').className,visible:getComputedStyle(document.getElementById('newManifestationModal')).visibility,closeVisible:getComputedStyle(document.querySelector('#newManifestationModal .citizen-modal-close')).visibility}))));
  assert.deepEqual(result.errors,[]);assert.equal(audit.apiCalls.filter(s=>s.startsWith('POST /api/council/')).length,0);
- console.log(JSON.stringify({keyboardOpening:true,evicted:true,resizeHandlersAfterEviction:0,resizeHandlersAfterRebuild:1,presentationHandlersAfterEviction:0,presentationHandlersAfterRebuild:1,errors:result.errors,passed:true}));await context.close();
+ console.log(JSON.stringify({keyboardOpening:true,evicted:true,resizeHandlersAfterEviction:0,resizeHandlersAfterRebuild:1,presentationHandlersAfterEviction:0,presentationHandlersAfterRebuild:1,prewarmedOwnersReused:true,oldOwnersAbsent:true,errors:result.errors,passed:true}));await context.close();
 } finally {await browser.close();await new Promise(r=>server.server.close(r));}

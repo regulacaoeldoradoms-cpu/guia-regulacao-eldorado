@@ -92,9 +92,13 @@ try {
     check('route waits for Chat history unwind', await page.evaluate(() => (window.PortalCitizenShell?.active().url || location).pathname === '/amigos/' && !history.state?.__portalHomeDirect && !document.getElementById('portalChatRoot').classList.contains('open')));
     await go(page, '/');
     const newest = { ...posts[0], id:'fixture-new-post', body:'Nova publicação sintética', createdAt:'2026-10-10T16:00:00Z' };
-    await contextRouteFeed(page, [newest, ...posts]);
+    // The updater deliberately coalesces online/focus events while a read is
+    // in flight. Finish that previous snapshot before requesting the new one.
+    await page.waitForFunction(()=>!window.PortalCitizenShell.diagnostics().updateRunning);
+    const feedReads=await contextRouteFeed(page, [newest, ...posts]);
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await page.locator('.social-new-posts:not([hidden])').waitFor();
+    check('online refresh reads the replacement feed snapshot',feedReads()>0);
     check('new post waits for tap', await page.locator('[data-post-id="fixture-new-post"]').count() === 0);
     await page.locator('.social-new-posts').click();
     check('new post applied once', await page.locator('[data-post-id="fixture-new-post"]').count() === 1);
@@ -171,7 +175,7 @@ try {
     // before measuring it; an already preparing area may still settle its data.
     await page.waitForFunction(() => {
       const state = window.PortalCitizenShell.diagnostics();
-      return !state.prewarming && ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/'].every(path => state.ready.includes(path));
+      return !state.prewarming && ['/amigos/', '/perfil/', '/mascotes/', '/notificacoes/', '/cidadao/'].every(path => state.ready.includes(path));
     });
     await page.waitForLoadState('networkidle');
     notifications = [{ id:900, type:'relationship_requested', text:'há uma atualização sintética', createdAt:'2026-10-10T16:00:00Z', read:false }]; unread = 1;
@@ -275,5 +279,7 @@ try {
 }
 if (results.some(result => result.failure)) process.exitCode = 1;
 async function contextRouteFeed(page, feed) {
-  await page.route('**/api/social/feed*', route => route.fulfill({ contentType:'application/json', body:JSON.stringify({ posts:feed, nextCursor:'' }) }));
+  let reads=0;
+  await page.route('**/api/social/feed*', route => {reads++;return route.fulfill({ contentType:'application/json', body:JSON.stringify({ posts:feed, nextCursor:'' }) });});
+  return()=>reads;
 }
