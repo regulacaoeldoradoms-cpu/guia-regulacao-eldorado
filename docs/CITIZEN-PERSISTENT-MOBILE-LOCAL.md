@@ -215,6 +215,15 @@ executou 1.090 testes: 1.089 aprovados e uma falha em `registration-rollout`
 permanece inalterado e obrigatório no CI Linux. A suíte social afetada passou
 após a atualização da expectativa.
 
+O gate da Home expôs uma corrida da fixture de feed: seu evento `online` podia
+coincidir com uma leitura anterior, que o produto deve agrupar. O teste agora
+aguarda essa leitura antes de trocar o snapshot sintético e também exige uma
+requisição do snapshot novo, preservando aviso, inclusão somente após toque e
+rascunho. As pré-condições de preparo completo incluem o Canal. Os três scripts
+`mobile-shell`, `mobile-shell-prewarm` e `mobile-shell-regressions` passaram
+integralmente após o ajuste; os limites de memória, polling e coalescência do
+produto não mudaram.
+
 O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
 as seis comparações históricas em um job separado. Os gates anteriores e seus
 limites permanecem intactos. Logs, capturas e recibos desta rodada estão na
