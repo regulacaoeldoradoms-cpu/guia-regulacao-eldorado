@@ -58,6 +58,8 @@ jobs:
         run: node testing/citizen-layout/citizen-retained-read-races.mjs
       - name: Browser Back during submission preserves the confirmed result or failed draft
         run: node testing/citizen-layout/citizen-retained-submission.mjs
+      - name: Native attachment URLs expire offscreen and clear before logout navigation
+        run: node testing/citizen-layout/citizen-retained-attachment-urls.mjs
       - name: Security changes supersede reads interrupted by retained navigation
         run: node testing/citizen-layout/citizen-retained-security-race.mjs
       - name: Direct Citizen startup resumes once after leaving during its first load
@@ -86,6 +88,7 @@ jobs:
             .local/citizen-retained-cache-update/
             .local/citizen-retained-read-races/
             .local/citizen-retained-submission/
+            .local/citizen-retained-attachment-urls/
             .local/citizen-retained-security-race/
             .local/citizen-retained-startup/
             .local/citizen-retained-abort-compat/

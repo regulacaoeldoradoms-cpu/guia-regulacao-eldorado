@@ -80,6 +80,12 @@ const initializeCitizenArea = async (context) => {
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
+  const openedAttachmentUrls = new Map();
+  function releaseAttachmentUrl(url) {
+    if (!openedAttachmentUrls.has(url)) return;
+    globalThis.clearTimeout(openedAttachmentUrls.get(url));
+    openedAttachmentUrls.delete(url); URL.revokeObjectURL(url);
+  }
   let securityReads = 0;
   const securityAccountState = () => {
     if (demonstration) return '';
@@ -760,8 +766,8 @@ const initializeCitizenArea = async (context) => {
       const blob = await response.blob();
       if (!liveAllowed()) return;
       const url = URL.createObjectURL(blob);
+      openedAttachmentUrls.set(url, globalThis.setTimeout(() => releaseAttachmentUrl(url), 60000));
       window.open(url, '_blank', 'noopener');
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) {
       if (!liveAllowed()) return;
       window.alert(error.message || 'Não foi possível abrir o anexo.');
@@ -961,7 +967,7 @@ const initializeCitizenArea = async (context) => {
   };
   context?.addController?.({activate:activateCitizen,revalidate,deactivate(){
     if (securityReads || refreshing) { securityRefreshNeeded = true; readRuns.delete('security'); }
-  },dispose(){disposed=true;submittedProtocol='';readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
+  },dispose(){disposed=true;submittedProtocol='';for(const url of openedAttachmentUrls.keys())releaseAttachmentUrl(url);readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
   const securityPending = loadSecurity().finally(()=>{securityReady=true;});
   let initialResults;
   if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {

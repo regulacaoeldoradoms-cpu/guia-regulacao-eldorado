@@ -344,6 +344,15 @@ original do histórico e percorrem Voltar/Avançar pela rota distinta anterior.
 O código `948a074` reproduziu a entrada duplicada; os cenários corrigidos
 mantêm o mesmo documento, Home, barra, Chat e mascote, sem mutações do Conselho.
 
+As URLs Blob de anexos abertos usam o timer global de limpeza de 60 s, que não
+é descartado quando o Canal fica inativo. A área acompanha essas URLs e revoga
+todas no descarte da sessão, inclusive antes da navegação de logout. A versão
+`dd5364a` reproduziu a ausência de revogação após sair da área. Quatro cenários
+com PDF fictício passaram: expiração ativa, expiração fora da tela, descarte
+com duas URLs e logout real da sessão sintética. Observam chamadas às funções
+nativas de criação/revogação; a expiração de 60 s é disparada manualmente no
+teste, sem alterar o relógio ou o prazo no produto. Nenhum popup real é aberto.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
