@@ -1,0 +1,237 @@
+{
+  "id": "digsaude.neuropediatria.doencas-neurologicas-inflamatorias",
+  "revision": "neuropediatria-20261017-1",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Neuropediatria",
+  "condition": "Doenças Neurológicas Inflamatórias",
+  "aliases": [
+    "esclerose múltipla pediátrica",
+    "encefalomielite aguda disseminada",
+    "neurite óptica",
+    "mielite transversa"
+  ],
+  "provenance": "Transcrição estruturada do Telessaúde MS v2.0, 06/10/2025, seção Neurologia Pediátrica, página impressa 36 / física 42. Oferta relatada por WhatsApp pelo setor; mensagem original não apresentada.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "printed": "36",
+        "physical": "42",
+        "documentTotal": 72
+      },
+      "pending": "Vigência, oferta e aplicabilidade a confirmar"
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ],
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      }
+    },
+    {
+      "id": "CRITERIO",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Suspeita ou diagnóstico de doença neurológica inflamatória: esclerose múltipla, encefalomielite aguda disseminada, neurite óptica ou mielite transversa.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ]
+    },
+    {
+      "id": "NEURO",
+      "group": "clinicalAssessment",
+      "requirement": "obrigatorio",
+      "text": "Exame físico neurológico (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ]
+    },
+    {
+      "id": "LAB",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Exames laboratoriais, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "TC",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Tomografia computadorizada de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "RM",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Ressonância magnética de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "QUADRO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Descrever o quadro clínico atual, com documentos anexados ou descritos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "text": "Necessária a presença de familiar ou responsável no teleatendimento.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "36",
+          "physical": "42"
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "label": "Critério de encaminhamento",
+      "title": "Quando encaminhar",
+      "ruleIds": [
+        "CRITERIO"
+      ]
+    },
+    {
+      "label": "Descrição obrigatória",
+      "title": "Quadro clínico atual",
+      "ruleIds": [
+        "QUADRO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Avaliação clínica obrigatória",
+      "title": "Exame físico neurológico",
+      "ruleIds": [
+        "NEURO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Se houver",
+      "title": "Exames complementares",
+      "ruleIds": [
+        "LAB",
+        "TC",
+        "RM"
+      ]
+    },
+    {
+      "label": "Condição do atendimento",
+      "title": "Familiar ou responsável",
+      "ruleIds": [
+        "RESPONSAVEL"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "kind": "institutional_confirmation",
+      "title": "Oferta",
+      "text": "Retomada relatada pelo setor via WhatsApp, sem mensagem e data originais disponíveis."
+    },
+    {
+      "id": "IDADE17",
+      "kind": "flow_gap",
+      "title": "Faixa de 17 anos",
+      "text": "Confirmar o fluxo com a Regulação."
+    }
+  ],
+  "contextualAlerts": [
+    {
+      "id": "IDADE17",
+      "trigger": {
+        "ageYears": 17
+      },
+      "title": "17 anos: faixa não explicitada",
+      "text": "A seção Neurologia Pediátrica não define o fluxo para 17 anos."
+    }
+  ],
+  "parentProtocolId": "neuropediatria",
+  "category": "Pediatria",
+  "systemKind": "digsaude",
+  "searchKind": "condition",
+  "reference": "Telessaúde MS v2.0, 06/10/2025, impressa 36 / física 42."
+}
