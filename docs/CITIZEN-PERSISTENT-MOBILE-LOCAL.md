@@ -254,6 +254,16 @@ limites permanecem intactos. Logs, capturas e recibos desta rodada estão na
 worktree em `.local/` e no relatório separado `diagnostico-canal-20261017/` do
 workspace, sem dados reais.
 
+O CI do head `2d43587` encontrou uma expectativa antiga no lifecycle de compose:
+depois da expulsão, a preparação automática podia já ter criado outro Canal.
+Uma reprodução com navegação mais espaçada confirmou o formulário antigo fora
+do documento, os dois handlers antigos ausentes e exatamente um par novo, com
+o Canal preparado. A fixture agora pausa somente a admissão automática durante
+a janela de expulsão, mantendo as exigências de zero handlers; depois restaura
+a admissão, exige um único par novo e confirma a reutilização das mesmas funções
+na ativação. Teclado, 18 navegações, limite de memória e zero envios permanecem.
+O teste afetado passou localmente; nenhum código de produto mudou nessa correção.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
