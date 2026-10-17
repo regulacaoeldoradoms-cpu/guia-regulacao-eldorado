@@ -1,0 +1,290 @@
+{
+  "id": "digsaude.neuropediatria.disturbios-movimento",
+  "revision": "neuropediatria-20261017-1",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Neuropediatria",
+  "condition": "Distúrbios do Movimento — Ataxias, Coreias e Distonia",
+  "aliases": [
+    "ataxia",
+    "coreia",
+    "distonia",
+    "espasmo hemifacial"
+  ],
+  "provenance": "Transcrição estruturada a partir da seção Neurologia Pediátrica do Protocolo Telessaúde MS v2.0, 06/10/2025; conferida com o PDF disponibilizado no projeto. Oferta da especialidade relatada pelo setor via WhatsApp; mensagem original e vigência externa não verificadas.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "printed": "35–36",
+        "physical": "41–42",
+        "documentTotal": 72
+      },
+      "pending": "Vigência, oferta atual e aplicabilidade municipal a confirmar."
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      },
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ]
+    },
+    {
+      "id": "ATAXIA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Suspeita ou diagnóstico de ataxia em crianças.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ]
+    },
+    {
+      "id": "COREIA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Suspeita ou diagnóstico de coreia.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ]
+    },
+    {
+      "id": "DISTONIA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Suspeita ou diagnóstico de distonia ou espasmo hemifacial.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ]
+    },
+    {
+      "id": "NEURO",
+      "group": "clinicalAssessment",
+      "requirement": "obrigatorio",
+      "text": "Exame físico neurológico (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ]
+    },
+    {
+      "id": "LAB",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Exames laboratoriais, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "TC",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Tomografia de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "RM",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Ressonância magnética de crânio, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "ENMG",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Eletroneuromiografia, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "35–36",
+          "physical": "41–42"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "QUADRO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Informar o quadro clínico atual, com documentos anexados ou descritos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "30",
+          "physical": "36"
+        }
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "text": "Necessária a presença de familiar ou responsável no dia do teleatendimento.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "30",
+          "physical": "36"
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "label": "Descrição clínica obrigatória",
+      "title": "Quadro clínico atual",
+      "ruleIds": [
+        "QUADRO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Critérios do protocolo",
+      "title": "Quando encaminhar",
+      "ruleIds": [
+        "ATAXIA",
+        "COREIA",
+        "DISTONIA"
+      ]
+    },
+    {
+      "label": "Avaliação clínica obrigatória",
+      "title": "Exame neurológico",
+      "ruleIds": [
+        "NEURO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Se houver",
+      "title": "Documentos e exames disponíveis",
+      "ruleIds": [
+        "LAB",
+        "TC",
+        "RM",
+        "ENMG"
+      ]
+    },
+    {
+      "label": "Condição do atendimento",
+      "title": "Familiar ou responsável",
+      "ruleIds": [
+        "RESPONSAVEL"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta operacional",
+      "kind": "institutional_confirmation",
+      "text": "Retomada comunicada ao Setor de Regulação pelo WhatsApp, segundo relato do setor. Não foram apresentados a mensagem original e a data."
+    },
+    {
+      "id": "IDADE17",
+      "title": "17 anos",
+      "kind": "flow_gap",
+      "text": "A seção Neurologia Pediátrica não define fluxo para 17 anos; confirmar com Regulação."
+    }
+  ],
+  "contextualAlerts": [
+    {
+      "id": "IDADE17",
+      "trigger": {
+        "ageYears": 17
+      },
+      "title": "17 anos: faixa não explicitada",
+      "text": "Este recorte é descrito até 16 anos, 11 meses e 29 dias. Confirme o fluxo com a Regulação."
+    }
+  ],
+  "parentProtocolId": "neuropediatria",
+  "category": "Pediatria",
+  "systemKind": "digsaude",
+  "searchKind": "condition",
+  "reference": "Telessaúde MS v2.0 — 06/10/2025 — impressas 35–36 / físicas 41–42.",
+  "sourceNotesPolicy": "Pendências de vigência e oferta não são requisitos adicionais."
+}
