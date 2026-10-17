@@ -151,7 +151,7 @@ executado antes da revisão de seu diff.
 Integração em nova worktree isolada com a main publicada
 `d8c34e9cfc6971c1ab92684e8ea9c9a30430d197`, sem conflitos. Os pilotos clínicos
 dos PRs 664 e 665 permanecem idênticos. A implementação funcional do bundle foi
-preservada. Nenhum Worker, SQL, configuração de permissão ou namespace global de
+preservada. Nenhum código produtivo do Worker, SQL, configuração de permissão ou namespace global de
 cache foi alterado por esta integração. O marcador público do HTML do Canal e
 sua constante no service worker foram atualizados juntos para `20261017-1`.
 
@@ -206,6 +206,14 @@ e sua rejeição com `AbortError`, além da ausência do painel antigo no Login.
 Isso substitui somente o evento de interceptação `requestfailed`, que pode não
 ser emitido enquanto uma rota sintética está pausada. A exigência de cancelamento
 efetivo e o prazo de falha continuam explícitos.
+
+O segundo CI encontrou uma expectativa exata antiga da URL de `home.js` no
+teste compartilhado `social-ui.test.mjs`; foi atualizada para a URL versionada,
+mantendo a exigência de uma única instância. A suíte completa local do Worker
+executou 1.090 testes: 1.089 aprovados e uma falha em `registration-rollout`
+(`snapshot > 0`), reproduzida também na main limpa deste Windows. Esse teste
+permanece inalterado e obrigatório no CI Linux. A suíte social afetada passou
+após a atualização da expectativa.
 
 O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
 as seis comparações históricas em um job separado. Os gates anteriores e seus
