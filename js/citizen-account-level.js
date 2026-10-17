@@ -10,7 +10,9 @@ const initializeCitizenArea = (context) => {
   const compact = globalThis.matchMedia('screen and (max-width: 900px)').matches;
   let pendingRender = false;
   let lastRender = 0;
+  let lastAccountState = '', pendingAccountState = '', renderAgain = false;
   const token = auth.getToken();
+  const accountState = user => JSON.stringify([user?.id,user?.username,user?.role,user?.jobTitle,user?.councilRole,levels.levelFor(user),user?.emailVerified,user?.privacyMode]);
 
   const roleLabels = {
     medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
@@ -41,13 +43,18 @@ const initializeCitizenArea = (context) => {
     }
   }
 
-  async function render() {
-    if (context?.disposed || auth.getToken() !== token || compact && (pendingRender || Date.now() - lastRender < 30000)) return;
+  async function render(options = {}) {
+    if (context?.disposed || auth.getToken() !== token) return;
+    const cachedState = accountState(auth.getCachedUser());
+    if (compact && pendingRender) { if (cachedState !== pendingAccountState) renderAgain = true; return; }
+    if (compact && options.force !== true && cachedState === lastAccountState && Date.now() - lastRender < 30000) return;
     pendingRender = true;
+    pendingAccountState = cachedState;
     try {
       const user = await resolvedUser();
       if (!user || context?.disposed || auth.getToken() !== token) return;
       lastRender = Date.now();
+      lastAccountState = accountState(user);
 
       const badge = document.getElementById('accountLevelBadge');
       const notice = document.getElementById('accountEvolutionNotice');
@@ -77,7 +84,10 @@ const initializeCitizenArea = (context) => {
         : meta.level === 'prata'
           ? '<strong>Conta Prata.</strong> Seu e-mail de segurança está confirmado. Em cada nova manifestação, você pode manter sua identidade sigilosa ou optar por se identificar ao Conselho. O endereço de e-mail continua protegido.'
           : '<strong>Conta Ouro.</strong> Sua conta atingiu o nível máximo de proteção previsto no portal.';
-    } finally { pendingRender = false; }
+    } finally {
+      pendingRender = false;
+      if (renderAgain) { renderAgain = false; void render({force:true}); }
+    }
   }
 
   const initialRender = render();

@@ -275,6 +275,16 @@ sucesso/erro, antes/depois do retorno. Todos passaram, preservando rascunho,
 identidade da área e zero envios ao Conselho. O caso de retorno com resposta
 anterior tardia reproduziu a falha em `009271d` antes de passar na correção.
 
+O limite de 30 s da ficha de nível também reconhece alterações relevantes na
+conta em cache. Bronze/Prata e a explicação de privacidade atualizam no retorno
+rápido de Segurança; uma mudança durante leitura pendente agenda uma única nova
+renderização. Sem mudança, a janela anterior é preservada. Os quatro cenários
+de segurança agora exigem selo e explicação Bronze após partir de Prata, com
+rascunho intacto. O código anterior `5fa412b` reproduziu a ficha desatualizada;
+os quatro casos corrigidos, 17 percursos retidos (incluindo logout/troca) e 86
+testes Node passaram. Os elementos opcionais de texto da ação não existem no
+HTML atual; nenhum novo bloco visual foi introduzido para atender a revisão.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
