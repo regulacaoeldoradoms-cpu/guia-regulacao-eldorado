@@ -1,5 +1,9 @@
 # Canal persistente mobile — validação local
 
+O corpo original abaixo registra a entrega local no ambiente cloud. A seção
+"Integração para publicação" atualiza seu estado em 17/10/2026. Os artefatos
+originais citados no corpo não fazem parte do bundle Git transferido.
+
 Base: `b5a0bbfc5cf01b0fb964ad9c76e0ee47222923a3` (PR663).
 Branch: `feat/citizen-persistent-mobile-20261016`. Checkout inicial limpo em
 `380a40b1`; `origin/main` consultado antes de criar a branch isolada.
@@ -134,6 +138,53 @@ As evidências iniciais não afetadas (desktop, CSS/tutoriais e políticas de ca
 foram reaproveitadas; somente contratos/fluxos afetados e dependentes foram
 rerodados. Nenhum teste ficou pendente por expectativa antiga.
 
-Próxima ação: autorizar criação de PR a partir do commit local e executar os
-gates usuais de CI/publicação. Não foram utilizados conta real nem dispositivo
-físico. Push, PR, merge e deploy continuam dependentes de autorização específica.
+## Integração para publicação - 17/10/2026
+
+A autorização humana para PR e publicação foi fornecida em 16/10/2026. O pacote
+foi recuperado pelo conteúdo exportado da conversa, sem modificar as restrições
+de rede do cloud. Bundle: 23.469 bytes, SHA-256
+`b17a8d58b5c198422743786937455a04a118e882bb34ee05a2c951ca6e6cc093`.
+Tamanho, hash, cabeça `4a4621e4c9aa7d1a2c3afaea238b9b9a593b2833`, base e
+`git bundle verify` conferidos antes de importar. Nenhum código do pacote foi
+executado antes da revisão de seu diff.
+
+Integração em nova worktree isolada com a main publicada
+`d8c34e9cfc6971c1ab92684e8ea9c9a30430d197`, sem conflitos. Os pilotos clínicos
+dos PRs 664 e 665 permanecem idênticos. A implementação funcional do bundle foi
+preservada. Nenhum Worker, SQL, configuração de permissão ou política global de
+cache foi alterado por esta integração.
+
+Validação sintética independente neste computador Windows, Chromium real:
+
+- 85/85 testes Node de cache, navegação, segurança, interações e tutorial.
+- 17/17 cenários do painel retido, sem mutações do Conselho, APIs não modeladas
+  ou erros de página; rascunho, objetos File, privacidade, aba e sessão cobertos.
+- Seis comparações visuais contra PR663: 360/390/1440 px, tela clara e impressão
+  escura, estilos/geometria iguais e zero pixels diferentes em todos os casos.
+- Shell e preparo em segundo plano aprovados; ciclo do formulário comprova
+  remoção e reconstrução dos handlers após eviction, sem duplicação.
+- Ajuda em contas existentes aprovada em acesso direto e pelo shell, sem
+  chamadas de demonstração ou mutações, preservando rascunho e anexo.
+
+O comparador foi corrigido para representar como 404 arquivos que não existiam
+na base histórica, adicionados pelos pilotos posteriores. Ambas as capturas
+agora aguardam a mesma primeira carga sintética do Chat antes de medir estilos.
+O comparador de pixels e seus limites originais permanecem intactos.
+
+Limitação local reproduzida: o teste original e inalterado de lifecycle do
+tutorial passa no percurso mobile, mas sua comparação PNG de impressão desktop
+falha neste Windows tanto na candidata quanto em uma worktree limpa da main
+`d8c34e9`. O recorte anterior/posterior muda a largura em 16 px. Isso não foi
+tratado como regressão introduzida pelo pacote, nem como teste aprovado; o gate
+original do tutorial em CI Linux continua obrigatório, sem alteração ou waiver.
+
+O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
+as seis comparações históricas em um job separado. Os gates anteriores e seus
+limites permanecem intactos. Logs, capturas e recibos desta rodada estão na
+worktree em `.local/` e no relatório separado `diagnostico-canal-20261017/` do
+workspace, sem dados reais.
+
+Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
+revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
+confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
+Não foram utilizados conta real nem dispositivo físico.

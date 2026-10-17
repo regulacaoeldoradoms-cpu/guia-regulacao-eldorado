@@ -1,0 +1,58 @@
+name: Citizen persistent panel
+
+on:
+  pull_request:
+    paths:
+      - 'js/citizen*.js'
+      - 'js/portal-interactions.js'
+      - 'js/auth-client.js'
+      - 'js/home-mobile-composition.js'
+      - 'cidadao/index.html'
+      - 'index.html'
+      - 'login/index.html'
+      - 'testing/citizen-layout/**'
+      - 'testing/browser/dark-audit-route-ready.mjs'
+      - 'testing/browser/dark-audit-surfaces.mjs'
+      - 'testing/browser/dark-audit-base-comparison.mjs'
+      - '.github/workflows/validate-citizen-persistent-panel.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  retained-citizen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install synthetic browser harness
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Chromium path
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {chromium} from './testing/browser/node_modules/playwright/index.mjs';
+          fs.appendFileSync(process.env.GITHUB_ENV, 'CHROMIUM_PATH=' + chromium.executablePath() + '\n');
+          JS
+      - name: Prepared routes, drafts, attachments, failures and session disposal
+        run: node testing/citizen-layout/citizen-retained-panel.mjs
+      - name: Preserve native geometry, desktop and print against PR663
+        env:
+          PRESERVE_WIDTHS: '360,390,1440'
+        run: node testing/citizen-layout/citizen-retained-preservation.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: citizen-persistent-panel-synthetic-evidence
+          include-hidden-files: true
+          path: |
+            .local/citizen-retained-panel/
+            .local/citizen-retained-preservation/

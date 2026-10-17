@@ -11,20 +11,29 @@ const {inspectSurfaces}=await import('../browser/dark-audit-surfaces.mjs');
 const root=path.resolve(import.meta.dirname,'../..'),output=path.join(root,'.local/citizen-retained-preservation'),base='b5a0bbfc';
 await fs.mkdir(output,{recursive:true});
 const changed=execFileSync('git',['diff','--name-only',base,'--','*.js','*.css','*.html'],{cwd:root,encoding:'utf8'}).trim().split('\n').filter(Boolean);
-const baseline=new Map(changed.map(file=>['/'+file,execFileSync('git',['show',base+':'+file],{cwd:root,encoding:'utf8'})]));
+const historicalFiles=new Set(execFileSync('git',['ls-tree','-r','--name-only',base],{cwd:root,encoding:'utf8'}).trim().split('\n'));
+// Later main commits can add unrelated assets that did not exist in PR663.
+// Keep the historical response exact, including absence, instead of failing
+// git show or leaking the current asset into the historical baseline.
+const baseline=new Map(changed.map(file=>['/'+file,historicalFiles.has(file)?execFileSync('git',['show',base+':'+file],{cwd:root,encoding:'utf8'}):null]));
 const server=await serve(root),browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox','--disable-gpu','--disable-skia-runtime-opts','--disable-lcd-text','--font-render-hinting=none','--disable-font-subpixel-positioning','--run-all-compositor-stages-before-draw','--disable-partial-raster','--disable-background-networking','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']});
 const results=[];
 async function capture(width,theme,media,isBase){
  const result={errors:[]},{page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
  if(isBase)await context.route('**/*',route=>{
   const url=new URL(route.request().url()),file=url.pathname.endsWith('/')?url.pathname+'index.html':url.pathname;
-  if(url.origin===server.origin&&baseline.has(file))return route.fulfill({contentType:file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':'text/javascript',body:baseline.get(file)});
+  if(url.origin===server.origin&&baseline.has(file))return baseline.get(file)===null
+   ? route.fulfill({status:404,body:'Asset absent in historical baseline'})
+   : route.fulfill({contentType:file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':'text/javascript',body:baseline.get(file)});
   return route.fallback();
  });
  try{
   await page.goto(server.origin+'/cidadao/');await ready(page,'/cidadao/');
   await page.locator('[data-tutorial-start]').waitFor({state:'attached'});
   if(width<900)await page.waitForFunction(()=>PortalCitizenShell.active().loaded);
+  // Both fresh contexts must finish the same synthetic Chat contact read
+  // before measuring styles; the fixture has exactly two unread messages.
+  await page.waitForFunction(()=>document.querySelector('#portalChatUnread.visible')?.textContent==='2');
   await page.evaluate(()=>PortalCitizenLayout.enterRoute());
   await page.emulateMedia({media});await page.mouse.move(-100,-100);
   await page.evaluate(async()=>{document.activeElement?.blur();scrollTo(0,0);await document.fonts.ready;});
