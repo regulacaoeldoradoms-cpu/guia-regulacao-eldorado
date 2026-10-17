@@ -264,6 +264,17 @@ a admissão, exige um único par novo e confirma a reutilização das mesmas fun
 na ativação. Teclado, 18 navegações, limite de memória e zero envios permanecem.
 O teste afetado passou localmente; nenhum código de produto mudou nessa correção.
 
+A leitura de segurança também passou a usar ownership por geração. Ao sair do
+Canal com uma leitura/atualização em curso, o owner antigo é invalidado e o
+retorno exige segurança atual, inclusive se a resposta terminou fora da tela.
+Se a atualização antiga ainda está em curso, ela acompanha o novo resultado;
+não renova a janela de frescor com a verificação anterior. As ativações normais
+continuam usando a janela existente de 30 s. Quatro cenários novos mudam o e-mail
+na área Segurança por um único PATCH sintético e soltam a leitura anterior com
+sucesso/erro, antes/depois do retorno. Todos passaram, preservando rascunho,
+identidade da área e zero envios ao Conselho. O caso de retorno com resposta
+anterior tardia reproduziu a falha em `009271d` antes de passar na correção.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.

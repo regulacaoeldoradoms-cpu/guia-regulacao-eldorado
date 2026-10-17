@@ -60,6 +60,7 @@ const initializeCitizenArea = async (context) => {
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
+  let securityReads = 0;
   const readRuns = new Map();
   function latestRead(key, read) {
     const run = {};
@@ -186,9 +187,12 @@ const initializeCitizenArea = async (context) => {
   }
 
   async function loadSecurity() {
+    if (!demonstration && !liveAllowed()) return false;
+    securityReads++;
+    try { return await latestRead('security', async current => {
     let fresh = true;
     const security = await auth.getSecurity().catch(() => { fresh = false; return state.security || { emailVerified: user.emailVerified, privacyMode: user.privacyMode || 'anonima' }; });
-    if (!demonstration && !liveAllowed()) return false;
+    if (!current() || !demonstration && !liveAllowed()) return false;
     state.security = security;
     const privacyChip = document.getElementById('privacyChip');
     const verifiedOptions = document.getElementById('verifiedPrivacyOptions');
@@ -229,6 +233,7 @@ const initializeCitizenArea = async (context) => {
 
     renderPrivacyNotice();
     return fresh;
+    }); } finally { securityReads--; }
   }
 
   function renderManifestations() {
@@ -883,7 +888,7 @@ const initializeCitizenArea = async (context) => {
   // files, selected tab or tutorial. No mutation is part of preparation.
   const refreshCitizenDetail = protocol => state.selectedProtocol === protocol ? openDetail(protocol, {preserve:true}) : Promise.resolve(true);
   detailModal.refreshCitizenDetail = refreshCitizenDetail;
-  let lastRefresh = 0, refreshing = null, disposed = false;
+  let lastRefresh = 0, refreshing = null, disposed = false, securityRefreshNeeded = false;
   const freshness = context && !demonstration ? document.createElement('div') : null;
   if (freshness) {
     freshness.className = 'portal-note info'; freshness.hidden = true;
@@ -906,7 +911,17 @@ const initializeCitizenArea = async (context) => {
     })().finally(() => { refreshing = null; });
     return refreshing;
   }
-  context?.addController?.({activate:revalidate,revalidate,dispose(){disposed=true;readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
+  const activateCitizen = () => {
+    if (securityRefreshNeeded && !disposed && liveAllowed()) {
+      securityRefreshNeeded = false;
+      if (refreshing) { void loadSecurity(); return refreshing; }
+      return revalidate({force:true});
+    }
+    return revalidate();
+  };
+  context?.addController?.({activate:activateCitizen,revalidate,deactivate(){
+    if (securityReads || refreshing) { securityRefreshNeeded = true; readRuns.delete('security'); }
+  },dispose(){disposed=true;readRuns.clear();if(detailModal.refreshCitizenDetail===refreshCitizenDetail)delete detailModal.refreshCitizenDetail;state.manifestations=[];state.notifications=[];state.security=null;state.selectedProtocol='';}});
   const securityPending = loadSecurity().finally(()=>{securityReady=true;});
   let initialResults;
   if (globalThis.matchMedia('screen and (max-width: 900px)').matches) {
