@@ -297,6 +297,14 @@ troca também passaram sem os dois métodos. Fixtures e artefatos desses casos
 ficam separados dos resultados normais. Nenhum método global é alterado no
 produto, nenhuma dependência ou regra de autorização foi acrescentada.
 
+O retorno de Segurança também compara o estado relevante da conta em cache com
+o snapshot da última leitura de segurança. Uma alteração invalida a janela de
+30 s mesmo sem leitura anterior em curso; o snapshot é associado ao início da
+requisição. A revalidação mais nova é a única que pode marcar dados como frescos
+ou liberar o owner pendente. O quinto cenário mantém o relógio de frescor dentro
+da janela, sem forçar leitura prévia e sem alterar timers reais: reproduziu a
+falha em `b8ce892` e passou na correção, assim como os quatro cenários anteriores.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.

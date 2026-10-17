@@ -81,6 +81,11 @@ const initializeCitizenArea = async (context) => {
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
   let securityReads = 0;
+  const securityAccountState = () => {
+    const account = auth.getCachedUser();
+    return JSON.stringify([account?.id,account?.username,Boolean(account?.emailVerified),Boolean(account?.emailConfigured),Boolean(account?.emailVerificationRequired),account?.privacyMode || 'anonima']);
+  };
+  let lastSecurityAccountState = securityAccountState();
   const readRuns = new Map();
   function latestRead(key, read) {
     const run = {};
@@ -210,10 +215,12 @@ const initializeCitizenArea = async (context) => {
     if (!demonstration && !liveAllowed()) return false;
     securityReads++;
     try { return await latestRead('security', async current => {
+    const accountStateAtRead = securityAccountState();
     let fresh = true;
     const security = await auth.getSecurity().catch(() => { fresh = false; return state.security || { emailVerified: user.emailVerified, privacyMode: user.privacyMode || 'anonima' }; });
     if (!current() || !demonstration && !liveAllowed()) return false;
     state.security = security;
+    if (fresh) lastSecurityAccountState = accountStateAtRead;
     const privacyChip = document.getElementById('privacyChip');
     const verifiedOptions = document.getElementById('verifiedPrivacyOptions');
     const verified = state.security?.emailVerified === true;
@@ -915,27 +922,29 @@ const initializeCitizenArea = async (context) => {
     freshness.setAttribute('role', 'status'); freshness.id = 'citizenDataStatus';
     document.getElementById('citizenContextNotice').after(freshness);
   }
-  function revalidate({force = false} = {}) {
-    if (!freshness || disposed || !liveAllowed() || context?.active === false || refreshing || !force && Date.now() - lastRefresh < 30000) return refreshing;
+  function revalidate({force = false, replace = false} = {}) {
+    if (!freshness || disposed || !liveAllowed() || context?.active === false || refreshing && !replace || !force && Date.now() - lastRefresh < 30000) return refreshing;
     freshness.hidden = false; freshness.textContent = 'Atualizando seus dados…';
-    refreshing = (async () => {
+    let run;
+    run = (async () => {
       const results = await Promise.all([loadSecurity(), loadManifestations({preserve:true}), loadNotifications(),
         detailModal.classList.contains('open') && state.selectedProtocol ? openDetail(state.selectedProtocol, {preserve:true}) : true]);
-      if (disposed || !liveAllowed()) return;
+      if (disposed || !liveAllowed() || refreshing !== run) return;
       if (results.every(Boolean)) { lastRefresh = Date.now(); freshness.hidden = true; }
       else {
         freshness.textContent = 'Não foi possível atualizar todos os dados. Confira a conexão e tente novamente. Os dados anteriores podem estar desatualizados. ';
         const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'portal-button secondary'; retry.textContent = 'Tentar novamente';
         retry.addEventListener('click', () => revalidate({force:true})); freshness.append(retry);
       }
-    })().finally(() => { refreshing = null; });
-    return refreshing;
+    })().finally(() => { if (refreshing === run) refreshing = null; });
+    refreshing = run;
+    return run;
   }
   const activateCitizen = () => {
+    if (securityAccountState() !== lastSecurityAccountState) securityRefreshNeeded = true;
     if (securityRefreshNeeded && !disposed && liveAllowed()) {
       securityRefreshNeeded = false;
-      if (refreshing) { void loadSecurity(); return refreshing; }
-      return revalidate({force:true});
+      return revalidate({force:true,replace:true});
     }
     return revalidate();
   };

@@ -11,9 +11,12 @@ const server=await serve(root),browser=await chromium.launch({executablePath:pro
 const results=[];
 const within=async(label,pending)=>{let timer;try{return await Promise.race([pending,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Security fixture timed out: '+label)),15000);})]);}finally{clearTimeout(timer);}};
 try{
- for(const timing of ['after-return','while-away'])for(const outcome of ['success','error']){
+ for(const timing of ['after-return','while-away','fresh'])for(const outcome of timing==='fresh'?['success']:['success','error']){
   const id=timing+'-'+outcome;if(process.env.SECURITY_RACE_CASES&&!process.env.SECURITY_RACE_CASES.split(',').includes(id))continue;
   const result={id,errors:[],writes:[]},{page,context,audit}=await newPage(browser,{width:390,theme:'light',seedOnce:true,user:{...user,emailVerified:true,accountLevel:'prata',strongAuthEnabled:false,mfaEnabled:false}},server.origin,result);
+  // Keep this case strictly inside the freshness window; real fetch timers
+  // remain untouched and no revalidation is forced before visiting Security.
+  if(timing==='fresh')await context.addInitScript(()=>{const now=Date.now();Date.now=()=>now;});
   let changed=false,armed=false,release,reached,readsAfterChange=0;
   const held=new Promise(r=>{release=r;}),started=new Promise(r=>{reached=r;});
   if(process.env.SECURITY_RACE_BASELINE==='1'){
@@ -23,6 +26,10 @@ try{
   if(process.env.ACCOUNT_LEVEL_BASELINE==='1'){
    const body=execFileSync('git',['show','5fa412b:js/citizen-account-level.js'],{cwd:root,encoding:'utf8'});
    await context.route('**/js/citizen-account-level.js*',r=>r.fulfill({contentType:'text/javascript',body}));
+  }
+  if(process.env.FRESH_SECURITY_BASELINE==='1'){
+   const body=execFileSync('git',['show','b8ce892:js/citizen.js'],{cwd:root,encoding:'utf8'});
+   await context.route('**/js/citizen.js*',r=>r.fulfill({contentType:'text/javascript',body}));
   }
   const security=()=>({emailVerified:!changed,email:changed?'new@example.invalid':'old@example.invalid',privacyMode:changed?'anonima':'sigilosa',firebaseReady:true});
   await context.route('**/api/auth/security',async route=>{
@@ -44,9 +51,12 @@ try{
    await page.locator('#openNewManifestation').click();await page.locator('input[value=sugestao]').check();
    await page.locator('#manifestationSubject').fill('Rascunho sintético preservado');
    await page.locator('#newManifestationModal [data-close-modal]').first().click();
-   await page.evaluate(()=>{window.__securityCitizen=PortalCitizenShell.active();});armed=true;
-   const refreshing=page.evaluate(()=>PortalCitizenShell.active().controllers.find(c=>c.revalidate).revalidate({force:true}));
-   await within('old security read',started);
+   await page.evaluate(()=>{window.__securityCitizen=PortalCitizenShell.active();});
+   let refreshing=Promise.resolve();
+   if(timing!=='fresh'){
+    armed=true;refreshing=page.evaluate(()=>PortalCitizenShell.active().controllers.find(c=>c.revalidate).revalidate({force:true}));
+    await within('old security read',started);
+   }
    await within('open Security',page.evaluate(()=>PortalCitizenShell.navigate(new URL('/seguranca/',location.href))));
    await page.locator('#securityEmail').fill('new@example.invalid');
    await page.locator('#securityEmailForm button[type=submit]').click();
@@ -70,6 +80,6 @@ try{
    assert(!audit.apiCalls.some(x=>/^(POST|PATCH|PUT|DELETE) \/api\/council\//.test(x)));
    assert.deepEqual(result.errors,[]);assert.deepEqual(audit.unmappedApiCalls,[]);result.passed=true;
   }catch(error){result.failure=error.stack;throw error;}
-  finally{release();await context.close();results.push(result);console.log(JSON.stringify(result));await fs.writeFile(path.join(out,process.env.SECURITY_RACE_BASELINE==='1'?'baseline.json':process.env.ACCOUNT_LEVEL_BASELINE==='1'?'level-baseline.json':'results.json'),JSON.stringify(results,null,2));}
+  finally{release();await context.close();results.push(result);console.log(JSON.stringify(result));await fs.writeFile(path.join(out,process.env.SECURITY_RACE_BASELINE==='1'?'baseline.json':process.env.ACCOUNT_LEVEL_BASELINE==='1'?'level-baseline.json':process.env.FRESH_SECURITY_BASELINE==='1'?'fresh-baseline.json':'results.json'),JSON.stringify(results,null,2));}
  }
 }finally{await browser.close();await new Promise(r=>{server.server.close(r);server.server.closeAllConnections();});}
