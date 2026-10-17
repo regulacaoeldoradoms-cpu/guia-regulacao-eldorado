@@ -201,6 +201,12 @@ mantêm suas versões anteriores. O teste de consistência exige a mesma chave d
 owners alterados em todas as entradas. Janelas de refresh, comportamento offline,
 dados privados e namespaces globais não foram alterados.
 
+A observação de logout exige o AbortSignal entregue ao fetch realmente abortado
+e sua rejeição com `AbortError`, além da ausência do painel antigo no Login.
+Isso substitui somente o evento de interceptação `requestfailed`, que pode não
+ser emitido enquanto uma rota sintética está pausada. A exigência de cancelamento
+efetivo e o prazo de falha continuam explícitos.
+
 O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
 as seis comparações históricas em um job separado. Os gates anteriores e seus
 limites permanecem intactos. Logs, capturas e recibos desta rodada estão na

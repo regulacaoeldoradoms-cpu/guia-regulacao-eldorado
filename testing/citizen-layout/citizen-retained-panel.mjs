@@ -144,18 +144,36 @@ try{
   check('failed account revalidation prevents private Citizen preparation',reads.length===0&&!audit.resources.some(p=>p.startsWith('/cidadao/'))&&!await page.evaluate(()=>PortalCitizenShell.diagnostics().ready.includes('/cidadao/')));
   check('denied background keeps Home usable',await page.locator('#socialHome').isVisible());
  });
- await run('logout-during-first-data-load',{},async({page,context,check})=>{
-  let release;const held=new Promise(r=>{release=r;});let failed=false;
-  page.on('requestfailed',request=>{if(new URL(request.url()).pathname==='/api/council/my')failed=true;});
+ await run('logout-during-first-data-load',{},async({page,context,check,result})=>{
+  let release,resolveAbort;const held=new Promise(r=>{release=r;}),aborted=new Promise(r=>{resolveAbort=r;}),evidence={};
+  await page.exposeFunction('__recordRetainedReadAbort',value=>{Object.assign(evidence,value);if(evidence.signalAborted&&evidence.readRejected)resolveAbort();});
+  await page.addInitScript(()=>{
+   const nativeFetch=window.fetch;
+   window.fetch=function(...args){
+    const pending=Reflect.apply(nativeFetch,this,args);
+    if(new URL(args[0]?.url||args[0],location.href).pathname==='/api/council/my'){
+     const report=value=>{void window.__recordRetainedReadAbort(value).catch(()=>{});};
+     const signal=args[1]?.signal||args[0]?.signal;
+     signal?.addEventListener('abort',()=>report({signalAborted:true}),{once:true});
+     pending.catch(error=>{if(error.name==='AbortError')report({readRejected:true});});
+    }
+    return pending;
+   };
+  });
   await context.route('**/api/council/my',async route=>{await held;await route.fallback();});
+  let timer;
   try{
    const started=page.waitForRequest(request=>new URL(request.url()).pathname==='/api/council/my');
    await page.goto(server.origin+'/');await ready(page,'/');
    await started;
    await page.evaluate(()=>{void RegulationAuth.logout();});await page.waitForURL('**/login/');
    release();
-   check('private in-flight read aborted and old panel cannot enter Login',failed&&await page.locator('#manifestationList').count()===0);
-  }finally{release();}
+   // A paused Playwright route need not emit requestfailed on navigation.
+   // Require the actual fetch signal and AbortError instead of that proxy event.
+   await Promise.race([aborted,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Private read must receive an aborted signal and reject with AbortError')),9000);})]);
+   result.abortEvidence=evidence;
+   check('private in-flight read aborted and old panel cannot enter Login',evidence.signalAborted&&evidence.readRejected&&await page.locator('#manifestationList').count()===0);
+  }finally{clearTimeout(timer);release();}
  });
  await run('resource-failure-and-retry',{},async({page,context,check})=>{
   let failController=true;
