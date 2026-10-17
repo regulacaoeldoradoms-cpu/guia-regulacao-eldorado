@@ -305,6 +305,27 @@ ou liberar o owner pendente. O quinto cenário mantém o relógio de frescor den
 da janela, sem forçar leitura prévia e sem alterar timers reais: reproduziu a
 falha em `b8ce892` e passou na correção, assim como os quatro cenários anteriores.
 
+O CI de `5c34d8f` encontrou uma regressão na abertura do tutorial: o snapshot
+de segurança tentava usar `getCachedUser`, ausente no adaptador deliberadamente
+isolado da demonstração. O caminho da demonstração agora dispensa esse snapshot;
+não recebe referência ao cache nem à API real. O percurso de abertura de ajuda
+que falhou no CI passou nas 22 combinações locais após a correção.
+
+A comparação nativa também aguardava apenas o Chat, que pode ficar pronto
+antes da montagem independente da configuração social. O artefato Linux tinha
+posições diferentes dos itens Avisos/Perfil. Uma reprodução controlada atrasou
+a configuração em 0/80/400/1.000 ms nos dois códigos: a preparação antiga podia
+capturar a barra ainda incompleta. A fixture agora espera os mesmos quatro
+links nativos e o processamento dos observers antes de entrar em impressão.
+Os oito percursos com atrasos passaram com a barra completa; não houve mudança
+na base histórica, nos estilos, snapshots, comparador ou tolerância de pixels.
+Na mesma investigação, capturas desktop com estilos idênticos mostraram o
+mascote em duas posições: seu construtor nativo pode medir a cena antes do CSS
+e limitar a posição ao tamanho provisório. A fixture carrega o CSS nativo
+inalterado e só então libera a resposta sintética de estado do mascote nas duas
+fontes. Não modifica posição, canvas, controlador ou propriedades do mascote.
+Os gates Linux completos continuam obrigatórios para o novo SHA.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.

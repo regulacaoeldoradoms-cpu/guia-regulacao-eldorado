@@ -82,6 +82,7 @@ const initializeCitizenArea = async (context) => {
   const state = { manifestations: [], notifications: [], security: null, selectedProtocol: '' };
   let securityReads = 0;
   const securityAccountState = () => {
+    if (demonstration) return '';
     const account = auth.getCachedUser();
     return JSON.stringify([account?.id,account?.username,Boolean(account?.emailVerified),Boolean(account?.emailConfigured),Boolean(account?.emailVerificationRequired),account?.privacyMode || 'anonima']);
   };

@@ -20,6 +20,23 @@ const server=await serve(root),browser=await chromium.launch({executablePath:pro
 const results=[];
 async function capture(width,theme,media,isBase){
  const result={errors:[]},{page,context,audit}=await newPage(browser,{width,theme,seedOnce:true},server.origin,result);
+ // The unchanged pet constructor measures its scene immediately. Deliver its
+ // synthetic state only after the unchanged native CSS is ready, so asset
+ // latency cannot clamp one source to the fallback 224px scene at startup.
+ await context.addInitScript(()=>{
+  const insert=()=>{
+   if(!document.head)return false;
+   if(!document.getElementById('petsStyles')){
+    const css=document.createElement('link');css.id='petsStyles';css.rel='stylesheet';css.href='/css/pets.css?v=20261012-pet-depth-speech-1';document.head.append(css);
+   }
+   return true;
+  };
+  if(!insert()){const observer=new MutationObserver(()=>{if(insert())observer.disconnect();});observer.observe(document,{childList:true,subtree:true});}
+ });
+ await context.route('**/api/pets/me',async route=>{
+  await page.waitForFunction(()=>Boolean(document.getElementById('petsStyles')?.sheet));
+  return route.fallback();
+ });
  if(isBase)await context.route('**/*',route=>{
   const url=new URL(route.request().url()),file=url.pathname.endsWith('/')?url.pathname+'index.html':url.pathname;
   if(url.origin===server.origin&&baseline.has(file))return baseline.get(file)===null
@@ -35,6 +52,14 @@ async function capture(width,theme,media,isBase){
   // before measuring styles; the fixture has exactly two unread messages.
   await page.waitForFunction(()=>document.querySelector('#portalChatUnread.visible')?.textContent==='2');
   await page.evaluate(()=>PortalCitizenLayout.enterRoute());
+  // The Chat read can finish before the independent social-config mount.
+  // Wait for the same complete native navigation in both sources before
+  // print restores its saved positions; do not compare partial startup bars.
+  await page.waitForFunction(()=>{
+   const nav=document.querySelector('.social-mobile-nav');
+   return nav?.querySelector('a[href="/amigos/"]')&&nav.querySelector('#socialNotificationTriggerMobile')&&nav.querySelector('a[href="/perfil/"]')&&nav.querySelector('a[href="/mascotes/"]');
+  });
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
   await page.emulateMedia({media});await page.mouse.move(-100,-100);
   await page.evaluate(async()=>{document.activeElement?.blur();scrollTo(0,0);await document.fonts.ready;});
   await page.waitForTimeout(350);
