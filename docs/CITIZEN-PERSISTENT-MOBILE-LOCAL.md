@@ -151,12 +151,14 @@ executado antes da revisão de seu diff.
 Integração em nova worktree isolada com a main publicada
 `d8c34e9cfc6971c1ab92684e8ea9c9a30430d197`, sem conflitos. Os pilotos clínicos
 dos PRs 664 e 665 permanecem idênticos. A implementação funcional do bundle foi
-preservada. Nenhum Worker, SQL, configuração de permissão ou política global de
-cache foi alterado por esta integração.
+preservada. Nenhum Worker, SQL, configuração de permissão ou namespace global de
+cache foi alterado por esta integração. O marcador público do HTML do Canal e
+sua constante no service worker foram atualizados juntos para `20261017-1`.
 
 Validação sintética independente neste computador Windows, Chromium real:
 
-- 85/85 testes Node de cache, navegação, segurança, interações e tutorial.
+- 86/86 testes Node de cache, navegação, segurança, interações e tutorial após a
+  regressão de atualização de PR663 acrescentada durante a revisão.
 - 17/17 cenários do painel retido, sem mutações do Conselho, APIs não modeladas
   ou erros de página; rascunho, objetos File, privacidade, aba e sessão cobertos.
 - Seis comparações visuais contra PR663: 360/390/1440 px, tela clara e impressão
@@ -165,6 +167,10 @@ Validação sintética independente neste computador Windows, Chromium real:
   remoção e reconstrução dos handlers após eviction, sem duplicação.
 - Ajuda em contas existentes aprovada em acesso direto e pelo shell, sem
   chamadas de demonstração ou mutações, preservando rascunho e anexo.
+- Nove cenários do atualizador de clientes instalados aprovados. Dois cenários
+  adicionais com service worker nativo, HTML e módulos exatos de PR663 em cache
+  comprovam a primeira entrada direta atualizada em claro/escuro e a retenção
+  de rascunho/anexo após alternar áreas, sem limpar o cache existente.
 
 O comparador foi corrigido para representar como 404 arquivos que não existiam
 na base histórica, adicionados pelos pilotos posteriores. Ambas as capturas
@@ -177,6 +183,23 @@ falha neste Windows tanto na candidata quanto em uma worktree limpa da main
 `d8c34e9`. O recorte anterior/posterior muda a largura em 16 px. Isso não foi
 tratado como regressão introduzida pelo pacote, nem como teste aprovado; o gate
 original do tutorial em CI Linux continua obrigatório, sem alteração ou waiver.
+Uma diferença de largura do título no teste de cabeçalho com texto normal
+também foi reproduzida na main limpa deste Windows (155,625 contra 163,09375 px).
+Os 24 percursos locais com texto ampliado passaram. As asserções geométricas do
+cabeçalho permanecem estritas no CI, sem tolerância nova.
+
+O primeiro CI identificou duas asserções que ainda esperavam `/cidadao/` no
+mobile. Foram atualizadas para o endereço `/`, mantendo exigência de controller
+correto/carregado, identidade dos nós, rascunhos, privacidade e geometria. As
+matrizes da página passaram localmente em texto normal e ampliado.
+
+A revisão também identificou que o marcador antigo permitia servir o HTML de
+PR663 na primeira visita. Um novo teste unitário falhou antes da correção e
+passou depois. A chave `panel=20261016-1` agora cobre também a cadeia alterada
+Home/account-section-shell → citizen-layout → presenter; CSS e outros assets
+mantêm suas versões anteriores. O teste de consistência exige a mesma chave dos
+owners alterados em todas as entradas. Janelas de refresh, comportamento offline,
+dados privados e namespaces globais não foram alterados.
 
 O novo workflow `validate-citizen-persistent-panel.yml` executa a matriz retida e
 as seis comparações históricas em um job separado. Os gates anteriores e seus

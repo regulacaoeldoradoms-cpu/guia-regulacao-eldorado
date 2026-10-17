@@ -9,6 +9,7 @@ const root=process.env.PORTAL_ROOT || path.resolve(import.meta.dirname,'../..');
 const output=process.env.HEADER_OUTPUT || path.join(root,'.local/shared-account-header');
 const secondary=['/configuracoes/','/seguranca/','/conquistas/','/ferramentas/','/cidadao/'];
 const primary=['/','/amigos/','/perfil/','/mascotes/'];
+const canonicalMobile=[...primary,'/cidadao/'];
 const rows=[];
 await fs.mkdir(output,{recursive:true});
 const server=await serve(root);
@@ -41,10 +42,11 @@ async function inspect(page){
 async function verify(page,result,reference){
   const state=await inspect(page);result.states.push(state);
   assert.equal(state.text,'Portal da regulação');assert.equal(state.headers,1);assert.equal(state.menus,1);assert.equal(state.oldMenus,0);assert.equal(state.logout,1);assert.ok(state.menuVisible);assert.ok(!state.menuOpen);assert.ok(state.same);assert.ok(state.fits);assert.equal(state.navTools,0);assert.equal(state.profileTools,0);
-  assert.deepEqual(state.header,reference.header,JSON.stringify({route:await page.evaluate(()=>PortalCitizenShell.active().url.pathname),state:state.headerBox,reference:reference.headerBox}));assert.deepEqual(state.title,reference.title);assert.deepEqual(state.account,reference.account);assert.deepEqual(state.nav,reference.nav);
+  const routeContext={route:await page.evaluate(()=>PortalCitizenShell.active().url.pathname),entry:result.entry,width:result.width,theme:result.theme};
+  assert.deepEqual(state.header,reference.header,JSON.stringify({...routeContext,state:state.headerBox,reference:reference.headerBox}));assert.deepEqual(state.title,reference.title,JSON.stringify(routeContext));assert.deepEqual(state.account,reference.account,JSON.stringify(routeContext));assert.deepEqual(state.nav,reference.nav);
   assert.ok(state.title.right<=result.width && state.account.right<=result.width);assert.ok(state.title.right<=state.account.x || state.title.bottom<=state.account.y || state.account.bottom<=state.title.y);
   const route=await page.evaluate(()=>PortalCitizenShell.active().url.pathname);
-  assert.equal(state.address,primary.includes(route)?'/':route,'Preserve the existing public URL policy');
+  assert.equal(state.address,canonicalMobile.includes(route)?'/':route,'Primary mobile areas, including retained Citizen, keep the Home address');
   await page.locator('#homeAccountMenu > summary').click();await page.locator('#portalLogout').waitFor({state:'visible'});
   assert.ok(await page.locator('#homeAccountPanel').evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0 && r.right<=innerWidth && e.scrollWidth<=e.clientWidth+1;}));
   await page.keyboard.press('Escape');assert.ok(await page.locator('#homeAccountMenu').evaluate(e=>!e.open && e.querySelector('summary')===document.activeElement));

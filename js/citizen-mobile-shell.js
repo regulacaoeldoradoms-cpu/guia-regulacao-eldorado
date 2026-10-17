@@ -315,7 +315,7 @@
     if (url.pathname === '/cidadao/' && screen.matches) area.presentationBody.classList.add('mobile-citizen-mode');
     try {
     const loadDependencies = async () => {
-      const dependencies = ['/js/account-section-shell.js?v=20261015-citizen-tutorial-1'];
+      const dependencies = ['/js/account-section-shell.js?v=20261015-citizen-tutorial-1&panel=20261016-1'];
       // Preview assets are optional and owned by the citizen controller. A
       // failed image helper must not discard an otherwise usable Citizen area.
       if (['/', '/perfil/'].includes(url.pathname)) dependencies.push('/js/social-feed.js?v=20261010-mobile-shell-1');
@@ -325,7 +325,7 @@
         if (!api) await loadScript(path);
       }
       for (const entry of entries[url.pathname]) {
-        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261016-help-compact-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : entry === 'security' ? '20261015-account-private-4' : entry === 'pets-page' ? '20261015-account-private-4' : entry === 'pets-achievements' ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}${['citizen', 'citizen-declaration', 'citizen-mobile-app', 'citizen-account-level'].includes(entry) ? '&panel=20261016-1' : ''}`, entry.startsWith('pets-'));
+        if (!factories.has(entry)) await loadScript(`/js/${entry}.js?v=${entry === 'citizen-mobile-app' ? '20261015-citizen-tutorial-1' : entry === 'home' ? '20261015-citizen-tutorial-1' : entry === 'citizen' ? '20261016-help-compact-1' : entry === 'achievements' ? '20261015-citizen-tutorial-1' : entry === 'citizen-account-level' ? '20261011-citizen-panel-1' : entry === 'security' ? '20261015-account-private-4' : entry === 'pets-page' ? '20261015-account-private-4' : entry === 'pets-achievements' ? '20261012-pet-depth-speech-1' : ['social-profile','tools'].includes(entry) ? '20261012-profile-tools-3' : ['social-home', 'social-friends'].includes(entry) ? '20261011-citizen-continuity-3' : '20261010-citizen-prewarm-1'}${['citizen', 'citizen-declaration', 'citizen-mobile-app', 'citizen-account-level', 'home'].includes(entry) ? '&panel=20261016-1' : ''}`, entry.startsWith('pets-'));
       }
     };
     if (['/', '/amigos/', '/perfil/', '/mascotes/'].includes(url.pathname)) {
