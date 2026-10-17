@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {execFileSync} from 'node:child_process';
 process.env.PORTAL_FIXTURES_ONLY='1';
 const {serve,newPage,ready,chromium,user}=await import('./mobile-profile-refinement.mjs');
 const root=path.resolve(import.meta.dirname,'../..');
@@ -17,6 +18,10 @@ async function run(id,options,exercise){
  if(process.env.RETAINED_CASES&&!process.env.RETAINED_CASES.split(',').includes(id))return;
  const result={id,errors:[],checks:[]};
  const {page,context,audit}=await newPage(browser,{width:390,theme:'light',seedOnce:true,...options},server.origin,result);
+ if(process.env.CANCEL_ACTIVE_BASELINE){
+  const body=execFileSync('git',['show','948a074:js/citizen-mobile-shell.js'],{cwd:root,encoding:'utf8'});
+  await context.route('**/js/citizen-mobile-shell.js*',route=>route.fulfill({contentType:'text/javascript',body}));
+ }
  if(process.env.MISSING_ABORT_METHODS)await context.addInitScript(methods=>{for(const method of methods)Object.defineProperty(AbortSignal,method,{configurable:true,value:undefined});},process.env.MISSING_ABORT_METHODS.split(','));
  if(process.env.RETAINED_MOTION)await page.emulateMedia({reducedMotion:process.env.RETAINED_MOTION});
  const reads=[],writes=[];let revision=1,failReads=false;
@@ -137,6 +142,32 @@ try{
   await page.locator('.social-mobile-nav a[href="/amigos/"]').click();await area(page,'/amigos/');
   check('can navigate away while data held',started);
   release();await warm(page);await go(page,'/cidadao/');await continuity(page,check);
+ });
+ for(const outcome of ['success','error'])await run('cancel-active-route-'+outcome,{},async({page,context,check})=>{
+  let release;const held=new Promise(r=>{release=r;});
+  await context.route('**/api/council/my',async route=>{
+   await held;
+   if(outcome==='error')await route.fulfill({status:503,json:{error:'Synthetic delayed failure'}}).catch(()=>{});
+   else await route.fallback().catch(()=>{});
+  });
+  try{
+   await page.goto(server.origin+'/');await ready(page,'/');
+   await page.waitForFunction(()=>{const d=PortalCitizenShell.diagnostics();return d.prepared.includes('/cidadao/')&&d.ready.includes('/perfil/');});
+   await go(page,'/perfil/');await go(page,'/');await owners(page);
+   const entries=await page.evaluate(()=>{window.__cancelHome=PortalCitizenShell.active();return history.length;});
+   await page.locator('a[href="/cidadao/"]').first().click();
+   await page.waitForFunction(()=>PortalCitizenShell.diagnostics().navigating);
+   await page.locator('.social-mobile-nav a[href="/"]').click();await area(page,'/');
+   check('cancelling to active Home creates no history entry',await page.evaluate(()=>history.length)===entries);
+   check('cancellation retains the same active Home',await page.evaluate(()=>PortalCitizenShell.active()===__cancelHome));
+   check('completed cancellation clears the loading notice',await page.locator('.citizen-route-notice').evaluate(n=>n.hidden&&n.getAttribute('aria-busy')==='false'));
+   release();await warm(page);
+   check('delayed preparation leaves Home active',await page.evaluate(()=>PortalCitizenShell.diagnostics().active)==='/');
+   await page.evaluate(()=>history.back());await area(page,'/perfil/');
+   await page.evaluate(()=>history.forward());await area(page,'/');
+   check('Back and Forward traverse the previous distinct route',await page.evaluate(()=>history.length)===entries);
+   await continuity(page,check);
+  }finally{release();}
  });
  await run('prewarm-denied',{},async({page,context,audit,reads,check})=>{
   await context.route('**/api/auth/me',route=>route.fulfill({status:403,json:{error:'Synthetic denied account revalidation'}}));

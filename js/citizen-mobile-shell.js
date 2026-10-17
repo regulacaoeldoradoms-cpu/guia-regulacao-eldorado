@@ -565,7 +565,9 @@
       retry.addEventListener('click', () => navigate(url, pop), { once: true }); notice.append(retry);
     } finally {
       notice.setAttribute('aria-busy', 'false'); navigating = false; navigationKey = null; cancelNavigation = null;
-      const next = wanted; wanted = null; if (next && valid()) void navigate(next.url, next.pop);
+      const next = wanted; wanted = null;
+      if (next && valid() && routeKey(next.url) === routeKey(active.url)) notice.hidden = true;
+      if (next && valid() && routeKey(next.url) !== routeKey(active.url)) void navigate(next.url, next.pop);
       else schedulePrewarm();
     }
     return true;

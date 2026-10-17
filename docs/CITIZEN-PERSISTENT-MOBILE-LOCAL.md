@@ -336,6 +336,14 @@ Todos passaram; o código `d7ddfc4` reproduziu o formulário enviado ainda abert
 Cada cenário exige exatamente o envio sintético planejado e, quando previsto,
 um upload sintético. O caso com erro exige rascunho e formulário preservados.
 
+Cancelar uma navegação lenta tocando na rota já visível encerra a fila sem
+reativar essa mesma rota ou criar outra entrada de histórico. O aviso de carga
+também é encerrado; a preparação autorizada pode continuar em segundo plano.
+Dois cenários deixam a preparação terminar com sucesso/erro, exigem o tamanho
+original do histórico e percorrem Voltar/Avançar pela rota distinta anterior.
+O código `948a074` reproduziu a entrada duplicada; os cenários corrigidos
+mantêm o mesmo documento, Home, barra, Chat e mascote, sem mutações do Conselho.
+
 Próxima ação: publicar a branch/PR autorizado e acompanhar os gates de CI e a
 revisão. Mesclar somente o SHA validado após todos os checks passarem; depois
 confirmar os arquivos públicos, versões dos assets e deploy seguro produtivo.
