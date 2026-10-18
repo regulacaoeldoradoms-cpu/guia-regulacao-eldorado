@@ -303,19 +303,6 @@
       "receptionCheck": true
     },
     {
-      "label": "Critérios do protocolo",
-      "title": "Quando encaminhar",
-      "ruleIds": [
-        "MARCOS",
-        "HIPOTONIA",
-        "PARALISIA",
-        "PERIMETRO",
-        "MORFOLOGIA",
-        "LINGUAGEM",
-        "PERDA"
-      ]
-    },
-    {
       "label": "Documentos obrigatórios",
       "title": "O que apresentar",
       "ruleIds": [
