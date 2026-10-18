@@ -269,15 +269,6 @@
       "receptionCheck": true
     },
     {
-      "label": "Critérios do protocolo",
-      "title": "Quando encaminhar",
-      "ruleIds": [
-        "SUSPEITA",
-        "QUATRO",
-        "SEIS"
-      ]
-    },
-    {
       "label": "Documentos obrigatórios",
       "title": "O que apresentar",
       "ruleIds": [
