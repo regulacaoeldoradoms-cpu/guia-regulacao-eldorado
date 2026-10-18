@@ -166,13 +166,6 @@
   ],
   "sections": [
     {
-      "label": "Critério de encaminhamento",
-      "title": "Quando encaminhar",
-      "ruleIds": [
-        "CRITERIO"
-      ]
-    },
-    {
       "label": "Descrição obrigatória",
       "title": "Quadro clínico atual",
       "ruleIds": [
