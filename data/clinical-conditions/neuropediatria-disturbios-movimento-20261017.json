@@ -223,15 +223,6 @@
       "receptionCheck": true
     },
     {
-      "label": "Critérios do protocolo",
-      "title": "Quando encaminhar",
-      "ruleIds": [
-        "ATAXIA",
-        "COREIA",
-        "DISTONIA"
-      ]
-    },
-    {
       "label": "Avaliação clínica obrigatória",
       "title": "Exame neurológico",
       "ruleIds": [
