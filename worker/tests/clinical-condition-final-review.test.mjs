@@ -172,9 +172,10 @@ test('outros motivos explícitos saem do piloto e continuam no catálogo normal'
   const shoulder=await client();shoulder.select(OM);assert.equal(shoulder.api.questionDecision('Como encaminhar para cardiologia?'),null);
 });
 test('especialidade genérica e idade isolada não escolhem convulsão',async()=>{
-  const c=await client();for(const question of ['Quais requisitos de Neuropediatria no DigSaúde para autismo?','17 anos']){assert.equal(c.api.questionDecision(question),null);assert.equal(c.api.matches(question),false);}
+  const c=await client();assert.equal(c.api.questionDecision('17 anos'),null);assert.equal(c.api.matches('17 anos'),false);
+  const autism=c.api.questionDecision('Quais requisitos de Neuropediatria no DigSaúde para autismo?');assert.equal(autism.kind,'records');assert.equal(autism.contexts[0].record.id,'digsaude.neuropediatria.tea');
   const selected=await client();selected.select(NP);assert.equal(selected.api.questionDecision('17 anos').contexts[0].age.years,17);
-  assert.equal(selected.api.questionDecision('Neuropediatria no DigSaúde para autismo?'),null);
+  assert.equal(selected.api.questionDecision('Neuropediatria no DigSaúde para autismo?').contexts[0].record.id,'digsaude.neuropediatria.tea');
 });
 test('registro indisponível não bloqueia assunto fora do piloto',async()=>{
   const c=await client('compatible',NP.id);c.fail(NP);assert.equal(c.api.unavailable(),true);assert.equal(c.api.unavailable('Quais exames para diabetes?'),false);assert.equal(c.api.localOnlyQuestion('Quais exames para diabetes?'),false);assert.equal(c.api.localAnswer('Quais exames para diabetes?'),null);
