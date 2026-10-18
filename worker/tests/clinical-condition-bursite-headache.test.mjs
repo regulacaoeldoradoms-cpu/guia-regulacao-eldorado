@@ -63,7 +63,8 @@ test('Classificação específica: Bursite/Tendinite no ombro não importa Dor n
  const c=await client();
  for(const query of ['bursite no ombro','tendinite no ombro DigSaúde','Bursite e tendinite']){assert.ok(c.api.matches(query,BT.id));assert.equal(c.api.matches(query,c.api.SHOULDER),false);}
  assert.ok(c.api.matches('cefaleia pediátrica',CE.id));assert.ok(c.api.matches('dor de cabeça',CE.id));
- for(const query of ['Neuropediatria para autismo no DigSaúde','17 anos','dor no joelho'])assert.equal(c.api.matches(query),false);
+ for(const query of ['17 anos','dor no joelho'])assert.equal(c.api.matches(query),false);
+ assert.equal(c.api.matches('Neuropediatria para autismo no DigSaúde',c.api.record('digsaude.neuropediatria.tea')?.id),true,'TEA possui recorte próprio, sem importar cefaleia/convulsão');
  c.select(c.api.record());assert.deepEqual(clone(c.api.questionContexts('Cefaleia no DigSaúde: quais exames?')).map(p=>p.id),[CE.id]);
  assert.doesNotMatch(c.api.localAnswer('Cefaleia no DigSaúde: quais exames?'),/monoterapia|anticrise|febril simples/);
  assert.deepEqual(clone(c.api.questionContexts('Convulsão no DigSaúde')).map(p=>p.id),[c.api.ID]);
@@ -106,8 +107,8 @@ test('Worker pede uma condição para pergunta mista mesmo com cliente antigo ou
  }
  assert.equal(calls,0);
 });
-test('Contexto e indisponibilidade: diabetes/autismo/joelho não herdam os novos recortes',async()=>{
- for(const record of [BT,CE])for(const other of ['Quais exames para diabetes?','Requisitos de Neuropediatria para autismo?','Dor no joelho: o que descrever?']){
+test('Contexto e indisponibilidade: diabetes/joelho não herdam os novos recortes',async()=>{
+ for(const record of [BT,CE])for(const other of ['Quais exames para diabetes?','Dor no joelho: o que descrever?']){
   const c=await client();c.select(record);assert.equal(c.api.questionDecision(other),null);assert.equal(c.api.localAnswer(other),null);assert.equal(c.api.questionContexts('E quais exames?'),null);
   const unavailable=await client(record.id);unavailable.fail(record);assert.equal(unavailable.api.questionDecision(other),null);assert.equal(unavailable.api.localAnswer(other),null);
  }

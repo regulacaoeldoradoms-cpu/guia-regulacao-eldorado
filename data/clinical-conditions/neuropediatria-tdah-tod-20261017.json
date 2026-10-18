@@ -1,0 +1,337 @@
+{
+  "id": "digsaude.neuropediatria.tdah-tod",
+  "revision": "neuropediatria-20261017-1",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Neuropediatria",
+  "condition": "TDAH / TOD",
+  "aliases": [
+    "tdah",
+    "tod",
+    "déficit de atenção",
+    "transtorno opositor desafiante"
+  ],
+  "provenance": "Transcrição estruturada a partir da seção Neurologia Pediátrica do Protocolo Telessaúde MS v2.0, 06/10/2025; conferida com o PDF disponibilizado no projeto. Oferta da especialidade relatada pelo setor via WhatsApp; mensagem original e vigência externa não verificadas.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "printed": "34",
+        "physical": "40",
+        "documentTotal": 72
+      },
+      "pending": "Vigência, oferta atual e aplicabilidade municipal a confirmar."
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      },
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "SUSPEITA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Suspeita ou diagnóstico de TDAH.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "QUATRO",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Crianças de 4 a menos de 6 anos com pontuação positiva para TDAH.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "SEIS",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "A partir de 6 anos completos: pontuação positiva para TDAH e sintomas persistentes após tratamento inicial em doses otimizadas por pelo menos 4 semanas, causando dificuldade de aprendizagem, ou agitação com prejuízo às aulas/risco de dano, ou dúvida diagnóstica pela associação de sinais de TEA. O prazo de 4 semanas não é regra para a faixa de 4 a menos de 6 anos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "SNAP",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "text": "MTA-SNAP-IV (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "RELATORIO",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "text": "Relatório médico com histórico dos sintomas e contexto social e escolar (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "ESCOLA",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "text": "Relatório escolar atualizado (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "BERA",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "BERA obrigatório em caso de atraso de linguagem.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "LAUDOS",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "Se diagnóstico prévio: laudos médicos anteriores obrigatórios.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "MEDICACOES",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "Se diagnóstico prévio: informar nomes das medicações em uso (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ]
+    },
+    {
+      "id": "MULTIPROF",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Se diagnóstico prévio: relatórios multiprofissionais, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "NEUROPREV",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Se diagnóstico prévio: EEG e neuroimagem anteriores, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "34",
+          "physical": "40"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "QUADRO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Informar o quadro clínico atual, com documentos anexados ou descritos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "30",
+          "physical": "36"
+        }
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "text": "Necessária a presença de familiar ou responsável no dia do teleatendimento.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "30",
+          "physical": "36"
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "label": "Descrição clínica obrigatória",
+      "title": "Quadro clínico atual",
+      "ruleIds": [
+        "QUADRO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Documentos obrigatórios",
+      "title": "O que apresentar",
+      "ruleIds": [
+        "SNAP",
+        "RELATORIO",
+        "ESCOLA"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Obrigatório conforme o caso",
+      "title": "Requisitos condicionais",
+      "ruleIds": [
+        "BERA",
+        "LAUDOS",
+        "MEDICACOES"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Se houver",
+      "title": "Documentos e exames disponíveis",
+      "ruleIds": [
+        "MULTIPROF",
+        "NEUROPREV"
+      ]
+    },
+    {
+      "label": "Condição do atendimento",
+      "title": "Familiar ou responsável",
+      "ruleIds": [
+        "RESPONSAVEL"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta operacional",
+      "kind": "institutional_confirmation",
+      "text": "Retomada comunicada ao Setor de Regulação pelo WhatsApp, segundo relato do setor. Não foram apresentados a mensagem original e a data."
+    },
+    {
+      "id": "IDADE17",
+      "title": "17 anos",
+      "kind": "flow_gap",
+      "text": "A seção Neurologia Pediátrica não define fluxo para 17 anos; confirmar com Regulação."
+    }
+  ],
+  "contextualAlerts": [
+    {
+      "id": "IDADE17",
+      "trigger": {
+        "ageYears": 17
+      },
+      "title": "17 anos: faixa não explicitada",
+      "text": "Este recorte é descrito até 16 anos, 11 meses e 29 dias. Confirme o fluxo com a Regulação."
+    }
+  ],
+  "parentProtocolId": "neuropediatria",
+  "category": "Pediatria",
+  "systemKind": "digsaude",
+  "searchKind": "condition",
+  "reference": "Telessaúde MS v2.0 — 06/10/2025 — impressas 34 / físicas 40.",
+  "sourceNotesPolicy": "Pendências de vigência e oferta não são requisitos adicionais."
+}

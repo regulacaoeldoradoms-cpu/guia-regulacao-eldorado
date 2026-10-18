@@ -5,8 +5,15 @@ import related from '../data/clinical-conditions/ombro-referencias-sisreg-cg-202
 import tendon from '../data/clinical-conditions/bursite-tendinite-20261016.json' with { type: 'json' };
 import headache from '../data/clinical-conditions/cefaleia-neuropediatria-20261016.json' with { type: 'json' };
 
+import neuroped0 from '../data/clinical-conditions/neuropediatria-atraso-regressao-desenvolvimento-20261017.json' with { type: 'json' };
+import neuroped1 from '../data/clinical-conditions/neuropediatria-tea-20261017.json' with { type: 'json' };
+import neuroped2 from '../data/clinical-conditions/neuropediatria-tdah-tod-20261017.json' with { type: 'json' };
+import neuroped3 from '../data/clinical-conditions/neuropediatria-transtornos-aprendizagem-20261017.json' with { type: 'json' };
+import neuroped4 from '../data/clinical-conditions/neuropediatria-disturbios-movimento-20261017.json' with { type: 'json' };
+import neuroped5 from '../data/clinical-conditions/neuropediatria-doencas-neurologicas-inflamatorias-20261017.json' with { type: 'json' };
+
 const copy = value => JSON.parse(JSON.stringify(value));
-const records = new Map([pilot, shoulder, related, tendon, headache].map(record => [record.id, record]));
+const records = new Map([pilot, shoulder, related, tendon, headache, neuroped0, neuroped1, neuroped2, neuroped3, neuroped4, neuroped5].map(record => [record.id, record]));
 function failure(message, status) { return Object.assign(new Error(message), { status }); }
 
 export function hydrateClinicalPilot(protocol) {

@@ -1,0 +1,319 @@
+{
+  "id": "digsaude.neuropediatria.tea",
+  "revision": "neuropediatria-20261017-1",
+  "status": "piloto_em_revisao_sem_vigencia_confirmada",
+  "system": "DigSaúde MS",
+  "specialty": "Neuropediatria",
+  "condition": "Transtorno do Espectro Autista (TEA)",
+  "aliases": [
+    "tea infantil",
+    "autismo",
+    "transtorno do espectro autista"
+  ],
+  "provenance": "Transcrição estruturada a partir da seção Neurologia Pediátrica do Protocolo Telessaúde MS v2.0, 06/10/2025; conferida com o PDF disponibilizado no projeto. Oferta da especialidade relatada pelo setor via WhatsApp; mensagem original e vigência externa não verificadas.",
+  "sources": [
+    {
+      "id": "TEL2",
+      "title": "Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul",
+      "version": "2.0",
+      "date": "06/10/2025",
+      "pages": {
+        "printed": "33",
+        "physical": "39",
+        "documentTotal": 72
+      },
+      "pending": "Vigência, oferta atual e aplicabilidade municipal a confirmar."
+    }
+  ],
+  "rules": [
+    {
+      "id": "IDADE",
+      "group": "eligibility",
+      "requirement": "condicional",
+      "text": "Até 16 anos, 11 meses e 29 dias.",
+      "ageMaximum": {
+        "years": 16,
+        "months": 11,
+        "days": 29
+      },
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "SUSPEITA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Suspeita ou diagnóstico de transtorno do espectro autista (TEA).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "DISMORFIA",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Dismorfias ou características sindrômicas sugestivas de síndrome associada ao TEA.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "CONSANGUINIDADE",
+      "group": "referral",
+      "requirement": "criterio",
+      "text": "Diagnóstico de TEA e pais consanguíneos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "INSTRUMENTO",
+      "group": "documents",
+      "requirement": "obrigatorio",
+      "text": "Aplicar pelo menos um instrumento adequado à faixa etária e informar o resultado: M-CHAT (18–30 meses), AQ-10 (4–11 anos) ou CARS-2 (a partir de 2 anos). Não exigir os três.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "LAUDOS",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "Se diagnóstico prévio: laudos médicos anteriores obrigatórios.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "MEDICACOES",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "Se diagnóstico prévio: informar nomes das medicações em uso (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "ESCOLA",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "Se diagnóstico prévio: relatório escolar atualizado (obrigatório).",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "BERA",
+      "group": "documents",
+      "requirement": "condicional",
+      "text": "Se diagnóstico prévio e atraso de linguagem: BERA obrigatório.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ]
+    },
+    {
+      "id": "MULTIPROF",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Se diagnóstico prévio: relatórios multiprofissionais, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "NEUROPREV",
+      "group": "documents",
+      "requirement": "opcional_documental",
+      "text": "Se diagnóstico prévio: EEG e neuroimagem anteriores, se houver.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "33",
+          "physical": "39"
+        }
+      ],
+      "availability": "se_houver"
+    },
+    {
+      "id": "QUADRO",
+      "group": "description",
+      "requirement": "obrigatorio",
+      "text": "Informar o quadro clínico atual, com documentos anexados ou descritos.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "30",
+          "physical": "36"
+        }
+      ]
+    },
+    {
+      "id": "RESPONSAVEL",
+      "group": "appointment",
+      "requirement": "obrigatorio",
+      "text": "Necessária a presença de familiar ou responsável no dia do teleatendimento.",
+      "sourceRefs": [
+        "TEL2"
+      ],
+      "sourceLocations": [
+        {
+          "source": "TEL2",
+          "printed": "30",
+          "physical": "36"
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "label": "Descrição clínica obrigatória",
+      "title": "Quadro clínico atual",
+      "ruleIds": [
+        "QUADRO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Documentos obrigatórios",
+      "title": "O que apresentar",
+      "ruleIds": [
+        "INSTRUMENTO"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Obrigatório conforme o caso",
+      "title": "Requisitos condicionais",
+      "ruleIds": [
+        "LAUDOS",
+        "MEDICACOES",
+        "ESCOLA",
+        "BERA"
+      ],
+      "receptionCheck": true
+    },
+    {
+      "label": "Se houver",
+      "title": "Documentos e exames disponíveis",
+      "ruleIds": [
+        "MULTIPROF",
+        "NEUROPREV"
+      ]
+    },
+    {
+      "label": "Condição do atendimento",
+      "title": "Familiar ou responsável",
+      "ruleIds": [
+        "RESPONSAVEL"
+      ]
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "OFERTA",
+      "title": "Oferta operacional",
+      "kind": "institutional_confirmation",
+      "text": "Retomada comunicada ao Setor de Regulação pelo WhatsApp, segundo relato do setor. Não foram apresentados a mensagem original e a data."
+    },
+    {
+      "id": "IDADE17",
+      "title": "17 anos",
+      "kind": "flow_gap",
+      "text": "A seção Neurologia Pediátrica não define fluxo para 17 anos; confirmar com Regulação."
+    }
+  ],
+  "contextualAlerts": [
+    {
+      "id": "IDADE17",
+      "trigger": {
+        "ageYears": 17
+      },
+      "title": "17 anos: faixa não explicitada",
+      "text": "Este recorte é descrito até 16 anos, 11 meses e 29 dias. Confirme o fluxo com a Regulação."
+    }
+  ],
+  "parentProtocolId": "neuropediatria",
+  "category": "Pediatria",
+  "systemKind": "digsaude",
+  "searchKind": "condition",
+  "reference": "Telessaúde MS v2.0 — 06/10/2025 — impressas 33 / físicas 39.",
+  "sourceNotesPolicy": "Pendências de vigência e oferta não são requisitos adicionais."
+}
