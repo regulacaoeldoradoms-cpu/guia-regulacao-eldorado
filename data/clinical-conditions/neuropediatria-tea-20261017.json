@@ -252,15 +252,6 @@
       "receptionCheck": true
     },
     {
-      "label": "Critérios do protocolo",
-      "title": "Quando encaminhar",
-      "ruleIds": [
-        "SUSPEITA",
-        "DISMORFIA",
-        "CONSANGUINIDADE"
-      ]
-    },
-    {
       "label": "Documentos obrigatórios",
       "title": "O que apresentar",
       "ruleIds": [
