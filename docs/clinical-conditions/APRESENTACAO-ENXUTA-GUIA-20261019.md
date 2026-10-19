@@ -14,6 +14,7 @@ O Guia Médico permanece **operacional, não enciclopédico**: o foco é apresen
 - Não promover incertezas em novas obrigações clínicas nem tratar oferta, pactuação ou vigência institucional não verificadas como confirmação.
 - Avisos assistenciais e limites pertinentes a perguntas específicas continuam a aparecer no fluxo contextual; ausência de definição na fonte não vira regra clínica.
 - O componente comum `js/clinical-condition-pilot.js` não injeta o painel de notas na apresentação, na Recepção nem no HTML de impressão. A linha de referência ao protocolo permanece.
+- A revisão de cache `20261019-1` acompanha os três HTMLs clínicos (`/medico/`, `/recepcao/`, `/protocolo/`), os arquivos JS/CSS e o marcador correspondente em `portal-sw.js`, evitando páginas antigas após o deploy.
 - Os testes garantem que regras completas e fontes ainda são entregues ao Worker, sem transmitir dados pessoais, e que o HTML público não contém a seção editorial removida.
 - Esta mudança é somente de apresentação. Não revisa critérios médicos, não confirma vigência ou oferta e não altera os sistemas CORE/SISREG/DigSaúde.
 
