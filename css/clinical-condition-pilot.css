@@ -7,3 +7,102 @@
 @media(max-width:900px){.clinical-pilot-active :is(.workspace,.reception-layout){grid-template-columns:minmax(0,1fr)}}
 .cp-reference-layout{grid-template-columns:minmax(0,1fr)}.clinical-pilot-choice button+button{margin-top:10px}
 
+
+/* Escolha contextual dos motivos: cards institucionais, sem setas ou ornamentos. */
+.clinical-pilot-choice.cp-condition-picker{
+  container-type:inline-size;
+  padding:22px;
+}
+.cp-condition-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:12px 18px;
+  margin-bottom:18px;
+}
+.cp-condition-heading h3{
+  margin:0 0 5px;
+  color:var(--cp-ink);
+  font-size:1.08em;
+  line-height:1.3;
+  font-weight:700;
+}
+.clinical-pilot-choice .cp-condition-heading p{
+  margin:0;
+  color:var(--cp-muted);
+  font-size:.81em;
+  line-height:1.45;
+}
+.cp-condition-count{
+  padding:5px 10px;
+  border:1px solid var(--cp-line);
+  border-radius:7px;
+  background:var(--cp-bg);
+  color:var(--cp-muted);
+  font-size:.7em;
+  font-weight:600;
+  white-space:nowrap;
+}
+.cp-condition-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.clinical-pilot-choice .cp-condition-grid .cp-condition-card{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:11px;
+  min-width:0;
+  min-height:101px;
+  margin:0;
+  padding:17px 18px;
+  border:1px solid var(--cp-line);
+  border-radius:11px;
+  background:var(--cp-bg);
+  color:var(--cp-ink);
+  text-align:left;
+  line-height:1.35;
+  box-shadow:none;
+  transition:border-color .16s ease,background-color .16s ease;
+}
+.cp-condition-card .cp-condition-name{
+  overflow-wrap:anywhere;
+  color:var(--cp-ink);
+  font-size:.95em;
+  font-weight:650;
+}
+.cp-condition-card .cp-condition-system{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:6px;
+  background:var(--cp-soft);
+  color:var(--cp-muted);
+  font-size:.72em;
+  font-weight:550;
+  line-height:1.25;
+}
+.clinical-pilot-choice .cp-condition-grid .cp-condition-card:hover{
+  border-color:var(--cp-accent);
+  background:var(--cp-soft);
+}
+.clinical-pilot-choice .cp-condition-grid .cp-condition-card:active{
+  border-color:var(--cp-accent);
+}
+.clinical-pilot-choice .cp-condition-grid .cp-condition-card:focus-visible{
+  outline:3px solid var(--cp-accent);
+  outline-offset:3px;
+}
+@container (max-width:620px){
+  .cp-condition-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:900px){
+  .clinical-pilot-choice.cp-condition-picker{padding:16px}
+  .cp-condition-grid{grid-template-columns:minmax(0,1fr)}
+  .clinical-pilot-choice .cp-condition-grid .cp-condition-card{min-height:88px;padding:14px 16px}
+}
+@media(prefers-reduced-motion:reduce){
+  .clinical-pilot-choice .cp-condition-grid .cp-condition-card{transition:none}
+}
