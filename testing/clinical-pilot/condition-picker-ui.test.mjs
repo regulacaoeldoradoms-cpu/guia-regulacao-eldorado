@@ -77,7 +77,9 @@ test('Ortopedia e Recepção compartilham o seletor e distinguem a origem SISREG
 test('CSS usa duas colunas no desktop, uma em espaço estreito, hover discreto e foco de teclado',()=>{
   assert.match(style,/\.cp-condition-grid\s*\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s);
   assert.match(style,/@container\s*\(max-width:620px\)\s*\{[^}]*\.cp-condition-grid\s*\{grid-template-columns:minmax\(0,1fr\)/s);
-  assert.match(style,/@media\(max-width:900px\)\s*\{[^}]*\.cp-condition-grid\s*\{grid-template-columns:minmax\(0,1fr\)/s);
+  const mobile=style.slice(style.lastIndexOf('@media(max-width:900px)'));
+  assert.ok(mobile.startsWith('@media(max-width:900px)'));
+  assert.match(mobile,/\.cp-condition-grid\s*\{grid-template-columns:minmax\(0,1fr\)/s);
   assert.match(style,/\.cp-condition-card:focus-visible/);
   assert.match(style,/prefers-reduced-motion:reduce/);
   assert.doesNotMatch(script,/→<\/button>/);
