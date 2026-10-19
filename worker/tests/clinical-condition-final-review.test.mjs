@@ -120,8 +120,9 @@ test('lacunas não viram requisitos, campos de conferência ou obrigação de de
     assert.ok(record.uncertainties.every(note=>note.kind));
     const context={record,age:null},projected=c.api.protocolContext(context);
     for(const note of record.uncertainties){assert.ok(!projected.informacoesClinicasObrigatorias.includes(note.text));assert.ok(!projected.examesObrigatorios.includes(note.text));assert.ok(record.sections.every(section=>!section.ruleIds.includes(note.id)));}
-    const html=c.api.printDocument(context);assert.match(html,/Estas notas não são uma lista adicional de exigências/);
-    if(record.sourceLimits)assert.ok(html.includes(record.sourceLimits.text));
+    const html=c.api.printDocument(context);assert.doesNotMatch(html,/Fonte, detalhes e pendências|Notas de fonte e pontos em aberto|Estas notas não são uma lista adicional de exigências|data-source-note/);
+    assert.ok(html.includes(record.reference));
+    if(record.sourceLimits)assert.ok(c.api.printDocument({...context,query:'Qual prazo ou validade?'}).includes(record.sourceLimits.text));
     assert.doesNotMatch(html,/precisa de confirmação com a Regulação/);
   }
   assert.equal(OM.uncertainties.find(note=>note.id==='INDISPONIVEIS').kind,'source_gap');

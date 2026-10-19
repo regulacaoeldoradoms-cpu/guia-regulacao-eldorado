@@ -90,7 +90,7 @@ test('tela/impressão, resposta local e Worker conservam integralmente o recorte
     }
     const html = api.printDocument(selected);
     assert.deepEqual([...html.matchAll(/data-clinical-rule="([^"]+)"/g)].map(m => m[1]).sort(), record.rules.map(r => r.id).sort());
-    assert.match(html, /Notas de fonte e pontos em aberto/);
+    assert.doesNotMatch(html, /Notas de fonte e pontos em aberto|Fonte, detalhes e pendências|data-source-note/); assert.ok(html.includes(record.reference));
     assert.doesNotMatch(html, /Exame neurológico|Eletroencefalograma/);
   }
   const ctx = { record: shoulder, age: null };
