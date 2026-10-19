@@ -158,7 +158,7 @@
       if(!panel||current&&matches(query,current.record.id))return;
       clearConditionUrl();document.body?.classList.add('clinical-pilot-active');
       const system=explicitSystem(query),blocked=system==='core'||unsupportedNewScope(query,family,system)||family==='seizure'&&(system==='sisreg'||/\badult[oa]/.test(norm(query)));
-      panel.innerHTML=`<article class="clinical-pilot" data-clinical-system-choice="${family}"><h2>${blocked?'Recorte não integrado neste piloto':'Escolha o sistema para consultar o motivo'}</h2><p>${blocked?'Este piloto não fornece exigências desse fluxo. As regras de outro sistema não foram usadas como substitutas.':'Cada sistema tem seu próprio recorte. Nenhuma lista de exigências é apresentada antes da escolha.'}</p><div class="cp-actions">${offered.map(id=>`<button type="button" data-pilot-open="${id}">${id===RELATED?'SISREG / Campo Grande':'DigSaúde MS'} →</button>`).join('')}</div></article>`;
+      panel.innerHTML=`<article class="clinical-pilot" data-clinical-system-choice="${family}"><h2>${blocked?'Recorte não integrado neste piloto':'Escolha o sistema para consultar o motivo'}</h2><p>${blocked?'Este piloto não fornece exigências desse fluxo. As regras de outro sistema não foram usadas como substitutas.':'Cada sistema tem seu próprio recorte. Nenhuma lista de exigências é apresentada antes da escolha.'}</p><div class="cp-actions">${offered.map(id=>`<button type="button" data-pilot-open="${id}">${id===RELATED?'SISREG / Campo Grande':'DigSaúde MS'}</button>`).join('')}</div></article>`;
       panel.querySelectorAll('[data-pilot-open]').forEach(button=>button.addEventListener('click',()=>{const id=button.dataset.pilotOpen,parent=protocols.find(p=>p.id===parentFor(id));open(parent,{conditionId:id,query});}));
       document.querySelectorAll('#protocolList .protocol-card').forEach(card=>card.classList.remove('active'));
     };
@@ -167,7 +167,7 @@
       const r=recordFor(id),protocol=protocols.find(p=>p.id===parentFor(id));if(!protocol)continue;
       if(channel==='guide'){const filter=document.querySelector('[data-filter].active')?.dataset.filter||'todos',category=document.getElementById('categoryFilter')?.value||'todos',allowed=id===RELATED?['todos','sisreg','ambos']:['todos','digsus','ambos'];if(!allowed.includes(filter)||!['todos',protocol.categoria].includes(category))continue;}
       const box=document.createElement('section');box.className='clinical-pilot-choice';box.dataset.pilotChoice=id;const label=(parentFor(id)==='neuropediatria'?'Neuropediatria - ':'Ortopedia Adulto - ')+labelFor(id),system=id===RELATED?'SISREG / Campo Grande':'DigSaúde MS',notice=r&&ageNotice(ageFromText(query),r);
-      box.innerHTML=`<p><strong>${esc(label)}</strong></p><p>Escolha o sistema. ${id===RELATED?'Referências relacionadas; pactuação a confirmar.':'Piloto em revisão; oferta a confirmar.'}</p><button type="button" data-pilot-system="${id}">${system} →</button>${notice?noticeMarkup(notice):''}`;
+      box.innerHTML=`<p><strong>${esc(label)}</strong></p><p>Escolha o sistema. ${id===RELATED?'Referências relacionadas; pactuação a confirmar.':'Piloto em revisão; oferta a confirmar.'}</p><button type="button" data-pilot-system="${id}">${system}</button>${notice?noticeMarkup(notice):''}`;
       box.querySelector('button').addEventListener('click',()=>open(protocol,{conditionId:id,query}));list.prepend(box);offered.push(id);count++;
     }
     if(count)list.querySelectorAll(':scope > .empty').forEach(node=>node.remove());
@@ -175,8 +175,16 @@
     showChoice();
   }
   function addDetailChoice(protocol,open,channel='guide'){
-    const ids=descriptors.filter(d=>parentFor(d.id)===protocol?.id).map(d=>d.id),panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');if(!ids.length||!panel||panel.querySelector('[data-clinical-condition-id], [data-pilot-detail-choice]'))return;
-    const box=document.createElement('section');box.className='clinical-pilot-choice';box.dataset.pilotDetailChoice='true';box.innerHTML='<p><strong>Consultar por motivo e sistema</strong></p>'+ids.map(id=>`<button type="button" data-condition="${id}">${labelFor(id)+(id===RELATED?' SISREG/Campo Grande':' - DigSaúde MS')} →</button>`).join('');box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>open(protocol,{conditionId:b.dataset.condition})));panel.prepend(box);
+    const ids=descriptors.filter(d=>parentFor(d.id)===protocol?.id).map(d=>d.id);
+    const panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');
+    if(!ids.length||!panel||panel.querySelector('[data-clinical-condition-id], [data-pilot-detail-choice]'))return;
+    const box=document.createElement('section');
+    box.className='clinical-pilot-choice cp-condition-picker';
+    box.dataset.pilotDetailChoice='true';
+    const cards=ids.map(id=>'<button type="button" class="cp-condition-card" data-condition="'+esc(id)+'"><span class="cp-condition-name">'+esc(labelFor(id))+'</span><span class="cp-condition-system">'+(id===RELATED?'SISREG / Campo Grande':'DigSaúde MS')+'</span></button>').join('');
+    box.innerHTML='<div class="cp-condition-heading"><div><h3>Consultar por motivo</h3><p>Selecione a condição para visualizar os requisitos do encaminhamento.</p></div><span class="cp-condition-count">'+ids.length+' '+(ids.length===1?'motivo':'motivos')+'</span></div><div class="cp-condition-grid" role="group" aria-label="Motivos de encaminhamento disponíveis">'+cards+'</div>';
+    box.querySelectorAll('[data-condition]').forEach(button=>button.addEventListener('click',()=>open(protocol,{conditionId:button.dataset.condition})));
+    panel.prepend(box);
   }
   function localAnswer(question,context){
     const decision=questionDecision(question,context);if(!decision)return null;if(decision.kind!=='records'){if(decision.kind==='choose_system')pendingQuestion={family:decision.family,question:decision.query||question};return decision.text;}
