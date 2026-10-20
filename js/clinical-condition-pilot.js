@@ -1,7 +1,7 @@
 'use strict';
 // Condition records are separate from the historical mirror and from each other.
 (() => {
-  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261019-2';
+  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261019-3';
   const descriptors=[
     {id:ID,file:'convulsao-epilepsia-20261016',revision:'piloto-convulsao-20261016-3',expected:['IDADE','CRISE','MONO','EFEITOS','DIFICIL','FEBRIL','QUADRO','TRATAMENTO','NEURO','EEG','TC','RM','APRESENTACAO','RESPONSAVEL','INDICACAO']},
     {id:SHOULDER,file:'dor-no-ombro-20261016',revision:'piloto-ombro-20261016-2',expected:['IDADE','TOTAL','PARCIAL','DOR6','OA','LUXACAO','MOVIMENTO','PRESENCA_LUXACAO','TRAUMA_PREVIO','TRATAMENTOS','RX','USG','RM','TC','AVALIACAO','CIRURGIA']},
@@ -182,7 +182,19 @@
     box.className='clinical-pilot-choice cp-condition-picker';
     box.dataset.pilotDetailChoice='true';
     const cards=ids.map(id=>'<button type="button" class="cp-condition-card" data-condition="'+esc(id)+'"><span class="cp-condition-name">'+esc(labelFor(id))+'</span><span class="cp-condition-system">'+(id===RELATED?'SISREG / Campo Grande':'DigSaúde MS')+'</span></button>').join('');
-    box.innerHTML='<div class="cp-condition-heading"><div><h3>Consultar por motivo</h3><p>Selecione a condição para visualizar os requisitos do encaminhamento.</p></div><span class="cp-condition-count">'+ids.length+' '+(ids.length===1?'motivo':'motivos')+'</span></div><div class="cp-condition-grid" role="group" aria-label="Motivos de encaminhamento disponíveis">'+cards+'</div>';
+    const count=ids.length+' '+(ids.length===1?'motivo disponível':'motivos disponíveis');
+    if(channel==='guide'){
+      const gridId='cp-condition-options-'+protocol.id;
+      box.innerHTML='<h3 class="cp-condition-toggle-heading"><button type="button" class="cp-condition-toggle" aria-expanded="false" aria-controls="'+esc(gridId)+'"><span class="cp-condition-toggle-title">Consultar por motivo</span><span class="cp-condition-count">'+count+'</span><span class="cp-condition-chevron" aria-hidden="true"></span></button></h3><div id="'+esc(gridId)+'" class="cp-condition-grid" role="group" aria-label="Motivos de encaminhamento disponíveis" hidden>'+cards+'</div>';
+      const toggle=box.querySelector('.cp-condition-toggle'),grid=box.querySelector('.cp-condition-grid');
+      toggle.addEventListener('click',()=>{
+        const expanded=toggle.getAttribute('aria-expanded')==='true';
+        toggle.setAttribute('aria-expanded',String(!expanded));
+        grid.hidden=expanded;
+      });
+    }else{
+      box.innerHTML='<div class="cp-condition-heading"><div><h3>Consultar por motivo</h3><p>Selecione a condição para visualizar os requisitos do encaminhamento.</p></div><span class="cp-condition-count">'+ids.length+' '+(ids.length===1?'motivo':'motivos')+'</span></div><div class="cp-condition-grid" role="group" aria-label="Motivos de encaminhamento disponíveis">'+cards+'</div>';
+    }
     box.querySelectorAll('[data-condition]').forEach(button=>button.addEventListener('click',()=>open(protocol,{conditionId:button.dataset.condition})));
     panel.prepend(box);
   }

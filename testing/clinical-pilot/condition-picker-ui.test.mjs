@@ -12,12 +12,14 @@ async function fixture(channel='guide'){
   let mounted=null;
   const opened=[];
   const buttons=[];
+  const grid={hidden:true};
+  const toggle={expanded:'false',getAttribute(){return this.expanded;},setAttribute(name,value){assert.equal(name,'aria-expanded');this.expanded=value;},addEventListener(event,callback){assert.equal(event,'click');this.click=callback;}};
   const panel={querySelector:()=>null,prepend(node){mounted=node;}};
   const document={
     getElementById:id=>id===(channel==='reception'?'receptionDetail':'detailPanel')?panel:null,
     createElement:tag=>{
       assert.equal(tag,'section');
-      return {dataset:{},className:'',innerHTML:'',querySelectorAll(selector){
+      return {dataset:{},className:'',innerHTML:'',querySelector(selector){return selector==='.cp-condition-toggle'?toggle:grid;},querySelectorAll(selector){
         assert.equal(selector,'[data-condition]');
         const matches=[...this.innerHTML.matchAll(/<button type="button" class="cp-condition-card" data-condition="([^"]+)"/g)];
         return matches.map(match=>{
@@ -37,7 +39,7 @@ async function fixture(channel='guide'){
   });
   vm.runInContext(script,context);
   await context.window.ClinicalConditionPilot.ready;
-  return {api:context.window.ClinicalConditionPilot,opened,buttons,
+  return {api:context.window.ClinicalConditionPilot,opened,buttons,toggle,grid,
     mount:id=>context.window.ClinicalConditionPilot.addDetailChoice({id},(protocol,options)=>opened.push({protocolId:protocol.id,conditionId:options.conditionId}),channel),
     html:()=>mounted?.innerHTML,
     className:()=>mounted?.className,
@@ -53,6 +55,14 @@ test('Neuropediatria mostra oito cards nativos, sem seta, nome separado do siste
   assert.equal(ui.dataset().pilotDetailChoice,'true');
   assert.match(ui.html(),/cp-condition-grid/);
   assert.match(ui.html(),/8 motivos/);
+  assert.match(ui.html(),/aria-expanded="false" aria-controls="cp-condition-options-neuropediatria"/);
+  assert.match(ui.html(),/id="cp-condition-options-neuropediatria"[^>]* hidden/);
+  ui.toggle.click();
+  assert.equal(ui.toggle.expanded,'true');
+  assert.equal(ui.grid.hidden,false);
+  ui.toggle.click();
+  assert.equal(ui.toggle.expanded,'false');
+  assert.equal(ui.grid.hidden,true);
   assert.match(ui.html(),/aria-label="Motivos de encaminhamento disponíveis"/);
   assert.equal((ui.html().match(/class="cp-condition-name"/g)||[]).length,8);
   assert.equal((ui.html().match(/class="cp-condition-system"/g)||[]).length,8);
@@ -69,6 +79,7 @@ test('Ortopedia e Recepção compartilham o seletor e distinguem a origem SISREG
   assert.equal(ui.buttons.length,3);
   assert.match(ui.html(),/SISREG \/ Campo Grande/);
   assert.equal((ui.html().match(/DigSaúde MS/g)||[]).length,2);
+  assert.doesNotMatch(ui.html(),/cp-condition-toggle|aria-expanded| hidden/);
   assert.doesNotMatch(ui.html(),/→|&rarr;/);
   ui.buttons[2].click();
   assert.deepEqual(ui.opened,[{protocolId:'ortopedia',conditionId:'digsaude.ortopedia.bursite-tendinite'}]);
@@ -81,6 +92,8 @@ test('CSS usa duas colunas no desktop, uma em espaço estreito, hover discreto e
   assert.ok(mobile.startsWith('@media(max-width:900px)'));
   assert.match(mobile,/\.cp-condition-grid\s*\{grid-template-columns:minmax\(0,1fr\)/s);
   assert.match(style,/\.cp-condition-card:focus-visible/);
+  assert.match(style,/\.cp-condition-toggle:focus-visible/);
+  assert.match(style,/\.cp-condition-grid\[hidden\]\{display:none\}/);
   assert.match(style,/prefers-reduced-motion:reduce/);
   assert.doesNotMatch(script,/→<\/button>/);
 });
