@@ -24,9 +24,9 @@ jobs:
       - name: Conferir carregamento e atualização de cache
         run: |
           grep -q 'referral-practice-update-20260828.js?v=20260828-1' medico/index.html
-          grep -q 'medical-app.js?v=20261016-pilot-4' medico/index.html
+          grep -q 'medical-app.js?v=20261020-general-1' medico/index.html
           grep -q 'ai-assistant.js?v=20261016-pilot-4' medico/index.html
-          grep -q 'app.js?v=20261016-pilot-4' protocolo/index.html
+          grep -q 'app.js?v=20261020-general-1' protocolo/index.html
 
       - name: Conferir fonte, escopo e resposta direta
         run: |
