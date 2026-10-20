@@ -47,7 +47,7 @@ test('Guia Médico carrega a correção operacional depois da regra de TEA', () 
   const current = html.indexOf('referral-practice-update-20260908.js?v=20260908-2');
   assert.ok(previous >= 0);
   assert.ok(current > previous);
-  assert.ok(current < html.indexOf('medical-app.js?v=20261016-pilot-4'));
+  assert.ok(current < html.indexOf('medical-app.js?v=20261020-general-1'));
 });
 
 test('Recepção oferece impressão condicional apenas onde há regra apoiada em fonte', () => {

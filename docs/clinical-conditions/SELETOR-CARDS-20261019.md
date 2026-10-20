@@ -39,11 +39,17 @@ Ajuste posterior solicitado pelo responsável: **Imprimir este recorte** aparece
 
 O campo digitável **Faixa etária para conferência (opcional)** também fica somente na Recepção. A faixa etária informativa do protocolo permanece no Guia Médico. Idade já fornecida por pesquisa/contexto continua disponível aos alertas e à IA, independentemente do campo; revisão clínica `20261020-3`.
 
+Correção de integridade da visão geral (20/10): o renderer de condições substituía todo o painel e descartava o protocolo geral. Agora preserva o artigo original e seus eventos no DOM, ocultando-o somente enquanto exibe uma condição. Recolher pelo card, topo, fim ou cabeçalho principal restaura esse mesmo artigo, incluindo aplicação prática, protocolo oficial, metadados e marcações do checklist. **Desmarcar todos** mantém o listener original. Nenhum armazenamento persistente foi adicionado.
+
+Links diretos montam primeiro a visão geral pelo renderer existente, sem outro conjunto de dados; só então exibem a condição solicitada. Ao recolher, removem `condicao`, mantêm `protocolo` e limpam o contexto específico da IA. Reabrir o último card restaura seu recorte. Visões gerais e critérios de sistemas distintos não são mostrados juntos. Isso substitui a convenção anterior de manter condição ativa/URL específica ao recolher.
+
+Cache clínico `20261020-4`; renderers Médico e Fontes em `20261020-general-1`. Teste de navegador existente ampliado somente com identidade do artigo/checkboxes, texto integral preservado, três marcações após consultas sucessivas, Desmarcar todos, retorno de links diretos e URL/contexto coerentes. Mesmos quatro cenários desktop/mobile e claro/escuro; sem nova suíte ou mudança no visual dos cards.
+
 Sobre a main `d3eaa168` (#670, #671 e contraste #672 preservados), o Guia mantém os mesmos cards montados ao selecionar uma condição. Uma única área de critérios é substituída ao trocar de motivo; nunca são acumulados registros. A Recepção conserva o fluxo anterior.
 
 - A lista principal começa fechada. Depois da escolha, permanece aberta; seu cabeçalho pode ocultar lista e critérios juntos, sem apagar a seleção.
 - O card selecionado recebe destaque discreto. Clique/Enter/Espaço nele alterna apenas seus critérios. Também há **Recolher critérios** no início e no fim; ao recolher pelo fim, o foco retorna ao card selecionado, com deslocamento apenas quando necessário para revelá-lo abaixo do cabeçalho.
-- Recolher mantém a condição, a URL `protocolo`/`condicao`, a idade opcional e o contexto da IA. Reabrir a mesma condição reutiliza seu conteúdo. Links diretos e atualização da página revelam lista e critérios solicitados.
+- Recolher restaura o protocolo geral com o checklist intacto e deixa somente `protocolo` na URL; a condição deixa de ser o contexto ativo da IA. Reabrir a mesma condição reutiliza seu conteúdo. Links diretos e atualização da página revelam lista e critérios solicitados.
 - O conteúdo clínico e a impressão reutilizam `contentMarkup`/`printDocument`, sem cópias de regras ou novos resumos. O seletor mantém quantidade, ordem, sistemas e apresentação dos cards.
 - Revisão clínica **20261020-1** nas três rotas e no marcador do Service Worker; cache global e revisão de `medical.css` da #672 preservados.
 

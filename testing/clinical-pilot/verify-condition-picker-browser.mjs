@@ -50,6 +50,20 @@ try{
       await page.locator('#protocolList [data-id="'+id+'"]').click();
     };
     await select('neuropediatria');
+    const general=page.locator('[data-pilot-general-protocol="neuropediatria"]');
+    assert.equal(await general.isVisible(),true);
+    assert.ok(await general.locator('.medical-checklist input').count()>=3);
+    for(let i=0;i<3;i++)await general.locator('.medical-checklist input').nth(i).check();
+    await general.evaluate(node=>{window.__generalNode=node;window.__generalText=node.textContent;window.__generalChecks=[...node.querySelectorAll('.medical-checklist input')];});
+    const restored=async()=>{
+      assert.equal(await general.isVisible(),true);
+      const preserved=await page.evaluate(()=>{const node=document.querySelector('[data-pilot-general-protocol="neuropediatria"]'),checks=[...node.querySelectorAll('.medical-checklist input')];return window.__generalNode===node&&window.__generalText===node.textContent&&checks.length===window.__generalChecks.length&&checks.every((input,i)=>input===window.__generalChecks[i]);});
+      assert.equal(preserved,true);
+      assert.equal(await general.locator('.medical-checklist input:checked').count(),3);
+      assert.equal(await page.evaluate(()=>window.ClinicalConditionPilot.active()),null);
+      assert.equal(new URL(page.url()).searchParams.has('condicao'),false);
+      assert.equal(new URL(page.url()).searchParams.get('protocolo'),'neuropediatria');
+    };
     const toggle=page.locator('.cp-condition-toggle'),grid=page.locator('.cp-condition-grid');
     assert.equal(await toggle.getAttribute('aria-expanded'),'false');
     assert.equal(await grid.isVisible(),false);
@@ -84,6 +98,7 @@ try{
       assert.equal(await card.getAttribute('aria-expanded'),'true');
       assert.equal(await card.getAttribute('data-selected'),'true');
       assert.equal(await criteria.isVisible(),true);
+      assert.equal(await general.isVisible(),false);
       const result=await page.evaluate(()=>{
         const api=window.ClinicalConditionPilot,ctx=api.active(),record=api.record(ctx.record.id);
         const print=new DOMParser().parseFromString(api.printDocument(),'text/html');
@@ -103,22 +118,28 @@ try{
     assert.equal(await criteria.isVisible(),false);assert.equal(await grid.isVisible(),true);
     assert.equal(await page.locator('[data-clinical-condition-id]').count(),1);
     assert.equal(await firstCard.getAttribute('aria-expanded'),'false');
+    await restored();
     // Reopening preserves the age already supplied by the query.
     await firstCard.focus();await page.keyboard.press('Space');
     assert.equal(await criteria.isVisible(),true);assert.equal(await page.evaluate(()=>window.ClinicalConditionPilot.active().age.years),17);
     await firstCard.focus();await page.keyboard.press('Enter');assert.equal(await criteria.isVisible(),false);
+    await restored();
     await firstCard.click();
     await page.locator('[data-pilot-criteria-bottom]').click();
     assert.equal(await criteria.isVisible(),false);assert.equal(await firstCard.evaluate(node=>node===document.activeElement),true);
     assert.equal(await grid.isVisible(),true);
+    await restored();
     // Same stable cards survive repeated changes; no duplicate content or listeners.
-    for(const id of [...ids,...ids.slice().reverse().slice(1)])await choose(id);
-    await choose(ids[1]);await choose(ids[0]);await choose(ids[1]);await choose(ids[3]);
+    for(const id of ids){await choose(id);await page.locator('[data-pilot-criteria-toggle]').first().click();await restored();}
+    await choose(ids[0]);await choose(ids[1]);await choose(ids[3]);
     assert.equal(await page.locator('[data-pilot-print]').count(),0);
-    if(width===1366&&theme==='light')await page.locator('#detailPanel').screenshot({path:path.join(output,'desktop-light-selected.png')});
     if(width===390&&theme==='dark')await picker.screenshot({path:path.join(output,'mobile-dark-selected.png')});
     await toggle.click();assert.equal(await grid.isVisible(),false);assert.equal(await criteria.isVisible(),false);
-    await toggle.click();assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),true);
+    await restored();
+    await toggle.click();assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),false);
+    if(width===1366&&theme==='light')await general.locator('.final-clinical-check').screenshot({path:path.join(output,'desktop-checklist-restored.png')});
+    await general.locator('#clearChecklistButton').click();
+    assert.equal(await general.locator('.medical-checklist input:checked').count(),0);
     await select('ortopedia');assert.equal(await toggle.getAttribute('aria-expanded'),'false');
     await toggle.click();assert.equal(await grid.locator('button').count(),3);
     await grid.locator('[data-condition="sisreg-campo-grande.ortopedia.referencias-ombro"]').click();
@@ -128,9 +149,24 @@ try{
     await page.goto(origin+'/medico/?protocolo=neuropediatria&condicao=digsaude.neuropediatria.tea',{waitUntil:'networkidle'});
     await page.locator('[data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
     assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),true);
+    assert.equal(await general.isVisible(),false);
+    await page.locator('[data-pilot-criteria-toggle]').first().click();
+    assert.equal(await general.isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('condicao'),false);
+    for(let i=0;i<3;i++)await general.locator('.medical-checklist input').nth(i).check();
+    await grid.locator('[data-condition="digsaude.neuropediatria.cefaleia"]').click();
+    await page.locator('[data-pilot-criteria-toggle]').first().click();
+    assert.equal(await general.locator('.medical-checklist input:checked').count(),3);
+    await grid.locator('[data-condition="digsaude.neuropediatria.tea"]').click();
     await page.reload({waitUntil:'networkidle'});
     await page.locator('[data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
     assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),true);
+    await page.locator('[data-pilot-criteria-toggle]').first().click();
+    assert.equal(await general.isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('condicao'),false);
+    if(width===1366&&theme==='light'){
+      await page.goto(origin+'/protocolo/?protocolo=neuropediatria&condicao=digsaude.neuropediatria.tea',{waitUntil:'networkidle'});
+      await page.locator('[data-pilot-criteria-toggle]').first().click();
+      assert.equal(await general.isVisible(),true);assert.equal(new URL(page.url()).searchParams.has('condicao'),false);
+    }
     await page.goto(origin+'/recepcao/',{waitUntil:'networkidle'});
     await page.evaluate(()=>window.ClinicalConditionPilot.ready);
     await page.locator('#receptionProtocolList [data-id="neuropediatria"]').click();
@@ -144,7 +180,7 @@ try{
     await page.locator('[data-pilot-print]').click();
     assert.equal(await page.evaluate(()=>window.__didPrint&&window.__printedHtml===window.ClinicalConditionPilot.printDocument()),true);
     assert.deepEqual(errors,[]);
-    report.push({width,theme,keyboard:true,collapsed:true,allEightConditions:true,singleContent:true,printAndAiContext:true,bottomCollapseFocus:true,directLinkAndReload:true,receptionPreserved:true});
+    report.push({width,theme,keyboard:true,collapsed:true,allEightConditions:true,singleContent:true,generalDomAndChecklistPreserved:true,clearChecklist:true,printAndAiContext:true,bottomCollapseFocus:true,directLinkAndReload:true,receptionPreserved:true});
     await context.close();
   }
   fs.writeFileSync(path.join(output,'results.json'),JSON.stringify(report,null,2));
