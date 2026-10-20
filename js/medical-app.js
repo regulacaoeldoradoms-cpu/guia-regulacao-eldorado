@@ -313,7 +313,7 @@ function updateProtocolUrl(protocol) {
 
 function renderProtocol(protocol, options = {}) {
   state.selected = protocol;
-  if (window.ClinicalConditionPilot?.render(protocol, options)) return;
+  if (window.ClinicalConditionPilot?.render(protocol, options, 'guide', renderProtocol)) return;
   window.ClinicalConditionPilot?.clearConditionUrl();
   document.querySelectorAll('.protocol-card').forEach((card) => card.classList.toggle('active', card.dataset.id === protocol.id));
   if (!options.preserveUrl) updateProtocolUrl(protocol);

@@ -1,7 +1,7 @@
 'use strict';
 // Condition records are separate from the historical mirror and from each other.
 (() => {
-  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261020-3';
+  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261020-4';
   const descriptors=[
     {id:ID,file:'convulsao-epilepsia-20261016',revision:'piloto-convulsao-20261016-3',expected:['IDADE','CRISE','MONO','EFEITOS','DIFICIL','FEBRIL','QUADRO','TRATAMENTO','NEURO','EEG','TC','RM','APRESENTACAO','RESPONSAVEL','INDICACAO']},
     {id:SHOULDER,file:'dor-no-ombro-20261016',revision:'piloto-ombro-20261016-2',expected:['IDADE','TOTAL','PARCIAL','DOR6','OA','LUXACAO','MOVIMENTO','PRESENCA_LUXACAO','TRAUMA_PREVIO','TRATAMENTOS','RX','USG','RM','TC','AVALIACAO','CIRURGIA']},
@@ -56,7 +56,7 @@
     const eligibility=record.rules.find(r=>r.id==='IDADE'),compare=(a,b)=>a.years-b.years||a.months-b.months||a.days-b.days;
     return (eligibility.ageMinimum&&compare(age,eligibility.ageMinimum)<0)||(eligibility.ageMaximum&&compare(age,eligibility.ageMaximum)>0)||(eligibility.ageMaximumYears!==undefined&&age.years>eligibility.ageMaximumYears)?{id:'FORA_FAIXA',title:'Idade fora da faixa descrita neste recorte',text:eligibility.text+' Confirme o fluxo com a Regulação; o piloto não define uma rota alternativa.'}:null;
   }
-  function active(){const root=document.querySelector('#detailPanel > [data-clinical-condition-id], #receptionDetail > [data-clinical-condition-id]'),record=root&&recordFor(root.dataset.clinicalConditionId);return record?{record:clone(record),age:ageFromText(root.querySelector('[data-pilot-age]')?.value??root.dataset.clinicalAge??''),query:root.dataset.clinicalQuery||'',channel:root.dataset.clinicalChannel}:null;}
+  function active(){const root=document.querySelector('#detailPanel > [data-clinical-condition-id], #receptionDetail > [data-clinical-condition-id]'),record=root&&!root.hidden&&recordFor(root.dataset.clinicalConditionId);return record?{record:clone(record),age:ageFromText(root.querySelector('[data-pilot-age]')?.value??root.dataset.clinicalAge??''),query:root.dataset.clinicalQuery||'',channel:root.dataset.clinicalChannel}:null;}
   function unavailable(question){const root=document.querySelector('[data-clinical-pilot-unavailable]');return question===undefined?Boolean(root):Boolean(root&&questionDecision(question)?.kind==='unavailable');}
   function searchFamilies(query){const q=norm(query),tendon=/bursite|tendinite/.test(q);return[tendon?'tendon':null,/cefaleia|dor de cabeca/.test(q)?'headache':null,/ombro|manguito/.test(q)&&(!tendon||/dor (?:no|do|em) ombro|manguito/.test(q))?'shoulder':null,/convuls|epilep/.test(q)?'seizure':null,/atraso (?:do )?desenvolvimento|regressao (?:do )?desenvolvimento|hipotonia infantil/.test(q)?'development':null,/\btea\b|autismo|espectro autista/.test(q)?'autism':null,/\btdah\b|\btod\b|deficit de atencao/.test(q)?'adhd':null,/dislexia|discalculia|transtornos? (?:de |da )?aprendizagem/.test(q)?'learning':null,/ataxia|coreia|distonia|espasmo hemifacial|disturbios? do movimento/.test(q)?'movement':null,/esclerose multipla|encefalomielite|neurite optica|mielite transversa|doencas? neurologicas? inflamatorias?/.test(q)?'inflammation':null].filter(Boolean);}
   const searchKind=query=>{const found=searchFamilies(query);return found.length===1?found[0]:null;};
@@ -138,6 +138,13 @@
   function setCriteriaExpanded(panel,expanded,returnToCard=false){
     const root=panel.querySelector('[data-clinical-condition-id]'),content=root?.querySelector('[data-pilot-criteria-content]');
     if(!content)return;
+    const general=panel.querySelector('[data-pilot-general-protocol]');
+    if(general){
+      returnToCard=returnToCard||!expanded&&root.contains(document.activeElement);
+      general.hidden=expanded;root.hidden=!expanded;
+      if(expanded){document.body.classList.add('clinical-pilot-active');const url=new URL(location.href);url.searchParams.set('protocolo',root.dataset.parentProtocolId);url.searchParams.set('condicao',root.dataset.clinicalConditionId);history.replaceState(null,'',url);}
+      else clearConditionUrl();
+    }
     content.hidden=!expanded;
     root.querySelectorAll('[data-pilot-criteria-toggle]').forEach(button=>{
       button.setAttribute('aria-expanded',String(expanded));
@@ -146,7 +153,7 @@
     let selected;
     panel.querySelectorAll('[data-condition]').forEach(button=>{
       const current=button.dataset.condition===root.dataset.clinicalConditionId;
-      button.dataset.selected=String(current);
+      button.dataset.selected=String(current&&expanded);
       button.setAttribute('aria-expanded',String(current&&expanded));
       button.setAttribute('aria-controls',content.id);
       if(current)selected=button;
@@ -157,23 +164,31 @@
       if(rect.top<top+12||rect.bottom>window.innerHeight-80)selected.scrollIntoView({block:'center',behavior:'instant'});
     }
   }
-  function render(protocol,options={},channel='guide'){
+  function render(protocol,options={},channel='guide',open){
     const descriptor=descriptors.find(d=>d.id===options.conditionId),r=descriptor&&recordFor(descriptor.id),parent=r?.parentProtocolId||(descriptor?parentFor(descriptor.id):'');
     if(!descriptor||protocol?.id!==parent){document.body?.classList.remove('clinical-pilot-active');return false;}
     const panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');if(!panel)return false;document.body?.classList.add('clinical-pilot-active');
     conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];pendingFamilies=[];
     if(!r){panel.innerHTML=`<div class="clinical-pilot" data-clinical-pilot-unavailable="${descriptor.id}"><p class="cp-alert">Não foi possível carregar o registro integral do piloto (${esc(errors.get(descriptor.id)||'carregando')}). Nenhuma lista geral foi usada como substituta.</p></div>`;return true;}
+    let general=channel==='guide'?panel.querySelector('[data-pilot-general-protocol]'):null;
+    if(channel==='guide'&&general?.dataset.pilotGeneralProtocol!==protocol.id){
+      open?.(protocol,{preserveUrl:true});
+      general=panel.querySelector('[data-pilot-general-protocol]');
+    }
     const query=options.query??document.getElementById(channel==='reception'?'receptionSearch':'sideSearchInput')?.value??'',age=options.age||ageFromText(query);
     const picker=channel==='guide'?panel.querySelector('[data-pilot-detail-choice]'):null,keepPicker=picker?.dataset.pilotProtocol===protocol.id?picker:null,focused=keepPicker?.contains(document.activeElement)?document.activeElement:null;
     const criteriaId='cp-condition-criteria-'+protocol.id,contentId=criteriaId+'-content';
     const control=bottom=>`<button type="button" data-pilot-criteria-toggle${bottom?' data-pilot-criteria-bottom':''} aria-expanded="true" aria-controls="${esc(contentId)}">Recolher critérios</button>`;
     const content=contentMarkup(r,age,channel,query);
-    panel.innerHTML=`<article class="clinical-pilot"${channel==='guide'?` id="${esc(criteriaId)}"`:''} data-clinical-condition-id="${r.id}" data-clinical-channel="${channel}" data-clinical-query="${esc(query)}">${channel==='guide'?`<div class="cp-actions cp-criteria-controls"><strong>${esc(r.condition)}</strong>${control(false)}</div><div id="${esc(contentId)}" data-pilot-criteria-content>${content}<div class="cp-actions">${control(true)}</div></div>`:content}</article>`;
-    document.querySelectorAll('#protocolList .protocol-card').forEach(card=>card.classList.toggle('active',channel==='guide'&&card.dataset.id===protocol.id));const root=panel.firstElementChild;
+    const markup=`<article class="clinical-pilot"${channel==='guide'?` id="${esc(criteriaId)}"`:''} data-clinical-condition-id="${r.id}" data-clinical-channel="${channel}" data-clinical-query="${esc(query)}">${channel==='guide'?`<div class="cp-actions cp-criteria-controls"><strong>${esc(r.condition)}</strong>${control(false)}</div><div id="${esc(contentId)}" data-pilot-criteria-content>${content}<div class="cp-actions">${control(true)}</div></div>`:content}</article>`;
+    if(general){panel.querySelectorAll(':scope > [data-clinical-condition-id]').forEach(node=>node.remove());panel.insertAdjacentHTML('beforeend',markup);}
+    else panel.innerHTML=markup;
+    document.querySelectorAll('#protocolList .protocol-card').forEach(card=>card.classList.toggle('active',channel==='guide'&&card.dataset.id===protocol.id));const root=general?panel.lastElementChild:panel.firstElementChild;
+    root.dataset.parentProtocolId=protocol.id;
     root.dataset.clinicalAge=age?age.years+' anos '+(age.months||0)+' meses '+(age.days||0)+' dias':'';
     root.querySelector('[data-pilot-age]')?.addEventListener('input',event=>{const n=ageNotice(ageFromText(event.target.value),r);root.querySelector('[data-pilot-age-notice]').innerHTML=n?noticeMarkup(n):'';});root.querySelector('[data-pilot-print]')?.addEventListener('click',printActive);
     if(channel==='guide'){
-      if(keepPicker)panel.prepend(keepPicker);else addDetailChoice(protocol,(item,choice)=>render(item,choice,channel),channel);
+      if(keepPicker)panel.prepend(keepPicker);else addDetailChoice(protocol,(item,choice)=>render(item,choice,channel,open),channel);
       const choice=panel.querySelector('[data-pilot-detail-choice]'),toggle=choice.querySelector('.cp-condition-toggle');
       toggle.setAttribute('aria-expanded','true');toggle.setAttribute('aria-controls',choice.querySelector('.cp-condition-grid').id+' '+criteriaId);choice.querySelector('.cp-condition-grid').hidden=false;
       root.querySelectorAll('[data-pilot-criteria-toggle]').forEach(button=>button.addEventListener('click',()=>setCriteriaExpanded(panel,root.querySelector('[data-pilot-criteria-content]').hidden,button.hasAttribute('data-pilot-criteria-bottom'))));
@@ -212,6 +227,8 @@
     const ids=descriptors.filter(d=>parentFor(d.id)===protocol?.id).map(d=>d.id);
     const panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');
     if(!ids.length||!panel||panel.querySelector('[data-pilot-detail-choice]')||channel!=='guide'&&panel.querySelector('[data-clinical-condition-id]'))return;
+    const general=channel==='guide'&&panel.querySelector(':scope > article:not([data-clinical-condition-id])');
+    if(general)general.dataset.pilotGeneralProtocol=protocol.id;
     const box=document.createElement('section');
     box.className='clinical-pilot-choice cp-condition-picker';
     box.dataset.pilotDetailChoice='true';
@@ -226,7 +243,7 @@
         const expanded=toggle.getAttribute('aria-expanded')==='true';
         toggle.setAttribute('aria-expanded',String(!expanded));
         grid.hidden=expanded;
-        const criteria=panel.querySelector('[data-clinical-condition-id]');if(criteria)criteria.hidden=expanded;
+        if(expanded&&panel.querySelector('[data-clinical-condition-id]'))setCriteriaExpanded(panel,false);
       });
     }else{
       box.innerHTML='<div class="cp-condition-heading"><div><h3>Consultar por motivo</h3><p>Selecione a condição para visualizar os requisitos do encaminhamento.</p></div><span class="cp-condition-count">'+ids.length+' '+(ids.length===1?'motivo':'motivos')+'</span></div><div class="cp-condition-grid" role="group" aria-label="Motivos de encaminhamento disponíveis">'+cards+'</div>';
