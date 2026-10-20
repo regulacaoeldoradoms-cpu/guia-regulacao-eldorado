@@ -37,6 +37,8 @@ O workflow clínico executa também `verify-condition-picker-browser.mjs` em Chr
 
 Ajuste posterior solicitado pelo responsável: **Imprimir este recorte** aparece somente na Recepção. O Guia Médico mantém os critérios e os controles de recolhimento, sem essa ação. Geração do documento de impressão e impressão da Recepção preservadas; revisão clínica `20261020-2`.
 
+O campo digitável **Faixa etária para conferência (opcional)** também fica somente na Recepção. A faixa etária informativa do protocolo permanece no Guia Médico. Idade já fornecida por pesquisa/contexto continua disponível aos alertas e à IA, independentemente do campo; revisão clínica `20261020-3`.
+
 Sobre a main `d3eaa168` (#670, #671 e contraste #672 preservados), o Guia mantém os mesmos cards montados ao selecionar uma condição. Uma única área de critérios é substituída ao trocar de motivo; nunca são acumulados registros. A Recepção conserva o fluxo anterior.
 
 - A lista principal começa fechada. Depois da escolha, permanece aberta; seu cabeçalho pode ocultar lista e critérios juntos, sem apagar a seleção.

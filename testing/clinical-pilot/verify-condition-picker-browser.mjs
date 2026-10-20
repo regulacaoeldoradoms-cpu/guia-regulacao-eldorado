@@ -96,14 +96,16 @@ try{
     };
     await choose(ids[0]);
     const firstCard=cards.first();
-    await page.locator('[data-pilot-age]').fill('17 anos');
+    assert.equal(await page.locator('[data-pilot-age]').count(),0);
+    // An age supplied by the existing query/context still works without an input.
+    await page.evaluate(id=>window.ClinicalConditionPilot.render({id:'neuropediatria'},{conditionId:id,query:'convulsão 17 anos'}),ids[0]);
     await page.locator('[data-pilot-criteria-toggle]').first().click();
     assert.equal(await criteria.isVisible(),false);assert.equal(await grid.isVisible(),true);
     assert.equal(await page.locator('[data-clinical-condition-id]').count(),1);
     assert.equal(await firstCard.getAttribute('aria-expanded'),'false');
-    // Reopening the selected card preserves its content and optional age.
+    // Reopening preserves the age already supplied by the query.
     await firstCard.focus();await page.keyboard.press('Space');
-    assert.equal(await criteria.isVisible(),true);assert.equal(await page.locator('[data-pilot-age]').inputValue(),'17 anos');
+    assert.equal(await criteria.isVisible(),true);assert.equal(await page.evaluate(()=>window.ClinicalConditionPilot.active().age.years),17);
     await firstCard.focus();await page.keyboard.press('Enter');assert.equal(await criteria.isVisible(),false);
     await firstCard.click();
     await page.locator('[data-pilot-criteria-bottom]').click();
@@ -136,6 +138,8 @@ try{
     assert.equal(await grid.locator('button').count(),8);
     await grid.locator('[data-condition="digsaude.neuropediatria.tea"]').click();
     await page.locator('#receptionDetail [data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
+    await page.locator('[data-pilot-age]').fill('17 anos');
+    assert.equal(await page.evaluate(()=>window.ClinicalConditionPilot.active().age.years),17);
     await page.evaluate(()=>{window.__didPrint=false;window.open=()=>({document:{open(){},write(html){window.__printedHtml=html;},close(){}},focus(){},print(){window.__didPrint=true;}});});
     await page.locator('[data-pilot-print]').click();
     assert.equal(await page.evaluate(()=>window.__didPrint&&window.__printedHtml===window.ClinicalConditionPilot.printDocument()),true);
