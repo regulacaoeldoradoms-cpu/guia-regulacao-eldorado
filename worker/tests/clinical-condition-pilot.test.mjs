@@ -142,13 +142,13 @@ test('API recebe todas as regras e fontes com provedor estritamente simulado', a
 test('HTML, espelho e cache usam registro separado e a mesma revisão', () => {
   for (const file of ['medico/index.html', 'protocolo/index.html', 'recepcao/index.html']) {
     const html = read(file);
-    assert.match(html, /<meta name="clinical-condition-pilot" content="20261019-2">/);
-    assert.match(html, /clinical-condition-pilot\.js\?v=20261019-2/);
-    assert.match(html, /clinical-condition-pilot\.css\?v=20261019-2/);
+    assert.match(html, /<meta name="clinical-condition-pilot" content="20261019-3">/);
+    assert.match(html, /clinical-condition-pilot\.js\?v=20261019-3/);
+    assert.match(html, /clinical-condition-pilot\.css\?v=20261019-3/);
   }
   const clientSource = read('js/clinical-condition-pilot.js');
   assert.match(clientSource, /file:'convulsao-epilepsia-20261016'/);
-  assert.match(clientSource, /VERSION='20261019-2'/);
+  assert.match(clientSource, /VERSION='20261019-3'/);
   assert.match(read('worker/clinical-condition-pilot.js'), /convulsao-epilepsia-20261016\.json/);
   assert.doesNotMatch(read('.github/workflows/sync-local-protocol-source.yml'), /clinical-conditions/);
   assert.doesNotMatch(read('data/protocol-source.html'), /clinicalConditionRecord/);
@@ -161,7 +161,7 @@ test('upgrade de HTML antigo fica restrito às três rotas clínicas e conserva 
     const ctx = vm.createContext({ URL, Request, Response, TextEncoder, TextDecoder, AbortController, setTimeout, clearTimeout, console,
       self: { location: { origin: 'https://synthetic.invalid' }, addEventListener() {} },
       caches: { open: async () => ({ match: async () => old.clone(), put: async () => {} }) },
-      fetch: async () => { if (scenario.offline) throw new Error('offline sintético'); return new Response('<meta name="clinical-condition-pilot" content="20261019-2">shell novo'); }
+      fetch: async () => { if (scenario.offline) throw new Error('offline sintético'); return new Response('<meta name="clinical-condition-pilot" content="20261019-3">shell novo'); }
     });
     vm.runInContext(read('portal-sw.js') + '\nglobalThis.handlePilotPage=handlePage;', ctx);
     const response = await ctx.handlePilotPage({ request: new Request('https://synthetic.invalid' + scenario.path), waitUntil: promise => wait.push(promise) });

@@ -43,3 +43,6 @@ jobs:
         with:
           node-version: '22'
       - run: node --test worker/tests/clinical-condition-pilot.test.mjs worker/tests/clinical-condition-shoulder.test.mjs worker/tests/clinical-condition-final-review.test.mjs worker/tests/clinical-condition-bursite-headache.test.mjs worker/tests/subprotocol-requirements.test.mjs worker/tests/psychology-autism-rule.test.mjs worker/tests/gemini-timeout.test.mjs testing/clinical-pilot/neuropediatria-contract.test.mjs testing/clinical-pilot/neuropediatria-new-conditions.test.mjs testing/clinical-pilot/condition-picker-ui.test.mjs
+      - run: npm install --prefix testing/browser --no-package-lock --ignore-scripts
+      - run: npx --prefix testing/browser playwright install --with-deps chromium
+      - run: node testing/clinical-pilot/verify-condition-picker-browser.mjs
