@@ -284,6 +284,10 @@
 
 /* Guia Médico: conteúdo dos seis blocos legível, sem recolorir títulos/avisos. */
 @media screen {
+  html[data-portal-theme="dark"] body[data-role-view="medico"] #clearChecklistButton {
+    color: #fff;
+  }
+
   html[data-portal-theme="dark"] body[data-role-view="medico"] #detailPanel .content-block:not(.alert) :is(ul, ol, li, p),
   html[data-portal-theme="dark"] body[data-role-view="medico"] #detailPanel .content-block:not(.alert) li::marker {
     color: #fff !important;
