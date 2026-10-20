@@ -112,9 +112,7 @@ try{
     // Same stable cards survive repeated changes; no duplicate content or listeners.
     for(const id of [...ids,...ids.slice().reverse().slice(1)])await choose(id);
     await choose(ids[1]);await choose(ids[0]);await choose(ids[1]);await choose(ids[3]);
-    await page.evaluate(()=>{window.__didPrint=false;window.open=()=>({document:{open(){},write(html){window.__printedHtml=html;},close(){}},focus(){},print(){window.__didPrint=true;}});});
-    await page.locator('[data-pilot-print]').click();
-    assert.equal(await page.evaluate(()=>window.__didPrint&&window.__printedHtml===window.ClinicalConditionPilot.printDocument()),true);
+    assert.equal(await page.locator('[data-pilot-print]').count(),0);
     if(width===1366&&theme==='light')await page.locator('#detailPanel').screenshot({path:path.join(output,'desktop-light-selected.png')});
     if(width===390&&theme==='dark')await picker.screenshot({path:path.join(output,'mobile-dark-selected.png')});
     await toggle.click();assert.equal(await grid.isVisible(),false);assert.equal(await criteria.isVisible(),false);
@@ -138,6 +136,9 @@ try{
     assert.equal(await grid.locator('button').count(),8);
     await grid.locator('[data-condition="digsaude.neuropediatria.tea"]').click();
     await page.locator('#receptionDetail [data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
+    await page.evaluate(()=>{window.__didPrint=false;window.open=()=>({document:{open(){},write(html){window.__printedHtml=html;},close(){}},focus(){},print(){window.__didPrint=true;}});});
+    await page.locator('[data-pilot-print]').click();
+    assert.equal(await page.evaluate(()=>window.__didPrint&&window.__printedHtml===window.ClinicalConditionPilot.printDocument()),true);
     assert.deepEqual(errors,[]);
     report.push({width,theme,keyboard:true,collapsed:true,allEightConditions:true,singleContent:true,printAndAiContext:true,bottomCollapseFocus:true,directLinkAndReload:true,receptionPreserved:true});
     await context.close();

@@ -1,7 +1,7 @@
 'use strict';
 // Condition records are separate from the historical mirror and from each other.
 (() => {
-  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261020-1';
+  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261020-2';
   const descriptors=[
     {id:ID,file:'convulsao-epilepsia-20261016',revision:'piloto-convulsao-20261016-3',expected:['IDADE','CRISE','MONO','EFEITOS','DIFICIL','FEBRIL','QUADRO','TRATAMENTO','NEURO','EEG','TC','RM','APRESENTACAO','RESPONSAVEL','INDICACAO']},
     {id:SHOULDER,file:'dor-no-ombro-20261016',revision:'piloto-ombro-20261016-2',expected:['IDADE','TOTAL','PARCIAL','DOR6','OA','LUXACAO','MOVIMENTO','PRESENCA_LUXACAO','TRAUMA_PREVIO','TRATAMENTOS','RX','USG','RM','TC','AVALIACAO','CIRURGIA']},
@@ -132,7 +132,7 @@
       ${r.systemBoundary?`<p class="cp-scope">${esc(r.systemBoundary)}</p>`:''}${r.sourceLimits&&/prazo|validade|crm|solicitante|urgencia|sem exame/.test(norm(query))?`<p class="cp-alert">${esc(r.sourceLimits.text)}</p>`:''}${r.id===ID&&/febril simples/.test(norm(query))?'<p class="cp-alert"><strong>Convulsão febril simples:</strong> está excluída do critério de episódios sugestivos de crise. O piloto não define encaminhamento por esse critério nem inventa outra rota.</p>':''}
       ${channel==='reception'?'<p class="cp-scope">A recepção confere somente se a informação está registrada ou se o exame foi apresentado. Não realiza avaliação clínica nem define diagnóstico, elegibilidade ou urgência. As marcações são locais e não alteram a impressão.</p>':''}
       <div class="cp-grid${referral.length?'':' cp-reference-layout'}">${referral.length?`<section><h3>Quando encaminhar</h3><p>Identifique o critério que sustenta o encaminhamento.</p><ol>${referral.map(rule=>`<li>${ruleMarkup(rule.id)}${rule.exceptionRefs?`<p class="cp-exclusion"><strong>Exclusão:</strong> ${rule.exceptionRefs.map(id=>ruleMarkup(id)).join(' ')}</p>`:''}</li>`).join('')}</ol></section>`:''}<section>${sections}</section></div>
-      <p class="cp-reference">${esc(r.reference)}</p>${channel==='print'?'':'<div class="cp-actions"><button type="button" data-pilot-print>Imprimir este recorte</button></div>'}`;
+      <p class="cp-reference">${esc(r.reference)}</p>${channel==='reception'?'<div class="cp-actions"><button type="button" data-pilot-print>Imprimir este recorte</button></div>':''}`;
 
   }
   function setCriteriaExpanded(panel,expanded,returnToCard=false){
