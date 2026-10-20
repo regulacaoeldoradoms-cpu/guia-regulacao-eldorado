@@ -50,6 +50,10 @@
   gap:12px;
 }
 .cp-condition-grid[hidden]{display:none}
+.clinical-pilot[hidden],[data-pilot-criteria-content][hidden]{display:none}
+.clinical-pilot-choice .cp-condition-grid .cp-condition-card[data-selected="true"]{border-color:var(--cp-accent);background:var(--cp-soft);box-shadow:inset 3px 0 var(--cp-accent)}
+.cp-criteria-controls{align-items:center;justify-content:space-between;gap:12px}
+.cp-criteria-controls strong{min-width:0;overflow-wrap:anywhere}
 .workspace:has(.cp-condition-toggle)>*{min-width:0}
 .clinical-pilot-choice .cp-condition-toggle-heading{margin:0}
 .clinical-pilot-choice .cp-condition-toggle{

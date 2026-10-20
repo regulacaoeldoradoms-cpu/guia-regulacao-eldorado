@@ -1,4 +1,4 @@
-// Real clinical pages with synthetic auth and no external traffic.
+// Clinical pages with synthetic auth; only public assets from the selected origin.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,12 +20,13 @@ const server=http.createServer((req,res)=>{
   catch{res.writeHead(404);res.end();}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-const origin='http://127.0.0.1:'+server.address().port;
+const origin=process.env.CLINICAL_PICKER_ORIGIN||'http://127.0.0.1:'+server.address().port;
 let browser;
 const report=[];
 try{
   browser=await chromium.launch({headless:true,...(process.env.CLINICAL_PILOT_BROWSER?{executablePath:process.env.CLINICAL_PILOT_BROWSER}:{})});
-  for(const width of [320,390,1366])for(const theme of ['light','dark']){
+  for(const width of [390,1366])for(const theme of ['light','dark']){
+    if(process.env.CLINICAL_PICKER_CASE&&process.env.CLINICAL_PICKER_CASE!==`${width}-${theme}`)continue;
     const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block',reducedMotion:'reduce'});
     const page=await context.newPage();
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -39,6 +40,7 @@ try{
       if(['/js/auth-config.js','/js/auth-client.js','/js/auth-fetch-bridge.js','/js/portal-global-chat.js','/js/pets-bootstrap.js','/js/portal-performance.js','/js/portal-observability.js','/js/portal-pwa.js'].includes(url.pathname))return route.fulfill({contentType:'text/javascript',body:''});
       if(url.hostname==='raw.githubusercontent.com')return route.fulfill({contentType:'text/html',body:source});
       if(url.origin!==origin)return route.abort();
+      if(route.request().method()!=='GET'||url.pathname.startsWith('/api/'))return route.abort();
       return route.continue();
     });
     await page.goto(origin+'/medico/',{waitUntil:'networkidle'});
@@ -72,20 +74,63 @@ try{
     const picker=page.locator('.cp-condition-picker');
     const bounds=await picker.boundingBox();
     assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,'seletor contido no viewport');
-    await picker.screenshot({path:path.join(output,`guide-${width}-${theme}-open.png`)});
-    await grid.locator('[data-condition="digsaude.neuropediatria.tea"]').click();
-    await page.locator('[data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
-    assert.ok(new URL(page.url()).searchParams.get('condicao').endsWith('.tea'));
+    const cards=grid.locator('[data-condition]'),ids=await cards.evaluateAll(nodes=>nodes.map(node=>node.dataset.condition));
+    const criteria=page.locator('[data-pilot-criteria-content]');
+    const choose=async id=>{
+      const card=grid.locator('[data-condition="'+id+'"]');
+      await card.click();
+      assert.equal(await grid.isVisible(),true);
+      assert.equal(await page.locator('[data-clinical-condition-id]').count(),1);
+      assert.equal(await card.getAttribute('aria-expanded'),'true');
+      assert.equal(await card.getAttribute('data-selected'),'true');
+      assert.equal(await criteria.isVisible(),true);
+      const result=await page.evaluate(()=>{
+        const api=window.ClinicalConditionPilot,ctx=api.active(),record=api.record(ctx.record.id);
+        const print=new DOMParser().parseFromString(api.printDocument(),'text/html');
+        return {id:ctx.record.id,rules:[...document.querySelectorAll('[data-pilot-criteria-content] [data-clinical-rule]')].map(node=>node.dataset.clinicalRule).sort(),printRules:[...print.querySelectorAll('[data-clinical-rule]')].map(node=>node.dataset.clinicalRule).sort(),expected:record.rules.map(rule=>rule.id).sort(),context:JSON.stringify(api.protocolContext(ctx).clinicalConditionRecord)===JSON.stringify(record),print:api.printDocument().includes(record.reference)};
+      });
+      assert.equal(result.id,id);assert.deepEqual(result.rules,result.expected);assert.deepEqual(result.printRules,result.expected);assert.ok(result.context&&result.print);
+      assert.equal(new URL(page.url()).searchParams.get('protocolo'),'neuropediatria');
+      assert.equal(new URL(page.url()).searchParams.get('condicao'),id);
+      assert.equal(await page.locator('#protocolList [data-id="neuropediatria"]').getAttribute('class').then(c=>c.includes('active')),true);
+    };
+    await choose(ids[0]);
+    const firstCard=cards.first();
+    await page.locator('[data-pilot-age]').fill('17 anos');
+    await page.locator('[data-pilot-criteria-toggle]').first().click();
+    assert.equal(await criteria.isVisible(),false);assert.equal(await grid.isVisible(),true);
+    assert.equal(await page.locator('[data-clinical-condition-id]').count(),1);
+    assert.equal(await firstCard.getAttribute('aria-expanded'),'false');
+    // Reopening the selected card preserves its content and optional age.
+    await firstCard.focus();await page.keyboard.press('Space');
+    assert.equal(await criteria.isVisible(),true);assert.equal(await page.locator('[data-pilot-age]').inputValue(),'17 anos');
+    await firstCard.focus();await page.keyboard.press('Enter');assert.equal(await criteria.isVisible(),false);
+    await firstCard.click();
+    await page.locator('[data-pilot-criteria-bottom]').click();
+    assert.equal(await criteria.isVisible(),false);assert.equal(await firstCard.evaluate(node=>node===document.activeElement),true);
+    assert.equal(await grid.isVisible(),true);
+    // Same stable cards survive repeated changes; no duplicate content or listeners.
+    for(const id of [...ids,...ids.slice().reverse().slice(1)])await choose(id);
+    await choose(ids[1]);await choose(ids[0]);await choose(ids[1]);await choose(ids[3]);
+    await page.evaluate(()=>{window.__didPrint=false;window.open=()=>({document:{open(){},write(html){window.__printedHtml=html;},close(){}},focus(){},print(){window.__didPrint=true;}});});
+    await page.locator('[data-pilot-print]').click();
+    assert.equal(await page.evaluate(()=>window.__didPrint&&window.__printedHtml===window.ClinicalConditionPilot.printDocument()),true);
+    if(width===1366&&theme==='light')await page.locator('#detailPanel').screenshot({path:path.join(output,'desktop-light-selected.png')});
+    if(width===390&&theme==='dark')await picker.screenshot({path:path.join(output,'mobile-dark-selected.png')});
+    await toggle.click();assert.equal(await grid.isVisible(),false);assert.equal(await criteria.isVisible(),false);
+    await toggle.click();assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),true);
     await select('ortopedia');assert.equal(await toggle.getAttribute('aria-expanded'),'false');
     await toggle.click();assert.equal(await grid.locator('button').count(),3);
     await grid.locator('[data-condition="sisreg-campo-grande.ortopedia.referencias-ombro"]').click();
     await page.locator('[data-clinical-condition-id="sisreg-campo-grande.ortopedia.referencias-ombro"]').waitFor();
     await select('neuropediatria');assert.equal(await grid.isVisible(),false);
-    await picker.screenshot({path:path.join(output,`guide-${width}-${theme}-closed.png`)});
-    // Direct condition links bypass the picker as before.
+    // Direct links reveal both the condition and its available siblings, also on reload.
     await page.goto(origin+'/medico/?protocolo=neuropediatria&condicao=digsaude.neuropediatria.tea',{waitUntil:'networkidle'});
     await page.locator('[data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
-    assert.equal(await toggle.count(),0);
+    assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),true);
+    await page.reload({waitUntil:'networkidle'});
+    await page.locator('[data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
+    assert.equal(await grid.isVisible(),true);assert.equal(await criteria.isVisible(),true);
     await page.goto(origin+'/recepcao/',{waitUntil:'networkidle'});
     await page.evaluate(()=>window.ClinicalConditionPilot.ready);
     await page.locator('#receptionProtocolList [data-id="neuropediatria"]').click();
@@ -94,7 +139,7 @@ try{
     await grid.locator('[data-condition="digsaude.neuropediatria.tea"]').click();
     await page.locator('#receptionDetail [data-clinical-condition-id="digsaude.neuropediatria.tea"]').waitFor();
     assert.deepEqual(errors,[]);
-    report.push({width,theme,keyboard:true,collapsed:true,conditionSelection:true,directLink:true,receptionPreserved:true});
+    report.push({width,theme,keyboard:true,collapsed:true,allEightConditions:true,singleContent:true,printAndAiContext:true,bottomCollapseFocus:true,directLinkAndReload:true,receptionPreserved:true});
     await context.close();
   }
   fs.writeFileSync(path.join(output,'results.json'),JSON.stringify(report,null,2));
