@@ -146,7 +146,7 @@ test('canonical redirects remain redirects rather than cached fallback', async (
 
 for (const path of ['/medico/','/protocolo/','/recepcao/','/telemedicina/']) test('current professional HTML retains stale-first navigation preload behavior: '+path, async () => {
   const f = fixture(async () => { throw Error('not used: preload remains valid'); });
-  const marker = path === '/telemedicina/' ? '' : '<meta name="clinical-condition-pilot" content="20261019-3">';
+  const marker = path === '/telemedicina/' ? '' : '<meta name="clinical-condition-pilot" content="20261020-1">';
   const cached = 'PROFESSIONAL-OLD'+marker;
   await f.seed(path, cached);
   const event = f.dispatch(path);

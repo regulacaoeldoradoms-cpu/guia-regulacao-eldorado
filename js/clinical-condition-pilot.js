@@ -1,7 +1,7 @@
 'use strict';
 // Condition records are separate from the historical mirror and from each other.
 (() => {
-  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261019-3';
+  const ID='digsaude.neuropediatria.convulsao-epilepsia', SHOULDER='digsaude.ortopedia.dor-no-ombro', RELATED='sisreg-campo-grande.ortopedia.referencias-ombro', TENDON='digsaude.ortopedia.bursite-tendinite', HEADACHE='digsaude.neuropediatria.cefaleia', DEV='digsaude.neuropediatria.atraso-regressao-desenvolvimento', TEA='digsaude.neuropediatria.tea', ADHD='digsaude.neuropediatria.tdah-tod', LEARN='digsaude.neuropediatria.transtornos-aprendizagem', MOVE='digsaude.neuropediatria.disturbios-movimento', INFLAM='digsaude.neuropediatria.doencas-neurologicas-inflamatorias', VERSION='20261020-1';
   const descriptors=[
     {id:ID,file:'convulsao-epilepsia-20261016',revision:'piloto-convulsao-20261016-3',expected:['IDADE','CRISE','MONO','EFEITOS','DIFICIL','FEBRIL','QUADRO','TRATAMENTO','NEURO','EEG','TC','RM','APRESENTACAO','RESPONSAVEL','INDICACAO']},
     {id:SHOULDER,file:'dor-no-ombro-20261016',revision:'piloto-ombro-20261016-2',expected:['IDADE','TOTAL','PARCIAL','DOR6','OA','LUXACAO','MOVIMENTO','PRESENCA_LUXACAO','TRAUMA_PREVIO','TRATAMENTOS','RX','USG','RM','TC','AVALIACAO','CIRURGIA']},
@@ -135,6 +135,28 @@
       <p class="cp-reference">${esc(r.reference)}</p>${channel==='print'?'':'<div class="cp-actions"><button type="button" data-pilot-print>Imprimir este recorte</button></div>'}`;
 
   }
+  function setCriteriaExpanded(panel,expanded,returnToCard=false){
+    const root=panel.querySelector('[data-clinical-condition-id]'),content=root?.querySelector('[data-pilot-criteria-content]');
+    if(!content)return;
+    content.hidden=!expanded;
+    root.querySelectorAll('[data-pilot-criteria-toggle]').forEach(button=>{
+      button.setAttribute('aria-expanded',String(expanded));
+      button.textContent=expanded?'Recolher critérios':'Mostrar critérios';
+    });
+    let selected;
+    panel.querySelectorAll('[data-condition]').forEach(button=>{
+      const current=button.dataset.condition===root.dataset.clinicalConditionId;
+      button.dataset.selected=String(current);
+      button.setAttribute('aria-expanded',String(current&&expanded));
+      button.setAttribute('aria-controls',content.id);
+      if(current)selected=button;
+    });
+    if(returnToCard&&selected){
+      selected.focus({preventScroll:true});
+      const rect=selected.getBoundingClientRect(),top=Math.max(0,...Array.from(document.querySelectorAll('.site-header,.social-global-nav')).map(node=>['fixed','sticky'].includes(getComputedStyle(node).position)?node.getBoundingClientRect().bottom:0));
+      if(rect.top<top+12||rect.bottom>window.innerHeight-80)selected.scrollIntoView({block:'center',behavior:'instant'});
+    }
+  }
   function render(protocol,options={},channel='guide'){
     const descriptor=descriptors.find(d=>d.id===options.conditionId),r=descriptor&&recordFor(descriptor.id),parent=r?.parentProtocolId||(descriptor?parentFor(descriptor.id):'');
     if(!descriptor||protocol?.id!==parent){document.body?.classList.remove('clinical-pilot-active');return false;}
@@ -142,10 +164,21 @@
     conversationContext=null;pendingQuestion=null;bypassPilotContext=false;legacyTerms=[];pendingFamilies=[];
     if(!r){panel.innerHTML=`<div class="clinical-pilot" data-clinical-pilot-unavailable="${descriptor.id}"><p class="cp-alert">Não foi possível carregar o registro integral do piloto (${esc(errors.get(descriptor.id)||'carregando')}). Nenhuma lista geral foi usada como substituta.</p></div>`;return true;}
     const query=options.query??document.getElementById(channel==='reception'?'receptionSearch':'sideSearchInput')?.value??'',age=options.age||ageFromText(query);
-    panel.innerHTML=`<article class="clinical-pilot" data-clinical-condition-id="${r.id}" data-clinical-channel="${channel}" data-clinical-query="${esc(query)}">${contentMarkup(r,age,channel,query)}</article>`;
-    document.querySelectorAll('#protocolList .protocol-card').forEach(card=>card.classList.remove('active'));const root=panel.firstElementChild;
+    const picker=channel==='guide'?panel.querySelector('[data-pilot-detail-choice]'):null,keepPicker=picker?.dataset.pilotProtocol===protocol.id?picker:null,focused=keepPicker?.contains(document.activeElement)?document.activeElement:null;
+    const criteriaId='cp-condition-criteria-'+protocol.id,contentId=criteriaId+'-content';
+    const control=bottom=>`<button type="button" data-pilot-criteria-toggle${bottom?' data-pilot-criteria-bottom':''} aria-expanded="true" aria-controls="${esc(contentId)}">Recolher critérios</button>`;
+    const content=contentMarkup(r,age,channel,query);
+    panel.innerHTML=`<article class="clinical-pilot"${channel==='guide'?` id="${esc(criteriaId)}"`:''} data-clinical-condition-id="${r.id}" data-clinical-channel="${channel}" data-clinical-query="${esc(query)}">${channel==='guide'?`<div class="cp-actions cp-criteria-controls"><strong>${esc(r.condition)}</strong>${control(false)}</div><div id="${esc(contentId)}" data-pilot-criteria-content>${content}<div class="cp-actions">${control(true)}</div></div>`:content}</article>`;
+    document.querySelectorAll('#protocolList .protocol-card').forEach(card=>card.classList.toggle('active',channel==='guide'&&card.dataset.id===protocol.id));const root=panel.firstElementChild;
     root.querySelector('[data-pilot-age]')?.addEventListener('input',event=>{const n=ageNotice(ageFromText(event.target.value),r);root.querySelector('[data-pilot-age-notice]').innerHTML=n?noticeMarkup(n):'';});root.querySelector('[data-pilot-print]')?.addEventListener('click',printActive);
-    if(channel==='guide'){const url=new URL(location.href);url.searchParams.set('protocolo',protocol.id);url.searchParams.set('condicao',r.id);history.replaceState(null,'',url);}return true;
+    if(channel==='guide'){
+      if(keepPicker)panel.prepend(keepPicker);else addDetailChoice(protocol,(item,choice)=>render(item,choice,channel),channel);
+      const choice=panel.querySelector('[data-pilot-detail-choice]'),toggle=choice.querySelector('.cp-condition-toggle');
+      toggle.setAttribute('aria-expanded','true');toggle.setAttribute('aria-controls',choice.querySelector('.cp-condition-grid').id+' '+criteriaId);choice.querySelector('.cp-condition-grid').hidden=false;
+      root.querySelectorAll('[data-pilot-criteria-toggle]').forEach(button=>button.addEventListener('click',()=>setCriteriaExpanded(panel,root.querySelector('[data-pilot-criteria-content]').hidden,button.hasAttribute('data-pilot-criteria-bottom'))));
+      setCriteriaExpanded(panel,true);focused?.focus({preventScroll:true});
+      const url=new URL(location.href);url.searchParams.set('protocolo',protocol.id);url.searchParams.set('condicao',r.id);history.replaceState(null,'',url);
+    }return true;
   }
   function addSearchChoice(protocols,open,channel='guide'){
     const query=document.getElementById(channel==='reception'?'receptionSearch':'sideSearchInput')?.value||'',ids=matchingIds(query),list=document.getElementById(channel==='reception'?'receptionProtocolList':'protocolList');if(!list||list.querySelector('[data-pilot-choice]'))return;
@@ -177,10 +210,11 @@
   function addDetailChoice(protocol,open,channel='guide'){
     const ids=descriptors.filter(d=>parentFor(d.id)===protocol?.id).map(d=>d.id);
     const panel=document.getElementById(channel==='reception'?'receptionDetail':'detailPanel');
-    if(!ids.length||!panel||panel.querySelector('[data-clinical-condition-id], [data-pilot-detail-choice]'))return;
+    if(!ids.length||!panel||panel.querySelector('[data-pilot-detail-choice]')||channel!=='guide'&&panel.querySelector('[data-clinical-condition-id]'))return;
     const box=document.createElement('section');
     box.className='clinical-pilot-choice cp-condition-picker';
     box.dataset.pilotDetailChoice='true';
+    box.dataset.pilotProtocol=protocol.id;
     const cards=ids.map(id=>'<button type="button" class="cp-condition-card" data-condition="'+esc(id)+'"><span class="cp-condition-name">'+esc(labelFor(id))+'</span><span class="cp-condition-system">'+(id===RELATED?'SISREG / Campo Grande':'DigSaúde MS')+'</span></button>').join('');
     const count=ids.length+' '+(ids.length===1?'motivo disponível':'motivos disponíveis');
     if(channel==='guide'){
@@ -191,11 +225,16 @@
         const expanded=toggle.getAttribute('aria-expanded')==='true';
         toggle.setAttribute('aria-expanded',String(!expanded));
         grid.hidden=expanded;
+        const criteria=panel.querySelector('[data-clinical-condition-id]');if(criteria)criteria.hidden=expanded;
       });
     }else{
       box.innerHTML='<div class="cp-condition-heading"><div><h3>Consultar por motivo</h3><p>Selecione a condição para visualizar os requisitos do encaminhamento.</p></div><span class="cp-condition-count">'+ids.length+' '+(ids.length===1?'motivo':'motivos')+'</span></div><div class="cp-condition-grid" role="group" aria-label="Motivos de encaminhamento disponíveis">'+cards+'</div>';
     }
-    box.querySelectorAll('[data-condition]').forEach(button=>button.addEventListener('click',()=>open(protocol,{conditionId:button.dataset.condition})));
+    box.querySelectorAll('[data-condition]').forEach(button=>button.addEventListener('click',()=>{
+      const current=channel==='guide'&&panel.querySelector('[data-clinical-condition-id]');
+      if(current&&current.dataset.clinicalConditionId===button.dataset.condition){setCriteriaExpanded(panel,current.querySelector('[data-pilot-criteria-content]').hidden);return;}
+      open(protocol,{conditionId:button.dataset.condition});
+    }));
     panel.prepend(box);
   }
   function localAnswer(question,context){
