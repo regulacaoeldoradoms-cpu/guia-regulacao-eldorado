@@ -232,12 +232,4 @@
     gap: 9px;
   }
 
-  body:not(.mobile-home-mode) #socialHome .social-safety-card h2 {
-    margin-bottom: 9px !important;
-    font-size: 1.05rem !important;
-  }
-
-  body:not(.mobile-home-mode) #socialHome .social-safety-card p {
-    font-size: .88rem !important;
-  }
 }
