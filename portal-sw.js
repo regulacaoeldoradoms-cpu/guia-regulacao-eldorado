@@ -70,7 +70,7 @@ const CORE_RESOURCES = Object.freeze([
   '/css/profile-account-link.css?v=20261014-avatar-1',
   '/assets/avatar.png',
   '/css/home-loading.css?v=20260909-1',
-  '/css/social.css?v=20260922-2',
+  '/css/social.css?v=20261021-social-dark-like-1',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
   '/js/portal-performance.js?v=20260923-1',
