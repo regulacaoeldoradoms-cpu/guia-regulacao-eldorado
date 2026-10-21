@@ -236,18 +236,20 @@
 .social-action { min-height: 39px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; color: #48677c; background: transparent; font-size: .78rem; }
 .social-action:hover { background: #edf6fb; color: var(--social-blue); }
 .social-action.active { color: var(--social-blue); background: #e8f4fb; }
-/* Mantenha os estados normal, hover e curtido legíveis no tema escuro. */
-html[data-portal-theme="dark"] .social-action {
-  color: var(--portal-theme-muted, #9fb2c1);
-}
-html[data-portal-theme="dark"] .social-action:hover {
-  color: var(--portal-theme-accent, #68b7ff);
-  background: var(--portal-theme-hover, #173247);
-}
-html[data-portal-theme="dark"] .social-action.active,
-html[data-portal-theme="dark"] .social-action.active:hover {
-  color: #c9e6fa;
-  background: var(--portal-theme-selected, #183e59);
+/* Mantenha os estados legíveis no escuro apenas na tela, sem afetar impressão. */
+@media screen {
+  html[data-portal-theme="dark"] .social-action {
+    color: var(--portal-theme-muted, #9fb2c1);
+  }
+  html[data-portal-theme="dark"] .social-action:hover {
+    color: var(--portal-theme-accent, #68b7ff);
+    background: var(--portal-theme-hover, #173247);
+  }
+  html[data-portal-theme="dark"] .social-action.active,
+  html[data-portal-theme="dark"] .social-action.active:hover {
+    color: #c9e6fa;
+    background: var(--portal-theme-selected, #183e59);
+  }
 }
 .social-action svg { width: 18px; height: 18px; }
 
