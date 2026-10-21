@@ -34,7 +34,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, filename === 'admin/social/index.html' ? /portal-theme\.js\?v=20260923-1/ : /portal-theme\.js\?v=20261013-theme-immediate-1/);
     assert.match(html, /portal-interactions\.css\?v=20260924-dark-final-1/);
     assert.match(html, filename === 'admin/social/index.html' ? /portal-interactions\.js\?v=20260923-2/ : /portal-interactions\.js\?v=20261015-citizen-tutorial-1/);
-    assert.match(html, /social\.css\?v=20260922-2/);
+    assert.match(html, /social\.css\?v=20261021-social-dark-like-1/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, filename === 'admin/social/index.html' ? /social-api\.js\?v=20260910-4/ : /social-api\.js\?v=20261011-citizen-continuity-3/);
     assert.match(html, filename === 'admin/social/index.html' ? /social-navigation\.js\?v=20261009-pets-1/ : /social-navigation\.js\?v=20261011-citizen-continuity-3/);
@@ -42,6 +42,17 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
   }
+});
+
+test('Home social remove aviso redundante e harmoniza estados da curtida no escuro', () => {
+  const home = read('index.html');
+  const css = read('css/social.css');
+  assert.doesNotMatch(home, /social-safety-card|Rede institucional, conversa segura|O feed social não publica atividades assistenciais/);
+  assert.match(css, /\.social-action\.active \{ color: var\(--social-blue\); background: #e8f4fb; \}/);
+  assert.match(css, /html\[data-portal-theme="dark"\] \.social-action \{/);
+  assert.match(css, /html\[data-portal-theme="dark"\] \.social-action:hover \{/);
+  assert.match(css, /html\[data-portal-theme="dark"\] \.social-action\.active,\s*html\[data-portal-theme="dark"\] \.social-action\.active:hover \{/);
+  assert.match(css, /background: var\(--portal-theme-selected, #183e59\);/);
 });
 
 test('Ferramentas mantém uma única matriz de autorização compartilhada', () => {
