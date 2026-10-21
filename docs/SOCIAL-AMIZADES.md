@@ -191,6 +191,8 @@ enviar/aceitar pedido e, quando a relação já for `friends`, abrir a conversa 
 Segurança, Configurações e Conquistas para não criar becos de navegação. A navegação
 mobile continua com os destinos existentes.
 
+A Home não apresenta mais o cartão explicativo “Rede institucional, conversa segura”; a distinção entre amizade social, chat profissional e acesso assistencial continua documentada e validada exclusivamente nas políticas do backend. Os estados da curtida e do comentário respeitam a paleta clara ou escura, sem alterar as reações armazenadas.
+
 ## Extensões futuras
 
 Comunidades, jogos e seguidores permanecem fora da V1. Produtos futuros podem
