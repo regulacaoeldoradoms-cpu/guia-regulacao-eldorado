@@ -236,6 +236,19 @@
 .social-action { min-height: 39px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; color: #48677c; background: transparent; font-size: .78rem; }
 .social-action:hover { background: #edf6fb; color: var(--social-blue); }
 .social-action.active { color: var(--social-blue); background: #e8f4fb; }
+/* Mantenha os estados normal, hover e curtido legíveis no tema escuro. */
+html[data-portal-theme="dark"] .social-action {
+  color: var(--portal-theme-muted, #9fb2c1);
+}
+html[data-portal-theme="dark"] .social-action:hover {
+  color: var(--portal-theme-accent, #68b7ff);
+  background: var(--portal-theme-hover, #173247);
+}
+html[data-portal-theme="dark"] .social-action.active,
+html[data-portal-theme="dark"] .social-action.active:hover {
+  color: #c9e6fa;
+  background: var(--portal-theme-selected, #183e59);
+}
 .social-action svg { width: 18px; height: 18px; }
 
 .social-comments { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d7e4ec; }
@@ -773,7 +786,6 @@ body.mobile-home-mode .social-shortcuts .social-card-pad .social-button {
   width: 100%;
   min-height: clamp(66px, 9.3vw, 90px);
 }
-body.mobile-home-mode .social-safety-card { display: none; }
 
 body.mobile-home-mode .portal-chat {
   bottom: calc(clamp(126px, 16.5vw, 168px) + env(safe-area-inset-bottom)) !important;
