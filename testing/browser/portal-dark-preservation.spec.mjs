@@ -262,7 +262,8 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
           await expect(notice.locator(':scope > *')).toHaveCount(2);
           await notice.evaluate(node=>node.remove());
         }
-        await expect(target.locator('#socialHome .social-tools-rail > section')).toHaveCount(1);
+        // The native mobile presenter may move shortcuts from the rail into the feed.
+        await expect(target.locator('#socialHome .social-shortcuts')).toHaveCount(1);
         await expect(target.locator('#socialShortcutGrid')).toBeAttached();
       }
       if(route==='/amigos/'){
