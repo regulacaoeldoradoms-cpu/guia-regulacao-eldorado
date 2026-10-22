@@ -4,7 +4,7 @@
   if (window.PortalGlobalNavigation) return;
 
   const VERSION = '1.0.1';
-  const SOCIAL_CSS = '/css/social.css?v=20260922-2';
+  const SOCIAL_CSS = '/css/social.css?v=20261021-social-dark-like-1';
   const NOTIFICATION_CSS = '/css/social-notification-panel.css?v=20260910-1';
   const SOCIAL_API = '/js/social-api.js?v=20260910-4';
   const AUTH_CONFIG = '/js/auth-config.js?v=20260815-1';

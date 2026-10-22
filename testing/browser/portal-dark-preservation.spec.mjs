@@ -217,7 +217,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
     const palettes=[];
     const homeContracts=[];
     const nativeContracts=[];
-    let friendsSource=0;
+    let friendsSource=0,homeSafetySource=0;
     let signupSource=0,privateAccountSource=0;
     const privateAccountBase=['/cadastro/','/seguranca/'].includes(route)?execFileSync('git',['show',`${process.env.DARK_AUDIT_BASE || 'origin/main'}:${route.slice(1)}index.html`],{encoding:'utf8'}):null;
     const signupContracts=[];
@@ -247,6 +247,24 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
           await expect(caption).toHaveText('Escolha um nome de usuário e uma senha. Sua data de nascimento é privada.');
           await caption.evaluate(node=>node.textContent='Você precisa informar somente um nome de usuário e uma senha.');
         }
+      }
+      if(route==='/'){
+        // The user explicitly approved removing this one redundant Home notice.
+        // Project its exact historical counterpart out of the base DOM only;
+        // preserve the complete computed/layout and full-PNG baseline gates.
+        const notice=target.locator('#socialHome .social-tools-rail > section.social-safety-card');
+        const current=homeSafetySource++===0;
+        await expect(notice).toHaveCount(current?0:1);
+        if(!current){
+          await expect(notice).toHaveClass(/\bsocial-card-pad\b/);
+          await expect(notice.locator('h2')).toHaveText('Rede institucional, conversa segura');
+          await expect(notice.locator('p')).toHaveText('O feed social não publica atividades assistenciais. Amizade não libera chat profissional, Conselho, Telemedicina ou qualquer dado de saúde.');
+          await expect(notice.locator(':scope > *')).toHaveCount(2);
+          await notice.evaluate(node=>node.remove());
+        }
+        // The native mobile presenter may move shortcuts from the rail into the feed.
+        await expect(target.locator('#socialHome .social-shortcuts')).toHaveCount(1);
+        await expect(target.locator('#socialShortcutGrid')).toBeAttached();
       }
       if(route==='/amigos/'){
         // The user approved removing this exact explanatory card on mobile and desktop.
