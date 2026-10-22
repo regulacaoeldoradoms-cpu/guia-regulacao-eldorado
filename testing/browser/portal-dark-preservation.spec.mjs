@@ -256,7 +256,7 @@ if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRou
         const current=homeSafetySource++===0;
         await expect(notice).toHaveCount(current?0:1);
         if(!current){
-          await expect(notice).toHaveClass(/\\bsocial-card-pad\\b/);
+          await expect(notice).toHaveClass(/\bsocial-card-pad\b/);
           await expect(notice.locator('h2')).toHaveText('Rede institucional, conversa segura');
           await expect(notice.locator('p')).toHaveText('O feed social não publica atividades assistenciais. Amizade não libera chat profissional, Conselho, Telemedicina ou qualquer dado de saúde.');
           await expect(notice.locator(':scope > *')).toHaveCount(2);
