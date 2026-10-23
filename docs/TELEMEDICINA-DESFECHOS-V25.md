@@ -79,6 +79,12 @@ A regra persistente do Worker reconhece `RETORNO APÓS ... - JÁ REALIZADO` como
 
 As expressões de desistência e encaminhamento presencial também são reconhecidas como encerramento na leitura de registros históricos.
 
+### Compatibilidade histórica da fila Altas — consolidada em 24/09/2026
+
+A regra operacional permanece: **concluído não é sinônimo de alta**. Registros de desistência, abandono do tratamento/acompanhamento ou encaminhamento para atendimento presencial devem permanecer encerrados no histórico, mas fora da fila **Altas**, mesmo quando dados antigos ainda carregarem `discharged: true` ou `followupMode: discharge`.
+
+A classificação persistente e a resposta imediata do frontend agora dão precedência à conduta documentada sobre esses marcadores técnicos antigos. A regressão cobre também a redação legada **ABANDONO DE ACOMPANHAMENTO**, pendência identificada na revisão do antigo PR #107.
+
 ## Movimento
 
 A V25 preserva a decisão anterior de manter `/telemedicina/` sem animações, transições ou deslocamentos decorativos. Os novos controles não introduzem movimento.

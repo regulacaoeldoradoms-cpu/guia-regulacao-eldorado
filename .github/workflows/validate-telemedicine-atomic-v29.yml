@@ -58,7 +58,7 @@ jobs:
           grep -q 'id="normalizeSpecialties" hidden' telemedicina/index.html
           grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
           grep -q '<option value="CONCLUÍDO">Altas</option>' telemedicina/index.html
-          grep -q 'telemedicina-altas-v30.js?v=20260909-3' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260924-1' telemedicina/index.html
           grep -q "COMPLETED_STATUS = 'CONCLUÍDO'" js/telemedicina-altas-v30.js
           grep -q 'data-atomic-save="v29"' telemedicina/index.html
           grep -q 'data-discharge-queue="v33"' telemedicina/index.html
